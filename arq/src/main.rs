@@ -1,6 +1,6 @@
 use std::io;
-use ui::{StartMenu};
-
+use ui::{StartMenu, StartMenuChoice};
+use std::convert::TryInto;
 mod terminal_manager;
 mod ui;
 mod menu;
@@ -13,30 +13,41 @@ fn main<>() -> Result<(), io::Error> {
     manager.terminal.clear()?;
 
     let start_menu = ui::build_start_menu();
-    let mut ui = ui::UI { menu : start_menu, frame_size : None };
+    let mut ui = ui::UI { start_menu, frame_size : None };
 
     manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;
     loop {
-        let last_selection = ui.menu.selection;
-        ui.menu.handle_input();
-        let selection = ui.menu.selection;
+        let last_selection = ui.start_menu.selection;
+        ui.start_menu.handle_input();
+        let selection = ui.start_menu.selection;
         log::info!("Selection is: {}", selection);
         if last_selection != selection {
             log::info!("Selection changed to: {}", selection);
             manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;
         }
 
-        if ui.menu.exit {
+        if ui.start_menu.exit {
             log::info!("Menu exited.");
             break;
         }
 
-        if ui.menu.selected {
-            log::info!("Menu item {} selected.", selection);
-            break;
+        if ui.start_menu.selected {
+            match ui.start_menu.selection.try_into() {
+                Ok(StartMenuChoice::Play) => {
+                    log::info!("Starting game..");
+                },
+                Ok(StartMenuChoice::Settings) => {
+                    log::info!("Showing settings..");
+                },
+                Ok(StartMenuChoice::Info) => {
+                    log::info!("Showing info..");
+                },
+                Ok(StartMenuChoice::Quit) => {
+                    break;
+                },
+                Err(_) => {}
+            }
         }
     }
-
-
     return Ok(());
 }
