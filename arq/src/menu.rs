@@ -4,11 +4,10 @@ use tui::style::{Style, Color};
 use termion::{event::Key};
 use termion::input::TermRead;
 
-pub struct Menu<T> {
+pub struct Menu{
     pub menu_titles: Vec<String>,
     pub highlight_text: Option<String>,
     pub selection: usize,
-    pub choice: Option<T>,
     pub selected : bool,
     pub exit : bool
 }
@@ -23,7 +22,7 @@ pub trait Selection {
     fn handle_input(&mut self);
 }
 
-impl <T> ToList for Menu<T> {
+impl ToList for Menu {
     fn to_list(&self) -> List {
         let menu_items: Vec<ListItem> = self.menu_titles.iter().cloned().map(ListItem::new).collect();
         let mut list = List::new(menu_items)
@@ -40,13 +39,17 @@ impl <T> ToList for Menu<T> {
     }
 }
 
-impl <T> Selection for Menu<T> {
+impl Selection for Menu {
     fn select_up(&mut self) {
-        self.selection -= 1;
+        if self.selection > 0 && self.selection < self.menu_titles.len() {
+            self.selection -= 1;
+        }
     }
 
     fn select_down(&mut self) {
-        self.selection += 1;
+        if self.selection < self.menu_titles.len() {
+            self.selection += 1;
+        }
     }
 
     fn handle_input(&mut self) {
