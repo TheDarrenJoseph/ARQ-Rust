@@ -41,13 +41,13 @@ impl ToList for Menu {
 
 impl Selection for Menu {
     fn select_up(&mut self) {
-        if self.selection > 0 && self.selection < self.menu_titles.len() {
+        if self.selection > 0 {
             self.selection -= 1;
         }
     }
 
     fn select_down(&mut self) {
-        if self.selection < self.menu_titles.len() {
+        if self.selection < self.menu_titles.len() - 1 {
             self.selection += 1;
         }
     }
