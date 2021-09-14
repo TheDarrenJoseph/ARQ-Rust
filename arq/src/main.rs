@@ -6,9 +6,12 @@ use termion::input::TermRead;
 
 mod terminal_manager;
 mod ui;
+mod items;
+mod container;
 mod menu;
 mod settings;
 
+use crate::container::{ContainerType};
 use crate::menu::Selection;
 
 fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI, settings: &mut settings::EnumSettings) -> Result<(), io::Error> {
@@ -52,8 +55,6 @@ fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut term
 
 
 fn handle_start_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI) -> Result<StartMenuChoice, io::Error> {
-    use crate::menu::Selection;
-
     loop {
         let last_selection = ui.start_menu.selection;
         let key = io::stdin().keys().next().unwrap().unwrap();
@@ -92,6 +93,8 @@ fn main<>() -> Result<(), io::Error> {
 
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let mut enum_settings = settings::EnumSettings { settings: vec![fog_of_war] };
+
+    let _container = container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
     loop {
         manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;

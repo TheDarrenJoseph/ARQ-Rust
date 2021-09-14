@@ -2,7 +2,7 @@ use tui::widgets::{Block, Borders, ListState};
 use tui::style::{Style, Color};
 use tui::layout::{Rect};
 use std::convert::TryInto;
-use crate::menu::{Menu,Selection,ToList};
+use crate::menu::{Menu,ToList};
 
 pub struct UI {
     pub start_menu : Menu,
