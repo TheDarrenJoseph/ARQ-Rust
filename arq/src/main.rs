@@ -10,6 +10,8 @@ mod items;
 mod container;
 mod menu;
 mod settings;
+mod tile;
+mod map;
 
 use crate::container::{ContainerType};
 use crate::menu::Selection;

@@ -15,3 +15,20 @@ impl Item {
 pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
     Item {id: id, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::container::{ContainerType};
+
+    #[test]
+    fn test__build() {
+        let item = crate::items::build(0, "Test Item".to_owned(), 'X', 1, 1);
+
+        assert_eq!(0, item.get_id());
+        assert_eq!("Test Item", item.name);
+        assert_eq!('X', item.symbol);
+        assert_eq!(0, item.colour);
+        assert_eq!(1, item.weight);
+        assert_eq!(1, item.value);
+    }
+}
