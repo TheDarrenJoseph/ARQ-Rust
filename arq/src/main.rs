@@ -2,18 +2,20 @@ use std::io;
 use ui::{StartMenu, StartMenuChoice, SettingsMenuChoice};
 use std::convert::TryInto;
 use settings::{Toggleable};
+use termion::input::TermRead;
 
 mod terminal_manager;
 mod ui;
 mod menu;
 mod settings;
 
-fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI, settings: &mut settings::EnumSettings) -> Result<(), io::Error> {
-    use crate::ui::menu::Selection;
+use crate::menu::Selection;
 
+fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI, settings: &mut settings::EnumSettings) -> Result<(), io::Error> {
     loop {
         let last_selection = ui.settings_menu.selection;
-        ui.settings_menu.handle_input();
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        ui.settings_menu.handle_input(key);
         let selection = ui.settings_menu.selection;
         log::info!("Selection is: {}", selection);
         if last_selection != selection {
@@ -50,11 +52,12 @@ fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut term
 
 
 fn handle_start_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI) -> Result<StartMenuChoice, io::Error> {
-    use crate::ui::menu::Selection;
+    use crate::menu::Selection;
 
     loop {
         let last_selection = ui.start_menu.selection;
-        ui.start_menu.handle_input();
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        ui.start_menu.handle_input(key);
         let selection = ui.start_menu.selection;
         log::info!("Selection is: {}", selection);
         if last_selection != selection {

@@ -1,25 +1,23 @@
-use std::io;
 use tui::widgets::{Block, Borders, List, ListItem};
 use tui::style::{Style, Color};
 use termion::{event::Key};
-use termion::input::TermRead;
 
-pub struct Menu{
+pub struct Menu {
     pub menu_titles: Vec<String>,
     pub highlight_text: Option<String>,
     pub selection: usize,
-    pub selected : bool,
-    pub exit : bool
+    pub selected: bool,
+    pub exit: bool
 }
 
 pub trait ToList {
-   fn to_list(&self) -> List;
+    fn to_list(&self) -> List;
 }
 
 pub trait Selection {
     fn select_up(&mut self);
     fn select_down(&mut self);
-    fn handle_input(&mut self);
+    fn handle_input(&mut self, key: termion::event::Key);
 }
 
 impl ToList for Menu {
@@ -52,40 +50,98 @@ impl Selection for Menu {
         }
     }
 
-    fn handle_input(&mut self) {
+    fn handle_input(&mut self, key: termion::event::Key) {
         self.selected = false;
-        let input = io::stdin();
-        let keys = input.keys();
-        for key in keys {
-            match key.unwrap() {
-                Key::Char('q') => {
-                    self.exit = true;
-                    break;
-                }
-                Key::Char('\n') => {
-                    self.selected = true;
-                    break;
-                }
-                Key::Char(c) => {
-                    log::info!("Inputted: '{}'", c);
-                }
-                Key::Up => {
-                    self.select_up();
-                    break;
-                }
-                Key::Down => {
-                    self.select_down();
-                    break;
-                }
-                Key::Right => {
-                    self.selected = true;
-                    break;
-                }
-                _ => {
-                    log::info!("Unknown");
-                }
+        match key {
+            Key::Char('q') => {
+                self.exit = true;
+            }
+            Key::Char('\n') => {
+                self.selected = true;
+            }
+            Key::Char(c) => {
+                log::info!("Inputted: '{}'", c);
+            }
+            Key::Up => {
+                self.select_up();
+            }
+            Key::Down => {
+                self.select_down();
+            }
+            Key::Right => {
+                self.selected = true;
+            }
+            _ => {
+                log::info!("Unknown");
             }
         }
+    }
+}
 
+#[cfg(test)]
+mod tests {
+    use crate::menu::{Menu,Selection};
+
+    fn build_test_menu() ->  Menu {
+        let titles = vec!["A".to_owned(), "B".to_owned(),  "C".to_owned()];
+        Menu { menu_titles : titles,  highlight_text : None, selection : 0, selected: false, exit: false}
+    }
+
+    #[test]
+    fn test_menu_select_up() {
+        // GIVEN a menu of 3 choices
+        let mut menu = build_test_menu();
+        // AND the initial selection is index 1
+        menu.selection = 1;
+
+        // WHEN we call to select_up
+        menu.select_up();
+
+        // THEN we expect the selection to be at the lowest index
+        assert_eq!(0, menu.selection);
+    }
+
+    #[test]
+    fn test_menu_select_up_upper_bound() {
+        // GIVEN a menu of 3 choices
+        let mut menu = build_test_menu();
+        // AND the initial selection is index 0
+        assert_eq!(0, menu.selection);
+
+        // WHEN we call to select_up
+        menu.select_up();
+
+        // THEN we expect the selection to remain unchanged
+        assert_eq!(0, menu.selection);
+    }
+
+    #[test]
+    fn test_menu_select_down() {
+        // GIVEN a menu of 3 choices
+        let mut menu = build_test_menu();
+        // AND the initial selection is index 0
+        assert_eq!(0, menu.selection);
+
+        // WHEN we call to select_down
+        menu.select_down();
+
+        // THEN we expect the selection to increment by 1
+        assert_eq!(1, menu.selection);
+    }
+
+    #[test]
+    fn test_menu_select_down_lower_bound() {
+        // GIVEN a menu of 3 choices
+        let mut menu = build_test_menu();
+        // AND the initial selection is index 0
+        assert_eq!(0, menu.selection);
+
+        // WHEN we call to select_down
+        for _ in 0..3 {
+            menu.select_down();
+        }
+
+        // THEN we expect the selection to be at the lowest possible index of 2
+        assert_eq!(2, menu.selection);
     }
 }
