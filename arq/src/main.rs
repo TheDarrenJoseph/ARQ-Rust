@@ -17,6 +17,8 @@ mod map_view;
 use crate::container::{ContainerType};
 use crate::menu::Selection;
 use crate::terminal_manager::TerminalManager;
+use crate::map_view::MapView;
+
 use tui::backend::Backend;
 use tui::backend::TermionBackend;
 use tui::buffer::Cell;
@@ -32,7 +34,7 @@ struct GameEngine  {
 impl GameEngine {
 
     fn draw_settings_menu(&mut self) {
-        let mut ui = &mut self.ui;
+        let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) });
     }
 
@@ -142,22 +144,19 @@ impl GameEngine {
 
     fn start_game(&mut self) {
         let tile_library = crate::tile::build_library();
-        let no_tile_1 = &tile_library[0];
-        let mut map = crate::map::Map { tiles : vec![vec![no_tile_1; 1]; 1] };
 
-        let backend = self.terminal_manager.terminal.backend_mut();
-        backend.clear();
-        let symbol = "Hello World".to_string();
-        let fg = tui::style::Color::Red;
-        let bg = tui::style::Color::Black;
-        let modifier = tui::style::Modifier::empty();
-        let cell = Cell{ symbol, fg, bg,modifier};
-        let mut cell_tup : (u16, u16, &Cell) = (7,11,&cell);
+        let room = &tile_library[2];
+        let wall = &tile_library[3];
 
-        let mut updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-        backend.draw(updates.into_iter());
-        backend.flush();
-        std::thread::sleep(Duration::from_millis(5000));
+        let mut map = crate::map::Map { tiles : vec![
+            vec![ wall,  wall,  wall],
+            vec![ wall,  room,  wall],
+            vec![ wall,  wall, wall]
+            ]
+        };
+
+        let mut map_view = MapView{ map, terminal_manager : &mut self.terminal_manager };
+        map_view.draw_map();
     }
 }
 

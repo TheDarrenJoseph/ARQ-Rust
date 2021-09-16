@@ -1,23 +1,41 @@
 use std::io;
-use tui::backend::Backend;
-use tui::backend::TermionBackend;
-use termion::raw::{RawTerminal};
 use crate::map::Map;
+use crate::terminal_manager::TerminalManager;
+use tui::buffer::Cell;
+use termion::raw::RawTerminal;
+use std::time::Duration;
 
-pub struct MapView<'a, RT : std::io::Write> {
-    map : Map<'a>,
-    backend : tui::backend::TermionBackend<RT>
+pub struct MapView<'a, B : tui::backend::Backend> {
+    pub map : Map<'a>,
+    pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-impl<RT : std::io::Write> MapView<'_, RT>{
-    fn draw_map(&self) {
+impl<B : tui::backend::Backend> MapView<'_, B>{
+    pub fn draw_map(&mut self) {
+        let backend = self.terminal_manager.terminal.backend_mut();
+        backend.clear();
+
         let tiles = &self.map.tiles;
-        let x = 0;
+        let mut y : u16 = 0;
         for row in tiles {
-            let y = 0;
+            let mut x : u16 = 0;
             for tile_details in row {
                 log::info!("Drawing position: {}, {}", x, y);
+
+                let symbol = tile_details.symbol.to_string();
+                let fg = tui::style::Color::Red;
+                let bg = tui::style::Color::Black;
+                let modifier = tui::style::Modifier::empty();
+                let cell = Cell{ symbol, fg, bg,modifier};
+                let mut cell_tup : (u16, u16, &Cell) = (x,y,&cell);
+
+                let mut updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                backend.draw(updates.into_iter());
+                backend.flush();
+                x += 1;
             }
+            y += 1;
         }
+        std::thread::sleep(Duration::from_millis(5000));
     }
 }
