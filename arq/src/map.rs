@@ -1,6 +1,4 @@
 use crate::tile::TileDetails;
-use crate::items::Item;
-use crate::container::Container;
 
 pub struct Map <'a> {
     pub tiles : Vec<Vec<&'a TileDetails>>
@@ -8,7 +6,7 @@ pub struct Map <'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::container::{ContainerType};
+    use crate::container::ContainerType;
     use crate::tile::build_library;
 
     #[test]

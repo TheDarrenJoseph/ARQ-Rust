@@ -1,6 +1,6 @@
+use termion::event::Key;
+use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, List, ListItem};
-use tui::style::{Style, Color};
-use termion::{event::Key};
 
 pub struct Menu {
     pub menu_titles: Vec<String>,
@@ -93,7 +93,7 @@ pub fn build_settings_menu() -> Menu {
 
 #[cfg(test)]
 mod tests {
-    use crate::menu::{Menu,Selection};
+    use crate::menu::{Menu, Selection};
 
     fn build_test_menu() ->  Menu {
         let titles = vec!["A".to_owned(), "B".to_owned(),  "C".to_owned()];

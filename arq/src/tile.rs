@@ -31,7 +31,7 @@ pub fn build_library() -> [TileDetails; 9] {
 
 #[cfg(test)]
 mod tests {
-    use crate::container::{ContainerType};
+    use crate::container::ContainerType;
     use crate::tile::build_library;
 
     #[test]

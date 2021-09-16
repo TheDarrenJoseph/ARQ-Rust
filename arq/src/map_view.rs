@@ -1,9 +1,8 @@
-use std::io;
+use tui::buffer::Cell;
+use std::time::Duration;
+
 use crate::map::Map;
 use crate::terminal_manager::TerminalManager;
-use tui::buffer::Cell;
-use termion::raw::RawTerminal;
-use std::time::Duration;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : Map<'a>,
@@ -27,9 +26,9 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 let bg = tui::style::Color::Black;
                 let modifier = tui::style::Modifier::empty();
                 let cell = Cell{ symbol, fg, bg,modifier};
-                let mut cell_tup : (u16, u16, &Cell) = (x,y,&cell);
+                let cell_tup : (u16, u16, &Cell) = (x,y,&cell);
 
-                let mut updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
                 backend.draw(updates.into_iter());
                 backend.flush();
                 x += 1;

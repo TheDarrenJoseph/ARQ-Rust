@@ -1,8 +1,15 @@
-use std::io;
-use ui::{StartMenu, StartMenuChoice, SettingsMenuChoice};
-use std::convert::TryInto;
-use settings::{Toggleable};
 use termion::input::TermRead;
+use termion::raw::RawTerminal;
+use tui::backend::TermionBackend;
+
+use settings::Toggleable;
+use std::convert::TryInto;
+use std::io;
+use ui::{SettingsMenuChoice, StartMenu, StartMenuChoice};
+
+use crate::map_view::MapView;
+use crate::menu::Selection;
+use crate::terminal_manager::TerminalManager;
 
 mod terminal_manager;
 mod ui;
@@ -14,17 +21,6 @@ mod tile;
 mod map;
 mod map_view;
 
-use crate::container::{ContainerType};
-use crate::menu::Selection;
-use crate::terminal_manager::TerminalManager;
-use crate::map_view::MapView;
-
-use tui::backend::Backend;
-use tui::backend::TermionBackend;
-use tui::buffer::Cell;
-use termion::raw::RawTerminal;
-use std::time::Duration;
-
 struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
     ui : ui::UI,
@@ -33,19 +29,18 @@ struct GameEngine  {
 
 impl GameEngine {
 
-    fn draw_settings_menu(&mut self) {
+    fn draw_settings_menu(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) });
+        self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) })
     }
 
-    fn draw_start_menu(&mut self) {
-        let mut ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) });
+    fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
+        let ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
     }
 
     fn handle_settings_menu_selection(&mut self) -> Result<(), io::Error> {
         loop {
-            let mut ui = &self.ui;
             let last_selection = self.ui.settings_menu.selection;
             let key = io::stdin().keys().next().unwrap().unwrap();
             self.ui.settings_menu.handle_input(key);
@@ -148,7 +143,7 @@ impl GameEngine {
         let room = &tile_library[2];
         let wall = &tile_library[3];
 
-        let mut map = crate::map::Map { tiles : vec![
+        let map = crate::map::Map { tiles : vec![
             vec![ wall,  wall,  wall],
             vec![ wall,  room,  wall],
             vec![ wall,  wall, wall]
@@ -163,12 +158,12 @@ impl GameEngine {
 fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTerminal<std::io::Stdout>>>) -> Result<GameEngine, io::Error> {
     let start_menu = menu::build_start_menu();
     let settings_menu = menu::build_settings_menu();
-    let mut ui = ui::UI { start_menu, settings_menu, frame_size : None };
+    let ui = ui::UI { start_menu, settings_menu, frame_size : None };
 
     terminal_manager.terminal.clear()?;
 
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
-    let mut settings = settings::EnumSettings { settings: vec![fog_of_war] };
+    let settings = settings::EnumSettings { settings: vec![fog_of_war] };
 
     Ok(GameEngine { terminal_manager, ui, settings })
 }
@@ -176,8 +171,8 @@ fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTe
 fn main<>() -> Result<(), io::Error> {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
-    let mut game_engine : Result<GameEngine, std::io::Error>;
-    let mut terminal_manager = terminal_manager::init().unwrap();
+    let game_engine : Result<GameEngine, std::io::Error>;
+    let terminal_manager = terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
     //let _container = container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
     game_engine.unwrap().start_menu()

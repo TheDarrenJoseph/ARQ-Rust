@@ -18,7 +18,7 @@ pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::container::{ContainerType};
+    use crate::container::ContainerType;
 
     #[test]
     fn test_build() {
