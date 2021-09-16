@@ -21,7 +21,7 @@ mod tests {
     use crate::container::{ContainerType};
 
     #[test]
-    fn test__build() {
+    fn test_build() {
         let item = crate::items::build(0, "Test Item".to_owned(), 'X', 1, 1);
 
         assert_eq!(0, item.get_id());

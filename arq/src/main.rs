@@ -12,111 +12,174 @@ mod menu;
 mod settings;
 mod tile;
 mod map;
+mod map_view;
 
 use crate::container::{ContainerType};
 use crate::menu::Selection;
+use crate::terminal_manager::TerminalManager;
+use tui::backend::Backend;
+use tui::backend::TermionBackend;
+use tui::buffer::Cell;
+use termion::raw::RawTerminal;
+use std::time::Duration;
 
-fn handle_settings_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI, settings: &mut settings::EnumSettings) -> Result<(), io::Error> {
-    loop {
-        let last_selection = ui.settings_menu.selection;
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        ui.settings_menu.handle_input(key);
-        let selection = ui.settings_menu.selection;
-        log::info!("Selection is: {}", selection);
-        if last_selection != selection {
-            log::info!("Selection changed to: {}", selection);
-            manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) })?;
-        }
-
-        if ui.settings_menu.exit {
-            log::info!("Menu exited.");
-            break;
-        }
-
-        if ui.settings_menu.selected {
-            match ui.settings_menu.selection.try_into() {
-                Ok(SettingsMenuChoice::FogOfWar) => {
-                    match settings.settings.iter_mut().find(|x| x.name == "Fog of war") {
-                        Some(s) => {
-                            s.toggle();
-                            log::info!("Fog of war: {}", s.value);
-                        },
-                        None => {}
-                    }
-                },
-                Ok(SettingsMenuChoice::Quit) => {
-                    log::info!("Closing settings..");
-                    break;
-                },
-                Err(_) => {}
-            }
-        }
-    }
-    Ok(())
+struct GameEngine  {
+    terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
+    ui : ui::UI,
+    settings : settings::EnumSettings
 }
 
+impl GameEngine {
 
-fn handle_start_menu_selection<B : tui::backend::Backend>(manager : &mut terminal_manager::TerminalManager<B> , ui : &mut ui::UI) -> Result<StartMenuChoice, io::Error> {
-    loop {
-        let last_selection = ui.start_menu.selection;
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        ui.start_menu.handle_input(key);
-        let selection = ui.start_menu.selection;
-        log::info!("Selection is: {}", selection);
-        if last_selection != selection {
-            log::info!("Selection changed to: {}", selection);
-            manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;
+    fn draw_settings_menu(&mut self) {
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) });
+    }
+
+    fn draw_start_menu(&mut self) {
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) });
+    }
+
+    fn handle_settings_menu_selection(&mut self) -> Result<(), io::Error> {
+        loop {
+            let mut ui = &self.ui;
+            let last_selection = self.ui.settings_menu.selection;
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            self.ui.settings_menu.handle_input(key);
+            let selection = self.ui.settings_menu.selection;
+            log::info!("Selection is: {}", selection);
+            if last_selection != selection {
+                log::info!("Selection changed to: {}", selection);
+                self.draw_settings_menu();
+            }
+
+            if self.ui.settings_menu.exit {
+                log::info!("Menu exited.");
+                break;
+            }
+
+            if self.ui.settings_menu.selected {
+                match self.ui.settings_menu.selection.try_into() {
+                    Ok(SettingsMenuChoice::FogOfWar) => {
+                        match self.settings.settings.iter_mut().find(|x| x.name == "Fog of war") {
+                            Some(s) => {
+                                s.toggle();
+                                log::info!("Fog of war: {}", s.value);
+                            },
+                            None => {}
+                        }
+                    },
+                    Ok(SettingsMenuChoice::Quit) => {
+                        log::info!("Closing settings..");
+                        break;
+                    },
+                    Err(_) => {}
+                }
+            }
         }
+        Ok(())
+    }
 
-        if ui.start_menu.exit {
-            log::info!("Menu exited.");
-            return Ok(StartMenuChoice::Quit);
-        }
 
-        if ui.start_menu.selected {
-            match ui.start_menu.selection.try_into() {
-                Ok(x) => {
-                    return Ok(x);
-                },
-                Err(_) => {}
+    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, io::Error> {
+        loop {
+            let last_selection = self.ui.start_menu.selection;
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            self.ui.start_menu.handle_input(key);
+            let selection = self.ui.start_menu.selection;
+            log::info!("Selection is: {}", selection);
+            if last_selection != selection {
+                log::info!("Selection changed to: {}", selection);
+                let ui = &mut self.ui;
+                self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;
+            }
+
+            if self.ui.start_menu.exit {
+                log::info!("Menu exited.");
+                return Ok(StartMenuChoice::Quit);
+            }
+
+            if self.ui.start_menu.selected {
+                match self.ui.start_menu.selection.try_into() {
+                    Ok(x) => {
+                        return Ok(x);
+                    },
+                    Err(_) => {}
+                }
             }
         }
     }
+
+    pub fn start_menu(&mut self) -> Result<(), io::Error> {
+        loop {
+            self.draw_start_menu();
+            let start_choice = self.handle_start_menu_selection()?;
+            match start_choice {
+                StartMenuChoice::Play => {
+                    log::info!("Starting game..");
+                    self.start_game();
+                    break;
+                },
+                StartMenuChoice::Settings => {
+                    log::info!("Showing settings..");
+                    let ui = &mut self.ui;
+                    self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) })?;
+                    self.handle_settings_menu_selection()?;
+                    break;
+                },
+                StartMenuChoice::Info => {
+                    log::info!("Showing info..");
+                    break;
+                },
+                StartMenuChoice::Quit => {
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn start_game(&mut self) {
+        let tile_library = crate::tile::build_library();
+        let no_tile_1 = &tile_library[0];
+        let mut map = crate::map::Map { tiles : vec![vec![no_tile_1; 1]; 1] };
+
+        let backend = self.terminal_manager.terminal.backend_mut();
+        backend.clear();
+        let symbol = "Hello World".to_string();
+        let fg = tui::style::Color::Red;
+        let bg = tui::style::Color::Black;
+        let modifier = tui::style::Modifier::empty();
+        let cell = Cell{ symbol, fg, bg,modifier};
+        let mut cell_tup : (u16, u16, &Cell) = (7,11,&cell);
+
+        let mut updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+        backend.draw(updates.into_iter());
+        backend.flush();
+        std::thread::sleep(Duration::from_millis(5000));
+    }
+}
+
+fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTerminal<std::io::Stdout>>>) -> Result<GameEngine, io::Error> {
+    let start_menu = menu::build_start_menu();
+    let settings_menu = menu::build_settings_menu();
+    let mut ui = ui::UI { start_menu, settings_menu, frame_size : None };
+
+    terminal_manager.terminal.clear()?;
+
+    let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
+    let mut settings = settings::EnumSettings { settings: vec![fog_of_war] };
+
+    Ok(GameEngine { terminal_manager, ui, settings })
 }
 
 fn main<>() -> Result<(), io::Error> {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    let mut manager = terminal_manager::init().unwrap();
-    manager.terminal.clear()?;
 
-    let start_menu = ui::build_start_menu();
-    let settings_menu = ui::build_settings_menu();
-    let mut ui = ui::UI { start_menu, settings_menu, frame_size : None };
-
-    let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
-    let mut enum_settings = settings::EnumSettings { settings: vec![fog_of_war] };
-
-    let _container = container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-
-    loop {
-        manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })?;
-        let start_choice = handle_start_menu_selection(&mut manager, &mut ui)?;
-        match start_choice {
-            StartMenuChoice::Play => {
-                log::info!("Starting game..");
-            },
-            StartMenuChoice::Settings => {
-                log::info!("Showing settings..");
-                manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) })?;
-                handle_settings_menu_selection(&mut manager, &mut ui, &mut enum_settings)?;
-            },
-            StartMenuChoice::Info => {
-                log::info!("Showing info..");
-            },
-            StartMenuChoice::Quit => {
-                break;
-            }
-        }
-    }
-    Ok(())
+    let mut game_engine : Result<GameEngine, std::io::Error>;
+    let mut terminal_manager = terminal_manager::init().unwrap();
+    game_engine = build_game_engine(terminal_manager);
+    //let _container = container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+    game_engine.unwrap().start_menu()
 }

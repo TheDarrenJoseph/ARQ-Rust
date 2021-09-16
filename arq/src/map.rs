@@ -3,7 +3,7 @@ use crate::items::Item;
 use crate::container::Container;
 
 pub struct Map <'a> {
-    tiles : Vec<Vec<&'a TileDetails>>
+    pub tiles : Vec<Vec<&'a TileDetails>>
 }
 
 #[cfg(test)]

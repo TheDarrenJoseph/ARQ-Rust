@@ -9,9 +9,10 @@ pub struct TerminalManager<B : tui::backend::Backend> {
 
 pub fn init() -> Result<TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>, io::Error> {
     let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
+    let mut backend = TermionBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
-    let manager = TerminalManager { terminal };
+    let manager = TerminalManager::<TermionBackend<RawTerminal<io::Stdout>>> { terminal };
+
     log::info!("Terminal initialised.");
     return Ok(manager);
 }

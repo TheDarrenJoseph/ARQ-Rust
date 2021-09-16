@@ -94,15 +94,3 @@ impl StartMenu for UI {
     }
 }
 
-pub fn build_start_menu() -> Menu {
-    let titles = vec!["Play".to_owned(), "Settings".to_owned(), "Info".to_owned(), "Quit".to_owned()];
-    let prompt = Some("-> ".to_owned());
-    let menu = Menu { menu_titles : titles,  highlight_text : prompt, selection : 0, selected: false, exit: false};
-    menu
-}
-
-pub fn build_settings_menu() -> Menu {
-    let titles = vec!["Fog of war".to_owned(), "Close settings".to_owned()];
-    let menu = Menu { menu_titles : titles,  highlight_text : None, selection : 0, selected: false, exit: false};
-    menu
-}
