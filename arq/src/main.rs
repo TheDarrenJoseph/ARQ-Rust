@@ -10,6 +10,8 @@ use ui::{SettingsMenuChoice, StartMenu, StartMenuChoice};
 use crate::map_view::MapView;
 use crate::menu::Selection;
 use crate::terminal_manager::TerminalManager;
+use crate::room::Room;
+use crate::position::{Position, build_area};
 
 mod terminal_manager;
 mod ui;
@@ -20,6 +22,9 @@ mod settings;
 mod tile;
 mod map;
 mod map_view;
+mod position;
+mod door;
+mod room;
 
 struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
@@ -48,7 +53,7 @@ impl GameEngine {
             log::info!("Selection is: {}", selection);
             if last_selection != selection {
                 log::info!("Selection changed to: {}", selection);
-                self.draw_settings_menu();
+                self.draw_settings_menu()?;
             }
 
             if self.ui.settings_menu.exit {
@@ -110,12 +115,12 @@ impl GameEngine {
 
     pub fn start_menu(&mut self) -> Result<(), io::Error> {
         loop {
-            self.draw_start_menu();
+            self.draw_start_menu()?;
             let start_choice = self.handle_start_menu_selection()?;
             match start_choice {
                 StartMenuChoice::Play => {
                     log::info!("Starting game..");
-                    self.start_game();
+                    self.start_game()?;
                     break;
                 },
                 StartMenuChoice::Settings => {
@@ -137,21 +142,36 @@ impl GameEngine {
         Ok(())
     }
 
-    fn start_game(&mut self) {
+    fn start_game(&mut self) -> Result<(), io::Error>{
         let tile_library = crate::tile::build_library();
 
-        let room = &tile_library[2];
+        let rom = &tile_library[2];
         let wall = &tile_library[3];
 
-        let map = crate::map::Map { tiles : vec![
+        let room_pos = Position { x: 0, y: 0 };
+        let room_area = build_area( room_pos, 3);
+        let doors = Vec::new();
+        let room = Room { area: room_area, doors };
+
+        let mut rooms = Vec::new();
+        rooms.push(room);
+
+        let map_pos = Position { x: 0, y: 0 };
+        let map_area = build_area( map_pos, 3);
+        let map = crate::map::Map {
+            area: map_area,
+            tiles : vec![
             vec![ wall,  wall,  wall],
-            vec![ wall,  room,  wall],
+            vec![ wall,  rom,  wall],
             vec![ wall,  wall, wall]
-            ]
+            ],
+            rooms
         };
 
         let mut map_view = MapView{ map, terminal_manager : &mut self.terminal_manager };
-        map_view.draw_map();
+
+        map_view.draw_map()?;
+        Ok(())
     }
 }
 

@@ -1,6 +1,7 @@
 use tui::buffer::Cell;
 use std::time::Duration;
 
+use crate::io::Error;
 use crate::map::Map;
 use crate::terminal_manager::TerminalManager;
 
@@ -10,16 +11,23 @@ pub struct MapView<'a, B : tui::backend::Backend> {
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
-    pub fn draw_map(&mut self) {
+    pub fn draw_map(&mut self) -> Result<(), Error> {
         let backend = self.terminal_manager.terminal.backend_mut();
-        backend.clear();
+        backend.clear()?;
+
+        let start_position = self.map.area.start_position;
+        let end_position =  self.map.area.end_position;
 
         let tiles = &self.map.tiles;
-        let mut y : u16 = 0;
-        for row in tiles {
-            let mut x : u16 = 0;
-            for tile_details in row {
-                log::info!("Drawing position: {}, {}", x, y);
+        let start_x = start_position.x;
+        let start_y = start_position.y;
+        let end_x = end_position.x;
+        let end_y = end_position.y;
+        for x in start_x..end_x {
+            for y in start_y..end_y {
+                log::info!("Drawing a position: {}, {}", x, y);
+
+                let tile_details = tiles[usize::from(x)][usize::from(y)];
 
                 let symbol = tile_details.symbol.to_string();
                 let fg = tui::style::Color::Red;
@@ -29,12 +37,12 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 let cell_tup : (u16, u16, &Cell) = (x,y,&cell);
 
                 let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                backend.draw(updates.into_iter());
-                backend.flush();
-                x += 1;
+                backend.draw(updates.into_iter())?;
+                backend.flush()?;
             }
-            y += 1;
         }
+
         std::thread::sleep(Duration::from_millis(5000));
+        Ok(())
     }
 }
