@@ -11,7 +11,7 @@ pub struct Area {
     pub size : u16
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     LEFT,
     RIGHT,
@@ -35,22 +35,23 @@ pub fn build_line(start_position : Position, size: u16, side: Side) -> AreaSide 
 
     let start_position;
     let end_position;
+    let zero_indexed_size = size - 1;
     match side {
         Side::LEFT => {
             start_position = Position { x : start_x, y: start_y};
-            end_position = Position { x : start_x, y: start_y + size};
+            end_position = Position { x : start_x, y: start_y + zero_indexed_size};
         },
         Side::RIGHT => {
-            start_position = Position { x : start_x + size, y: start_y};
-            end_position = Position { x : start_x, y: start_y + size};
+            start_position = Position { x : start_x + zero_indexed_size, y: start_y};
+            end_position = Position { x : start_x + zero_indexed_size, y: start_y + zero_indexed_size};
         },
         Side::TOP => {
             start_position = Position { x : start_x, y: start_y};
-            end_position = Position { x : start_x + size, y: start_y};
+            end_position = Position { x : start_x + zero_indexed_size, y: start_y};
         },
         Side::BOTTOM => {
-            start_position = Position { x : start_x, y: start_y + size};
-            end_position = Position { x : start_x + size, y: start_y + size};
+            start_position = Position { x : start_x, y: start_y + zero_indexed_size};
+            end_position = Position { x : start_x + zero_indexed_size, y: start_y + zero_indexed_size};
         }
     }
     let area = Area { start_position, end_position, size };
