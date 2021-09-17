@@ -1,10 +1,13 @@
-#[derive(Clone)]
+#[derive(Copy)]
 #[derive(PartialEq)]
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum Tile {NoTile,Corridor,Room,Wall,Window,Door,Entry,Exit,Deadly}
+#[derive(Copy)]
 #[derive(Clone)]
 pub enum Colour {None,Red,Green,Blue,Cyan,Brown,White,Black}
 
+#[derive(Clone)]
 pub struct TileDetails
 {
     id: u64,
