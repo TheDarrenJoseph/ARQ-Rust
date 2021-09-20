@@ -13,7 +13,7 @@ mod tests {
     use crate::container::ContainerType;
     use crate::tile::build_library;
     use crate::room::Room;
-    use crate::position::{Position, Area, build_area};
+    use crate::position::{Position, Area, build_square_area};
 
     #[test]
     fn test_build_map() {
@@ -24,7 +24,7 @@ mod tests {
         let wall = &tile_library[3];
 
         let room_pos = Position { x: 0, y: 0 };
-        let room_area = build_area( room_pos, 3);
+        let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
         let room = Room { area: room_area, doors };
 
@@ -32,7 +32,7 @@ mod tests {
         rooms.push(room);
 
         let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_area( map_pos, 3);
+        let map_area = build_square_area(map_pos, 3);
         let map = crate::map::Map {
             area: map_area,
             tiles : vec![
@@ -58,7 +58,7 @@ mod tests {
         let wall = &tile_library[3];
 
         let room_pos = Position { x: 0, y: 0 };
-        let room_area = build_area( room_pos, 3);
+        let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
         let room = Room { area: room_area, doors };
 
@@ -66,7 +66,7 @@ mod tests {
         rooms.push(room);
 
         let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_area( map_pos, 3);
+        let map_area = build_square_area(map_pos, 3);
         let mut map = crate::map::Map {
             area: map_area,
             tiles : vec![

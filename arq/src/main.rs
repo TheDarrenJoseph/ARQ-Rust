@@ -11,7 +11,7 @@ use crate::map_view::MapView;
 use crate::menu::Selection;
 use crate::terminal_manager::TerminalManager;
 use crate::room::Room;
-use crate::position::{Position, build_area};
+use crate::position::{Position, build_square_area};
 
 mod terminal_manager;
 mod ui;
@@ -149,7 +149,7 @@ impl GameEngine {
         let wall = &tile_library[3];
 
         let room_pos = Position { x: 0, y: 0 };
-        let room_area = build_area( room_pos, 3);
+        let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
         let room = Room { area: room_area, doors };
 
@@ -157,7 +157,7 @@ impl GameEngine {
         rooms.push(room);
 
         let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_area( map_pos, 3);
+        let map_area = build_square_area(map_pos, 3);
         let map = crate::map::Map {
             area: map_area,
             tiles : vec![
