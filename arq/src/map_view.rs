@@ -6,7 +6,7 @@ use crate::map::Map;
 use crate::terminal_manager::TerminalManager;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
-    pub map : Map<'a>,
+    pub map : Map,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
@@ -23,11 +23,11 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         let start_y = start_position.y;
         let end_x = end_position.x;
         let end_y = end_position.y;
-        for x in start_x..end_x {
-            for y in start_y..end_y {
-                log::info!("Drawing a position: {}, {}", x, y);
+        for x in start_x..=end_x {
+            for y in start_y..=end_y {
+                //log::info!("Drawing a position: {}, {}", x, y);
 
-                let tile_details = tiles[usize::from(x)][usize::from(y)];
+                let tile_details = &tiles[usize::from(x)][usize::from(y)];
 
                 let symbol = tile_details.symbol.to_string();
                 let fg = tui::style::Color::Red;

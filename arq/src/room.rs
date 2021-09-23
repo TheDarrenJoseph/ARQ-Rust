@@ -1,4 +1,4 @@
-use crate::position::{Area,AreaSide,all_sides, build_line};
+use crate::position::{Area,Position,AreaSide,all_sides, build_line};
 use crate::door::Door;
 
 pub struct Room {
@@ -15,6 +15,14 @@ impl Room {
             sides.push(build_line(start_pos.clone(), *size, side.clone()));
         }
         sides
+    }
+
+    pub fn get_inside_area(&self) -> Area {
+        let start_pos = &self.area.start_position;
+        let end_pos = &self.area.end_position;
+        let start_position = Position { x : start_pos.x + 1, y: start_pos.y + 1};
+        let end_position = Position { x : end_pos.x - 1, y: end_pos.y - 1};
+        Area { start_position, end_position, size: self.area.size }
     }
 }
 
@@ -66,5 +74,24 @@ mod tests {
         assert_eq!(2, bottom.area.start_position.y);
         assert_eq!(2, bottom.area.end_position.x);
         assert_eq!(2, bottom.area.end_position.y);
+    }
+
+    #[test]
+    fn test_get_inside_area() {
+        // GIVEN a room of 4x4
+        let start_position = Position { x: 0, y: 0};
+        let area = build_square_area(start_position, 4);
+        let mut doors = Vec::new();
+        let room = Room { area, doors };
+        assert_eq!(Position { x: 0, y: 0}, room.area.start_position);
+        assert_eq!(Position { x: 3, y: 3}, room.area.end_position);
+
+        // WHEN we call to get the inside area
+        let inside_area = room.get_inside_area();
+
+        // THEN we expect it to start at 1,1
+        assert_eq!(Position { x: 1, y: 1}, inside_area.start_position);
+        // AND end at 2,2
+        assert_eq!(Position { x: 2, y: 2}, inside_area.end_position);
     }
 }

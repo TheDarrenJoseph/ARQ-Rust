@@ -8,9 +8,9 @@ use std::io;
 use ui::{SettingsMenuChoice, StartMenu, StartMenuChoice};
 
 use crate::map_view::MapView;
+use crate::map_generator::build_generator;
 use crate::menu::Selection;
 use crate::terminal_manager::TerminalManager;
-use crate::room::Room;
 use crate::position::{Position, build_square_area};
 
 mod terminal_manager;
@@ -22,6 +22,7 @@ mod settings;
 mod tile;
 mod map;
 mod map_view;
+mod map_generator;
 mod position;
 mod door;
 mod room;
@@ -143,30 +144,10 @@ impl GameEngine {
     }
 
     fn start_game(&mut self) -> Result<(), io::Error>{
-        let tile_library = crate::tile::build_library();
+        let map_area = build_square_area(Position {x: 0, y: 0}, 20);
+        let mut map_generator = build_generator(map_area);
 
-        let rom = &tile_library[2];
-        let wall = &tile_library[3];
-
-        let room_pos = Position { x: 0, y: 0 };
-        let room_area = build_square_area(room_pos, 3);
-        let doors = Vec::new();
-        let room = Room { area: room_area, doors };
-
-        let mut rooms = Vec::new();
-        rooms.push(room);
-
-        let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_square_area(map_pos, 3);
-        let map = crate::map::Map {
-            area: map_area,
-            tiles : vec![
-            vec![ wall,  wall,  wall],
-            vec![ wall,  rom,  wall],
-            vec![ wall,  wall, wall]
-            ],
-            rooms
-        };
+        let map = map_generator.generate();
 
         let mut map_view = MapView{ map, terminal_manager : &mut self.terminal_manager };
 

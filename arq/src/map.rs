@@ -2,9 +2,9 @@ use crate::room::Room;
 use crate::position::{Area};
 use crate::tile::TileDetails;
 
-pub struct Map <'a> {
+pub struct Map {
     pub area : Area,
-    pub tiles : Vec<Vec<&'a TileDetails>>,
+    pub tiles : Vec<Vec<TileDetails>>,
     pub rooms : Vec<Room>
 }
 
@@ -20,8 +20,8 @@ mod tests {
         let tile_library = crate::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let rom = &tile_library[2];
-        let wall = &tile_library[3];
+        let rom = tile_library[2].clone();
+        let wall = tile_library[3].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -36,9 +36,9 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : vec![
-                vec![ wall, wall, wall ],
-                vec![ wall, rom, wall ],
-                vec![ wall, wall, wall ],
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+                vec![ wall.clone(), rom.clone(), wall.clone() ],
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
         ], rooms
         };
 
@@ -54,8 +54,8 @@ mod tests {
         let tile_library = crate::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let room = &tile_library[2];
-        let wall = &tile_library[3];
+        let room = tile_library[2].clone();
+        let wall = tile_library[3].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -70,14 +70,14 @@ mod tests {
         let mut map = crate::map::Map {
             area: map_area,
             tiles : vec![
-                vec![ wall,  wall,  wall],
+                vec![ wall.clone(),  wall.clone(),  wall.clone()],
             ], rooms
         };
 
         assert_eq!(1, map.tiles.len());
 
         // WHEN we push an item to the first row
-        map.tiles[0].push(wall);
+        map.tiles[0].push(wall.clone());
         // THEN we expect it to go from 3 to 4 items long
         assert_eq!(4, map.tiles[0].len());
 
@@ -85,7 +85,7 @@ mod tests {
         assert_eq!(crate::tile::Tile::Wall, map.tiles[0][1].tile_type);
 
         // AND WHEN we push an new row to the map
-        map.tiles.push(vec![wall]);
+        map.tiles.push(vec![wall.clone()]);
         // THEN we expect the length to increase
         assert_eq!(1, map.tiles[1].len());
         // AND the new tile to be available at 1,0
