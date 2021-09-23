@@ -4,6 +4,7 @@ use std::time::Duration;
 use crate::io::Error;
 use crate::map::Map;
 use crate::terminal_manager::TerminalManager;
+use crate::colour_mapper;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : Map,
@@ -30,7 +31,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 let tile_details = &tiles[usize::from(x)][usize::from(y)];
 
                 let symbol = tile_details.symbol.to_string();
-                let fg = tui::style::Color::Red;
+                let fg = colour_mapper::map_colour(tile_details.colour);
                 let bg = tui::style::Color::Black;
                 let modifier = tui::style::Modifier::empty();
                 let cell = Cell{ symbol, fg, bg,modifier};

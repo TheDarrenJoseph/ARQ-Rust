@@ -26,6 +26,7 @@ mod map_generator;
 mod position;
 mod door;
 mod room;
+mod colour_mapper;
 
 struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,

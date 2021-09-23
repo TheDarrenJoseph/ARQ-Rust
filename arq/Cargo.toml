@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+rand = "0.8.4"
 log = "0.4.14"
 log4rs = "1.0.0"
 tui = "0.12"
 termion = "1.5"
+enum-map = "0.6.3"
