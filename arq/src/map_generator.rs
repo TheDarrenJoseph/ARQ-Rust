@@ -1,8 +1,9 @@
 use rand::Rng;
+use std::collections::HashMap;
 use crate::map::Map;
 use crate::room::Room;
 use crate::position::{Position, Area, build_square_area};
-use crate::tile::{TileDetails, build_library};
+use crate::tile::{Tile, TileDetails, build_library};
 
 pub struct MapGenerator {
     min_room_size: u16,
@@ -10,7 +11,7 @@ pub struct MapGenerator {
     room_area_quota_percentage: u16,
     room_area_percentage: u16,
     max_door_count: u16,
-    tile_library :  [TileDetails; 9],
+    tile_library :  HashMap<Tile, TileDetails>,
     map_area : Area,
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>
@@ -124,7 +125,7 @@ impl MapGenerator {
             row = Vec::new();
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
                 log::info!("New tile at: {}, {}", x,y);
-                row.push( self.tile_library[0].clone());
+                row.push( self.tile_library[&Tile::NoTile].clone());
             }
             map_tiles.push(row);
         }
@@ -133,8 +134,8 @@ impl MapGenerator {
 
     fn add_rooms_to_map(&mut self, mut map: Map) -> Map {
         let tile_library = crate::tile::build_library();
-        let room_tile = &tile_library[2].clone();
-        let wall_tile = &tile_library[3].clone();
+        let room_tile = &tile_library[&Tile::Room].clone();
+        let wall_tile = &tile_library[&Tile::Wall].clone();
 
         let rooms = &map.rooms;
         for room in rooms {

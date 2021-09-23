@@ -11,7 +11,7 @@ pub struct Map {
 #[cfg(test)]
 mod tests {
     use crate::container::ContainerType;
-    use crate::tile::build_library;
+    use crate::tile::{Tile, build_library};
     use crate::room::Room;
     use crate::position::{Position, Area, build_square_area};
 
@@ -20,8 +20,8 @@ mod tests {
         let tile_library = crate::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let rom = tile_library[2].clone();
-        let wall = tile_library[3].clone();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -54,8 +54,8 @@ mod tests {
         let tile_library = crate::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let room = tile_library[2].clone();
-        let wall = tile_library[3].clone();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);

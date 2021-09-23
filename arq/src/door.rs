@@ -1,4 +1,4 @@
-use crate::tile::TileDetails;
+use crate::tile::{Tile, TileDetails};
 use crate::position::Position;
 
 pub struct Door {
@@ -46,7 +46,7 @@ impl DoorLike for Door {
 
 pub fn build_door(position : Position) -> Door {
     let tile_library = crate::tile::build_library();
-    let door_tile_details = tile_library[5].clone();
+    let door_tile_details = tile_library[&Tile::Door].clone();
     Door { tile_details : door_tile_details, position, open: false, locked: false, health: 100, locks: 0, unlocked_locks: 0 }
 }
 

@@ -1,8 +1,13 @@
-#[derive(Copy)]
-#[derive(PartialEq)]
+use std::collections::HashMap;
+
+#[derive(Eq, Hash, PartialEq)]
 #[derive(Debug)]
-#[derive(Clone)]
-pub enum Tile {NoTile,Corridor,Room,Wall,Window,Door,Entry,Exit,Deadly}
+#[derive(Copy, Clone)]
+pub enum Tile
+{
+    NoTile,Corridor,Room,Wall,Window,Door,Entry,Exit,Deadly
+}
+
 #[derive(Copy)]
 #[derive(Clone)]
 pub enum Colour {None,Red,Green,Blue,Cyan,Brown,White,Black}
@@ -18,8 +23,8 @@ pub struct TileDetails
     pub name: String
 }
 
-pub fn build_library() -> [TileDetails; 9] {
-    [
+pub fn build_library() -> HashMap<Tile, TileDetails> {
+    let tile_details = [
         TileDetails {id: 0,     tile_type:  Tile::NoTile,   traversable: false, symbol: ' ', colour: Colour::None, name:  "Empty".to_string()},
         TileDetails {id: 1,     tile_type:  Tile::Corridor, traversable: true, symbol: '-', colour: Colour::Blue, name:  "Corridor".to_string()},
         TileDetails {id: 2,     tile_type:  Tile::Room,     traversable: true, symbol: '-', colour: Colour::Blue, name:  "Room".to_string()},
@@ -29,7 +34,13 @@ pub fn build_library() -> [TileDetails; 9] {
         TileDetails {id: 6,     tile_type:  Tile::Entry,     traversable: true, symbol: '^', colour: Colour::Green, name:  "Entry".to_string()},
         TileDetails {id: 7,     tile_type:  Tile::Exit,     traversable: true, symbol: '^', colour: Colour::Red, name:  "Exit".to_string()},
         TileDetails {id: 8,     tile_type:  Tile::Deadly,     traversable: true, symbol: '!', colour: Colour::Red, name:  "Deadly".to_string()}
-    ]
+    ];
+
+    let mut tile_map = HashMap::new();
+    for details in tile_details {
+        tile_map.insert(details.tile_type, details);
+    }
+    tile_map
 }
 
 #[cfg(test)]
