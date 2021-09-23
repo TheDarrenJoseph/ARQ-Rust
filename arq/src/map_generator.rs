@@ -2,7 +2,8 @@ use rand::Rng;
 use std::collections::HashMap;
 use crate::map::Map;
 use crate::room::Room;
-use crate::position::{Position, Area, build_square_area};
+use crate::door::{Door, build_door};
+use crate::position::{Position, Area, AreaSide, build_square_area, Side};
 use crate::tile::{Tile, TileDetails, build_library};
 
 pub struct MapGenerator {
@@ -33,8 +34,30 @@ impl MapGenerator {
 
     fn generate_room(&self, room_pos : Position, size: u16) -> Room {
         let room_area = build_square_area( room_pos, size);
-        let doors = Vec::new();
-        Room { area: room_area, doors }
+        let mut room = Room { area: room_area, doors: Vec::new() };
+
+        let mut chosen_sides = Vec::<Side>::new();
+        let room_sides = room.get_sides();
+
+        let mut doors = Vec::new();
+        let mut rng = rand::thread_rng();
+        let door_count = rng.gen_range(1..=self.max_door_count);
+        for x in 0..door_count {
+            let side : Side = rand::random();
+            if !chosen_sides.contains(&side) {
+                chosen_sides.push(side);
+
+                let side_idx = room_sides.iter().position(|area_side| area_side.side == side);
+
+                let area_side = room_sides.get(side_idx.unwrap() as usize).unwrap();
+                let door_position = area_side.get_mid_point();
+
+                let door = build_door(door_position);
+                doors.push(door);
+            }
+        }
+        room.doors = doors;
+        room
     }
 
     fn remove_possible_position(&mut self, position : Position) -> Option<Position>{
@@ -144,7 +167,7 @@ impl MapGenerator {
             for position in inside_positions {
                 let x = position.x as usize;
                 let y = position.y as usize;
-                log::info!("Room tile at: {}, {}", x,y);
+                //log::info!("Room tile at: {}, {}", x,y);
                 map.tiles[y][x] = room_tile.clone();
             }
 
@@ -154,9 +177,18 @@ impl MapGenerator {
                 for position in side_positions {
                     let x = position.x as usize;
                     let y = position.y as usize;
-                    log::info!("Wall tile at: {}, {}", x,y);
+                    //log::info!("Wall tile at: {}, {}", x,y);
                     map.tiles[y][x] = wall_tile.clone();
                 }
+            }
+
+            let doors = &room.doors;
+            for door in doors {
+                let position = door.position;
+                let x = position.x as usize;
+                let y = position.y as usize;
+                //log::info!("Door tile at: {}, {}", x,y);
+                map.tiles[y][x] = door.tile_details.clone();
             }
         }
         map

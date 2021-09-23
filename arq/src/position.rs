@@ -1,3 +1,6 @@
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
+
 #[derive(Copy, Clone, std::cmp::PartialEq, Debug)]
 pub struct Position {
     pub x : u16,
@@ -78,10 +81,41 @@ pub enum Side {
     BOTTOM
 }
 
+impl Distribution<Side> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Side {
+        match rng.gen_range(0..8) {
+            0 => Side::LEFT,
+            1 => Side::RIGHT,
+            2 => Side::TOP,
+            3 => Side::BOTTOM,
+            _ => Side::LEFT,
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct AreaSide {
     pub area: Area,
     pub side : Side
+}
+
+impl AreaSide {
+    pub fn get_mid_point(&self) -> Position {
+       match self.side {
+           Side::LEFT => {
+               Position { x: self.area.start_position.x, y: self.area.start_position.y + (self.area.size - 1) / 2 }
+           },
+           Side::RIGHT => {
+               Position { x: self.area.end_position.x, y: self.area.start_position.y + (self.area.size - 1) / 2 }
+           },
+           Side::TOP => {
+               Position { x: self.area.start_position.x + (self.area.size - 1) / 2, y: self.area.start_position.y}
+           },
+           Side::BOTTOM => {
+               Position { x: self.area.start_position.x + (self.area.size - 1) / 2, y: self.area.end_position.y }
+           }
+       }
+    }
 }
 
 pub fn all_sides() -> [Side; 4] {
