@@ -1,4 +1,4 @@
-ASCII Roguelike Quester (Rust Port) [Rust, Ncurses]
+ASCII Roguelike Quester (Rust Port) [Rust]
 =============================================================
 
 A port of https://github.com/TheDarrenJoseph/ARQ to Rust    
@@ -8,10 +8,20 @@ INSPIRATION
 - Nethack
 - Dwarf Fortress
 
+MADE USING
+=======
+- [tui] (https://github.com/fdehau/tui-rs)
+
 TODO (Not in any specific order)
 ----
-- [X] Procedural levels
-- [X] Settings Menu
+- [ ] Procedural levels
+	- [ ] Room generation
+	- [ ] Pathfinding
+	- [ ] Level traversal
+- [ ] Items (potions, scrolls, etc)
+	- [ ] Containers / Container spawning
+	- [ ] Inventory handling (drop, move, use) 
+	- [ ] Item encounters (pickup)
 - [ ] Character Stats (For player and NPCs)
     - [ ] Health System
     - [ ] Combat system
@@ -20,10 +30,7 @@ TODO (Not in any specific order)
 	- [ ] Basic pathfinding / player seeking
 	- [ ] Combat turns
 	- [ ] Level bosses
-- [ ] Items (potions, scrolls, etc)
-	- [ ] Containers / Container spawning
-	- [ ] Item encounters (pickup)
-	- [ ] Inventory handling (drop, move, use) 
+- [X] Settings Menu
 - [ ] Ending Screen (Game Over / Dungeon escape)
 - [ ] Leaderboard / Graveyard
-- [ ] (Optional )Export / Load game/item maps from files
+- [ ] (Optional) Export / Load game/item maps from files
