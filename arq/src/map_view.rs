@@ -7,7 +7,7 @@ use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
-    pub map : Map,
+    pub map : &'a Map,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
@@ -42,8 +42,6 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 backend.flush()?;
             }
         }
-
-        std::thread::sleep(Duration::from_millis(5000));
         Ok(())
     }
 }

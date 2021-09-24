@@ -1,6 +1,7 @@
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
+use termion::event::Key;
 
 use settings::Toggleable;
 use std::convert::TryInto;
@@ -31,7 +32,8 @@ mod colour_mapper;
 struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
     ui : ui::UI,
-    settings : settings::EnumSettings
+    settings : settings::EnumSettings,
+    game_running : bool,
 }
 
 impl GameEngine {
@@ -115,15 +117,19 @@ impl GameEngine {
         }
     }
 
-    pub fn start_menu(&mut self) -> Result<(), io::Error> {
+    fn start_menu(&mut self) -> Result<(), io::Error> {
         loop {
             self.draw_start_menu()?;
             let start_choice = self.handle_start_menu_selection()?;
             match start_choice {
                 StartMenuChoice::Play => {
-                    log::info!("Starting game..");
-                    self.start_game()?;
-                    break;
+                    if (!self.game_running) {
+                        log::info!("Starting game..");
+                        self.start_game()?;
+                        break;
+                    } else {
+                        return Ok(());
+                    }
                 },
                 StartMenuChoice::Settings => {
                     log::info!("Showing settings..");
@@ -137,6 +143,9 @@ impl GameEngine {
                     break;
                 },
                 StartMenuChoice::Quit => {
+                    if self.game_running {
+                        self.game_running = false;
+                    }
                     break;
                 }
             }
@@ -145,14 +154,30 @@ impl GameEngine {
     }
 
     fn start_game(&mut self) -> Result<(), io::Error>{
-        let map_area = build_rectangular_area(Position {x: 0, y: 0}, 40, 20);
+        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
+        let map = &map_generator.generate();
 
-        let map = map_generator.generate();
+        self.game_running = true;
+        while self.game_running {
+            let mut map_view = MapView { map, terminal_manager: &mut self.terminal_manager };
+            map_view.draw_map()?;
+            self.game_loop();
+        }
+        Ok(())
+    }
 
-        let mut map_view = MapView{ map, terminal_manager : &mut self.terminal_manager };
+    fn game_loop(&mut self) -> Result<(), io::Error> {
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        match key {
+            Key::Char('q') => {
+                self.terminal_manager.terminal.clear()?;
+                self.start_menu();
+                self.terminal_manager.terminal.clear()?;
+            }
+            _ => {}
+        }
 
-        map_view.draw_map()?;
         Ok(())
     }
 }
@@ -167,7 +192,7 @@ fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTe
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
 
-    Ok(GameEngine { terminal_manager, ui, settings })
+    Ok(GameEngine { terminal_manager, ui, settings, game_running: false })
 }
 
 fn main<>() -> Result<(), io::Error> {
