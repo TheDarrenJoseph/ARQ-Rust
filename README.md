@@ -10,7 +10,7 @@ INSPIRATION
 
 MADE USING
 =======
-- [tui] (https://github.com/fdehau/tui-rs)
+- [tui](https://github.com/fdehau/tui-rs)
 
 TODO (Not in any specific order)
 ----
