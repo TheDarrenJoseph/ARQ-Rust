@@ -236,7 +236,7 @@ mod tests {
         let room = generator.generate_room(Position {x: 0, y: 0}, 3);
         let expected_area = build_square_area(Position {x: 0, y: 0}, 3);
         assert_eq!(expected_area, room.area);
-        assert_eq!(0, room.doors.len());
+        assert!(!room.doors.is_empty());
     }
 
     #[test]

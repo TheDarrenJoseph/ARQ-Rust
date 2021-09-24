@@ -1,4 +1,4 @@
-use crate::position::{Area,Position,AreaSide,all_sides, build_line};
+use crate::position::{Area, Position, AreaSide, Side, all_sides, build_line, build_rectangular_area};
 use crate::door::Door;
 
 pub struct Room {
@@ -9,20 +9,22 @@ pub struct Room {
 impl Room {
     pub fn get_sides(&self) -> Vec<AreaSide> {
         let start_pos = &self.area.start_position;
-        let size = &self.area.size;
         let mut sides = Vec::new();
         for side in all_sides().iter() {
-            sides.push(build_line(start_pos.clone(), *size, side.clone()));
+
+            if *side == Side::LEFT || *side == Side::RIGHT {
+                sides.push(build_line(start_pos.clone(), self.area.get_size_y(), side.clone()));
+            } else {
+                sides.push(build_line(start_pos.clone(), self.area.get_size_x(), side.clone()));
+            }
         }
         sides
     }
 
     pub fn get_inside_area(&self) -> Area {
         let start_pos = &self.area.start_position;
-        let end_pos = &self.area.end_position;
         let start_position = Position { x : start_pos.x + 1, y: start_pos.y + 1};
-        let end_position = Position { x : end_pos.x - 1, y: end_pos.y - 1};
-        Area { start_position, end_position, size: self.area.size }
+        build_rectangular_area(start_position,  self.area.get_size_x()-2,  self.area.get_size_y() - 2 )
     }
 }
 

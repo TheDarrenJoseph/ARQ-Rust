@@ -11,7 +11,7 @@ use crate::map_view::MapView;
 use crate::map_generator::build_generator;
 use crate::menu::Selection;
 use crate::terminal_manager::TerminalManager;
-use crate::position::{Position, build_square_area};
+use crate::position::{Position, build_square_area, build_rectangular_area};
 
 mod terminal_manager;
 mod ui;
@@ -145,7 +145,7 @@ impl GameEngine {
     }
 
     fn start_game(&mut self) -> Result<(), io::Error>{
-        let map_area = build_square_area(Position {x: 0, y: 0}, 20);
+        let map_area = build_rectangular_area(Position {x: 0, y: 0}, 40, 20);
         let mut map_generator = build_generator(map_area);
 
         let map = map_generator.generate();

@@ -28,7 +28,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
             for y in start_y..=end_y {
                 //log::info!("Drawing a position: {}, {}", x, y);
 
-                let tile_details = &tiles[usize::from(x)][usize::from(y)];
+                let tile_details = &tiles[usize::from(y)][usize::from(x)];
 
                 let symbol = tile_details.symbol.to_string();
                 let fg = colour_mapper::map_colour(tile_details.colour);
