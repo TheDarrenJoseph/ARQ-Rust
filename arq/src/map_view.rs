@@ -1,7 +1,6 @@
 use tui::buffer::Cell;
-use std::time::Duration;
 
-use crate::io::Error;
+use std::io::Error;
 use crate::map::Map;
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;

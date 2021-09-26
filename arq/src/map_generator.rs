@@ -2,8 +2,8 @@ use rand::Rng;
 use std::collections::HashMap;
 use crate::map::Map;
 use crate::room::Room;
-use crate::door::{Door, build_door};
-use crate::position::{Position, Area, AreaSide, build_square_area, Side};
+use crate::door::{build_door};
+use crate::position::{Position, Area, build_square_area, Side};
 use crate::tile::{Tile, TileDetails, build_library};
 
 pub struct MapGenerator {
@@ -42,7 +42,7 @@ impl MapGenerator {
         let mut doors = Vec::new();
         let mut rng = rand::thread_rng();
         let door_count = rng.gen_range(1..=self.max_door_count);
-        for x in 0..door_count {
+        for _x in 0..door_count {
             let side : Side = rand::random();
             if !chosen_sides.contains(&side) {
                 chosen_sides.push(side);

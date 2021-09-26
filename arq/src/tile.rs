@@ -37,8 +37,8 @@ pub fn build_library() -> HashMap<Tile, TileDetails> {
     ];
 
     let mut tile_map = HashMap::new();
-    for details in tile_details {
-        tile_map.insert(details.tile_type, details);
+    for details in tile_details.iter() {
+        tile_map.insert(details.tile_type, details.clone());
     }
     tile_map
 }
