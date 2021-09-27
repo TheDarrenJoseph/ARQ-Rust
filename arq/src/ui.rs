@@ -108,7 +108,7 @@ impl StartMenu for UI {
             .wrap(Wrap { trim: true });
 
         let frame_size = frame.size();
-        let paragraph_size = Rect::new(4, 4, frame_size.width / 2, (spans_len + 2));
+        let paragraph_size = Rect::new(4, 4, frame_size.width / 2, spans_len + 2);
         frame.render_widget(paragraph, paragraph_size);
     }
 }

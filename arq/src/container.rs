@@ -25,12 +25,13 @@ impl Container {
 }
 
 pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32, container_type : ContainerType, weight_limit : i32) -> Container {
-    let container_item = crate::items::build(id, name, symbol, weight, value);
+    let container_item = crate::items::build_container(id, name, symbol, weight, value);
     Container { item: container_item, container_type, weight_limit, contents: Vec::new()}
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::items::build_item;
     use crate::container::ContainerType;
 
     #[test]
@@ -58,7 +59,7 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add a new item
-        let item = crate::items::build(1, "Test Item".to_owned(), 'X', 1, 1);
+        let item = crate::items::build_item(1, "Test Item".to_owned(), 'X', 1, 1);
         container.add_item(item);
 
         // THEN we expect it's contents size to increase
