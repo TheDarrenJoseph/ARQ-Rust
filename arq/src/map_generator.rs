@@ -42,15 +42,24 @@ impl MapGenerator {
         let mut doors = Vec::new();
         let mut rng = rand::thread_rng();
         let door_count = rng.gen_range(1..=self.max_door_count);
+        let map_area = self.map_area.clone();
+        let map_sides = map_area.get_sides();
+
         for _x in 0..door_count {
             let side : Side = rand::random();
             if !chosen_sides.contains(&side) {
                 chosen_sides.push(side);
 
                 let side_idx = room_sides.iter().position(|area_side| area_side.side == side);
-
                 let area_side = room_sides.get(side_idx.unwrap() as usize).unwrap();
                 let door_position = area_side.get_mid_point();
+
+                // Don't allow doors at the edges of the map
+                for map_side in &map_sides {
+                    if map_side.area.contains(door_position) {
+                        continue;
+                    }
+                }
 
                 let door = build_door(door_position);
                 doors.push(door);

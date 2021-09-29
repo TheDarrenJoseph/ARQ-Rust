@@ -8,17 +8,7 @@ pub struct Room {
 
 impl Room {
     pub fn get_sides(&self) -> Vec<AreaSide> {
-        let start_pos = &self.area.start_position;
-        let mut sides = Vec::new();
-        for side in all_sides().iter() {
-
-            if *side == Side::LEFT || *side == Side::RIGHT {
-                sides.push(build_line(start_pos.clone(), self.area.get_size_y(), side.clone()));
-            } else {
-                sides.push(build_line(start_pos.clone(), self.area.get_size_x(), side.clone()));
-            }
-        }
-        sides
+        self.area.get_sides()
     }
 
     pub fn get_inside_area(&self) -> Area {

@@ -65,7 +65,7 @@ fn build_main_block<'a, B : tui::backend::Backend>(_frame : &mut tui::terminal::
     .style(Style::default().bg(Color::Black))
 }
 
-fn render_main_window<'a, B : tui::backend::Backend>(frame : &mut tui::terminal::Frame<'_, B>) {
+pub fn render_main_window<'a, B : tui::backend::Backend>(frame : &mut tui::terminal::Frame<'_, B>) {
     let main_block = build_main_block(frame);
     let frame_size = frame.size();
     let window_size = Rect::new(frame_size.x, frame_size.y, frame_size.width-2, frame_size.height-2);

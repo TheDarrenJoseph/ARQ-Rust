@@ -28,6 +28,19 @@ impl Area {
         self.size_y
     }
 
+    pub fn get_sides(&self) -> Vec<AreaSide> {
+        let start_pos = &self.start_position;
+        let mut sides = Vec::new();
+        for side in all_sides().iter() {
+            if *side == Side::LEFT || *side == Side::RIGHT {
+                sides.push(build_line(start_pos.clone(), self.size_y, side.clone()));
+            } else {
+                sides.push(build_line(start_pos.clone(), self.size_x, side.clone()));
+            }
+        }
+        sides
+    }
+
     pub fn intersects(&self, area: Area) -> bool {
 
         let start_x = self.start_position.x;
@@ -219,7 +232,7 @@ pub fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u1
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, Area, build_square_area, build_rectangular_area};
+    use crate::position::{Position, Area, Side, AreaSide, build_square_area, build_rectangular_area};
 
     #[test]
     fn test_build_square_area() {
@@ -569,5 +582,42 @@ mod tests {
 
         // THEN we expect the result to be false
         assert_ne!(true, can_fit);
+    }
+
+    #[test]
+    fn test_get_sides() {
+        let start_position = Position { x: 0, y: 0};
+        let area = build_square_area(start_position, 3);
+        let sides = area.get_sides();
+
+        assert_eq!(4, sides.len());
+
+        let left = sides[0];
+        assert_eq!(Side::LEFT, left.side);
+        assert_eq!(0, left.area.start_position.x);
+        assert_eq!(0, left.area.start_position.y);
+        assert_eq!(0, left.area.end_position.x);
+        assert_eq!(2, left.area.end_position.y);
+
+        let right = sides[1];
+        assert_eq!(Side::RIGHT, right.side);
+        assert_eq!(2, right.area.start_position.x);
+        assert_eq!(0, right.area.start_position.y);
+        assert_eq!(2, right.area.end_position.x);
+        assert_eq!(2, right.area.end_position.y);
+
+        let top = sides[2];
+        assert_eq!(Side::TOP, top.side);
+        assert_eq!(0, top.area.start_position.x);
+        assert_eq!(0, top.area.start_position.y);
+        assert_eq!(2, top.area.end_position.x);
+        assert_eq!(0, top.area.end_position.y);
+
+        let bottom = sides[3];
+        assert_eq!(Side::BOTTOM, bottom.side);
+        assert_eq!(0, bottom.area.start_position.x);
+        assert_eq!(2, bottom.area.start_position.y);
+        assert_eq!(2, bottom.area.end_position.x);
+        assert_eq!(2, bottom.area.end_position.y);
     }
 }

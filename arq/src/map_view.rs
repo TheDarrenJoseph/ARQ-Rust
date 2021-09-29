@@ -2,6 +2,7 @@ use tui::buffer::Cell;
 
 use std::io::Error;
 use crate::map::Map;
+use crate::ui;
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 
@@ -12,8 +13,9 @@ pub struct MapView<'a, B : tui::backend::Backend> {
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
     pub fn draw_map(&mut self) -> Result<(), Error> {
+        self.terminal_manager.terminal.draw(|frame| { ui::render_main_window(frame) });
+
         let backend = self.terminal_manager.terminal.backend_mut();
-        backend.clear()?;
 
         let start_position = self.map.area.start_position;
         let end_position =  self.map.area.end_position;
@@ -34,7 +36,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 let bg = tui::style::Color::Black;
                 let modifier = tui::style::Modifier::empty();
                 let cell = Cell{ symbol, fg, bg,modifier};
-                let cell_tup : (u16, u16, &Cell) = (x,y,&cell);
+                let cell_tup : (u16, u16, &Cell) = (x+1,y+1,&cell);
 
                 let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
                 backend.draw(updates.into_iter())?;
