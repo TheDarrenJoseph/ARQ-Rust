@@ -81,10 +81,11 @@ impl MapGenerator {
         let mut remaining_area_total = total_area - room_area_total;
         let mut total_area_usage_percentage : i32 = 0;
 
+        let mut try_count = 0;
         let mut rooms : Vec<Room> = Vec::new();
         let mut rng = rand::thread_rng();
         self.find_possible_room_positions();
-        while total_area_usage_percentage < 40 && self.possible_room_positions.len() > 0 {
+        while total_area_usage_percentage < 30 && self.possible_room_positions.len() > 0 {
             let random_pos = rng.gen_range(0..self.possible_room_positions.len());
             let position = *self.possible_room_positions.get(random_pos).unwrap();
 
@@ -95,7 +96,10 @@ impl MapGenerator {
                 let mut position_taken = false;
                 for r in &rooms {
                     let taken_area = r.area;
-                    if taken_area.intersects(potential_area) {
+                    if taken_area.intersects_or_touches(potential_area.clone()) {
+                        log::info!("Cannot fit, intersection of proposed Start:{},{}, End:{},{} itersects: {},{}..{},{}",
+                            potential_area.start_position.x, potential_area.start_position.y, potential_area.end_position.x,potential_area.end_position.y,
+                            taken_area.start_position.x, taken_area.start_position.y, taken_area.end_position.x,taken_area.end_position.y);
                         position_taken = true;
                     }
                 }
@@ -125,6 +129,11 @@ impl MapGenerator {
                     break;
                 }
             }
+            try_count+=1;
+        }
+
+        if (total_area_usage_percentage < 20 ) {
+            log::info!("Failed to reach target area usage %. Expected: {}, Current: {}%", 20, total_area_usage_percentage);
         }
         rooms
     }

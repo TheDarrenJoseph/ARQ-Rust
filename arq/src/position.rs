@@ -29,12 +29,45 @@ impl Area {
     }
 
     pub fn intersects(&self, area: Area) -> bool {
-        for position in area.get_positions() {
-            if self.contains(position) {
-                return true;
-            }
-        }
-        return false;
+
+        let start_x = self.start_position.x;
+        let start_y = self.start_position.y;
+        let end_x = self.end_position.x;
+        let end_y = self.end_position.y;
+
+        let area_start_x = area.start_position.x;
+        let area_start_y = area.start_position.y;
+
+        let area_end_x = area.end_position.x;
+        let area_end_y = area.end_position.y;
+
+        let area_start_x_intersect = area_start_x >= start_x && area_start_x <= end_x;
+        let area_end_x_intersect = area_end_x >= start_x && area_end_x <= end_x;
+
+        let area_start_y_intersect = area_start_y >= start_y && area_start_y <= end_y;
+        let area_end_y_intersect = area_end_y >= start_y && area_end_y <= end_y;
+
+        let intersects = (area_start_x_intersect || area_end_x_intersect) && (area_start_y_intersect || area_end_y_intersect);
+        intersects
+    }
+
+
+    pub fn intersects_or_touches(&self, area: Area) -> bool {
+        // Adjust boundaries to allow 1 place above or below each range
+        let start_x = if self.start_position.x > 0 { self.start_position.x - 1 } else { self.start_position.x };
+        let start_y = if self.start_position.y > 0 {  self.start_position.y - 1 } else {  self.start_position.y };
+        let end_x = if self.end_position.x < u16::MAX { self.end_position.x + 1 } else { self.end_position.x };
+        let end_y = if self.end_position.y < u16::MAX { self.end_position.y + 1 } else { self.end_position.y };
+
+        // Cast to signed and get absolute value to find the diff
+        let size_x = (start_x as i32 - end_x as i32).abs() as u16;
+        let size_y = (start_y as i32 - end_y as i32).abs() as u16;
+
+        let start_position = Position { x: start_x, y: start_y };
+        let end_position = Position { x: end_x, y: end_y};
+
+        let self_adjusted_area = Area { start_position, end_position, size_x, size_y };
+        self_adjusted_area.intersects(area)
     }
 
     pub fn contains(&self, position: Position) -> bool {
@@ -313,6 +346,127 @@ mod tests {
         assert_eq!(Position { x: 7, y: 5}, *positions.get(13).unwrap());
         assert_eq!(Position { x: 7, y: 6}, *positions.get(14).unwrap());
         assert_eq!(Position { x: 7, y: 7}, *positions.get(15).unwrap());
+    }
+
+    #[test]
+    fn test_3x3_valid_top_left_intersects() {
+        // GIVEN a 3x3 Area
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area overlaping the top-left corner intersects
+        let overlap_area = build_square_area(Position { x: 0, y: 0 }, 2);
+        // THEN we expect the result to be true
+        assert!(area.intersects(overlap_area));
+    }
+
+    #[test]
+    fn test_3x3_valid_top_right_intersects() {
+        // GIVEN a 3x3 Area (x)
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area (X) overlaping the top-right corner intersects
+        // i.e
+        // ---XX
+        // -xxXX
+        // -xxx-
+        // -xxx-
+        let overlap_area = build_square_area(Position { x: 3, y: 0 }, 2);
+        // THEN we expect the result to be true
+        assert!(area.intersects(overlap_area));
+    }
+
+    #[test]
+    fn test_3x3_valid_bottom_right_intersects() {
+        // GIVEN a 3x3 Area (x)
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area (X) overlaping the top-right corner intersects
+        // i.e
+        //  01234
+        // 0-----
+        // 1-xxx-
+        // 2-xxx-
+        // 3-xxXX
+        // 4---XX
+        let overlap_area = build_square_area(Position { x: 3, y: 3 }, 2);
+        // THEN we expect the result to be true
+        assert!(area.intersects(overlap_area));
+    }
+
+    #[test]
+    fn test_3x3_valid_bottom_left_intersects() {
+        // GIVEN a 3x3 Area (x)
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area (X) overlaping the top-right corner intersects
+        // i.e
+        //  01234
+        // 0-----
+        // 1-xxx-
+        // 2-xxx-
+        // 3XXxx-
+        // 4XX---
+        let overlap_area = build_square_area(Position { x: 0, y: 3 }, 2);
+        // THEN we expect the result to be true
+        assert!(area.intersects(overlap_area));
+    }
+
+    #[test]
+    fn test_3x3_invalid_ends_before_intersects() {
+        // GIVEN a 3x3 Area
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area that ends touching the top-left corner intersects
+        let overlap_area = build_square_area(Position { x: 0, y: 0 }, 1);
+        // THEN we expect the result to be false
+        assert!(!area.intersects(overlap_area));
+    }
+
+    #[test]
+    fn test_3x3_invalid_starts_after_intersects() {
+        // GIVEN a 3x3 Area
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if an area that starts after the bottom-right corner intersects
+        let overlap_area = build_square_area(Position { x: 4, y: 4 }, 3);
+        // THEN we expect the result to be false
+        assert!(!area.intersects(overlap_area));
     }
 
     #[test]
