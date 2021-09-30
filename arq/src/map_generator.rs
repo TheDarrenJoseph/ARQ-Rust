@@ -231,7 +231,7 @@ mod tests {
 
         assert_eq!(3, generator.min_room_size);
         assert_eq!(6, generator.max_room_size);
-        assert_eq!(40, generator.room_area_quota_percentage);
+        assert_eq!(30, generator.room_area_quota_percentage);
         assert_eq!(0, generator.room_area_percentage);
         assert_eq!(4, generator.max_door_count);
         assert!(generator.tile_library.len() > 0);

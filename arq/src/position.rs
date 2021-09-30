@@ -1,11 +1,36 @@
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 
-#[derive(Copy, Clone, std::cmp::PartialEq, Debug)]
+#[derive(Copy, Clone, std::cmp::PartialEq, Hash, Debug)]
 pub struct Position {
     pub x : u16,
     pub y : u16
 }
+
+impl Position {
+    pub fn get_neighbors(&self) -> Vec<Position> {
+        let mut positions = Vec::new();
+        // Left
+        if self.x > 0 {
+            positions.push(Position { x: self.x - 1, y: self.y });
+        }
+        // Right
+        if self.x < u16::MAX {
+            positions.push(Position { x: self.x + 1, y: self.y });
+        }
+        // Top
+        if self.y > 0 {
+            positions.push(Position { x: self.x, y: self.y - 1 });
+        }
+        // Bottom
+        if self.y < u16::MAX {
+            positions.push(Position { x: self.x, y: self.y + 1 });
+        }
+        positions
+    }
+}
+
+impl Eq for Position {}
 
 #[derive(Copy, Clone, std::cmp::PartialEq, Debug)]
 pub struct Area {
@@ -233,6 +258,70 @@ pub fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u1
 #[cfg(test)]
 mod tests {
     use crate::position::{Position, Side, build_square_area, build_rectangular_area};
+
+    #[test]
+    fn test_get_neighbors_top_left() {
+        // GIVEN a position in the top left corner
+        let start_pos = Position { x: 0, y: 0 };
+        // WHEN we call to get it's neighbors
+        let neighbors = start_pos.get_neighbors();
+        // THEN we expect 2 positions to return. The right-hand and the below neighbor
+        assert_eq!(2, neighbors.len());
+        assert_eq!(Position{x: 1, y: 0}, *neighbors.get(0).unwrap());
+        assert_eq!(Position{x: 0, y: 1}, *neighbors.get(1).unwrap());
+    }
+
+
+    #[test]
+    fn test_get_neighbors_top_right() {
+        // GIVEN a position in the top right corner
+        let start_pos = Position { x: u16::MAX, y: 0 };
+        // WHEN we call to get it's neighbors
+        let neighbors = start_pos.get_neighbors();
+        // THEN we expect 2 positions to return. The left-hand and the below neighbor
+        assert_eq!(2, neighbors.len());
+        assert_eq!(Position{x: u16::MAX - 1, y: 0}, *neighbors.get(0).unwrap());
+        assert_eq!(Position{x: u16::MAX, y: 1}, *neighbors.get(1).unwrap());
+    }
+
+    #[test]
+    fn test_get_neighbors_bottom_left() {
+        // GIVEN a position in the bottom left corner
+        let start_pos = Position { x: 0, y: u16::MAX };
+        // WHEN we call to get it's neighbors
+        let neighbors = start_pos.get_neighbors();
+        // THEN we expect 2 positions to return. The right-hand and the above neighbor
+        assert_eq!(2, neighbors.len());
+        assert_eq!(Position{x: 1, y: u16::MAX }, *neighbors.get(0).unwrap());
+        assert_eq!(Position{x: 0, y: u16::MAX - 1 }, *neighbors.get(1).unwrap());
+    }
+
+    #[test]
+    fn test_get_neighbors_bottom_right() {
+        // GIVEN a position in the bottom right corner
+        let start_pos = Position { x: u16::MAX, y: u16::MAX };
+        // WHEN we call to get it's neighbors
+        let neighbors = start_pos.get_neighbors();
+        // THEN we expect 2 positions to return. The left-hand and the above neighbor
+        assert_eq!(2, neighbors.len());
+        assert_eq!(Position{x: u16::MAX - 1, y: u16::MAX }, *neighbors.get(0).unwrap());
+        assert_eq!(Position{x: u16::MAX, y: u16::MAX - 1 }, *neighbors.get(1).unwrap());
+    }
+
+
+    #[test]
+    fn test_get_neighbors_mid_point() {
+        // GIVEN a position in the center of the possible range
+        let start_pos = Position { x: u16::MAX/2, y: u16::MAX/2 };
+        // WHEN we call to get it's neighbors
+        let neighbors = start_pos.get_neighbors();
+        // THEN we expect 4 positions to return. The left-hand, right, above, and below neighbor
+        assert_eq!(4, neighbors.len());
+        assert_eq!(Position{x: u16::MAX/2 - 1, y: u16::MAX/2 }, *neighbors.get(0).unwrap());
+        assert_eq!(Position{x: u16::MAX/2 + 1, y: u16::MAX/2 }, *neighbors.get(1).unwrap());
+        assert_eq!(Position{x: u16::MAX/2, y: u16::MAX/2 - 1 }, *neighbors.get(2).unwrap());
+        assert_eq!(Position{x: u16::MAX/2, y: u16::MAX/2 + 1  }, *neighbors.get(3).unwrap());
+    }
 
     #[test]
     fn test_build_square_area() {

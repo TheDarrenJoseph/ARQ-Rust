@@ -1,11 +1,29 @@
 use crate::room::Room;
-use crate::position::{Area};
+use crate::position::{Position, Area};
 use crate::tile::TileDetails;
 
 pub struct Map {
     pub area : Area,
     pub tiles : Vec<Vec<TileDetails>>,
     pub rooms : Vec<Room>
+}
+
+impl Map {
+    pub fn get_neighbors(&self, position: Position) -> Vec<Position> {
+
+        let mut results = Vec::new();
+        let area = self.area;
+        if area.contains(position) {
+            let neighbors = position.get_neighbors();
+            for n in neighbors {
+                if area.contains(n) {
+                    results.push(n);
+                }
+            }
+
+        }
+        results
+    }
 }
 
 #[cfg(test)]
