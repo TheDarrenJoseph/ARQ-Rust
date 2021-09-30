@@ -37,7 +37,7 @@ impl Eq for Node {}
 struct Pathfinding {
     start_position: Position,
     unvisited : BinaryHeap<Reverse<Node>>,
-    previous_nodes: VecDeque<Node>,
+    came_from: HashMap<Position, Position>,
     g_scores:   HashMap<Position, i32>,
     f_scores:   HashMap<Position, i32>,
 }
@@ -52,7 +52,7 @@ impl ManhattanPathCosting for Pathfinding {
 
 impl Pathfinding {
     pub fn build(start_position: Position) -> Pathfinding {
-        let mut pathfinding = Pathfinding { start_position, unvisited: BinaryHeap::new(), previous_nodes: VecDeque::new(), g_scores: HashMap::new(), f_scores: HashMap::new() };
+        let mut pathfinding = Pathfinding { start_position, unvisited: BinaryHeap::new(), came_from: HashMap::new(), g_scores: HashMap::new(), f_scores: HashMap::new() };
         let node = Node { position: start_position, score: 0 };
         let reversed = Reverse(node);
         pathfinding.unvisited.push(reversed);
@@ -60,12 +60,42 @@ impl Pathfinding {
         pathfinding
     }
 
-    fn build_path(&self) -> Vec<Position> {
+    fn build_path(&self, position: Position) -> Vec<Position> {
         let mut nodes = Vec::new();
-        for node in self.previous_nodes.iter() {
-            nodes.push(node.position);
+        nodes.push(position);
+
+        let mut next_node = position;
+        let mut has_next_node = true;
+        while has_next_node {
+            let previous_node = self.came_from.get(&next_node);
+
+            match(previous_node) {
+                Some(n) => {
+                    next_node = (*n);
+                    nodes.push(*n);
+                },
+                None => {
+                    has_next_node = false;
+                }
+            }
         }
+        nodes.reverse();
         nodes
+    }
+
+    fn get_g_score(&self, position: Position) -> i32 {
+        *self.g_scores.get(&position).unwrap_or(&(i16::MAX as i32))
+    }
+
+    fn position_unvisited(&self, position: Position) -> bool {
+        match self.unvisited.iter().find(|u| u.0.position == position) {
+            Some(_) => {
+                return true;
+            },
+            _ => {
+                return false;
+            }
+        }
     }
 
     pub fn a_star_search(&mut self, map : Map, end_position: Position) -> Vec<Position> {
@@ -73,11 +103,40 @@ impl Pathfinding {
         self.f_scores.insert(self.start_position, score_estimate);
 
         while !self.unvisited.is_empty() {
-            let lowest_score = self.unvisited.pop();
-            if lowest_score.unwrap().0.position == end_position {
-                return self.build_path();
+            let current_lowest_score_node = self.unvisited.pop().unwrap().0;
+            if current_lowest_score_node.position == end_position {
+                log::info!("Found end position {:?}", end_position);
+                return self.build_path(end_position);
             }
 
+            let neighbors = current_lowest_score_node.position.get_neighbors();
+            log::info!("Found {} neighbors for current_lowest_score_node: {:?}", neighbors.len(), current_lowest_score_node.position);
+
+            let current_position = current_lowest_score_node.position.clone();
+            let current_g_score = self.get_g_score(current_position);
+            log::info!("Current current_lowest_score_node gScore {}", current_g_score);
+            for n in neighbors {
+                log::info!("Evaluating neighbor {:?}", n);
+                let neighbor_g_score = self.g_scores.get(&n).unwrap_or(&(i16::MAX as i32));
+                log::info!("Current neighbor gScore {}", current_g_score);
+                let distance_through = self.manhattan_path_cost(current_position, n);
+                log::info!("Distance through neighbor {}", distance_through);
+                let potential_g_score = current_g_score + distance_through;
+                if potential_g_score < *neighbor_g_score {
+                    self.came_from.insert(n, current_position);
+                    self.g_scores.insert(n, potential_g_score);
+                    let through_neighbor_score = self.manhattan_path_cost(n, end_position);
+
+                    let neighbor_fscore = potential_g_score + through_neighbor_score;
+                    self.f_scores.insert(n, neighbor_fscore);
+
+                    if !self.position_unvisited(n) {
+                        let node = Node { position: n, score: neighbor_fscore };
+                        self.unvisited.push(Reverse(node));
+                    }
+                }
+
+            }
         }
 
         return Vec::new();
@@ -199,6 +258,8 @@ mod tests {
 
     #[test]
     fn test_a_star_search() {
+        log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+
         // GIVEN a starting position
         let start_pos = Position { x: 0, y: 0 };
         let end_pos = Position { x: 3, y: 0 };
@@ -216,5 +277,13 @@ mod tests {
         assert_eq!(0, *g_score.unwrap());
         let f_score = pathfinding.f_scores.get(&start_pos);
         assert_eq!(3, *f_score.unwrap());
+
+        // AND the path to be 4 nodes long
+        assert_eq!(4, path.len());
+        // AND look like this
+        assert_eq!(Position{x:0, y:0}, *path.get(0).unwrap());
+        assert_eq!(Position{x:1, y:0}, *path.get(1).unwrap());
+        assert_eq!(Position{x:2, y:0}, *path.get(2).unwrap());
+        assert_eq!(Position{x:3, y:0}, *path.get(3).unwrap());
     }
 }
