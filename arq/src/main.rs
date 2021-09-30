@@ -13,6 +13,7 @@ mod position;
 mod door;
 mod room;
 mod colour_mapper;
+mod pathfinding;
 
 use std::io;
 

@@ -13,7 +13,7 @@ pub struct MapView<'a, B : tui::backend::Backend> {
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
     pub fn draw_map(&mut self) -> Result<(), Error> {
-        self.terminal_manager.terminal.draw(|frame| { ui::render_main_window(frame) });
+        self.terminal_manager.terminal.draw(|frame| { ui::render_main_window(frame) })?;
 
         let backend = self.terminal_manager.terminal.backend_mut();
 

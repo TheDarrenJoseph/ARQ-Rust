@@ -10,10 +10,9 @@ pub struct Map {
 
 #[cfg(test)]
 mod tests {
-    use crate::container::ContainerType;
-    use crate::tile::{Tile, build_library};
+    use crate::tile::{Tile};
     use crate::room::Room;
-    use crate::position::{Position, Area, build_square_area};
+    use crate::position::{Position, build_square_area};
 
     #[test]
     fn test_build_map() {

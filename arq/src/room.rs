@@ -1,4 +1,4 @@
-use crate::position::{Area, Position, AreaSide, Side, all_sides, build_line, build_rectangular_area};
+use crate::position::{Area, Position, AreaSide, build_rectangular_area};
 use crate::door::Door;
 
 pub struct Room {

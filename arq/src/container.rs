@@ -31,7 +31,6 @@ pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32, con
 
 #[cfg(test)]
 mod tests {
-    use crate::items::build_item;
     use crate::container::ContainerType;
 
     #[test]

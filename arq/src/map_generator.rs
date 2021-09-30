@@ -20,7 +20,7 @@ pub struct MapGenerator {
 
 pub fn build_generator(map_area : Area) -> MapGenerator {
     MapGenerator { min_room_size: 3, max_room_size: 6,
-        room_area_quota_percentage: 40, room_area_percentage: 0, max_door_count: 4,
+        room_area_quota_percentage: 30, room_area_percentage: 0, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new()}
 }
@@ -88,13 +88,12 @@ impl MapGenerator {
         let total_area = self.map_area.get_total_area();
         let mut room_area_total = 0;
         let mut remaining_area_total = total_area - room_area_total;
-        let mut total_area_usage_percentage : i32 = 0;
+        let mut total_area_usage_percentage : u16 = 0;
 
-        let mut try_count = 0;
         let mut rooms : Vec<Room> = Vec::new();
         let mut rng = rand::thread_rng();
         self.find_possible_room_positions();
-        while total_area_usage_percentage < 30 && self.possible_room_positions.len() > 0 {
+        while total_area_usage_percentage < self.room_area_quota_percentage && self.possible_room_positions.len() > 0 {
             let random_pos = rng.gen_range(0..self.possible_room_positions.len());
             let position = *self.possible_room_positions.get(random_pos).unwrap();
 
@@ -130,7 +129,7 @@ impl MapGenerator {
                         remaining_area_total -= room_area_total;
                     }
 
-                    let area_usage_percentage : i32 = (room_area as f32 / total_area as f32 * 100.00 as f32) as i32;
+                    let area_usage_percentage : u16 = (room_area as f32 / total_area as f32 * 100.00 as f32) as u16;
                     log::info!("Room area usage: {}%", area_usage_percentage);
                     total_area_usage_percentage += area_usage_percentage;
                     log::info!("Total room area usage: {}/{}", room_area_total, total_area);
@@ -138,11 +137,6 @@ impl MapGenerator {
                     break;
                 }
             }
-            try_count+=1;
-        }
-
-        if (total_area_usage_percentage < 20 ) {
-            log::info!("Failed to reach target area usage %. Expected: {}, Current: {}%", 20, total_area_usage_percentage);
         }
         rooms
     }
@@ -226,8 +220,8 @@ impl MapGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, Area, build_square_area};
-    use crate::map_generator::{MapGenerator, build_generator};
+    use crate::position::{Position, build_square_area};
+    use crate::map_generator::{build_generator};
 
     #[test]
     fn test_build_generator() {
