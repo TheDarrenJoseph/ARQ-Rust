@@ -1,6 +1,6 @@
 use crate::room::Room;
 use crate::position::{Position, Area};
-use crate::tile::TileDetails;
+use crate::tile::{Tile, TileDetails};
 
 pub struct Map {
     pub area : Area,
@@ -9,6 +9,36 @@ pub struct Map {
 }
 
 impl Map {
+
+    pub fn get_tile(&self, position: Position) -> Option<TileDetails> {
+        match self.tiles.get(position.y as usize) {
+            Some (row) => {
+                let details = row.get(position.x as usize).unwrap();
+                return Some(details.clone());
+            },
+            None => {
+                return None
+            }
+        }
+
+
+    }
+
+    pub fn is_paveable(&self, position: Position) -> bool {
+        match self.get_tile(position) {
+            Some(tile) => {
+                // All traversible tile types are paveable, including NoTile
+                if (tile.tile_type == Tile::NoTile) {
+                    true
+                } else {
+                    tile.traversable
+                }
+            }, None => {
+                false
+            }
+        }
+    }
+
     pub fn get_neighbors(&self, position: Position) -> Vec<Position> {
 
         let mut results = Vec::new();

@@ -22,7 +22,7 @@ impl Room {
 mod tests {
     use crate::door::build_door;
     use crate::room::Room;
-    use crate::position::{Position, Area, Side, build_square_area};
+    use crate::position::{Position, Side, build_square_area};
 
     #[test]
     fn test_get_sides() {

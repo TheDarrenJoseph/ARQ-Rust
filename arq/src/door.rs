@@ -52,7 +52,6 @@ pub fn build_door(position : Position) -> Door {
 
 #[cfg(test)]
 mod tests {
-    use crate::tile::build_library;
     use crate::position::Position;
     use crate::door::{build_door};
 

@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap,VecDeque,HashMap};
+use std::collections::{BinaryHeap,HashMap};
 use std::cmp::{Reverse,Ordering};
 
 use crate::map::Map;
@@ -69,9 +69,9 @@ impl Pathfinding {
         while has_next_node {
             let previous_node = self.came_from.get(&next_node);
 
-            match(previous_node) {
+            match previous_node {
                 Some(n) => {
-                    next_node = (*n);
+                    next_node = *n;
                     nodes.push(*n);
                 },
                 None => {
@@ -109,33 +109,34 @@ impl Pathfinding {
                 return self.build_path(end_position);
             }
 
-            let neighbors = current_lowest_score_node.position.get_neighbors();
-            log::info!("Found {} neighbors for current_lowest_score_node: {:?}", neighbors.len(), current_lowest_score_node.position);
+            if map.is_paveable(current_lowest_score_node.position) {
+                let neighbors = current_lowest_score_node.position.get_neighbors();
+                log::info!("Found {} neighbors for current_lowest_score_node: {:?}", neighbors.len(), current_lowest_score_node.position);
 
-            let current_position = current_lowest_score_node.position.clone();
-            let current_g_score = self.get_g_score(current_position);
-            log::info!("Current current_lowest_score_node gScore {}", current_g_score);
-            for n in neighbors {
-                log::info!("Evaluating neighbor {:?}", n);
-                let neighbor_g_score = self.g_scores.get(&n).unwrap_or(&(i16::MAX as i32));
-                log::info!("Current neighbor gScore {}", current_g_score);
-                let distance_through = self.manhattan_path_cost(current_position, n);
-                log::info!("Distance through neighbor {}", distance_through);
-                let potential_g_score = current_g_score + distance_through;
-                if potential_g_score < *neighbor_g_score {
-                    self.came_from.insert(n, current_position);
-                    self.g_scores.insert(n, potential_g_score);
-                    let through_neighbor_score = self.manhattan_path_cost(n, end_position);
+                let current_position = current_lowest_score_node.position.clone();
+                let current_g_score = self.get_g_score(current_position);
+                log::info!("Current current_lowest_score_node gScore {}", current_g_score);
+                for n in neighbors {
+                    log::info!("Evaluating neighbor {:?}", n);
+                    let neighbor_g_score = self.g_scores.get(&n).unwrap_or(&(i16::MAX as i32));
+                    log::info!("Current neighbor gScore {}", current_g_score);
+                    let distance_through = self.manhattan_path_cost(current_position, n);
+                    log::info!("Distance through neighbor {}", distance_through);
+                    let potential_g_score = current_g_score + distance_through;
+                    if potential_g_score < *neighbor_g_score {
+                        self.came_from.insert(n, current_position);
+                        self.g_scores.insert(n, potential_g_score);
+                        let through_neighbor_score = self.manhattan_path_cost(n, end_position);
 
-                    let neighbor_fscore = potential_g_score + through_neighbor_score;
-                    self.f_scores.insert(n, neighbor_fscore);
+                        let neighbor_fscore = potential_g_score + through_neighbor_score;
+                        self.f_scores.insert(n, neighbor_fscore);
 
-                    if !self.position_unvisited(n) {
-                        let node = Node { position: n, score: neighbor_fscore };
-                        self.unvisited.push(Reverse(node));
+                        if !self.position_unvisited(n) {
+                            let node = Node { position: n, score: neighbor_fscore };
+                            self.unvisited.push(Reverse(node));
+                        }
                     }
                 }
-
             }
         }
 
@@ -145,8 +146,6 @@ impl Pathfinding {
 
 #[cfg(test)]
 mod tests {
-    use core::cmp::Reverse;
-
     use crate::tile::{Tile};
     use crate::room::Room;
     use crate::map;
@@ -158,8 +157,10 @@ mod tests {
         let tile_library = crate::tile::build_library();
         assert_eq!(9, tile_library.len());
 
+        let non = tile_library[&Tile::NoTile].clone();
         let rom = tile_library[&Tile::Room].clone();
         let wall = tile_library[&Tile::Wall].clone();
+        let door = tile_library[&Tile::Door].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -170,13 +171,14 @@ mod tests {
         rooms.push(room);
 
         let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_square_area(map_pos, 3);
+        let map_area = build_square_area(map_pos, 4);
         let map = crate::map::Map {
             area: map_area,
             tiles : vec![
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
-                vec![ wall.clone(), rom.clone(), wall.clone() ],
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
+                vec![ non.clone(), non.clone(), non.clone(), non.clone(), ],
+                vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
+                vec![ non.clone(), door.clone(), rom.clone(), wall.clone(), ],
+                vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
             ], rooms
         };
         map
@@ -257,9 +259,7 @@ mod tests {
     }
 
     #[test]
-    fn test_a_star_search() {
-        log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-
+    fn test_a_star_search_straight_line_no_obstacles() {
         // GIVEN a starting position
         let start_pos = Position { x: 0, y: 0 };
         let end_pos = Position { x: 3, y: 0 };
@@ -267,7 +267,7 @@ mod tests {
         // AND a valid pathfinding instance
         let mut pathfinding = Pathfinding::build( start_pos);
 
-        // WHEN we call to a* search
+        // WHEN we call to a* search in a straight line with no obstacles
         let map = build_test_map();
         let path = pathfinding.a_star_search(map, end_pos);
 
@@ -285,5 +285,36 @@ mod tests {
         assert_eq!(Position{x:1, y:0}, *path.get(1).unwrap());
         assert_eq!(Position{x:2, y:0}, *path.get(2).unwrap());
         assert_eq!(Position{x:3, y:0}, *path.get(3).unwrap());
+    }
+
+    #[test]
+    fn test_a_star_search_obstacles_into_room() {
+        // GIVEN a starting position
+        let start_pos = Position { x: 0, y: 0 };
+        // AND an end position targeting a Room tile inside a room
+        let end_pos = Position { x: 2, y: 2 };
+
+        // AND a valid pathfinding instance
+        let mut pathfinding = Pathfinding::build( start_pos);
+
+        // WHEN we call to a* search in a straight line with no obstacles
+        let map = build_test_map();
+        let path = pathfinding.a_star_search(map, end_pos);
+
+        // THEN we expect the initial gscore to be 0
+        // AND the initial fscore to be the distance between the 2 Positions
+        let g_score = pathfinding.g_scores.get(&start_pos);
+        assert_eq!(0, *g_score.unwrap());
+        let f_score = pathfinding.f_scores.get(&start_pos);
+        assert_eq!(4, *f_score.unwrap());
+
+        // AND the path to be 5 nodes long
+        assert_eq!(5, path.len());
+        // AND look like this
+        assert_eq!(Position{x:0, y:0}, *path.get(0).unwrap());
+        assert_eq!(Position{x:0, y:1}, *path.get(1).unwrap());
+        assert_eq!(Position{x:0, y:2}, *path.get(2).unwrap());
+        assert_eq!(Position{x:1, y:2}, *path.get(3).unwrap());
+        assert_eq!(Position{x:2, y:2}, *path.get(4).unwrap());
     }
 }
