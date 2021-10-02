@@ -5,6 +5,7 @@ use crate::room::Room;
 use crate::door::{build_door};
 use crate::position::{Position, Area, build_square_area, Side};
 use crate::tile::{Tile, TileDetails, build_library};
+use crate::pathfinding::{Pathfinding};
 
 pub struct MapGenerator {
     min_room_size: u16,
@@ -15,21 +16,47 @@ pub struct MapGenerator {
     tile_library :  HashMap<Tile, TileDetails>,
     map_area : Area,
     taken_positions : Vec<Position>,
-    possible_room_positions : Vec<Position>
+    possible_room_positions : Vec<Position>,
+    map: Map
 }
 
 pub fn build_generator(map_area : Area) -> MapGenerator {
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, room_area_percentage: 0, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
-        possible_room_positions : Vec::new()}
+        possible_room_positions : Vec::new(),
+        map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new()}}
 }
 
 impl MapGenerator {
     pub fn generate(&mut self) -> Map {
-        let mut map = self.build_map();
-        map = self.add_rooms_to_map(map);
-        map
+        self.map = self.build_map();
+        self.add_rooms_to_map();
+        self.path_rooms();
+        self.map.clone()
+    }
+
+    fn path_rooms(&mut self){
+        let tile_library = crate::tile::build_library();
+        let corridor_tile = &tile_library[&Tile::Corridor].clone();
+        let rooms = self.map.get_rooms().clone();
+        for i in 0..rooms.len()-1 {
+            let room1 = rooms[i].clone();
+            let room2 = rooms[i+1].clone();
+
+            for door1 in room1.doors {
+                let door1_position = door1.position;
+                let door2_position = room2.doors[0].position;
+                let mut pathfinding = Pathfinding::build(door1_position);
+                let path = pathfinding.a_star_search(&self.map, door2_position);
+                for position in path {
+                    let tile_type = self.map.get_tile(position).unwrap().tile_type;
+                    if tile_type != Tile::Door {
+                        self.map.set_tile(position, corridor_tile.clone());
+                    }
+                }
+            }
+        }
     }
 
     fn generate_room(&self, room_pos : Position, size: u16) -> Room {
@@ -84,7 +111,6 @@ impl MapGenerator {
     }
 
     fn generate_rooms(&mut self) -> Vec<Room> {
-
         let total_area = self.map_area.get_total_area();
         let mut room_area_total = 0;
         let mut remaining_area_total = total_area - room_area_total;
@@ -153,7 +179,6 @@ impl MapGenerator {
     }
 
     fn build_empty_tiles(&mut self) -> Vec<Vec<TileDetails>> {
-        // TODO hash map the library entries we we can lookup by NoTile, etc
         let mut map_tiles = Vec::new();
         let mut row;
         for y in self.map_area.start_position.y..=self.map_area.end_position.y {
@@ -167,43 +192,36 @@ impl MapGenerator {
         map_tiles
     }
 
-    fn add_rooms_to_map(&mut self, mut map: Map) -> Map {
+    fn add_room_to_map(&mut self, room: &Room) {
         let tile_library = crate::tile::build_library();
         let room_tile = &tile_library[&Tile::Room].clone();
         let wall_tile = &tile_library[&Tile::Wall].clone();
 
-        let rooms = &map.rooms;
-        for room in rooms {
-            let inside_area = room.get_inside_area();
-            let inside_positions = inside_area.get_positions();
-            for position in inside_positions {
-                let x = position.x as usize;
-                let y = position.y as usize;
-                //log::info!("Room tile at: {}, {}", x,y);
-                map.tiles[y][x] = room_tile.clone();
-            }
+        let inside_area = room.get_inside_area();
+        let inside_positions = inside_area.get_positions();
+        for position in inside_positions {
+            self.map.set_tile(position, room_tile.clone());
+        }
 
-            let sides = room.get_sides();
-            for side in sides {
-                let side_positions = side.area.get_positions();
-                for position in side_positions {
-                    let x = position.x as usize;
-                    let y = position.y as usize;
-                    //log::info!("Wall tile at: {}, {}", x,y);
-                    map.tiles[y][x] = wall_tile.clone();
-                }
-            }
-
-            let doors = &room.doors;
-            for door in doors {
-                let position = door.position;
-                let x = position.x as usize;
-                let y = position.y as usize;
-                //log::info!("Door tile at: {}, {}", x,y);
-                map.tiles[y][x] = door.tile_details.clone();
+        let sides = room.get_sides();
+        for side in sides {
+            let side_positions = side.area.get_positions();
+            for position in side_positions {
+                self.map.set_tile(position, wall_tile.clone());
             }
         }
-        map
+
+        let doors = &room.doors;
+        for door in doors {
+            let position = door.position;
+            self.map.set_tile(position, door.tile_details.clone());
+        }
+    }
+
+    fn add_rooms_to_map(&mut self) {
+        for room in self.map.get_rooms().clone() {
+            self.add_room_to_map(&room);
+        }
     }
 
     fn build_map(&mut self) -> Map {

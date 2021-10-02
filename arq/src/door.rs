@@ -1,6 +1,7 @@
 use crate::tile::{Tile, TileDetails};
 use crate::position::Position;
 
+#[derive(Clone)]
 pub struct Door {
     pub tile_details : TileDetails,
     pub position : Position,

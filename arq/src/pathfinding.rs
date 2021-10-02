@@ -34,7 +34,7 @@ impl PartialEq for Node {
 
 impl Eq for Node {}
 
-struct Pathfinding {
+pub struct Pathfinding {
     start_position: Position,
     unvisited : BinaryHeap<Reverse<Node>>,
     came_from: HashMap<Position, Position>,
@@ -98,7 +98,7 @@ impl Pathfinding {
         }
     }
 
-    pub fn a_star_search(&mut self, map : Map, end_position: Position) -> Vec<Position> {
+    pub fn a_star_search(&mut self, map : &Map, end_position: Position) -> Vec<Position> {
         let score_estimate = self.manhattan_path_cost(self.start_position, end_position);
         self.f_scores.insert(self.start_position, score_estimate);
 

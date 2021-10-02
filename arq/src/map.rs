@@ -2,6 +2,7 @@ use crate::room::Room;
 use crate::position::{Position, Area};
 use crate::tile::{Tile, TileDetails};
 
+#[derive(Clone)]
 pub struct Map {
     pub area : Area,
     pub tiles : Vec<Vec<TileDetails>>,
@@ -20,15 +21,23 @@ impl Map {
                 return None
             }
         }
+    }
 
+    pub fn set_tile(&mut self, position: Position, tile: TileDetails) {
+        let x = position.x as usize;
+        let y = position.y as usize;
+        self.tiles[y][x] = tile
+    }
 
+    pub fn get_rooms(&self) -> Vec<Room> {
+        return self.rooms.clone();
     }
 
     pub fn is_paveable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {
                 // All traversible tile types are paveable, including NoTile
-                if (tile.tile_type == Tile::NoTile) {
+                if tile.tile_type == Tile::NoTile {
                     true
                 } else {
                     tile.traversable

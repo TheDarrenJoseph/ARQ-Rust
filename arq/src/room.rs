@@ -1,6 +1,7 @@
 use crate::position::{Area, Position, AreaSide, build_rectangular_area};
 use crate::door::Door;
 
+#[derive(Clone)]
 pub struct Room {
     pub area: Area,
     pub doors : Vec<Door>
