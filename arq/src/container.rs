@@ -1,5 +1,6 @@
 use crate::items::Item;
 
+#[derive(Clone)]
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ContainerType {
@@ -7,6 +8,7 @@ pub enum ContainerType {
     AREA
 }
 
+#[derive(Clone)]
 pub struct Container {
     item : Item,
     container_type : ContainerType,

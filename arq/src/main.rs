@@ -10,6 +10,7 @@ mod map;
 mod map_view;
 mod map_generator;
 mod position;
+mod character;
 mod door;
 mod room;
 mod colour_mapper;

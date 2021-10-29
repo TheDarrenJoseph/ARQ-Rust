@@ -16,6 +16,9 @@ use crate::map_view::MapView;
 use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
+use crate::character::{Character, build_player};
+use crate::tile::Colour;
+use crate::container::ContainerType;
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
@@ -142,14 +145,24 @@ impl GameEngine {
         Ok(())
     }
 
+    fn build_characters(&self) -> Vec<Character> {
+        let position = Position { x: 1, y: 1};
+        let player = build_player("Player".to_string(), position);
+
+        let mut characters = Vec::new();
+        characters.push(player);
+        return characters;
+    }
+
     fn start_game(&mut self) -> Result<(), io::Error>{
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
         let map = &map_generator.generate();
+        let characters = self.build_characters();
 
         self.game_running = true;
         while self.game_running {
-            let mut map_view = MapView { map, terminal_manager: &mut self.terminal_manager };
+            let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
             map_view.draw_map()?;
             self.game_loop()?;
         }

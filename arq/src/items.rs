@@ -1,4 +1,4 @@
-
+#[derive(Clone)]
 #[derive(PartialEq, Debug)]
 pub enum ItemType {
     ITEM,
@@ -9,6 +9,7 @@ pub enum ItemType {
     LEGS
 }
 
+#[derive(Clone)]
 pub struct Item {
     id : u64,
     pub item_type: ItemType,

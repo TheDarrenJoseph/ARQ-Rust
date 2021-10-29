@@ -5,9 +5,11 @@ use crate::map::Map;
 use crate::ui;
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
+use crate::character::Character;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
+    pub characters : Vec<Character>,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 

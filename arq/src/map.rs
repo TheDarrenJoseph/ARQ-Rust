@@ -14,8 +14,14 @@ impl Map {
     pub fn get_tile(&self, position: Position) -> Option<TileDetails> {
         match self.tiles.get(position.y as usize) {
             Some (row) => {
-                let details = row.get(position.x as usize).unwrap();
-                return Some(details.clone());
+                match row.get(position.x as usize) {
+                    Some(details) => {
+                        return Some(details.clone());
+                    },
+                    None => {
+                        return None
+                    }
+                }
             },
             None => {
                 return None

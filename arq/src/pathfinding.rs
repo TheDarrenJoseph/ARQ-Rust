@@ -269,7 +269,7 @@ mod tests {
 
         // WHEN we call to a* search in a straight line with no obstacles
         let map = build_test_map();
-        let path = pathfinding.a_star_search(map, end_pos);
+        let path = pathfinding.a_star_search(&map, end_pos);
 
         // THEN we expect the initial gscore to be 0
         // AND the initial fscore to be the distance between the 2 Positions
@@ -299,7 +299,7 @@ mod tests {
 
         // WHEN we call to a* search in a straight line with no obstacles
         let map = build_test_map();
-        let path = pathfinding.a_star_search(map, end_pos);
+        let path = pathfinding.a_star_search(&map, end_pos);
 
         // THEN we expect the initial gscore to be 0
         // AND the initial fscore to be the distance between the 2 Positions

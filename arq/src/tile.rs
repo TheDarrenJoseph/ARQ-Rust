@@ -10,6 +10,7 @@ pub enum Tile
 
 #[derive(Copy)]
 #[derive(Clone)]
+#[derive(PartialEq, Debug)]
 pub enum Colour {None,Red,Green,Blue,Cyan,Brown,White,Black}
 
 #[derive(Clone)]
