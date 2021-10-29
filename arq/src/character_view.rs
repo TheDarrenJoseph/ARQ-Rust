@@ -81,24 +81,35 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
 
     pub fn handle_input(&mut self) -> Result<bool, Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
+        let frame_handler = &mut self.frame_handler;
+        let mut widgets = &mut frame_handler.text_widgets;
         match key {
             Key::Char('q') => {
                 self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             }
             Key::Char(c) => {
-                let frame_handler = &mut self.frame_handler;
                 match (frame_handler.selected_widget) {
                     Some(idx) => {
                         log::info!("Input: {}", c.to_string());
 
-                        let widget = &mut frame_handler.text_widgets[idx as usize];
+                        let widget = &mut widgets[idx as usize];
                         widget.add_char(c);
 
                         log::info!("Widget state input is: {}", widget.state.input);
 
                         self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame) });
                     },
+                    None => {}
+                }
+            },
+            Key::Backspace => {
+                match (frame_handler.selected_widget) {
+                    Some(idx) => {
+                        let widget = &mut widgets[idx as usize];
+                        widget.delete_char();
+                        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame) });
+                    }
                     None => {}
                 }
             }

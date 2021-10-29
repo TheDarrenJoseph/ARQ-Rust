@@ -44,6 +44,12 @@ impl TextInput {
             self.state.input.push_str(&String::from(c));
         }
     }
+
+    pub fn delete_char(&mut self) {
+        if !self.buffer_full() {
+            self.state.input.pop();
+        }
+    }
 }
 
 impl StatefulWidget for TextInput {
