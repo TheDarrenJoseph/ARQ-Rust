@@ -13,6 +13,19 @@ pub struct UI {
     pub frame_size : Option<Rect>
 }
 
+fn draw_menu<B: tui::backend::Backend>(frame: &mut tui::terminal::Frame<'_, B>, menu : &mut  Menu) {
+    render_main_window(frame);
+
+    let mut menu_list_state = ListState::default();
+    menu_list_state.select(Some(menu.selection.try_into().unwrap()));
+
+    let frame_size = frame.size();
+    let menu_size = Rect::new(4, 4, frame_size.width / 2, menu.menu_titles.len().try_into().unwrap());
+    let menu_list = menu.to_list();
+    frame.render_stateful_widget(menu_list, menu_size, &mut menu_list_state);
+}
+
+
 pub enum StartMenuChoice {
     Play,
     Settings,
@@ -52,7 +65,7 @@ impl std::convert::TryFrom<usize> for SettingsMenuChoice {
 }
 
 
-pub trait StartMenu {
+pub trait Draw {
     fn draw_start_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_settings_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
@@ -72,29 +85,14 @@ pub fn render_main_window<'a, B : tui::backend::Backend>(frame : &mut tui::termi
     frame.render_widget(main_block, window_size);
 }
 
-impl StartMenu for UI {
+impl Draw for UI {
+
     fn draw_start_menu<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        render_main_window(frame);
-
-        let mut menu_list_state = ListState::default();
-        menu_list_state.select(Some(self.start_menu.selection.try_into().unwrap()));
-
-        let frame_size = frame.size();
-        let menu_size = Rect::new(4, 4, frame_size.width / 2, self.start_menu.menu_titles.len().try_into().unwrap());
-        let menu_list = self.start_menu.to_list();
-        frame.render_stateful_widget(menu_list, menu_size, &mut menu_list_state);
+      return draw_menu(frame, &mut self.start_menu);
     }
 
     fn draw_settings_menu<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        render_main_window(frame);
-
-        let mut menu_list_state = ListState::default();
-        menu_list_state.select(Some(self.settings_menu.selection.try_into().unwrap()));
-
-        let frame_size = frame.size();
-        let menu_size = Rect::new(4, 4, frame_size.width / 2, self.settings_menu.menu_titles.len().try_into().unwrap());
-        let menu_list = self.settings_menu.to_list();
-        frame.render_stateful_widget(menu_list, menu_size, &mut menu_list_state);
+        return draw_menu(frame, &mut self.settings_menu);
     }
 
     fn draw_info<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {

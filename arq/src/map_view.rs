@@ -15,6 +15,8 @@ pub struct MapView<'a, B : tui::backend::Backend> {
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
     pub fn draw_map(&mut self) -> Result<(), Error> {
+        log::info!("Drawing map tiles...");
+
         self.terminal_manager.terminal.draw(|frame| { ui::render_main_window(frame) })?;
 
         let backend = self.terminal_manager.terminal.backend_mut();
@@ -44,6 +46,25 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 backend.draw(updates.into_iter())?;
                 backend.flush()?;
             }
+        }
+        Ok(())
+    }
+
+    pub fn draw_characters(&mut self) -> Result<(), Error> {
+        log::info!("Drawing characters...");
+
+        let backend = self.terminal_manager.terminal.backend_mut();
+        for character in &self.characters {
+            let position = character.get_position();
+            let character_colour = character.get_colour();
+            let fg = colour_mapper::map_colour(character_colour);
+            let bg = tui::style::Color::Black;
+            let modifier = tui::style::Modifier::empty();
+            let cell = Cell{ symbol: "@".to_string(), fg, bg,modifier};
+            let cell_tup : (u16, u16, &Cell) = (position.x+1,position.y+1,&cell);
+            let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+            backend.draw(updates.into_iter())?;
+            backend.flush()?;
         }
         Ok(())
     }

@@ -6,13 +6,14 @@ use std::io;
 use std::convert::TryInto;
 
 use crate::ui;
-use crate::ui::StartMenu;
+use crate::ui::Draw;
 use crate::settings;
 use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::map_view::MapView;
+use crate::character_view::CharacterView;
 use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
@@ -160,10 +161,17 @@ impl GameEngine {
         let map = &map_generator.generate();
         let characters = self.build_characters();
 
+        let character_created = false;
         self.game_running = true;
         while self.game_running {
-            let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
-            map_view.draw_map()?;
+            if (!character_created) {
+                let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, text_widgets: Vec::new() };
+                character_view.draw();
+            } else {
+                let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
+                map_view.draw_map()?;
+                map_view.draw_characters()?;
+            }
             self.game_loop()?;
         }
         Ok(())
