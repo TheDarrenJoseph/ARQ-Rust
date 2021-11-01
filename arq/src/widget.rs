@@ -39,6 +39,14 @@ impl TextInput {
         return self.state.input.len() >= self.length as usize;
     }
 
+    pub fn focus(&mut self) {
+        self.selected = true;
+    }
+
+    pub fn unfocus(&mut self) {
+        self.selected = false;
+    }
+
     pub fn add_char(&mut self, c : char) {
         if !self.buffer_full() {
             self.state.input.push_str(&String::from(c));
@@ -56,9 +64,21 @@ impl StatefulWidget for TextInput {
     type State = TextInputState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+
+        let input_start_index = area.left() + self.name.len() as u16 + self.input_padding as u16;
+        let input = self.state.input;
+        let current_cursor_index = input_start_index + input.len() as u16;
+        let max_index = input_start_index + self.length as u16;
+
         buf.set_string(area.left(), area.top(), self.name.clone(), Style::default().fg(Color::White).bg(Color::Black));
-        let name_length = self.name.len() as u16;
-        let input_buffer = build_buffer(self.length, self.state.input);
-        buf.set_string(area.left() + name_length + self.input_padding as u16, area.top(), input_buffer, Style::default().fg(Color::Black).bg(Color::White));
+        let input_buffer = build_buffer(self.length.clone(), input.clone());
+        buf.set_string(input_start_index, area.top(), input_buffer, Style::default().fg(Color::Black).bg(Color::White));
+        if self.selected && current_cursor_index < max_index {
+            let selected_cell = buf.get_mut(current_cursor_index as u16, area.top());
+            selected_cell.set_style(Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
+        } else if current_cursor_index == max_index {
+            let selected_input_row =  Rect::new(input_start_index, area.top(), self.length.clone() as u16, 1);
+            buf.set_style(selected_input_row, Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
+        }
     }
 }

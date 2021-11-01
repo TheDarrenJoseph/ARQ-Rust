@@ -29,6 +29,33 @@ pub struct CharacterViewFrameHandler {
 
 impl CharacterViewFrameHandler {
 
+    fn previous_widget(&mut self) {
+        let selected_widget = self.selected_widget.unwrap();
+        if selected_widget > 0 && selected_widget < self.text_widgets.len() as i8 {
+            self.select_widget(selected_widget - 1);
+        }
+    }
+
+    fn next_widget(&mut self) {
+        let selected_widget = self.selected_widget.unwrap();
+        if selected_widget >= 0 && selected_widget < self.text_widgets.len() as i8 - 1 {
+            self.select_widget(selected_widget + 1);
+        }
+    }
+
+    fn select_widget(&mut self, index: i8) {
+        let mut offset = 0;
+        for widget in self.text_widgets.iter_mut() {
+            if offset == index {
+                self.selected_widget =  Some(offset.clone());
+                widget.focus();
+            } else {
+                widget.unfocus();
+            }
+            offset += 1;
+        }
+    }
+
     fn build_text_inputs(&mut self) {
         let mut name_input_state = TextInputState { input: "".to_string() };
         let name_input = TextInput { name: String::from("Name"), input_padding: 2, length: 12, selected: false, selected_index: 0, state: name_input_state};
@@ -37,19 +64,20 @@ impl CharacterViewFrameHandler {
         let class_input = TextInput { name: String::from("Class"), input_padding: 1, length: 12, selected: false, selected_index: 0, state: class_input_state};
         self.text_widgets.push(name_input);
         self.text_widgets.push(class_input);
+        self.selected_widget = Some(0);
+        self.text_widgets[0].focus();
     }
 
     pub fn draw_text_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
-
-        let mut offset = 0;
-        for widget in self.text_widgets.iter_mut() {
-            let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
-            frame.render_stateful_widget(widget.clone(), widget_size, &mut widget.state);
-            offset+=1;
+        if self.text_widgets.len() > 0 {
+            let mut offset = 0;
+            for widget in self.text_widgets.iter_mut() {
+                let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
+                frame.render_stateful_widget(widget.clone(), widget_size, &mut widget.state);
+                offset += 1;
+            }
         }
-
-        self.selected_widget = Some(0);
     }
 
     pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
@@ -83,35 +111,49 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         let frame_handler = &mut self.frame_handler;
         let mut widgets = &mut frame_handler.text_widgets;
+
+        let mut selected_widget = None;
+        match frame_handler.selected_widget {
+            Some(idx) => {
+                let widget = &mut widgets[idx as usize];
+                widget.focus();
+                selected_widget = Some(widget);
+            },
+            None => {}
+        }
+
         match key {
             Key::Char('q') => {
                 self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             }
             Key::Char(c) => {
-                match (frame_handler.selected_widget) {
-                    Some(idx) => {
+                match selected_widget {
+                    Some(widget) => {
                         log::info!("Input: {}", c.to_string());
-
-                        let widget = &mut widgets[idx as usize];
                         widget.add_char(c);
-
                         log::info!("Widget state input is: {}", widget.state.input);
-
-                        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame) });
+                        self.draw();
                     },
                     None => {}
                 }
             },
             Key::Backspace => {
-                match (frame_handler.selected_widget) {
-                    Some(idx) => {
-                        let widget = &mut widgets[idx as usize];
+                match selected_widget {
+                    Some(widget) => {
                         widget.delete_char();
-                        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame) });
+                        self.draw();
                     }
                     None => {}
                 }
+            },
+            Key::Down => {
+                frame_handler.next_widget();
+                self.draw();
+            },
+            Key::Up => {
+                frame_handler.previous_widget();
+                self.draw();
             }
             _ => {
             }
