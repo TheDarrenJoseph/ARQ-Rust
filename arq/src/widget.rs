@@ -4,8 +4,8 @@ use tui::buffer::Buffer;
 use tui::style::{Color, Style, Modifier};
 
 pub enum WidgetType {
-    Text(TextInputWidget),
-    Dropdown(DropdownInputWidget),
+    Text(WidgetState<TextInputState>),
+    Dropdown(WidgetState<DropdownInputState>),
 }
 
 pub struct Widget {
@@ -15,7 +15,6 @@ pub struct Widget {
 #[derive(Clone)]
 pub struct TextInputState {
     pub length: i8,
-    pub selected: bool,
     pub input : String,
     pub name: String,
     pub input_padding: i8,
@@ -23,19 +22,14 @@ pub struct TextInputState {
 }
 
 #[derive(Clone)]
-pub struct TextInputWidget {
-    pub state: TextInputState
-}
-
-#[derive(Clone)]
-pub struct DropdownInputWidget {
-    pub state: DropdownInputState
+pub struct WidgetState<S> {
+    pub selected: bool,
+    pub state: S
 }
 
 #[derive(Clone)]
 pub struct DropdownInputState {
     pub name: String,
-    pub selected: bool,
     pub chosen_option : String,
     pub options : Vec<String>
 }
@@ -61,27 +55,17 @@ pub trait Focusable {
     fn unfocus(&mut self);
 }
 
-impl Focusable for TextInputWidget {
+impl <S> Focusable for WidgetState<S> {
     fn focus(&mut self) {
-        self.state.selected = true;
+        self.selected = true;
     }
 
     fn unfocus(&mut self) {
-        self.state.selected = false;
+        self.selected = false;
     }
 }
 
-impl Focusable for DropdownInputWidget {
-    fn focus(&mut self) {
-        self.state.selected = true;
-    }
-
-    fn unfocus(&mut self) {
-        self.state.selected = false;
-    }
-}
-
-impl TextInputWidget {
+impl WidgetState<TextInputState> {
     pub fn buffer_full(&self) -> bool {
         return self.state.input.len() >= self.state.length as usize;
     }
@@ -99,7 +83,7 @@ impl TextInputWidget {
     }
 }
 
-impl StatefulWidget for TextInputWidget {
+impl StatefulWidget for WidgetState<TextInputState> {
     type State = TextInputState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -112,7 +96,7 @@ impl StatefulWidget for TextInputWidget {
         buf.set_string(area.left(), area.top(), self.state.name.clone(), Style::default().fg(Color::White).bg(Color::Black));
         let input_buffer = build_buffer(self.state.length.clone(), input.clone());
         buf.set_string(input_start_index, area.top(), input_buffer, Style::default().fg(Color::Black).bg(Color::White));
-        if self.state.selected && current_cursor_index < max_index {
+        if self.selected && current_cursor_index < max_index {
             let selected_cell = buf.get_mut(current_cursor_index as u16, area.top());
             selected_cell.set_style(Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
         } else if current_cursor_index == max_index {
@@ -122,14 +106,14 @@ impl StatefulWidget for TextInputWidget {
     }
 }
 
-impl StatefulWidget for DropdownInputWidget {
+impl StatefulWidget for WidgetState<DropdownInputState> {
     type State = DropdownInputState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_string(area.left(), area.top(), self.state.name.clone(), Style::default().fg(Color::White).bg(Color::Black));
 
         let mut index: u16 = 0;
-        if self.state.selected {
+        if self.selected {
             let selected_option = self.state.chosen_option;
 
             for opt in self.state.options {

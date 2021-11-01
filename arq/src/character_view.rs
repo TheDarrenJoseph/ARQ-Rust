@@ -14,7 +14,7 @@ use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 use crate::character::Character;
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, TextInputWidget, DropdownInputWidget, DropdownInputState};
+use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, WidgetState};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -73,9 +73,9 @@ impl CharacterViewFrameHandler {
     }
 
     fn build_text_inputs(&mut self) {
-        let mut name_input_state = WidgetType::Text(TextInputWidget { state: TextInputState { length: 12, selected: false, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 }});
+        let mut name_input_state = WidgetType::Text(WidgetState { selected: false, state: TextInputState { length: 12, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 }});
         let name_input = Widget { state_type: name_input_state };
-        let mut class_input_state = WidgetType::Dropdown(DropdownInputWidget { state: DropdownInputState { name: "Class".to_string(), selected: false, chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()] }});
+        let mut class_input_state = WidgetType::Dropdown(WidgetState { selected: false, state: DropdownInputState { name: "Class".to_string(), chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()] }});
         let class_input = Widget { state_type: class_input_state};
         self.widgets.push(name_input);
         self.widgets.push(class_input);
@@ -197,10 +197,12 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                 }
             },
             Key::Down => {
+                // TODO check for dropdown selected
                 frame_handler.next_widget();
                 self.draw();
             },
             Key::Up => {
+                // TODO check for dropdown selected
                 frame_handler.previous_widget();
                 self.draw();
             }
