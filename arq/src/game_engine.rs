@@ -165,7 +165,7 @@ impl GameEngine {
         self.game_running = true;
         while self.game_running {
             if (!character_created) {
-                let mut frame_handler = CharacterViewFrameHandler { text_widgets: Vec::new(), selected_widget: None };
+                let mut frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
                 character_view.draw();
 
