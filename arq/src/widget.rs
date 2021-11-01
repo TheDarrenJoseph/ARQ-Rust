@@ -5,7 +5,7 @@ use tui::style::{Color, Style, Modifier};
 
 pub enum WidgetType {
     Text(TextInputWidget),
-    Dropdown(DropdownInputState),
+    Dropdown(DropdownInputWidget),
 }
 
 pub struct Widget {
@@ -28,8 +28,16 @@ pub struct TextInputWidget {
 }
 
 #[derive(Clone)]
+pub struct DropdownInputWidget {
+    pub state: DropdownInputState
+}
+
+#[derive(Clone)]
 pub struct DropdownInputState {
-    pub input : String
+    pub name: String,
+    pub selected: bool,
+    pub chosen_option : String,
+    pub options : Vec<String>
 }
 
 fn build_buffer(length: i8, input: String) -> String {
@@ -48,17 +56,34 @@ fn build_buffer(length: i8, input: String) -> String {
     return buffer;
 }
 
-impl TextInputWidget {
-    pub fn buffer_full(&self) -> bool {
-        return self.state.input.len() >= self.state.length as usize;
-    }
+pub trait Focusable {
+    fn focus(&mut self);
+    fn unfocus(&mut self);
+}
 
-    pub fn focus(&mut self) {
+impl Focusable for TextInputWidget {
+    fn focus(&mut self) {
         self.state.selected = true;
     }
 
-    pub fn unfocus(&mut self) {
+    fn unfocus(&mut self) {
         self.state.selected = false;
+    }
+}
+
+impl Focusable for DropdownInputWidget {
+    fn focus(&mut self) {
+        self.state.selected = true;
+    }
+
+    fn unfocus(&mut self) {
+        self.state.selected = false;
+    }
+}
+
+impl TextInputWidget {
+    pub fn buffer_full(&self) -> bool {
+        return self.state.input.len() >= self.state.length as usize;
     }
 
     pub fn add_char(&mut self, c : char) {
@@ -94,5 +119,30 @@ impl StatefulWidget for TextInputWidget {
             let selected_input_row =  Rect::new(input_start_index, area.top(), self.state.length.clone() as u16, 1);
             buf.set_style(selected_input_row, Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
         }
+    }
+}
+
+impl StatefulWidget for DropdownInputWidget {
+    type State = DropdownInputState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_string(area.left(), area.top(), self.state.name.clone(), Style::default().fg(Color::White).bg(Color::Black));
+
+        let mut index: u16 = 0;
+        if self.state.selected {
+            let selected_option = self.state.chosen_option;
+
+            for opt in self.state.options {
+                let input_offset = area.left() + self.state.name.clone().len() as u16 + 2;
+                if opt == selected_option {
+                    let selected_input_row =  Rect::new(input_offset.clone(), area.top(), 12, 1);
+                    buf.set_style(selected_input_row, Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
+                }
+                buf.set_string(input_offset, area.top() + index.clone(), opt.clone(), Style::default().fg(Color::White).bg(Color::Black));
+                index += 1;
+            }
+        }
+
+
     }
 }

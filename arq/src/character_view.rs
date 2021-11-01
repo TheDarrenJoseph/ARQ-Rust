@@ -14,7 +14,7 @@ use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 use crate::character::Character;
-use crate::widget::{Widget, WidgetType, TextInputState, TextInputWidget};
+use crate::widget::{Focusable, Widget, WidgetType, TextInputState, TextInputWidget, DropdownInputWidget, DropdownInputState};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -49,15 +49,21 @@ impl CharacterViewFrameHandler {
             if offset == index {
                 self.selected_widget =  Some(offset.clone());
                 match &mut widget.state_type {
-                    WidgetType::Text(text_input_state) => {
-                        text_input_state.focus();
+                    WidgetType::Text(w) => {
+                        w.focus();
+                    },
+                    WidgetType::Dropdown(w) => {
+                        w.focus();
                     },
                     _ => {}
                 }
             } else {
                 match &mut widget.state_type {
-                    WidgetType::Text(text_input_state) => {
-                        text_input_state.unfocus();
+                    WidgetType::Text(w) => {
+                        w.unfocus();
+                    },
+                    WidgetType::Dropdown(w) => {
+                        w.unfocus();
                     },
                     _ => {}
                 }
@@ -69,7 +75,7 @@ impl CharacterViewFrameHandler {
     fn build_text_inputs(&mut self) {
         let mut name_input_state = WidgetType::Text(TextInputWidget { state: TextInputState { length: 12, selected: false, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 }});
         let name_input = Widget { state_type: name_input_state };
-        let mut class_input_state = WidgetType::Text(TextInputWidget { state: TextInputState { length: 12, selected: false, input: "".to_string(), name: String::from("Class"), input_padding: 1,  selected_index: 0 }});
+        let mut class_input_state = WidgetType::Dropdown(DropdownInputWidget { state: DropdownInputState { name: "Class".to_string(), selected: false, chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()] }});
         let class_input = Widget { state_type: class_input_state};
         self.widgets.push(name_input);
         self.widgets.push(class_input);
@@ -92,6 +98,9 @@ impl CharacterViewFrameHandler {
 
                 match &mut widget.state_type {
                     WidgetType::Text(w) => {
+                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.state);
+                    },
+                    WidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.state);
                     },
                     _ => {}
