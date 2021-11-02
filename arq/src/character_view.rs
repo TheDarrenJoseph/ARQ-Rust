@@ -13,8 +13,8 @@ use crate::map::Map;
 use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
-use crate::character::Character;
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, build_dropdown, build_text_input};
+use crate::character::{Attribute, get_all_attributes, Character};
+use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, build_dropdown, build_text_input, build_number_input, build_number_input_with_value};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -56,12 +56,24 @@ impl CharacterViewFrameHandler {
         }
     }
 
-    fn build_text_inputs(&mut self) {
+    fn build_attribute_inputs(&mut self, mut character: Character) {
+        for attribute in get_all_attributes() {
+            let attribute_input = build_number_input(true,1, attribute.to_string(), 1);
+            self.widgets.push(attribute_input);
+        }
+        let free_points = build_number_input_with_value(false, character.get_free_attribute_points() as i32, 1, "Free points".to_string(), 1);
+        self.widgets.push(free_points);
+    }
+
+    fn build_widgets(&mut self, character: Character) {
         let name_input =  build_text_input(12, String::from("Name"), 2);
         self.widgets.push(name_input);
 
         let class_input = build_dropdown("Class".to_string(), vec!["None".to_string(), "Warrior".to_string()]);
         self.widgets.push(class_input);
+
+        self.build_attribute_inputs(character);
+
         self.selected_widget = Some(0);
         &mut self.widgets[0].state_type.focus();
     }
@@ -77,10 +89,15 @@ impl CharacterViewFrameHandler {
                     WidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
+                    WidgetType::Number(w) => {
+                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
+                    },
                     WidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
-                    _ => {}
+                    _ => {
+                        log::info!("Failed to render a widget with type: {:?} ", widget.state_type)
+                    }
                 }
 
                 offset += 1;
@@ -88,7 +105,7 @@ impl CharacterViewFrameHandler {
         }
     }
 
-    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
         log::info!("Drawing character creation...");
         render_main_window(frame);
         let frame_size = frame.size();
@@ -102,7 +119,7 @@ impl CharacterViewFrameHandler {
         frame.render_widget(creation_block, menu_size);
         if self.widgets.is_empty() {
             log::info!("Building input widgets...");
-            self.build_text_inputs();
+            self.build_widgets(character);
         }
         self.draw_text_inputs(frame);
     }
@@ -111,8 +128,22 @@ impl CharacterViewFrameHandler {
 impl <B : tui::backend::Backend> CharacterView<'_, B> {
     pub fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
-        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame) });
+        let character = self.character.clone();
+        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) });
         Ok(())
+    }
+
+    pub fn update_free_points(&mut self, free_points: i32) {
+        for widget in self.frame_handler.widgets.iter_mut() {
+            match &mut widget.state_type {
+                WidgetType::Number(state) => {
+                    if state.name == "Free points" {
+                        state.set_input(free_points.clone());
+                    }
+                },
+                _ => {}
+            }
+        }
     }
 
     pub fn handle_input(&mut self) -> Result<bool, Error> {
@@ -218,7 +249,45 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             }
                         }
                         self.draw();
-                    }
+                    },
+                    None => {}
+                }
+            },
+            Key::Right => {
+                match selected_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Number(state) => {
+                                let free_points = self.character.get_free_attribute_points().clone();
+                                if free_points > 0 {
+                                    state.increment();
+                                    self.character.set_free_attribute_points(free_points - 1);
+                                    self.update_free_points(free_points.clone() as i32 - 1);
+                                    self.draw();
+                                }
+                            },
+                            _ => {}
+                        }
+                    },
+                    None => {}
+                }
+            },
+            Key::Left => {
+                match selected_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Number(state) => {
+                                let free_points = self.character.get_free_attribute_points();
+                                if free_points < self.character.get_max_free_attribute_points() {
+                                    state.decrement();
+                                    self.character.set_free_attribute_points(free_points + 1);
+                                    self.update_free_points(free_points.clone() as i32 + 1);
+                                }
+                                self.draw();
+                            },
+                            _ => {}
+                        }
+                    },
                     None => {}
                 }
             },

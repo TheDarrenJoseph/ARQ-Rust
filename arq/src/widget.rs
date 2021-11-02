@@ -3,8 +3,10 @@ use tui::layout::Rect;
 use tui::buffer::Buffer;
 use tui::style::{Color, Style, Modifier};
 
+#[derive(Debug)]
 pub enum WidgetType {
     Text(TextInputState),
+    Number(NumberInputState),
     Dropdown(DropdownInputState),
 }
 
@@ -13,6 +15,7 @@ pub struct Widget {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct TextInputState {
     selected: bool,
     length: i8,
@@ -50,6 +53,50 @@ pub fn build_text_input(length: i8, name: String, input_padding: i8) -> Widget {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
+pub struct NumberInputState {
+    selected: bool,
+    editable: bool,
+    length: i8,
+    input : i32,
+    min: i32,
+    max: i32,
+    pub name: String,
+    input_padding: i8
+}
+
+pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> Widget {
+    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
+    Widget{ state_type: name_input_state}
+}
+
+pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> Widget {
+    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
+    Widget{ state_type: name_input_state}
+}
+
+impl NumberInputState {
+    pub fn increment(&mut self) {
+        if self.input < self.max {
+            self.input += 1;
+        }
+    }
+
+    pub fn decrement(&mut self) {
+        if self.input > self.min {
+            self.input -= 1;
+        }
+    }
+
+    pub fn set_input(&mut self, input: i32) {
+        if input >= self.min && self.input <= self.max {
+            self.input = input
+        }
+    }
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
 pub struct DropdownInputState {
     pub selected: bool,
     show_options: bool,
@@ -119,6 +166,9 @@ impl Focusable for WidgetType {
             WidgetType::Text(state) => {
                 state.selected = true;
             },
+            WidgetType::Number(state) => {
+                state.selected = true;
+            }
             WidgetType::Dropdown(state) => {
                 state.selected = true;
             }
@@ -128,6 +178,9 @@ impl Focusable for WidgetType {
     fn unfocus(&mut self) {
         match self {
             WidgetType::Text(state) => {
+                state.selected = false;
+            },
+            WidgetType::Number(state) => {
                 state.selected = false;
             }
             WidgetType::Dropdown(state) => {
@@ -157,6 +210,20 @@ impl StatefulWidget for TextInputState {
             let selected_input_row =  Rect::new(input_start_index, area.top(), self.length.clone() as u16, 1);
             buf.set_style(selected_input_row, Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
         }
+    }
+}
+
+impl StatefulWidget for NumberInputState {
+    type State = NumberInputState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_string(area.left(), area.top(), self.name.clone(), Style::default());
+        let input_start_index = area.left() + self.name.len() as u16 + self.input_padding as u16;
+        let input_text = if self.editable { "<- ".to_string() + &self.input.clone().to_string() + &" ->".to_string() } else { self.input.clone().to_string() };
+        let input_buffer = build_buffer(input_text.len() as i8, input_text);
+            let style = if self.selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
+            buf.set_string(input_start_index, area.top(), input_buffer, style);
+
     }
 }
 

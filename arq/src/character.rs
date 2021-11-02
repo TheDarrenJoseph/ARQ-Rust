@@ -1,3 +1,5 @@
+use std::fmt::{Formatter, Display, Result, Debug};
+
 use crate::container::{Container,ContainerType};
 use crate::position::Position;
 use crate::tile::Colour;
@@ -16,8 +18,14 @@ pub struct Character {
 pub enum Race {Human,Goblin}
 #[derive(Clone)]
 pub enum Class {None,Warrior}
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Attribute {Strength, Health, Agility, Intelligence, Stealth}
+
+impl Display for Attribute {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        Debug::fmt(self, f)
+    }
+}
 
 #[derive(Clone)]
 pub struct AttributeScore {
@@ -29,12 +37,17 @@ pub struct AttributeScore {
 pub struct CharacterDetails {
     race: Race,
     class: Class,
+    max_free_attribute_points: i8,
+    free_attribute_points: i8,
     attributes: Vec<AttributeScore>
+}
+pub fn get_all_attributes() -> Vec<Attribute> {
+    vec![Attribute::Strength, Attribute::Health, Attribute::Agility, Attribute::Intelligence, Attribute::Stealth]
 }
 
 pub fn build_default_attributes() -> Vec<AttributeScore> {
     let mut scores = Vec::new();
-    let attributes = [Attribute::Stealth, Attribute::Health, Attribute::Agility, Attribute::Intelligence, Attribute::Stealth];
+    let attributes = get_all_attributes();
     for attr in attributes {
         scores.push(AttributeScore { attribute: attr, score: 0 });
     }
@@ -43,7 +56,7 @@ pub fn build_default_attributes() -> Vec<AttributeScore> {
 
 pub fn build_default_character_details() -> CharacterDetails{
     let attributes = build_default_attributes();
-    return CharacterDetails { race: Race::Human, class: Class::None, attributes};
+    return CharacterDetails { race: Race::Human, class: Class::None, max_free_attribute_points: 6, free_attribute_points: 6, attributes};
 }
 
 pub fn build_player(name : String, position: Position) -> Character {
@@ -64,7 +77,7 @@ impl Character {
         return self.health.clone();
     }
 
-    pub fn set_health(&mut self, health: i8)  {
+    pub fn set_health(&mut self, health: i8) {
         self.health = health;
     }
 
@@ -84,6 +97,17 @@ impl Character {
         return &mut self.inventory;
     }
 
+    pub fn get_max_free_attribute_points(&mut self) -> i8 {
+        self.character_details.max_free_attribute_points
+    }
+
+    pub fn get_free_attribute_points(&mut self) -> i8 {
+        self.character_details.free_attribute_points
+    }
+
+    pub fn set_free_attribute_points(&mut self, points: i8) {
+        self.character_details.free_attribute_points = points;
+    }
 }
 
 #[cfg(test)]
