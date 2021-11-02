@@ -14,7 +14,7 @@ use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 use crate::character::Character;
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, WidgetState};
+use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -48,45 +48,24 @@ impl CharacterViewFrameHandler {
         for widget in self.widgets.iter_mut() {
             if offset == index {
                 self.selected_widget =  Some(offset.clone());
-                match &mut widget.state_type {
-                    WidgetType::Text(w) => {
-                        w.focus();
-                    },
-                    WidgetType::Dropdown(w) => {
-                        w.focus();
-                    },
-                    _ => {}
-                }
+                widget.state_type.focus();
             } else {
-                match &mut widget.state_type {
-                    WidgetType::Text(w) => {
-                        w.unfocus();
-                    },
-                    WidgetType::Dropdown(w) => {
-                        w.unfocus();
-                    },
-                    _ => {}
-                }
+                widget.state_type.unfocus();
             }
             offset += 1;
         }
     }
 
     fn build_text_inputs(&mut self) {
-        let mut name_input_state = WidgetType::Text(WidgetState { selected: false, state: TextInputState { length: 12, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 }});
-        let name_input = Widget { state_type: name_input_state };
-        let mut class_input_state = WidgetType::Dropdown(WidgetState { selected: false, state: DropdownInputState { name: "Class".to_string(), chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()] }});
-        let class_input = Widget { state_type: class_input_state};
+        let mut name_input_state = WidgetType::Text( TextInputState { selected: false, length: 12, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 });
+        let name_input =  Widget{ state_type: name_input_state};
         self.widgets.push(name_input);
+
+        let mut class_input_state = WidgetType::Dropdown( DropdownInputState { selected: false, name: "Class".to_string(), chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()]});
+        let class_input =  Widget{ state_type: class_input_state};
         self.widgets.push(class_input);
         self.selected_widget = Some(0);
-
-        match &mut self.widgets[0].state_type {
-            WidgetType::Text(text_input_state) => {
-                text_input_state.focus();
-            },
-            _ => {}
-        }
+        &mut self.widgets[0].state_type.focus();
     }
 
     pub fn draw_text_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
@@ -98,10 +77,10 @@ impl CharacterViewFrameHandler {
 
                 match &mut widget.state_type {
                     WidgetType::Text(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.state);
+                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Dropdown(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.state);
+                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     _ => {}
                 }
@@ -147,12 +126,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
         match frame_handler.selected_widget {
             Some(idx) => {
                 let widget = &mut widgets[idx as usize];
-                match &mut widget.state_type {
-                    WidgetType::Text(text_input_state) => {
-                        text_input_state.focus();
-                    },
-                    _ => {}
-                }
+                widget.state_type.focus();
                 selected_widget = Some(widget);
             },
             None => {}
@@ -169,9 +143,9 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                         log::info!("Input: {}", c.to_string());
 
                         match &mut widget.state_type {
-                            WidgetType::Text(w) => {
-                                w.add_char(c);
-                                log::info!("Widget state input is: {}", w.state.input);
+                            WidgetType::Text(state) => {
+                                state.add_char(c);
+                                log::info!("Widget state input is: {}", state.input);
                             },
                             _ => {}
                         }
