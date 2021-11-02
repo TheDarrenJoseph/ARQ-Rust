@@ -14,7 +14,7 @@ use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 use crate::character::Character;
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState};
+use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, build_dropdown, build_text_input};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -57,12 +57,10 @@ impl CharacterViewFrameHandler {
     }
 
     fn build_text_inputs(&mut self) {
-        let mut name_input_state = WidgetType::Text( TextInputState { selected: false, length: 12, input: "".to_string(), name: String::from("Name"), input_padding: 2,  selected_index: 0 });
-        let name_input =  Widget{ state_type: name_input_state};
+        let name_input =  build_text_input(12, String::from("Name"), 2);
         self.widgets.push(name_input);
 
-        let mut class_input_state = WidgetType::Dropdown( DropdownInputState { selected: false, name: "Class".to_string(), chosen_option: "None".to_string(), options: vec!["None".to_string(), "Warrior".to_string()]});
-        let class_input =  Widget{ state_type: class_input_state};
+        let class_input = build_dropdown("Class".to_string(), vec!["None".to_string(), "Warrior".to_string()]);
         self.widgets.push(class_input);
         self.selected_widget = Some(0);
         &mut self.widgets[0].state_type.focus();
@@ -136,7 +134,22 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
             Key::Char('q') => {
                 self.terminal_manager.terminal.clear()?;
                 return Ok(true)
-            }
+            },
+            Key::Char('\n') => {
+                match selected_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Dropdown(state) => {
+                                state.toggle_show();
+                            },
+                            _ => {
+                            }
+                        }
+                        self.draw();
+                    }
+                    None => {}
+                }
+            },
             Key::Char(c) => {
                 match selected_widget {
                     Some(widget) => {
@@ -145,11 +158,10 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                         match &mut widget.state_type {
                             WidgetType::Text(state) => {
                                 state.add_char(c);
-                                log::info!("Widget state input is: {}", state.input);
+                                log::info!("Widget state input is: {}", state.get_input());
                             },
                             _ => {}
                         }
-
                         self.draw();
                     },
                     None => {}
@@ -159,8 +171,8 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Text(text_input_state) => {
-                                text_input_state.delete_char();
+                            WidgetType::Text(state) => {
+                                state.delete_char();
                             },
                             _ => {}
                         }
@@ -171,15 +183,45 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                 }
             },
             Key::Down => {
-                // TODO check for dropdown selected
-                frame_handler.next_widget();
-                self.draw();
+                match selected_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Dropdown(state) => {
+                                if state.is_showing_options() {
+                                    state.select_next();
+                                } else {
+                                    frame_handler.next_widget();
+                                }
+                            },
+                            _ => {
+                                frame_handler.next_widget();
+                            }
+                        }
+                        self.draw();
+                    }
+                    None => {}
+                }
             },
             Key::Up => {
-                // TODO check for dropdown selected
-                frame_handler.previous_widget();
-                self.draw();
-            }
+                match selected_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Dropdown(state) => {
+                                if state.is_showing_options() {
+                                    state.select_previous();
+                                } else {
+                                    frame_handler.previous_widget();
+                                }
+                            },
+                            _ => {
+                                frame_handler.previous_widget();
+                            }
+                        }
+                        self.draw();
+                    }
+                    None => {}
+                }
+            },
             _ => {
             }
         }
