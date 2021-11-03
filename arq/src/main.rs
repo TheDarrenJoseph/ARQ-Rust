@@ -13,6 +13,7 @@ mod position;
 mod character;
 mod character_view;
 mod widget;
+mod test;
 mod door;
 mod room;
 mod colour_mapper;
