@@ -90,6 +90,7 @@ impl CharacterViewFrameHandler {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Number(w) => {
+                        let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Dropdown(w) => {
@@ -108,19 +109,25 @@ impl CharacterViewFrameHandler {
     pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
         log::info!("Drawing character creation...");
         render_main_window(frame);
-        let frame_size = frame.size();
-        let menu_size = Rect::new(4, 4, frame_size.width / 2, frame_size.height / 2);
 
+        let frame_size = frame.size();
+        let window_size = Rect::new(4, 4, frame_size.width / 2, frame_size.height / 2);
         let creation_block = Block::default()
         .borders(Borders::ALL)
-        .title("Character Creation")
-        .style(Style::default().bg(Color::Black));
+        .title("Character Creation");
+        frame.render_widget(creation_block, window_size);
 
-        frame.render_widget(creation_block, menu_size);
         if self.widgets.is_empty() {
             log::info!("Building input widgets...");
             self.build_widgets(character);
         }
+
+        let attributes_block = Block::default()
+            .borders(Borders::ALL)
+            .title("Attributes");
+        let attributes_size = Rect::new(5, 7, (frame_size.width.clone() / 2) - 2, (frame_size.height.clone() / 2) - 4);
+        frame.render_widget(attributes_block, attributes_size);
+
         self.draw_text_inputs(frame);
     }
 }
