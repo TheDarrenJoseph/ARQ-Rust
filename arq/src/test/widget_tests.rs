@@ -148,8 +148,24 @@ mod text_number_input {
             state.increment();
             assert_eq!(100, state.get_input());
             state.increment();
-            // THEN we expect the value to remain at the maxmimum allowed
+            // THEN we expect the value to remain at the maximum allowed
             assert_eq!(100, state.get_input());
+        });
+    }
+
+    #[test]
+    fn test_number_input_decrement() {
+        // GIVEN a number input that's currently set to 1 (1 off the 0 min input)
+        let mut number_input = build_number_input_with_value(true, 1,1, "A".to_string(), 1);
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(1, state.get_input());
+            // WHEN we call to decrement twice
+            state.decrement();
+            assert_eq!(0, state.get_input());
+            state.decrement();
+            // THEN we expect the value to remain at the minimum allowed
+            assert_eq!(0, state.get_input());
         });
     }
 }
