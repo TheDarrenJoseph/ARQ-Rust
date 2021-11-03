@@ -3,6 +3,23 @@ use tui::layout::Rect;
 use tui::buffer::Buffer;
 use tui::style::{Color, Style, Modifier};
 
+fn build_buffer(length: i8, input: String) -> String {
+    let mut buffer = String::from("");
+    for i in 0..length {
+        let idx = i as usize;
+        let input_char =  input.chars().nth(idx);
+        match (input_char) {
+            Some(s) => {
+                buffer.push(s);
+            }, None => {
+                buffer.push(' ');
+            }
+        }
+    }
+    return buffer;
+}
+
+
 #[derive(Debug)]
 pub enum WidgetType {
     Text(TextInputState),
@@ -24,6 +41,57 @@ pub struct TextInputState {
     input_padding: i8,
     selected_index: i8,
 }
+
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct NumberInputState {
+    selected: bool,
+    editable: bool,
+    length: i8,
+    input : i32,
+    min: i32,
+    max: i32,
+    pub name: String,
+    input_padding: i8
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct DropdownInputState {
+    pub selected: bool,
+    show_options: bool,
+    name: String,
+    options : Vec<String>,
+    selected_index: i8,
+    chosen_option : String
+}
+
+pub trait Focusable {
+    fn focus(&mut self);
+    fn unfocus(&mut self);
+    fn is_focused(&mut self) -> bool;
+}
+
+pub fn build_text_input(length: i8, name: String, input_padding: i8) -> Widget {
+    let mut name_input_state = WidgetType::Text( TextInputState { selected: false, length, input: "".to_string(), name, input_padding,  selected_index: 0 });
+    Widget{ state_type: name_input_state}
+}
+
+pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> Widget {
+    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
+    Widget{ state_type: name_input_state}
+}
+
+pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> Widget {
+    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
+    Widget{ state_type: name_input_state}
+}
+
+pub fn build_dropdown(name: String, options: Vec<String>) -> Widget {
+    let mut state = WidgetType::Dropdown( DropdownInputState { selected: false, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
+    Widget{ state_type: state}
+}
+
 
 impl TextInputState {
     pub fn buffer_full(&self) -> bool {
@@ -52,34 +120,6 @@ impl TextInputState {
 
 }
 
-pub fn build_text_input(length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Text( TextInputState { selected: false, length, input: "".to_string(), name, input_padding,  selected_index: 0 });
-    Widget{ state_type: name_input_state}
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-pub struct NumberInputState {
-    selected: bool,
-    editable: bool,
-    length: i8,
-    input : i32,
-    min: i32,
-    max: i32,
-    pub name: String,
-    input_padding: i8
-}
-
-pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
-    Widget{ state_type: name_input_state}
-}
-
-pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
-    Widget{ state_type: name_input_state}
-}
-
 impl NumberInputState {
     pub fn increment(&mut self) {
         if self.input < self.max {
@@ -92,28 +132,15 @@ impl NumberInputState {
             self.input -= 1;
         }
     }
+    pub fn get_input(&mut self) -> i32 {
+        self.input.clone()
+    }
 
     pub fn set_input(&mut self, input: i32) {
         if input >= self.min && self.input <= self.max {
             self.input = input
         }
     }
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-pub struct DropdownInputState {
-    pub selected: bool,
-    show_options: bool,
-    name: String,
-    options : Vec<String>,
-    selected_index: i8,
-    chosen_option : String
-}
-
-pub fn build_dropdown(name: String, options: Vec<String>) -> Widget {
-    let mut state = WidgetType::Dropdown( DropdownInputState { selected: false, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
-    Widget{ state_type: state}
 }
 
 impl DropdownInputState {
@@ -144,27 +171,6 @@ impl DropdownInputState {
     }
 }
 
-fn build_buffer(length: i8, input: String) -> String {
-    let mut buffer = String::from("");
-    for i in 0..length {
-        let idx = i as usize;
-        let input_char =  input.chars().nth(idx);
-        match (input_char) {
-            Some(s) => {
-                buffer.push(s);
-            }, None => {
-                buffer.push(' ');
-            }
-        }
-    }
-    return buffer;
-}
-
-pub trait Focusable {
-    fn focus(&mut self);
-    fn unfocus(&mut self);
-}
-
 impl Focusable for WidgetType {
     fn focus(&mut self) {
         match self {
@@ -190,6 +196,20 @@ impl Focusable for WidgetType {
             }
             WidgetType::Dropdown(state) => {
                 state.selected = false;
+            }
+        }
+    }
+
+    fn is_focused(&mut self) -> bool {
+        match self {
+            WidgetType::Text(state) => {
+                state.selected.clone()
+            },
+            WidgetType::Number(state) => {
+                state.selected.clone()
+            }
+            WidgetType::Dropdown(state) => {
+                state.selected.clone()
             }
         }
     }
