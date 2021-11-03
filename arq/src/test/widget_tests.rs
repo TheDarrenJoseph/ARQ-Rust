@@ -1,4 +1,4 @@
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, build_text_input, NumberInputState, DropdownInputState};
+use crate::widget::{WidgetType, TextInputState, NumberInputState, DropdownInputState};
 
 fn assert_for_text_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(TextInputState) {
     match widget_type {
@@ -35,13 +35,13 @@ fn assert_for_dropdown_widget<F>(widget_type : WidgetType, mut callback: F) wher
 
 #[cfg(test)]
 mod text_text_input {
-    use crate::widget::{Focusable, Widget, WidgetType, TextInputState, build_text_input};
+    use crate::widget::{TextInputState, build_text_input};
     use crate::test::widget_tests::assert_for_text_widget;
 
     #[test]
     fn test_text_input_add_char() {
         // GIVEN a text input of 3 characters with no initial input
-        let mut text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Test".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // WHEN we add a character
             state.add_char('A');
@@ -53,7 +53,7 @@ mod text_text_input {
     #[test]
     fn test_text_input_add_char_max_input() {
         // GIVEN a text input of 3 characters with no initial input
-        let mut text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Test".to_string(), 1);
         // WHEN we add 4 characters
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             state.add_char('A');
@@ -69,7 +69,7 @@ mod text_text_input {
     #[test]
     fn test_text_input_delete_char() {
         // GIVEN a text input of 3 characters with no initial input
-        let mut text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Test".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // AND we've adjusted it's input to be "A"
             state.set_input("A".to_string());
@@ -83,7 +83,7 @@ mod text_text_input {
     #[test]
     fn test_text_input_delete_char_empty_field() {
         // GIVEN a text input of 3 characters with no initial input
-        let mut text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Test".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // WHEN we call to delete a char
             state.delete_char();
@@ -95,7 +95,7 @@ mod text_text_input {
     #[test]
     fn test_text_input_delete_char_many() {
         // GIVEN a text input of 3 characters with no initial input
-        let mut text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Test".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
                 // AND we've adjusted it's input to be "ABC"
                 state.set_input("ABC".to_string());
@@ -110,7 +110,7 @@ mod text_text_input {
 
 #[cfg(test)]
 mod text_number_input {
-    use crate::widget::{Focusable, Widget, WidgetType, NumberInputState, build_number_input, build_number_input_with_value};
+    use crate::widget::{Focusable, NumberInputState, build_number_input, build_number_input_with_value};
     use crate::test::widget_tests::assert_for_number_widget;
 
     #[test]
@@ -118,22 +118,37 @@ mod text_number_input {
         // GIVEN valid inputs
         // WHEN we call to build a number input
         let mut number_input = build_number_input(true,1, "A".to_string(), 1);
+        // THEN we expect it to be created without being focused
         assert_eq!(false, number_input.state_type.is_focused());
         assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
-            // THEN we expect it to be created without being focused
             assert_eq!(0, state.get_input());
         });
     }
-
 
     #[test]
     fn test_build_number_input_with_value() {
         // GIVEN valid inputs
         // WHEN we call to build a number input
         let mut number_input = build_number_input_with_value(true, 100,1, "A".to_string(), 1);
+        // THEN we expect it to be created without being focused
         assert_eq!(false, number_input.state_type.is_focused());
         assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
-            // THEN we expect it to be created without being focused
+            assert_eq!(100, state.get_input());
+        });
+    }
+
+    #[test]
+    fn test_number_input_increment() {
+        // GIVEN a number input that's currently set to 99 (1 off the 100 max input)
+        let mut number_input = build_number_input_with_value(true, 99,1, "A".to_string(), 1);
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(99, state.get_input());
+            // WHEN we call to increment twice
+            state.increment();
+            assert_eq!(100, state.get_input());
+            state.increment();
+            // THEN we expect the value to remain at the maxmimum allowed
             assert_eq!(100, state.get_input());
         });
     }
@@ -141,14 +156,14 @@ mod text_number_input {
 
 #[cfg(test)]
 mod text_dropdown {
-    use crate::widget::{Focusable, Widget, WidgetType, DropdownInputState, build_dropdown};
+    use crate::widget::{DropdownInputState, build_dropdown};
     use crate::test::widget_tests::assert_for_dropdown_widget;
 
     #[test]
     fn test_dropdown_get_selection() {
         // GIVEN a dropdown with 2 options
         let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
-        assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
+        assert_for_dropdown_widget(dropdown.state_type,  &|state: DropdownInputState| {
             // WHEN we call to get the initial selection
             // THEN we expect it to be "A"
             assert_eq!("A".to_string(),  state.get_selection());

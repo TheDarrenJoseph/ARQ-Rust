@@ -74,7 +74,7 @@ mod tests {
         // GIVEN a room of 4x4
         let start_position = Position { x: 0, y: 0};
         let area = build_square_area(start_position, 4);
-        let mut doors = Vec::new();
+        let doors = Vec::new();
         let room = Room { area, doors };
         assert_eq!(Position { x: 0, y: 0}, room.area.start_position);
         assert_eq!(Position { x: 3, y: 3}, room.area.end_position);

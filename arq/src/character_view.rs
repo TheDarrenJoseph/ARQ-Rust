@@ -1,20 +1,14 @@
 use std::io;
 use std::io::Error;
-use tui::buffer::Cell;
-use tui::layout::{Alignment, Rect};
-use tui::style::{Color, Style};
-use tui::text::{Spans,Span};
-use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
+use tui::layout::{Rect};
+use tui::widgets::{Block, Borders};
 use termion::input::TermRead;
 use termion::event::Key;
-use tui::widgets::StatefulWidget;
 
-use crate::map::Map;
 use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
-use crate::colour_mapper;
-use crate::character::{Attribute, get_all_attributes, Character};
-use crate::widget::{Focusable, Widget, WidgetType, TextInputState, DropdownInputState, build_dropdown, build_text_input, build_number_input, build_number_input_with_value};
+use crate::character::{get_all_attributes, Character};
+use crate::widget::{Focusable, Widget, WidgetType, build_dropdown, build_text_input, build_number_input, build_number_input_with_value};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -95,9 +89,6 @@ impl CharacterViewFrameHandler {
                     },
                     WidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
-                    },
-                    _ => {
-                        log::info!("Failed to render a widget with type: {:?} ", widget.state_type)
                     }
                 }
 
@@ -136,7 +127,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
     pub fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
-        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) });
+        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) })?;
         Ok(())
     }
 
@@ -156,7 +147,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
     pub fn handle_input(&mut self) -> Result<bool, Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         let frame_handler = &mut self.frame_handler;
-        let mut widgets = &mut frame_handler.widgets;
+        let widgets = &mut frame_handler.widgets;
 
         let mut selected_widget = None;
         match frame_handler.selected_widget {
@@ -183,7 +174,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             _ => {
                             }
                         }
-                        self.draw();
+                        self.draw()?;
                     }
                     None => {}
                 }
@@ -200,7 +191,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             },
                             _ => {}
                         }
-                        self.draw();
+                        self.draw()?;
                     },
                     None => {}
                 }
@@ -215,7 +206,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             _ => {}
                         }
 
-                        self.draw();
+                        self.draw()?;
                     }
                     None => {}
                 }
@@ -235,7 +226,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                 frame_handler.next_widget();
                             }
                         }
-                        self.draw();
+                        self.draw()?;
                     }
                     None => {}
                 }
@@ -255,7 +246,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                 frame_handler.previous_widget();
                             }
                         }
-                        self.draw();
+                        self.draw()?;
                     },
                     None => {}
                 }
@@ -270,7 +261,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                     state.increment();
                                     self.character.set_free_attribute_points(free_points - 1);
                                     self.update_free_points(free_points.clone() as i32 - 1);
-                                    self.draw();
+                                    self.draw()?;
                                 }
                             },
                             _ => {}
@@ -290,7 +281,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                     self.character.set_free_attribute_points(free_points + 1);
                                     self.update_free_points(free_points.clone() as i32 + 1);
                                 }
-                                self.draw();
+                                self.draw()?;
                             },
                             _ => {}
                         }

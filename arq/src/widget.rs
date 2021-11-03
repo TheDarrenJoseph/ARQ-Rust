@@ -1,14 +1,14 @@
 use tui::widgets::StatefulWidget;
 use tui::layout::Rect;
 use tui::buffer::Buffer;
-use tui::style::{Color, Style, Modifier};
+use tui::style::{Style, Modifier};
 
 fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");
     for i in 0..length {
         let idx = i as usize;
         let input_char =  input.chars().nth(idx);
-        match (input_char) {
+        match input_char {
             Some(s) => {
                 buffer.push(s);
             }, None => {
@@ -73,22 +73,22 @@ pub trait Focusable {
 }
 
 pub fn build_text_input(length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Text( TextInputState { selected: false, length, input: "".to_string(), name, input_padding,  selected_index: 0 });
+    let name_input_state = WidgetType::Text( TextInputState { selected: false, length, input: "".to_string(), name, input_padding,  selected_index: 0 });
     Widget{ state_type: name_input_state}
 }
 
 pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
+    let name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
     Widget{ state_type: name_input_state}
 }
 
 pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> Widget {
-    let mut name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
+    let name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
     Widget{ state_type: name_input_state}
 }
 
 pub fn build_dropdown(name: String, options: Vec<String>) -> Widget {
-    let mut state = WidgetType::Dropdown( DropdownInputState { selected: false, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
+    let state = WidgetType::Dropdown( DropdownInputState { selected: false, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
     Widget{ state_type: state}
 }
 
@@ -139,6 +139,16 @@ impl NumberInputState {
     pub fn set_input(&mut self, input: i32) {
         if input >= self.min && self.input <= self.max {
             self.input = input
+        }
+    }
+
+    pub fn get_max(&mut self) -> i32 {
+        self.max.clone()
+    }
+
+    pub fn set_max(&mut self, max: i32) {
+        if max > self.min {
+            self.max = max;
         }
     }
 }
@@ -218,7 +228,7 @@ impl Focusable for WidgetType {
 impl StatefulWidget for TextInputState {
     type State = TextInputState;
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
 
         let input_start_index = area.left() + self.name.len() as u16 + self.input_padding as u16;
         let input = self.input;
@@ -241,7 +251,7 @@ impl StatefulWidget for TextInputState {
 impl StatefulWidget for NumberInputState {
     type State = NumberInputState;
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
         buf.set_string(area.left(), area.top(), self.name.clone(), Style::default());
         let input_start_index = area.left() + self.name.len() as u16 + self.input_padding as u16;
         let input_text = if self.editable { "<- ".to_string() + &self.input.clone().to_string() + &" ->".to_string() } else { self.input.clone().to_string() };
@@ -255,7 +265,7 @@ impl StatefulWidget for NumberInputState {
 impl StatefulWidget for DropdownInputState {
     type State = DropdownInputState;
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
         buf.set_string(area.left(), area.top(), self.name.clone(), Style::default());
 
         let mut index: u16 = 0;

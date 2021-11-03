@@ -113,7 +113,7 @@ impl Character {
 #[cfg(test)]
 mod tests {
     use crate::character::{Character, build_player, build_default_character_details};
-    use crate::container::{Container, ContainerType};
+    use crate::container::{ContainerType};
     use crate::tile::Colour;
     use crate::position::Position;
 

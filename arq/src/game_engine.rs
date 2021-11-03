@@ -18,8 +18,6 @@ use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
-use crate::tile::Colour;
-use crate::container::ContainerType;
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
@@ -164,12 +162,12 @@ impl GameEngine {
         let mut character_created = false;
         self.game_running = true;
         while self.game_running {
-            if (!character_created) {
-                let mut frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
+            if !character_created {
+                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw();
+                character_view.draw()?;
 
-                while(!character_created) {
+                while !character_created {
                     character_created = character_view.handle_input().unwrap();
                 }
             } else {
