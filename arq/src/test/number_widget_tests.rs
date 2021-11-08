@@ -1,0 +1,78 @@
+use crate::widget::text_widget::TextInputState;
+use crate::widget::dropdown_widget::DropdownInputState;
+use crate::widget::number_widget::NumberInputState;
+use crate::widget::{WidgetType};
+
+fn assert_for_number_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(NumberInputState) {
+    match widget_type {
+        WidgetType::Number(s ) => {
+            callback(s);
+        }
+        _ => {
+            panic!("Widget state type was not Number!")
+        }
+    }
+}
+
+#[cfg(test)]
+mod text_number_input {
+    use crate::widget::{Focusable};
+    use crate::widget::number_widget::{NumberInputState, build_number_input, build_number_input_with_value};
+    use crate::test::number_widget_tests::assert_for_number_widget;
+
+    #[test]
+    fn test_build_number_input() {
+        // GIVEN valid inputs
+        // WHEN we call to build a number input
+        let mut number_input = build_number_input(true,1, "A".to_string(), 1);
+        // THEN we expect it to be created without being focused
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(0, state.get_input());
+        });
+    }
+
+    #[test]
+    fn test_build_number_input_with_value() {
+        // GIVEN valid inputs
+        // WHEN we call to build a number input
+        let mut number_input = build_number_input_with_value(true, 100,1, "A".to_string(), 1);
+        // THEN we expect it to be created without being focused
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(100, state.get_input());
+        });
+    }
+
+    #[test]
+    fn test_number_input_increment() {
+        // GIVEN a number input that's currently set to 99 (1 off the 100 max input)
+        let mut number_input = build_number_input_with_value(true, 99,1, "A".to_string(), 1);
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(99, state.get_input());
+            // WHEN we call to increment twice
+            state.increment();
+            assert_eq!(100, state.get_input());
+            state.increment();
+            // THEN we expect the value to remain at the maximum allowed
+            assert_eq!(100, state.get_input());
+        });
+    }
+
+    #[test]
+    fn test_number_input_decrement() {
+        // GIVEN a number input that's currently set to 1 (1 off the 0 min input)
+        let mut number_input = build_number_input_with_value(true, 1,1, "A".to_string(), 1);
+        assert_eq!(false, number_input.state_type.is_focused());
+        assert_for_number_widget(number_input.state_type,  &|mut state: NumberInputState| {
+            assert_eq!(1, state.get_input());
+            // WHEN we call to decrement twice
+            state.decrement();
+            assert_eq!(0, state.get_input());
+            state.decrement();
+            // THEN we expect the value to remain at the minimum allowed
+            assert_eq!(0, state.get_input());
+        });
+    }
+}

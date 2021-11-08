@@ -8,7 +8,10 @@ use termion::event::Key;
 use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character};
-use crate::widget::{Focusable, Widget, WidgetType, build_dropdown, build_text_input, build_number_input, build_number_input_with_value};
+use crate::widget::text_widget::build_text_input;
+use crate::widget::dropdown_widget::build_dropdown;
+use crate::widget::number_widget::{build_number_input, build_number_input_with_value};
+use crate::widget::{Focusable, Widget, WidgetType};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
