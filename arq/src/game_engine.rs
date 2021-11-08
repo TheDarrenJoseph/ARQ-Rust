@@ -170,11 +170,13 @@ impl GameEngine {
                 while !character_created {
                     character_created = character_view.handle_input().unwrap();
                 }
-            } else {
-                let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
-                map_view.draw_map()?;
-                map_view.draw_characters()?;
+                //TODO extract/update character details
             }
+
+            let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
+            map_view.draw_map()?;
+            map_view.draw_characters()?;
+
             self.game_loop()?;
         }
         Ok(())

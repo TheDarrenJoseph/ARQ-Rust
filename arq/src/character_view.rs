@@ -11,6 +11,7 @@ use crate::character::{get_all_attributes, Character};
 use crate::widget::text_widget::build_text_input;
 use crate::widget::dropdown_widget::build_dropdown;
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value};
+use crate::widget::button_widget::build_button;
 use crate::widget::{Focusable, Widget, WidgetType};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
@@ -71,30 +72,33 @@ impl CharacterViewFrameHandler {
 
         self.build_attribute_inputs(character);
 
+        let button = build_button("[Enter]".to_string().len() as i8, "[Enter]".to_string());
+        self.widgets.push(button);
+
         self.selected_widget = Some(0);
         &mut self.widgets[0].state_type.focus();
     }
 
-    pub fn draw_text_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    pub fn draw_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
         if self.widgets.len() > 0 {
             let mut offset = 0;
             for widget in self.widgets.iter_mut() {
                 let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
-
                 match &mut widget.state_type {
                     WidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Number(w) => {
-                        let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
+                    },
+                    WidgetType::Button(w) => {
+                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     }
                 }
-
                 offset += 1;
             }
         }
@@ -122,7 +126,7 @@ impl CharacterViewFrameHandler {
         let attributes_size = Rect::new(5, 7, (frame_size.width.clone() / 2) - 2, (frame_size.height.clone() / 2) - 4);
         frame.render_widget(attributes_block, attributes_size);
 
-        self.draw_text_inputs(frame);
+        self.draw_inputs(frame);
     }
 }
 
@@ -174,6 +178,14 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             WidgetType::Dropdown(state) => {
                                 state.toggle_show();
                             },
+                            WidgetType::Button(state) => {
+                                match state.get_name().as_str() {
+                                    "[Enter]" => {
+                                        return Ok(true)
+                                    },
+                                    _ => {}
+                                }
+                            },
                             _ => {
                             }
                         }
@@ -205,7 +217,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                         match &mut widget.state_type {
                             WidgetType::Text(state) => {
                                 state.delete_char();
-                            },
+                            }
                             _ => {}
                         }
 
