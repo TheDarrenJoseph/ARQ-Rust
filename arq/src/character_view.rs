@@ -112,9 +112,10 @@ impl CharacterViewFrameHandler {
         &mut self.widgets[0].state_type.focus();
     }
 
-    pub fn draw_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    pub fn draw_main_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
-        if self.widgets.len() > 0 {
+        let widget_count = self.widgets.len();
+        if widget_count > 0 {
             let mut offset = 0;
             for widget in self.widgets.iter_mut() {
                 let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
@@ -122,15 +123,31 @@ impl CharacterViewFrameHandler {
                     WidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
-                    WidgetType::Number(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
-                    },
                     WidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     WidgetType::Button(w) => {
+                        let area = Rect::new(6, widget_count as u16 + 5, frame_size.width.clone() / 2, 1);
+                        frame.render_stateful_widget(w.clone(), area, &mut w.clone());
+                    },
+                    _ => {}
+                }
+                offset += 1;
+            }
+        }
+    }
+
+    pub fn draw_attribute_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+        let frame_size = frame.size();
+        if self.widgets.len() > 0 {
+            let mut offset = 0;
+            for widget in self.widgets.iter_mut() {
+                let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
+                match &mut widget.state_type {
+                    WidgetType::Number(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
-                    }
+                    },
+                    _ => {}
                 }
                 offset += 1;
             }
@@ -141,7 +158,9 @@ impl CharacterViewFrameHandler {
         render_main_window(frame);
 
         let frame_size = frame.size();
-        let window_size = Rect::new(4, 4, frame_size.width / 2, frame_size.height / 2);
+        let main_window_width = frame_size.width / 2;
+        let main_window_height = frame_size.height / 2;
+        let window_size = Rect::new(4, 4, main_window_width, main_window_height);
         let creation_block = Block::default()
             .borders(Borders::ALL)
             .title(title);
@@ -155,10 +174,17 @@ impl CharacterViewFrameHandler {
         let attributes_block = Block::default()
             .borders(Borders::ALL)
             .title("Attributes");
-        let attributes_size = Rect::new(5, 7, (frame_size.width.clone() / 2) - 2, (frame_size.height.clone() / 2) - 4);
+        let all_attributes = get_all_attributes();
+        let mut attribute_start = (self.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
+        // To account for the enter button
+        if (self.view_mode == ViewMode::CREATION) {
+            attribute_start -= 1;
+        }
+        let attributes_size = Rect::new(5, 4 + attribute_start, main_window_width.clone() - 2, main_window_height.clone() - 4);
         frame.render_widget(attributes_block, attributes_size);
 
-        self.draw_inputs(frame);
+        self.draw_main_inputs(frame);
+        self.draw_attribute_inputs(frame);
     }
 
     pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
