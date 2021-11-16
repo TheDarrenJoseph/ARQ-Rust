@@ -9,7 +9,7 @@ use crate::widget::{Widget, WidgetType, build_buffer};
 #[derive(Debug)]
 pub struct NumberInputState {
     pub selected: bool,
-    editable: bool,
+    pub editable: bool,
     length: i8,
     input : i32,
     min: i32,

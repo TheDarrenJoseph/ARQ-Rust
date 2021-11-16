@@ -13,7 +13,7 @@ use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::map_view::MapView;
-use crate::character_view::{CharacterView, CharacterViewFrameHandler};
+use crate::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
 use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
@@ -164,13 +164,13 @@ impl GameEngine {
         self.game_running = true;
         while self.game_running {
             if !character_created {
-                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
+                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw_creation()?;
+                character_view.draw()?;
 
                 while !character_created {
                     character_created = character_view.handle_input().unwrap();
-                    character_view.draw_creation();
+                    character_view.draw();
                 }
 
                 let updated_character = character_view.get_character();
@@ -197,9 +197,9 @@ impl GameEngine {
             },
             Key::Char('a') => {
                 self.terminal_manager.terminal.clear()?;
-                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
+                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw_details()?;
+                character_view.draw()?;
                 let key = io::stdin().keys().next().unwrap().unwrap();
             }
             _ => {}

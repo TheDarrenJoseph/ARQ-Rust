@@ -14,15 +14,22 @@ use crate::widget::number_widget::{build_number_input, build_number_input_with_v
 use crate::widget::button_widget::build_button;
 use crate::widget::{Focusable, Widget, WidgetType, Named};
 
+#[derive(PartialEq, Clone, Debug)]
+pub enum ViewMode {
+    CREATION,
+    VIEW
+}
+
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: CharacterViewFrameHandler
+    pub frame_handler: CharacterViewFrameHandler,
 }
 
 pub struct CharacterViewFrameHandler {
     pub selected_widget: Option<i8>,
-    pub widgets: Vec<Widget>
+    pub widgets: Vec<Widget>,
+    pub view_mode : ViewMode
 }
 
 impl CharacterViewFrameHandler {
@@ -58,7 +65,9 @@ impl CharacterViewFrameHandler {
         let mut scores = character.get_attribute_scores();
         for attribute in get_all_attributes() {
             let score = scores.iter_mut().find(|score| score.attribute == attribute);
-            let mut attribute_input = build_number_input(true,1, attribute.to_string(), 1);
+
+            let editable = self.view_mode == ViewMode::CREATION;
+            let mut attribute_input = build_number_input(editable,1, attribute.to_string(), 1);
             match attribute_input.state_type {
                 WidgetType::Number(ref mut state) => {
                     match score {
@@ -77,10 +86,14 @@ impl CharacterViewFrameHandler {
     }
 
     fn build_widgets(&mut self, mut character: Character) {
-        let name_input =  build_text_input(12, String::from("Name"), character.get_name(), 2);
-        self.widgets.push(name_input);
+        let creation_mode = self.view_mode == ViewMode::CREATION;
 
-        let mut class_input = build_dropdown("Class".to_string(), vec!["None".to_string(), "Warrior".to_string()]);
+        if creation_mode {
+            let name_input = build_text_input(12, String::from("Name"), character.get_name(), 2);
+            self.widgets.push(name_input);
+        }
+
+        let mut class_input = build_dropdown("Class".to_string(), creation_mode,vec!["None".to_string(), "Warrior".to_string()]);
         match class_input.state_type {
             WidgetType::Dropdown(ref mut state) => {
                 state.select(character.get_class().to_string())
@@ -90,8 +103,10 @@ impl CharacterViewFrameHandler {
 
         self.build_attribute_inputs(character);
 
-        let button = build_button("[Enter]".to_string().len() as i8, "[Enter]".to_string());
-        self.widgets.push(button);
+        if creation_mode {
+            let button = build_button("[Enter]".to_string().len() as i8, "[Enter]".to_string());
+            self.widgets.push(button);
+        }
 
         self.selected_widget = Some(0);
         &mut self.widgets[0].state_type.focus();
@@ -159,17 +174,18 @@ impl CharacterViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> CharacterView<'_, B> {
-    pub fn draw_creation(&mut self) -> Result<(), Error> {
+    pub fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
-        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) })?;
-        Ok(())
-    }
 
-    pub fn draw_details(&mut self) -> Result<(), Error> {
-        let frame_handler = &mut self.frame_handler;
-        let character = self.character.clone();
-        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_info(frame, character) })?;
+        match frame_handler.view_mode {
+            ViewMode::CREATION => {
+                self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) })?
+            },
+            ViewMode::VIEW => {
+                self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_info(frame, character) })?
+            }
+        }
         Ok(())
     }
 
@@ -263,10 +279,12 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                     Some(widget) => {
                         match &mut widget.state_type {
                             WidgetType::Dropdown(state) => {
-                                if state.is_showing_options() {
-                                    state.select_next();
-                                } else {
-                                    frame_handler.next_widget();
+                                if state.editable {
+                                    if state.is_showing_options() {
+                                        state.select_next();
+                                    } else {
+                                        frame_handler.next_widget();
+                                    }
                                 }
                             },
                             _ => {
@@ -282,10 +300,12 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                     Some(widget) => {
                         match &mut widget.state_type {
                             WidgetType::Dropdown(state) => {
-                                if state.is_showing_options() {
-                                    state.select_previous();
-                                } else {
-                                    frame_handler.previous_widget();
+                                if state.editable {
+                                    if state.is_showing_options() {
+                                        state.select_previous();
+                                    } else {
+                                        frame_handler.previous_widget();
+                                    }
                                 }
                             },
                             _ => {
@@ -301,11 +321,13 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                     Some(widget) => {
                         match &mut widget.state_type {
                             WidgetType::Number(state) => {
-                                let free_points = self.character.get_free_attribute_points().clone();
-                                if free_points > 0 {
-                                    state.increment();
-                                    self.character.set_free_attribute_points(free_points - 1);
-                                    self.update_free_points(free_points.clone() as i32 - 1);
+                                if state.editable {
+                                    let free_points = self.character.get_free_attribute_points().clone();
+                                    if free_points > 0 {
+                                        state.increment();
+                                        self.character.set_free_attribute_points(free_points - 1);
+                                        self.update_free_points(free_points.clone() as i32 - 1);
+                                    }
                                 }
                             },
                             _ => {}
@@ -319,11 +341,13 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                     Some(widget) => {
                         match &mut widget.state_type {
                             WidgetType::Number(state) => {
-                                let free_points = self.character.get_free_attribute_points();
-                                if free_points < self.character.get_max_free_attribute_points() {
-                                    state.decrement();
-                                    self.character.set_free_attribute_points(free_points + 1);
-                                    self.update_free_points(free_points.clone() as i32 + 1);
+                                if state.editable {
+                                    let free_points = self.character.get_free_attribute_points();
+                                    if free_points < self.character.get_max_free_attribute_points() {
+                                        state.decrement();
+                                        self.character.set_free_attribute_points(free_points + 1);
+                                        self.update_free_points(free_points.clone() as i32 + 1);
+                                    }
                                 }
                             },
                             _ => {}

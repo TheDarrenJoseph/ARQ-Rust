@@ -9,6 +9,7 @@ use crate::widget::{Widget, WidgetType, build_buffer};
 #[derive(Debug)]
 pub struct DropdownInputState {
     pub selected: bool,
+    pub editable: bool,
     show_options: bool,
     name: String,
     options : Vec<String>,
@@ -57,8 +58,8 @@ impl DropdownInputState {
     }
 }
 
-pub fn build_dropdown(name: String, options: Vec<String>) -> Widget {
-    let state = WidgetType::Dropdown( DropdownInputState { selected: false, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
+pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> Widget {
+    let state = WidgetType::Dropdown( DropdownInputState { selected: false, editable, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
     Widget{ state_type: state}
 }
 
