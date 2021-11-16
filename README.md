@@ -14,15 +14,18 @@ MADE USING
 
 TODO (Not in any specific order)
 ----
-- [ ] Procedural levels
-	- [ ] Room generation
-	- [ ] Pathfinding
+- [X] Procedural levels
+	- [X] Room generation
+	- [X] Pathfinding
 	- [ ] Level traversal
 - [ ] Items (potions, scrolls, etc)
 	- [ ] Containers / Container spawning
-	- [ ] Inventory handling (drop, move, use) 
+	- [ ] Inventory view / handling (drop, move, use) 
 	- [ ] Item encounters (pickup)
 - [ ] Character Stats (For player and NPCs)
+	- [X] Character creation
+	- [ ] Stats view 
+    - [ ] Leveling / Stat edit
     - [ ] Health System
     - [ ] Combat system
 - [ ] NPCs
