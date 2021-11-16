@@ -16,10 +16,26 @@ pub struct Character {
 
 #[derive(Clone)]
 pub enum Race {Human,Goblin}
-#[derive(Clone)]
-pub enum Class {None,Warrior}
 #[derive(Clone, Debug)]
+pub enum Class {None,Warrior}
+#[derive(PartialEq, Clone, Debug)]
 pub enum Attribute {Strength, Health, Agility, Intelligence, Stealth}
+
+
+pub fn determine_class(name: String) -> Option<Class> {
+    match name.as_str() {
+        "None" => {
+            Some(Class::None)
+        }
+        "Warrior" => {
+            Some(Class::Warrior)
+        }
+        _ => {
+            None
+        }
+    }
+}
+
 
 impl Display for Attribute {
     fn fmt(&self, f: &mut Formatter) -> Result {
@@ -27,10 +43,16 @@ impl Display for Attribute {
     }
 }
 
+impl Display for Class {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        Debug::fmt(self, f)
+    }
+}
+
 #[derive(Clone)]
 pub struct AttributeScore {
-    attribute: Attribute,
-    score: i8
+    pub attribute: Attribute,
+    pub score: i8
 }
 
 #[derive(Clone)]
@@ -73,6 +95,14 @@ impl Character {
         return self.name.clone();
     }
 
+    pub fn set_name(&mut self, name : String) {
+        self.name = name;
+    }
+
+    pub fn get_details(&self) -> CharacterDetails {
+        self.character_details.clone()
+    }
+
     pub fn get_health(&self) -> i8 {
         return self.health.clone();
     }
@@ -97,6 +127,22 @@ impl Character {
         return &mut self.inventory;
     }
 
+    pub fn get_race(&mut self) -> Race {
+        self.character_details.race.clone()
+    }
+
+    pub fn set_race(&mut self, race: Race) {
+        self.character_details.race = race;
+    }
+
+    pub fn get_class(&mut self) -> Class {
+        self.character_details.class.clone()
+    }
+
+    pub fn set_class(&mut self, class: Class) {
+        self.character_details.class = class
+    }
+
     pub fn get_max_free_attribute_points(&mut self) -> i8 {
         self.character_details.max_free_attribute_points
     }
@@ -107,6 +153,14 @@ impl Character {
 
     pub fn set_free_attribute_points(&mut self, points: i8) {
         self.character_details.free_attribute_points = points;
+    }
+
+    pub fn get_attribute_scores(&mut self) -> Vec<AttributeScore> {
+        self.character_details.attributes.clone()
+    }
+
+    pub fn set_attribute_scores(&mut self, scores : Vec<AttributeScore> ) {
+        self.character_details.attributes = scores;
     }
 }
 

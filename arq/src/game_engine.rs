@@ -24,6 +24,7 @@ pub struct GameEngine  {
     ui : ui::UI,
     settings : settings::EnumSettings,
     game_running : bool,
+    characters : Vec<Character>,
 }
 
 impl GameEngine {
@@ -157,7 +158,7 @@ impl GameEngine {
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
         let map = &map_generator.generate();
-        let characters = self.build_characters();
+        let mut characters = self.build_characters();
 
         let mut character_created = false;
         self.game_running = true;
@@ -165,12 +166,16 @@ impl GameEngine {
             if !character_created {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw()?;
+                character_view.draw_creation()?;
 
                 while !character_created {
                     character_created = character_view.handle_input().unwrap();
+                    character_view.draw_creation();
                 }
-                //TODO extract/update character details
+
+                let updated_character = character_view.get_character();
+                characters[0] = updated_character;
+                self.characters = characters.clone();
             }
 
             let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
@@ -189,6 +194,13 @@ impl GameEngine {
                 self.terminal_manager.terminal.clear()?;
                 self.start_menu()?;
                 self.terminal_manager.terminal.clear()?;
+            },
+            Key::Char('a') => {
+                self.terminal_manager.terminal.clear()?;
+                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None };
+                let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
+                character_view.draw_details()?;
+                let key = io::stdin().keys().next().unwrap().unwrap();
             }
             _ => {}
         }
@@ -207,5 +219,5 @@ pub fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<R
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
 
-    Ok(GameEngine { terminal_manager, ui, settings, game_running: false })
+    Ok(GameEngine { terminal_manager, ui, settings, game_running: false, characters: Vec::new()})
 }

@@ -7,12 +7,12 @@ use termion::event::Key;
 
 use crate::ui::{render_main_window};
 use crate::terminal_manager::TerminalManager;
-use crate::character::{get_all_attributes, Character};
+use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
-use crate::widget::dropdown_widget::build_dropdown;
-use crate::widget::number_widget::{build_number_input, build_number_input_with_value};
+use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
+use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::button_widget::build_button;
-use crate::widget::{Focusable, Widget, WidgetType};
+use crate::widget::{Focusable, Widget, WidgetType, Named};
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
@@ -55,19 +55,37 @@ impl CharacterViewFrameHandler {
     }
 
     fn build_attribute_inputs(&mut self, mut character: Character) {
+        let mut scores = character.get_attribute_scores();
         for attribute in get_all_attributes() {
-            let attribute_input = build_number_input(true,1, attribute.to_string(), 1);
+            let score = scores.iter_mut().find(|score| score.attribute == attribute);
+            let mut attribute_input = build_number_input(true,1, attribute.to_string(), 1);
+            match attribute_input.state_type {
+                WidgetType::Number(ref mut state) => {
+                    match score {
+                        Some(s) => {
+                            state.set_input(s.score.into());
+                        },
+                        _ => {}
+                    }
+                },
+                _ => {}
+            }
             self.widgets.push(attribute_input);
         }
         let free_points = build_number_input_with_value(false, character.get_free_attribute_points() as i32, 1, "Free points".to_string(), 1);
         self.widgets.push(free_points);
     }
 
-    fn build_widgets(&mut self, character: Character) {
-        let name_input =  build_text_input(12, String::from("Name"), 2);
+    fn build_widgets(&mut self, mut character: Character) {
+        let name_input =  build_text_input(12, String::from("Name"), character.get_name(), 2);
         self.widgets.push(name_input);
 
-        let class_input = build_dropdown("Class".to_string(), vec!["None".to_string(), "Warrior".to_string()]);
+        let mut class_input = build_dropdown("Class".to_string(), vec!["None".to_string(), "Warrior".to_string()]);
+        match class_input.state_type {
+            WidgetType::Dropdown(ref mut state) => {
+                state.select(character.get_class().to_string())
+            }, _ => {}
+        }
         self.widgets.push(class_input);
 
         self.build_attribute_inputs(character);
@@ -104,15 +122,14 @@ impl CharacterViewFrameHandler {
         }
     }
 
-    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
-        log::info!("Drawing character creation...");
+    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character, title: String) {
         render_main_window(frame);
 
         let frame_size = frame.size();
         let window_size = Rect::new(4, 4, frame_size.width / 2, frame_size.height / 2);
         let creation_block = Block::default()
-        .borders(Borders::ALL)
-        .title("Character Creation");
+            .borders(Borders::ALL)
+            .title(title);
         frame.render_widget(creation_block, window_size);
 
         if self.widgets.is_empty() {
@@ -128,13 +145,31 @@ impl CharacterViewFrameHandler {
 
         self.draw_inputs(frame);
     }
+
+    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
+        log::info!("Drawing character creation...");
+        self.draw_character_details(frame, character, "Character Creation".to_string());
+    }
+
+    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
+        log::info!("Drawing character details...");
+        let name = character.get_name().clone();
+        self.draw_character_details(frame, character,name);
+    }
 }
 
 impl <B : tui::backend::Backend> CharacterView<'_, B> {
-    pub fn draw(&mut self) -> Result<(), Error> {
+    pub fn draw_creation(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) })?;
+        Ok(())
+    }
+
+    pub fn draw_details(&mut self) -> Result<(), Error> {
+        let frame_handler = &mut self.frame_handler;
+        let character = self.character.clone();
+        self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_info(frame, character) })?;
         Ok(())
     }
 
@@ -189,7 +224,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             _ => {
                             }
                         }
-                        self.draw()?;
                     }
                     None => {}
                 }
@@ -206,7 +240,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             },
                             _ => {}
                         }
-                        self.draw()?;
                     },
                     None => {}
                 }
@@ -221,7 +254,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                             _ => {}
                         }
 
-                        self.draw()?;
                     }
                     None => {}
                 }
@@ -241,7 +273,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                 frame_handler.next_widget();
                             }
                         }
-                        self.draw()?;
                     }
                     None => {}
                 }
@@ -261,7 +292,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                 frame_handler.previous_widget();
                             }
                         }
-                        self.draw()?;
                     },
                     None => {}
                 }
@@ -276,7 +306,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                     state.increment();
                                     self.character.set_free_attribute_points(free_points - 1);
                                     self.update_free_points(free_points.clone() as i32 - 1);
-                                    self.draw()?;
                                 }
                             },
                             _ => {}
@@ -296,7 +325,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
                                     self.character.set_free_attribute_points(free_points + 1);
                                     self.update_free_points(free_points.clone() as i32 + 1);
                                 }
-                                self.draw()?;
                             },
                             _ => {}
                         }
@@ -308,5 +336,77 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
             }
         }
         Ok(false)
+    }
+
+    pub fn get_character(&mut self) -> Character {
+        let mut character = self.character.clone();
+        let mut scores  = character.get_attribute_scores();
+        for widget in self.frame_handler.widgets.iter_mut() {
+            let mut state_type = &mut widget.state_type;
+            if String::from("Name") == state_type.get_name() {
+                match state_type {
+                    WidgetType::Text(state) => {
+                        character.set_name(state.get_input());
+                    },
+                    _ => {}
+                }
+            }
+
+            if String::from("Class") == state_type.get_name() {
+                match state_type {
+                    WidgetType::Dropdown(state) => {
+                        let class = determine_class(state.get_selection());
+                        match class {
+                            Some(c) => {
+                                character.set_class(c);
+                            },
+                            _ => {}
+                        }
+                    },
+                    _ => {}
+                }
+            }
+        }
+
+        let mut number_states : Vec<NumberInputState> = Vec::new();
+        let ns_options : Vec<Option<NumberInputState>> = self.frame_handler.widgets.iter_mut().map(|w| map_state(  w)).collect();
+        for ns_option in ns_options {
+            match ns_option {
+                Some(ns) => {
+                    number_states.push(ns)
+                },
+                _ => {}
+            }
+        }
+
+        for attribute in get_all_attributes() {
+            let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
+            match number_state {
+                Some(mut ns) => {
+                    let mut score = scores.iter_mut().find(|score| score.attribute == attribute);
+                    match score {
+                        Some(s) => {
+                            s.score = ns.get_input() as i8;
+                        },
+                        _ => {}
+                    }
+                },
+                _ => {}
+            }
+        }
+
+        character.set_attribute_scores(scores);
+        character
+    }
+}
+
+fn map_state(widget : &mut Widget) -> Option<NumberInputState> {
+    match &widget.state_type {
+        WidgetType::Number(state) => {
+            Some(state.clone())
+        },
+        _ => {
+            None
+        }
     }
 }

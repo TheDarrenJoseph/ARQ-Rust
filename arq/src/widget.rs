@@ -41,6 +41,30 @@ pub struct Widget {
     pub state_type: WidgetType
 }
 
+pub trait Named {
+    fn get_name(&mut self) -> String;
+}
+
+
+impl Named for WidgetType {
+    fn get_name(&mut self) -> String {
+        match self {
+            WidgetType::Text(state) => {
+                state.get_name()
+            },
+            WidgetType::Number(state) => {
+                state.name.clone()
+            },
+            WidgetType::Dropdown(state) => {
+                state.get_name()
+            },
+            WidgetType::Button(state) => {
+                state.get_name()
+            }
+        }
+    }
+}
+
 pub trait Focusable {
     fn focus(&mut self);
     fn unfocus(&mut self);

@@ -17,6 +17,15 @@ pub struct DropdownInputState {
 }
 
 impl DropdownInputState {
+    pub fn select(&mut self, input : String) {
+        match self.options.iter().position(|o| *o == input) {
+            Some(idx) => {
+                self.selected_index = idx as i8;
+                self.chosen_option = self.options[idx].clone();
+            }, _ => {}
+        }
+    }
+
     pub fn select_next(&mut self) {
         if self.selected_index < self.options.len() as i8 - 1 {
             self.selected_index += 1;
@@ -37,6 +46,10 @@ impl DropdownInputState {
 
     pub fn is_showing_options(&self) -> bool {
         return self.show_options.clone();
+    }
+
+    pub fn get_name(&mut self) -> String {
+        self.name.clone()
     }
 
     pub fn toggle_show(&mut self) {

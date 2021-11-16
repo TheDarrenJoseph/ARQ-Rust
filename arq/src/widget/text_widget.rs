@@ -16,8 +16,8 @@ pub struct TextInputState {
     selected_index: i8,
 }
 
-pub fn build_text_input(length: i8, name: String, input_padding: i8) -> Widget {
-    let name_input_state = WidgetType::Text( TextInputState { selected: false, length, input: "".to_string(), name, input_padding,  selected_index: 0 });
+pub fn build_text_input(length: i8, name: String, input: String, input_padding: i8) -> Widget {
+    let name_input_state = WidgetType::Text( TextInputState { selected: false, length, input, name, input_padding,  selected_index: 0 });
     Widget{ state_type: name_input_state}
 }
 
@@ -44,6 +44,10 @@ impl TextInputState {
 
     pub fn set_input(&mut self, input: String)  {
         self.input = input
+    }
+
+    pub fn get_name(&mut self) -> String {
+        self.name.clone()
     }
 
 }
