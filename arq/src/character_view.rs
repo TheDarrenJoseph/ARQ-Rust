@@ -1,17 +1,20 @@
 use std::io;
 use std::io::Error;
 use tui::layout::{Rect};
+use tui::style::{Style, Color};
+use tui::buffer::{Buffer};
 use tui::widgets::{Block, Borders};
 use termion::input::TermRead;
 use termion::event::Key;
 
-use crate::ui::{render_main_window};
+use crate::ui::{UI};
 use crate::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
 use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::button_widget::build_button;
+use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::widget::{Focusable, Widget, WidgetType, Named};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -22,6 +25,7 @@ pub enum ViewMode {
 
 pub struct CharacterView<'a, B : tui::backend::Backend> {
     pub character : Character,
+    pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: CharacterViewFrameHandler,
 }
@@ -155,16 +159,15 @@ impl CharacterViewFrameHandler {
     }
 
     fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character, title: String) {
-        render_main_window(frame);
-
         let frame_size = frame.size();
         let main_window_width = frame_size.width / 2;
+
         let main_window_height = frame_size.height / 2;
-        let window_size = Rect::new(4, 4, main_window_width, main_window_height);
+        let window_area = Rect::new(4, 4, main_window_width.clone(), main_window_height);
         let creation_block = Block::default()
             .borders(Borders::ALL)
             .title(title);
-        frame.render_widget(creation_block, window_size);
+        frame.render_widget(creation_block, window_area);
 
         if self.widgets.is_empty() {
             log::info!("Building input widgets...");
@@ -180,8 +183,8 @@ impl CharacterViewFrameHandler {
         if (self.view_mode == ViewMode::CREATION) {
             attribute_start -= 1;
         }
-        let attributes_size = Rect::new(5, 4 + attribute_start, main_window_width.clone() - 2, main_window_height.clone() - 4);
-        frame.render_widget(attributes_block, attributes_size);
+        let attributes_area = Rect::new(5, 4 + attribute_start, main_window_width.clone() - 2, main_window_height.clone() - 4);
+        frame.render_widget(attributes_block, attributes_area);
 
         self.draw_main_inputs(frame);
         self.draw_attribute_inputs(frame);
@@ -203,13 +206,20 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
     pub fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
+        let ui = &mut self.ui;
 
         match frame_handler.view_mode {
             ViewMode::CREATION => {
-                self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_creation(frame, character) })?
+                self.terminal_manager.terminal.draw(|frame| {
+                    ui.render(frame);
+                    frame_handler.draw_character_creation(frame, character)
+                })?
             },
             ViewMode::VIEW => {
-                self.terminal_manager.terminal.draw(|frame| { frame_handler.draw_character_info(frame, character) })?
+                self.terminal_manager.terminal.draw(|frame| {
+                    ui.render(frame);
+                    frame_handler.draw_character_info(frame, character)
+                })?
             }
         }
         Ok(())

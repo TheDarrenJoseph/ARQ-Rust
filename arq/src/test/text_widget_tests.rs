@@ -22,7 +22,7 @@ mod test_text_input {
     #[test]
     fn test_text_input_add_char() {
         // GIVEN a text input of 3 characters with no initial input
-        let text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Input".to_string(),"".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // WHEN we add a character
             state.add_char('A');
@@ -34,7 +34,7 @@ mod test_text_input {
     #[test]
     fn test_text_input_add_char_max_input() {
         // GIVEN a text input of 3 characters with no initial input
-        let text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Input".to_string(), "".to_string(), 1);
         // WHEN we add 4 characters
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             state.add_char('A');
@@ -50,7 +50,7 @@ mod test_text_input {
     #[test]
     fn test_text_input_delete_char() {
         // GIVEN a text input of 3 characters with no initial input
-        let text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Input".to_string(), "".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // AND we've adjusted it's input to be "A"
             state.set_input("A".to_string());
@@ -64,7 +64,7 @@ mod test_text_input {
     #[test]
     fn test_text_input_delete_char_empty_field() {
         // GIVEN a text input of 3 characters with no initial input
-        let text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Input".to_string(),"".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
             // WHEN we call to delete a char
             state.delete_char();
@@ -76,7 +76,7 @@ mod test_text_input {
     #[test]
     fn test_text_input_delete_char_many() {
         // GIVEN a text input of 3 characters with no initial input
-        let text_input = build_text_input(3, "Test".to_string(), 1);
+        let text_input = build_text_input(3, "Input".to_string(),"".to_string(), 1);
         assert_for_text_widget(text_input.state_type,  &|mut state: TextInputState| {
                 // AND we've adjusted it's input to be "ABC"
                 state.set_input("ABC".to_string());

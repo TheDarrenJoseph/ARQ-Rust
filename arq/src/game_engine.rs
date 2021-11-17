@@ -18,6 +18,7 @@ use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
+use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
@@ -108,11 +109,15 @@ impl GameEngine {
     }
 
     pub fn start_menu(&mut self) -> Result<(), io::Error> {
+        self.ui.start_menu = menu::build_start_menu(true);
         loop {
+            // Hide additional widgets when paused
+            self.ui.render_additional = false;
             self.draw_start_menu()?;
             let start_choice = self.handle_start_menu_selection()?;
             match start_choice {
                 StartMenuChoice::Play => {
+                    self.ui.render_additional = true;
                     if !self.game_running {
                         log::info!("Starting game..");
                         self.start_game()?;
@@ -165,7 +170,7 @@ impl GameEngine {
         while self.game_running {
             if !character_created {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
-                let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
+                let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 character_view.draw()?;
 
                 while !character_created {
@@ -178,7 +183,12 @@ impl GameEngine {
                 self.characters = characters.clone();
             }
 
-            let mut map_view = MapView { map, characters: characters.clone(), terminal_manager: &mut self.terminal_manager };
+            if self.ui.additional_widgets.is_empty() {
+                let stat_line = build_character_stat_line(characters[0].get_health(), characters[0].get_details(), characters[0].get_inventory().get_loot_value());
+                self.ui.additional_widgets.push(stat_line);
+            }
+
+            let mut map_view = MapView { map, characters: characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
             map_view.draw_map()?;
             map_view.draw_characters()?;
 
@@ -198,7 +208,7 @@ impl GameEngine {
             Key::Char('a') => {
                 self.terminal_manager.terminal.clear()?;
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
-                let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), terminal_manager: &mut self.terminal_manager, frame_handler};
+                let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 character_view.draw()?;
                 let key = io::stdin().keys().next().unwrap().unwrap();
             }
@@ -210,9 +220,10 @@ impl GameEngine {
 }
 
 pub fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTerminal<std::io::Stdout>>>) -> Result<GameEngine, io::Error> {
-    let start_menu = menu::build_start_menu();
+    let start_menu = menu::build_start_menu(false);
     let settings_menu = menu::build_settings_menu();
-    let ui = ui::UI { start_menu, settings_menu, frame_size : None };
+
+    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
 
     terminal_manager.terminal.clear()?;
 

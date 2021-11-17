@@ -4,7 +4,7 @@ use crate::container::{Container,ContainerType};
 use crate::position::Position;
 use crate::tile::Colour;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Character {
     name : String,
     character_details: CharacterDetails,
@@ -14,7 +14,7 @@ pub struct Character {
     inventory: Container
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Race {Human,Goblin}
 #[derive(Clone, Debug)]
 pub enum Class {None,Warrior}
@@ -49,16 +49,17 @@ impl Display for Class {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AttributeScore {
     pub attribute: Attribute,
     pub score: i8
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CharacterDetails {
     race: Race,
     class: Class,
+    level: i32,
     max_free_attribute_points: i8,
     free_attribute_points: i8,
     attributes: Vec<AttributeScore>
@@ -78,7 +79,7 @@ pub fn build_default_attributes() -> Vec<AttributeScore> {
 
 pub fn build_default_character_details() -> CharacterDetails{
     let attributes = build_default_attributes();
-    return CharacterDetails { race: Race::Human, class: Class::None, max_free_attribute_points: 6, free_attribute_points: 6, attributes};
+    return CharacterDetails { race: Race::Human, class: Class::None, level:0, max_free_attribute_points: 6, free_attribute_points: 6, attributes};
 }
 
 pub fn build_player(name : String, position: Position) -> Character {

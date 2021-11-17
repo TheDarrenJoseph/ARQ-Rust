@@ -2,6 +2,7 @@ pub mod text_widget;
 pub mod dropdown_widget;
 pub mod number_widget;
 pub mod button_widget;
+pub mod character_stat_line;
 
 use tui::widgets::StatefulWidget;
 use tui::layout::Rect;
@@ -12,6 +13,7 @@ use crate::widget::text_widget::TextInputState;
 use crate::widget::dropdown_widget::DropdownInputState;
 use crate::widget::number_widget::NumberInputState;
 use crate::widget::button_widget::ButtonState;
+use crate::widget::character_stat_line::CharacterStatLineState;
 
 pub fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");
@@ -34,7 +36,8 @@ pub enum WidgetType {
     Text(TextInputState),
     Number(NumberInputState),
     Dropdown(DropdownInputState),
-    Button(ButtonState)
+    Button(ButtonState),
+    StatLine(CharacterStatLineState)
 }
 
 pub struct Widget {
@@ -60,7 +63,8 @@ impl Named for WidgetType {
             },
             WidgetType::Button(state) => {
                 state.get_name()
-            }
+            },
+            _ => { "".to_string() }
         }
     }
 }
@@ -85,7 +89,8 @@ impl Focusable for WidgetType {
             },
             WidgetType::Button(state) => {
                 state.selected = true;
-            }
+            },
+            _ => {}
         }
     }
 
@@ -102,7 +107,8 @@ impl Focusable for WidgetType {
             },
             WidgetType::Button(state) => {
                 state.selected = false;
-            }
+            },
+            _ => {}
         }
     }
 
@@ -120,6 +126,7 @@ impl Focusable for WidgetType {
             WidgetType::Button(state) => {
                 state.selected.clone()
             },
+            _ => { false }
         }
     }
 }

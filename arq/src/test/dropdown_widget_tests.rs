@@ -21,7 +21,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_get_selection() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
         assert_for_dropdown_widget(dropdown.state_type,  &|state: DropdownInputState| {
             // WHEN we call to get the initial selection
             // THEN we expect it to be "A"
@@ -33,7 +33,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_toggle_show() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
 
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             // WHEN we call to toggle showing of options
@@ -46,7 +46,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_toggle_show_multi() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
 
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
 
@@ -62,7 +62,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_select_next() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             // WHEN we call to select the next item
             state.select_next();
@@ -74,7 +74,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_select_next_end_of_range() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
 
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             // WHEN we call to select the next item twice
@@ -88,7 +88,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_select_previous() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
 
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             // AND we've selected the 2nd option
@@ -104,7 +104,7 @@ mod text_dropdown {
     #[test]
     fn test_dropdown_select_previous_end_of_range() {
         // GIVEN a dropdown with 2 options
-        let dropdown = build_dropdown("Test".to_string(), vec!["A".to_string(), "B".to_string()]);
+        let dropdown = build_dropdown("Test".to_string(), true,vec!["A".to_string(), "B".to_string()]);
 
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             assert_eq!("A".to_string(),  state.get_selection());

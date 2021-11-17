@@ -8,7 +8,7 @@ pub enum ContainerType {
     AREA
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Container {
     item : Item,
     container_type : ContainerType,
@@ -19,6 +19,13 @@ pub struct Container {
 impl Container {
     pub fn get_contents(&self) -> &Vec<Item> {
         &self.contents
+    }
+    pub fn get_loot_value(&self) -> i32 {
+        let mut loot_total = 0;
+        for item in &self.contents {
+         loot_total += item.value;
+        }
+        loot_total
     }
 
     pub fn add_item(&mut self, item : Item) {
@@ -53,6 +60,7 @@ mod tests {
         assert_eq!(0, contents.len());
     }
 
+    #[test]
     fn test_container_add() {
         // GIVEN we have a valid container
         let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
@@ -65,5 +73,36 @@ mod tests {
 
         // THEN we expect it's contents size to increase
         assert_eq!(1, container.get_contents().len());
+    }
+
+    #[test]
+    fn test_get_loot_value_empty() {
+        // GIVEN we have a valid container with no items
+        let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+        // WHEN we call to get the total item value
+        let total_value = container.get_loot_value();
+        // THEN we expect 0 to be returned
+        assert_eq!(0, total_value);
+    }
+
+    #[test]
+    fn test_get_loot_value() {
+        // GIVEN we have a valid container
+        let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+
+        // AND we've added 2 items with different values
+        let gold_bar = crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 1, 100);
+        container.add_item(gold_bar);
+
+        let silver_bar = crate::items::build_item(1, "Silver Bar".to_owned(), 'X', 1, 50);
+        container.add_item(silver_bar);
+        assert_eq!(2, container.get_contents().len());
+
+        // WHEN we call to get their total value
+        let total_value = container.get_loot_value();
+        // THEN we expect the total of all the item values to be returned
+        assert_eq!(150, total_value);
     }
 }

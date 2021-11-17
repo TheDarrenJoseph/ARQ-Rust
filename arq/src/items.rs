@@ -9,7 +9,7 @@ pub enum ItemType {
     LEGS
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Item {
     id : u64,
     pub item_type: ItemType,

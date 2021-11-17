@@ -78,8 +78,10 @@ impl Selection for Menu {
     }
 }
 
-pub fn build_start_menu() -> Menu {
-    let titles = vec!["Play".to_owned(), "Settings".to_owned(), "Info".to_owned(), "Quit".to_owned()];
+pub fn build_start_menu(game_started: bool) -> Menu {
+
+    let play_or_resume = if game_started { "Resume".to_owned() } else { "Play".to_owned() };
+    let titles = vec![play_or_resume, "Settings".to_owned(), "Info".to_owned(), "Quit".to_owned()];
     let prompt = Some("-> ".to_owned());
     let menu = Menu { menu_titles : titles,  highlight_text : prompt, selection : 0, selected: false, exit: false};
     menu

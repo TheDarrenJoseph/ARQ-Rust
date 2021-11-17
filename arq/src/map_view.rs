@@ -2,13 +2,14 @@ use tui::buffer::Cell;
 
 use std::io::Error;
 use crate::map::Map;
-use crate::ui;
+use crate::ui::{UI};
 use crate::terminal_manager::TerminalManager;
 use crate::colour_mapper;
 use crate::character::Character;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
+    pub ui : &'a mut UI,
     pub characters : Vec<Character>,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
@@ -17,7 +18,8 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
     pub fn draw_map(&mut self) -> Result<(), Error> {
         log::info!("Drawing map tiles...");
 
-        self.terminal_manager.terminal.draw(|frame| { ui::render_main_window(frame) })?;
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| { ui.render(frame) })?;
 
         let backend = self.terminal_manager.terminal.backend_mut();
 
