@@ -15,6 +15,7 @@ use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::view::View;
 use crate::map_view::MapView;
 use crate::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
+use crate::container_view::{ContainerView};
 use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
@@ -208,6 +209,10 @@ impl GameEngine {
             },
             Key::Char('a') => {
                 self.terminal_manager.terminal.clear()?;
+
+                let mut inventory_view = ContainerView { container: self.characters[0].get_inventory(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager};
+
+
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 character_view.draw()?;

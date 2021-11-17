@@ -7,7 +7,7 @@ use tui::widgets::{Block, Borders};
 use termion::input::TermRead;
 use termion::event::Key;
 
-use crate::ui::{UI};
+use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::View;
 use crate::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
@@ -17,6 +17,7 @@ use crate::widget::number_widget::{build_number_input, build_number_input_with_v
 use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::widget::{Focusable, Widget, WidgetType, Named};
+use crate::character;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ViewMode {
@@ -66,7 +67,7 @@ impl CharacterViewFrameHandler {
         }
     }
 
-    fn build_attribute_inputs(&mut self, mut character: Character) {
+    fn build_attribute_inputs(&mut self, mut character: &mut Character) {
         let mut scores = character.get_attribute_scores();
         for attribute in get_all_attributes() {
             let score = scores.iter_mut().find(|score| score.attribute == attribute);
@@ -90,7 +91,7 @@ impl CharacterViewFrameHandler {
         self.widgets.push(free_points);
     }
 
-    fn build_widgets(&mut self, mut character: Character) {
+    fn build_widgets(&mut self, mut character: &mut Character) {
         let creation_mode = self.view_mode == ViewMode::CREATION;
 
         if creation_mode {
@@ -159,7 +160,7 @@ impl CharacterViewFrameHandler {
         }
     }
 
-    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character, title: String) {
+    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character, title: String) {
         let frame_size = frame.size();
         let main_window_width = frame_size.width / 2;
 
@@ -192,12 +193,12 @@ impl CharacterViewFrameHandler {
         self.draw_attribute_inputs(frame);
     }
 
-    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
+    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character) {
         log::info!("Drawing character creation...");
         self.draw_character_details(frame, character, "Character Creation".to_string());
     }
 
-    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: Character) {
+    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character) {
         log::info!("Drawing character details...");
         let name = character.get_name().clone();
         self.draw_character_details(frame, character,name);
@@ -280,26 +281,30 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
     }
 }
 
+impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterViewFrameHandler {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
+        match self.view_mode {
+            ViewMode::CREATION => {
+                self.draw_character_creation(frame, data.unpack());
+            },
+            ViewMode::VIEW => {
+                self.draw_character_info(frame, data.unpack())
+            }
+        }
+    }
+}
+
 impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
     fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
 
-        match frame_handler.view_mode {
-            ViewMode::CREATION => {
-                self.terminal_manager.terminal.draw(|frame| {
-                    ui.render(frame);
-                    frame_handler.draw_character_creation(frame, character)
-                })?
-            },
-            ViewMode::VIEW => {
-                self.terminal_manager.terminal.draw(|frame| {
-                    ui.render(frame);
-                    frame_handler.draw_character_info(frame, character)
-                })?
-            }
-        }
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(frame);
+            frame_handler.handle_frame(frame, FrameData { data: character });
+        })?;
+
         Ok(())
     }
 

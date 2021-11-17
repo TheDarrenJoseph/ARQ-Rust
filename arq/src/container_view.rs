@@ -1,14 +1,26 @@
+use std::io;
+use std::io::Error;
+
+use tui::layout::{Rect};
+use tui::style::{Style, Color};
+use tui::buffer::{Buffer};
+use tui::widgets::{Block, Borders};
+use termion::input::TermRead;
+use termion::event::Key;
+
+use crate::ui::{UI};
 use crate::view::View;
+use crate::terminal_manager::TerminalManager;
+use crate::container::Container;
 
 pub struct ContainerView<'a, B : tui::backend::Backend> {
-    pub container : Container,
+    pub container : &'a mut Container,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
 impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
     fn draw(&mut self) -> Result<(), Error> {
-        let frame_handler = &mut self.frame_handler;
         let ui = &mut self.ui;
         Ok(())
     }

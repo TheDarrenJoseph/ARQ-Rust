@@ -8,17 +8,18 @@ mod settings;
 mod tile;
 mod map;
 mod view;
-mod map_view;
 mod map_generator;
 mod position;
 mod character;
-mod character_view;
 mod widget;
 mod test;
 mod door;
 mod room;
 mod colour_mapper;
 mod pathfinding;
+mod map_view;
+mod character_view;
+mod container_view;
 
 use std::io;
 

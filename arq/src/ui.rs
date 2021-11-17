@@ -23,6 +23,20 @@ pub enum StartMenuChoice {
     Quit
 }
 
+pub trait FrameHandler<B: tui::backend::Backend, T> {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<T>);
+}
+
+pub struct FrameData<T> {
+    pub data : T
+}
+
+impl <T> FrameData<T> {
+    pub fn unpack(&mut self) -> &mut T {
+        &mut self.data
+    }
+}
+
 impl std::convert::TryFrom<usize> for StartMenuChoice {
     type Error = String;
 
