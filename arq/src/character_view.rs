@@ -8,6 +8,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI};
+use crate::view::View;
 use crate::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -164,10 +165,11 @@ impl CharacterViewFrameHandler {
 
         let main_window_height = frame_size.height / 2;
         let window_area = Rect::new(4, 4, main_window_width.clone(), main_window_height);
-        let creation_block = Block::default()
+
+        let window_block = Block::default()
             .borders(Borders::ALL)
             .title(title);
-        frame.render_widget(creation_block, window_area);
+        frame.render_widget(window_block, window_area);
 
         if self.widgets.is_empty() {
             log::info!("Building input widgets...");
@@ -203,7 +205,83 @@ impl CharacterViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> CharacterView<'_, B> {
-    pub fn draw(&mut self) -> Result<(), Error> {
+    pub fn update_free_points(&mut self, free_points: i32) {
+        for widget in self.frame_handler.widgets.iter_mut() {
+            match &mut widget.state_type {
+                WidgetType::Number(state) => {
+                    if state.name == "Free points" {
+                        state.set_input(free_points.clone());
+                    }
+                },
+                _ => {}
+            }
+        }
+    }
+
+    pub fn get_character(&mut self) -> Character {
+        let mut character = self.character.clone();
+        let mut scores  = character.get_attribute_scores();
+        for widget in self.frame_handler.widgets.iter_mut() {
+            let mut state_type = &mut widget.state_type;
+            if String::from("Name") == state_type.get_name() {
+                match state_type {
+                    WidgetType::Text(state) => {
+                        character.set_name(state.get_input());
+                    },
+                    _ => {}
+                }
+            }
+
+            if String::from("Class") == state_type.get_name() {
+                match state_type {
+                    WidgetType::Dropdown(state) => {
+                        let class = determine_class(state.get_selection());
+                        match class {
+                            Some(c) => {
+                                character.set_class(c);
+                            },
+                            _ => {}
+                        }
+                    },
+                    _ => {}
+                }
+            }
+        }
+
+        let mut number_states : Vec<NumberInputState> = Vec::new();
+        let ns_options : Vec<Option<NumberInputState>> = self.frame_handler.widgets.iter_mut().map(|w| map_state(  w)).collect();
+        for ns_option in ns_options {
+            match ns_option {
+                Some(ns) => {
+                    number_states.push(ns)
+                },
+                _ => {}
+            }
+        }
+
+        for attribute in get_all_attributes() {
+            let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
+            match number_state {
+                Some(mut ns) => {
+                    let mut score = scores.iter_mut().find(|score| score.attribute == attribute);
+                    match score {
+                        Some(s) => {
+                            s.score = ns.get_input() as i8;
+                        },
+                        _ => {}
+                    }
+                },
+                _ => {}
+            }
+        }
+
+        character.set_attribute_scores(scores);
+        character
+    }
+}
+
+impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
+    fn draw(&mut self) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
@@ -225,20 +303,7 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
         Ok(())
     }
 
-    pub fn update_free_points(&mut self, free_points: i32) {
-        for widget in self.frame_handler.widgets.iter_mut() {
-            match &mut widget.state_type {
-                WidgetType::Number(state) => {
-                    if state.name == "Free points" {
-                        state.set_input(free_points.clone());
-                    }
-                },
-                _ => {}
-            }
-        }
-    }
-
-    pub fn handle_input(&mut self) -> Result<bool, Error> {
+    fn handle_input(&mut self) -> Result<bool, Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         let frame_handler = &mut self.frame_handler;
         let widgets = &mut frame_handler.widgets;
@@ -396,67 +461,6 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
             }
         }
         Ok(false)
-    }
-
-    pub fn get_character(&mut self) -> Character {
-        let mut character = self.character.clone();
-        let mut scores  = character.get_attribute_scores();
-        for widget in self.frame_handler.widgets.iter_mut() {
-            let mut state_type = &mut widget.state_type;
-            if String::from("Name") == state_type.get_name() {
-                match state_type {
-                    WidgetType::Text(state) => {
-                        character.set_name(state.get_input());
-                    },
-                    _ => {}
-                }
-            }
-
-            if String::from("Class") == state_type.get_name() {
-                match state_type {
-                    WidgetType::Dropdown(state) => {
-                        let class = determine_class(state.get_selection());
-                        match class {
-                            Some(c) => {
-                                character.set_class(c);
-                            },
-                            _ => {}
-                        }
-                    },
-                    _ => {}
-                }
-            }
-        }
-
-        let mut number_states : Vec<NumberInputState> = Vec::new();
-        let ns_options : Vec<Option<NumberInputState>> = self.frame_handler.widgets.iter_mut().map(|w| map_state(  w)).collect();
-        for ns_option in ns_options {
-            match ns_option {
-                Some(ns) => {
-                    number_states.push(ns)
-                },
-                _ => {}
-            }
-        }
-
-        for attribute in get_all_attributes() {
-            let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
-            match number_state {
-                Some(mut ns) => {
-                    let mut score = scores.iter_mut().find(|score| score.attribute == attribute);
-                    match score {
-                        Some(s) => {
-                            s.score = ns.get_input() as i8;
-                        },
-                        _ => {}
-                    }
-                },
-                _ => {}
-            }
-        }
-
-        character.set_attribute_scores(scores);
-        character
     }
 }
 

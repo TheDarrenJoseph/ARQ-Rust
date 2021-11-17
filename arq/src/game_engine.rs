@@ -12,6 +12,7 @@ use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
+use crate::view::View;
 use crate::map_view::MapView;
 use crate::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
 use crate::map_generator::build_generator;
@@ -189,7 +190,7 @@ impl GameEngine {
             }
 
             let mut map_view = MapView { map, characters: characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
-            map_view.draw_map()?;
+            map_view.draw()?;
             map_view.draw_characters()?;
 
             self.game_loop()?;

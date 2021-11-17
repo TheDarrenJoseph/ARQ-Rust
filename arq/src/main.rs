@@ -7,6 +7,7 @@ mod menu;
 mod settings;
 mod tile;
 mod map;
+mod view;
 mod map_view;
 mod map_generator;
 mod position;
