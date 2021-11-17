@@ -24,6 +24,15 @@ impl Item {
     pub fn get_id(&self) -> u64 {
         self.id
     }
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+    pub fn get_weight(&self) -> i32 {
+        self.weight.clone()
+    }
+    pub fn get_value(&self) -> i32 {
+        self.value.clone()
+    }
 }
 
 pub fn build_item(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
