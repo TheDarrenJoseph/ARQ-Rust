@@ -15,7 +15,7 @@ use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::view::View;
 use crate::map_view::MapView;
 use crate::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
-use crate::container_view::{ContainerView};
+use crate::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
 use crate::map_generator::build_generator;
 use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
@@ -175,10 +175,10 @@ impl GameEngine {
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 character_view.draw()?;
 
-                while !character_created {
-                    character_created = character_view.handle_input().unwrap();
-                    character_view.draw();
-                }
+                //while !character_created {
+                //    character_created = character_view.handle_input().unwrap();
+                //    character_view.draw();
+               // }
 
                 let updated_character = character_view.get_character();
                 characters[0] = updated_character;
@@ -210,12 +210,19 @@ impl GameEngine {
             Key::Char('a') => {
                 self.terminal_manager.terminal.clear()?;
 
-                let mut inventory_view = ContainerView { container: self.characters[0].get_inventory(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager};
+                let inventory = self.characters[0].get_inventory();
+                let gold_bar = crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 1, 100);
+                inventory.add_item(gold_bar);
 
+                let silver_bar = crate::items::build_item(1, "Silver Bar".to_owned(), 'X', 1, 50);
+                inventory.add_item(silver_bar);
+
+                let mut inventory_view = build_container_view( inventory, &mut self.ui, &mut self.terminal_manager);
+                inventory_view.draw();
 
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw()?;
+                //character_view.draw()?;
                 let key = io::stdin().keys().next().unwrap().unwrap();
             }
             _ => {}

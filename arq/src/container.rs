@@ -17,6 +17,10 @@ pub struct Container {
 }
 
 impl Container {
+    pub fn get_self_item(&self) -> &Item {
+        &self.item
+    }
+
     pub fn get_contents(&self) -> &Vec<Item> {
         &self.contents
     }
