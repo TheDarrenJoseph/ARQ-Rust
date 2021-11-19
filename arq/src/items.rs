@@ -39,7 +39,7 @@ pub fn build_item(id: u64, name: String, symbol: char, weight : i32, value : i32
     Item {id: id, item_type: ItemType::ITEM, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
 }
 
-pub fn build_container(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
+pub fn build_container_item(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
     Item {id: id, item_type: ItemType::CONTAINER, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
 }
 

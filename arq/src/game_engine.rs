@@ -21,6 +21,7 @@ use crate::terminal_manager::TerminalManager;
 use crate::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
+use crate::container::ContainerType;
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
@@ -173,16 +174,10 @@ impl GameEngine {
             if !character_created {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
-                character_view.draw()?;
-
-                //while !character_created {
-                //    character_created = character_view.handle_input().unwrap();
-                //    character_view.draw();
-               // }
-
-                let updated_character = character_view.get_character();
-                characters[0] = updated_character;
-                self.characters = characters.clone();
+                //character_created = character_view.begin().unwrap();
+                //let updated_character = character_view.get_character();
+                //characters[0] = updated_character;
+                //self.characters = characters.clone();
             }
 
             if self.ui.additional_widgets.is_empty() {
@@ -207,18 +202,25 @@ impl GameEngine {
                 self.start_menu()?;
                 self.terminal_manager.terminal.clear()?;
             },
-            Key::Char('a') => {
+            Key::Char('i') => {
                 self.terminal_manager.terminal.clear()?;
 
                 let inventory = self.characters[0].get_inventory();
                 let gold_bar = crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 1, 100);
                 inventory.add_item(gold_bar);
 
-                let silver_bar = crate::items::build_item(1, "Silver Bar".to_owned(), 'X', 1, 50);
+                let silver_bar = crate::items::build_item(2, "Silver Bar".to_owned(), 'X', 1, 50);
                 inventory.add_item(silver_bar);
 
+                let bronze_bar = crate::items::build_item(2, "Bronze Bar".to_owned(), 'X', 1, 50);
+                let mut bag = crate::container::build(3, "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+                let carton = crate::container::build(4, "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+                bag.add(carton);
+                bag.add_item(bronze_bar);
+                inventory.add(bag);
+
                 let mut inventory_view = build_container_view( inventory, &mut self.ui, &mut self.terminal_manager);
-                inventory_view.draw();
+                inventory_view.begin();
 
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};

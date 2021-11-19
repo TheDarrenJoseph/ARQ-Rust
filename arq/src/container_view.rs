@@ -3,7 +3,7 @@ use std::io::Error;
 use std::convert::TryInto;
 
 use tui::layout::{Alignment, Rect};
-use tui::style::{Style, Color};
+use tui::style::{Style, Color, Modifier};
 use tui::buffer::{Buffer};
 use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
 use tui::text::{Spans,Span};
@@ -30,7 +30,16 @@ pub fn build_container_view<'a, B : tui::backend::Backend> (container: &'a mut C
         Column {name : "VALUE".to_string(), size: 12}
     ];
 
-    ContainerView::<B> { container, ui, terminal_manager, frame_handler: ContainerFrameHandler { columns }}
+    ContainerView::<B> { container, ui, terminal_manager, frame_handler: ContainerFrameHandler { selected_index: 0, columns }}
+}
+
+impl <B : tui::backend::Backend> ContainerView<'_, B> {
+    pub(crate) fn begin(&mut self) {
+        self.draw();
+        while !self.handle_input().unwrap() {
+            self.draw();
+        }
+    }
 }
 
 pub struct Column {
@@ -39,7 +48,23 @@ pub struct Column {
 }
 
 pub struct ContainerFrameHandler {
+    selected_index : i32,
     columns : Vec<Column>
+}
+
+impl ContainerFrameHandler {
+    fn increment_selection(&mut self) {
+        let column_count = self.columns.len() as i32;
+        if self.selected_index < column_count - 1 {
+            self.selected_index += 1
+        }
+    }
+
+    fn decrement_selection(&mut self) {
+        if self.selected_index > 0 {
+            self.selected_index -= 1
+        }
+    }
 }
 
 fn build_padding(length : i8) -> String {
@@ -70,6 +95,30 @@ impl ContainerFrameHandler {
     }
 }
 
+fn build_column_text(column: &Column, item: &Item) -> String {
+    match column.name.as_str() {
+        "NAME" => {
+            item.get_name()
+        },
+        "WEIGHT (Kg)" => {
+            item.get_weight().to_string()
+        },
+        "VALUE" => {
+            item.get_value().to_string()
+        },
+        _ => { "".to_string() }
+    }
+}
+
+fn build_cell<'a>(text: String) -> Paragraph<'a> {
+    let spans = vec![Spans::from(Span::raw(text.clone()))];
+    let spans_len = spans.len() as u16;
+    let paragraph = Paragraph::new(spans)
+        .style(Style::default())
+        .alignment(Alignment::Left);
+    paragraph
+}
+
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
@@ -85,37 +134,19 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
         frame.render_widget(headings, headings_area);
 
         let mut index = 0;
-        let item_count = container.get_contents().len() as u16;
-        for item in container.get_contents() {
+        for c in container.get_contents() {
+            let item = &c.get_self_item();
             let mut offset : u16 = 2;
             for column in &self.columns {
-                let mut data = String::new();
-                match column.name.as_str() {
-                    "NAME" => {
-                        data = item.get_name();
-                    },
-                    "WEIGHT (Kg)" => {
-                        data = item.get_weight().to_string();
-                    },
-                    "VALUE" => {
-                        data = item.get_value().to_string();
-                    },
-                    _ => {}
-                }
-
-                let spans = vec![Spans::from(Span::raw(data))];
-                let spans_len = spans.len() as u16;
-                let row = Paragraph::new(spans)
-                    .block(Block::default()
-                        .borders(Borders::NONE))
-                    .style(Style::default())
-                    .alignment(Alignment::Left)
-                    .wrap(Wrap { trim: false });
-
-                let frame_size = frame.size();
+                let text = build_column_text(column, item);
+                let mut cell= if index == self.selected_index {
+                    build_cell(text).style(Style::default().add_modifier(Modifier::REVERSED))
+                } else {
+                    build_cell(text)
+                };
                 let column_length = column.size as i8;
-                let row_area = Rect::new( offset.clone(), 3 + index.clone(), column_length.try_into().unwrap(), 2);
-                frame.render_widget(row, row_area);
+                let cell_area = Rect::new( offset.clone(), (3 + index.clone()).try_into().unwrap(), column_length.try_into().unwrap(), 1);
+                frame.render_widget(cell.clone(), cell_area);
                 offset += column_length as u16;
             }
             index += 1;
@@ -138,21 +169,25 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
     }
 
     fn handle_input(&mut self) -> Result<bool, Error> {
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        match key {
-            Key::Char('q') => {
-                self.terminal_manager.terminal.clear()?;
-                return Ok(true)
-            },
-            Key::Char('\n') => {
-            },
-            Key::Char(c) => {
-            },
-            Key::Backspace => {
-            },
-            _ => {
+        loop {
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            match key {
+                Key::Char('q') => {
+                    self.terminal_manager.terminal.clear()?;
+                    return Ok(true)
+                },
+                Key::Char('\n') => {},
+                Key::Char(c) => {},
+                Key::Backspace => {},
+                Key::Up => {
+                    self.frame_handler.decrement_selection();
+                },
+                Key::Down => {
+                    self.frame_handler.increment_selection();
+                },
+                _ => {}
             }
+            return Ok(false)
         }
-        Ok(false)
     }
 }

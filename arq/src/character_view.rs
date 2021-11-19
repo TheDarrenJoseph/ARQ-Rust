@@ -206,6 +206,17 @@ impl CharacterViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> CharacterView<'_, B> {
+
+    pub fn begin(&mut self) -> Result<bool, Error> {
+        let mut character_created = false;
+        self.draw()?;
+        while !character_created {
+            character_created = self.handle_input().unwrap();
+            self.draw()?;
+        }
+        Ok(true)
+    }
+
     pub fn update_free_points(&mut self, free_points: i32) {
         for widget in self.frame_handler.widgets.iter_mut() {
             match &mut widget.state_type {

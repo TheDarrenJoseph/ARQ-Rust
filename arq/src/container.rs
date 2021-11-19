@@ -1,19 +1,24 @@
-use crate::items::Item;
+use crate::items::{Item, ItemType};
 
 #[derive(Clone)]
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ContainerType {
-    OBJECT,
-    AREA
+    ITEM, // No inventory, just item set
+    OBJECT, // Movable container i.e Bags
+    AREA // Fixed container i.e Floor, Chests, Player's inventory
 }
 
+/*
+* Container is an item wrapper at it's most basic (ITEM),
+* otherwise a container for storing items (i.e: OBJECT, AREA) which are also Container instances
+*/
 #[derive(Clone, Debug)]
 pub struct Container {
     item : Item,
-    container_type : ContainerType,
+    pub container_type : ContainerType,
     weight_limit : i32,
-    contents : Vec<Item>
+    contents : Vec<Container>
 }
 
 impl Container {
@@ -21,24 +26,55 @@ impl Container {
         &self.item
     }
 
-    pub fn get_contents(&self) -> &Vec<Item> {
+    pub fn get_contents(&self) -> &Vec<Container> {
         &self.contents
     }
+
     pub fn get_loot_value(&self) -> i32 {
         let mut loot_total = 0;
-        for item in &self.contents {
-         loot_total += item.value;
+        for c in &self.contents {
+            match c.container_type {
+                ContainerType::ITEM => {
+                    loot_total += c.get_self_item().value;
+                },
+                ContainerType::OBJECT | ContainerType::AREA => {
+                    loot_total += c.get_self_item().value;
+                    for c in c.get_contents() {
+                        loot_total += c.get_loot_value();
+                    }
+                }
+            }
+
         }
         loot_total
     }
 
+    pub fn add(&mut self, container : Container) {
+        match container.container_type {
+           ContainerType::ITEM | ContainerType::OBJECT => {
+                self.contents.push(container);
+            },
+            _ => {}
+        }
+
+    }
+
     pub fn add_item(&mut self, item : Item) {
-        self.contents.push(item);
+        match item.item_type {
+            // Container items should only ever be the meta item for a container
+            ItemType::CONTAINER => {
+                return;
+            },
+            _ => {
+                let container = Container { item: item.clone(), container_type: ContainerType::ITEM, weight_limit: item.weight.clone(), contents : Vec::new() };
+                self.contents.push(container);
+            }
+        }
     }
 }
 
 pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32, container_type : ContainerType, weight_limit : i32) -> Container {
-    let container_item = crate::items::build_container(id, name, symbol, weight, value);
+    let container_item = crate::items::build_container_item(id, name, symbol, weight, value);
     Container { item: container_item, container_type, weight_limit, contents: Vec::new()}
 }
 
