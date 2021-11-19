@@ -30,6 +30,14 @@ impl Container {
         &self.contents
     }
 
+    pub fn get(&self, index: i32) -> &Container {
+        &self.contents[index as usize]
+    }
+
+    pub fn get_mut(&mut self, index: i32) -> &mut Container {
+        &mut self.contents[index as usize]
+    }
+
     pub fn get_loot_value(&self) -> i32 {
         let mut loot_total = 0;
         for c in &self.contents {
@@ -57,6 +65,10 @@ impl Container {
             _ => {}
         }
 
+    }
+
+    pub fn can_open(&self) -> bool {
+        self.container_type ==  ContainerType::OBJECT || self.container_type ==  ContainerType::AREA
     }
 
     pub fn add_item(&mut self, item : Item) {

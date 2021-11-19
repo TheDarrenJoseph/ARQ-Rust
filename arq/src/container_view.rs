@@ -176,6 +176,15 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                     self.terminal_manager.terminal.clear()?;
                     return Ok(true)
                 },
+                Key::Char('o') => {
+
+                    let index = self.frame_handler.selected_index.clone();
+                    let mut item = self.container.get_mut(index);
+                    if item.can_open() {
+                        let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
+                        view.begin();
+                    }
+                },
                 Key::Char('\n') => {},
                 Key::Char(c) => {},
                 Key::Backspace => {},

@@ -175,9 +175,9 @@ impl GameEngine {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_created = character_view.begin().unwrap();
-                //let updated_character = character_view.get_character();
-                //characters[0] = updated_character;
-                //self.characters = characters.clone();
+                let updated_character = character_view.get_character();
+                characters[0] = updated_character;
+                self.characters = characters.clone();
             }
 
             if self.ui.additional_widgets.is_empty() {
