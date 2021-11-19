@@ -20,6 +20,7 @@ pub struct ContainerView<'a, B : tui::backend::Backend> {
     pub container : &'a mut Container,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
+    selecting_items : bool,
     pub frame_handler : ContainerFrameHandler
 }
 
@@ -30,7 +31,7 @@ pub fn build_container_view<'a, B : tui::backend::Backend> (container: &'a mut C
         Column {name : "VALUE".to_string(), size: 12}
     ];
 
-    ContainerView::<B> { container, ui, terminal_manager, frame_handler: ContainerFrameHandler { selected_index: 0, columns }}
+    ContainerView::<B> { container, ui, terminal_manager, selecting_items: false, frame_handler: ContainerFrameHandler { current_index: 0, selected_indices: Vec::new(), columns }}
 }
 
 impl <B : tui::backend::Backend> ContainerView<'_, B> {
@@ -48,21 +49,28 @@ pub struct Column {
 }
 
 pub struct ContainerFrameHandler {
-    selected_index : i32,
+    current_index : i32,
+    selected_indices : Vec<i32>,
     columns : Vec<Column>
 }
 
 impl ContainerFrameHandler {
     fn increment_selection(&mut self) {
         let column_count = self.columns.len() as i32;
-        if self.selected_index < column_count - 1 {
-            self.selected_index += 1
+        if self.current_index < column_count - 1 {
+            self.current_index += 1
         }
     }
 
     fn decrement_selection(&mut self) {
-        if self.selected_index > 0 {
-            self.selected_index -= 1
+        if self.current_index > 0 {
+            self.current_index -= 1
+        }
+    }
+
+    fn select(&mut self) {
+        if !self.selected_indices.contains(&self.current_index) {
+            self.selected_indices.push(self.current_index.clone());
         }
     }
 }
@@ -139,11 +147,18 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
             let mut offset : u16 = 2;
             for column in &self.columns {
                 let text = build_column_text(column, item);
-                let mut cell= if index == self.selected_index {
-                    build_cell(text).style(Style::default().add_modifier(Modifier::REVERSED))
-                } else {
-                    build_cell(text)
-                };
+
+                let current_index = index == self.current_index;
+                let selected = self.selected_indices.contains(&index);
+                let mut cell = build_cell(text);
+                if current_index && selected {
+                    cell = cell.style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
+                } else  if current_index {
+                    cell = cell.style(Style::default().add_modifier(Modifier::REVERSED));
+                } else if selected {
+                    cell = cell.style(Style::default().fg(Color::Green));
+                }
+
                 let column_length = column.size as i8;
                 let cell_area = Rect::new( offset.clone(), (3 + index.clone()).try_into().unwrap(), column_length.try_into().unwrap(), 1);
                 frame.render_widget(cell.clone(), cell_area);
@@ -173,26 +188,39 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
             let key = io::stdin().keys().next().unwrap().unwrap();
             match key {
                 Key::Char('q') => {
-                    self.terminal_manager.terminal.clear()?;
-                    return Ok(true)
-                },
-                Key::Char('o') => {
-
-                    let index = self.frame_handler.selected_index.clone();
-                    let mut item = self.container.get_mut(index);
-                    if item.can_open() {
-                        let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
-                        view.begin();
+                    if !self.frame_handler.selected_indices.is_empty() {
+                        self.frame_handler.selected_indices.clear();
+                        self.selecting_items = false;
+                    } else {
+                        self.terminal_manager.terminal.clear()?;
+                        return Ok(true)
                     }
                 },
-                Key::Char('\n') => {},
+                Key::Char('o') => {
+                    if !&self.selecting_items && self.frame_handler.selected_indices.is_empty() {
+                        let index = self.frame_handler.current_index.clone();
+                        let mut item = self.container.get_mut(index);
+                        if item.can_open() {
+                            let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
+                            view.begin();
+                        }
+                    }
+                },
+                Key::Char('\n') => {
+                    self.selecting_items = !self.selecting_items.clone();
+                    if self.selecting_items {
+                        self.frame_handler.select();
+                    }
+                },
                 Key::Char(c) => {},
                 Key::Backspace => {},
                 Key::Up => {
                     self.frame_handler.decrement_selection();
+                    if self.selecting_items { self.frame_handler.select() };
                 },
                 Key::Down => {
                     self.frame_handler.increment_selection();
+                    if self.selecting_items { self.frame_handler.select() };
                 },
                 _ => {}
             }
