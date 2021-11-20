@@ -4,7 +4,7 @@ use crate::items::{Item, ItemType};
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ContainerType {
-    ITEM, // No inventory, just item set
+    ITEM, // No storage, just a wrapped Item
     OBJECT, // Movable container i.e Bags
     AREA // Fixed container i.e Floor, Chests, Player's inventory
 }
@@ -38,6 +38,23 @@ impl Container {
         &mut self.contents[index as usize]
     }
 
+    fn get_weight_total(&self) -> i32 {
+        let mut weight_total = 0;
+        match self.container_type {
+            ContainerType::OBJECT | ContainerType::AREA => {
+                weight_total += self.get_self_item().weight.clone();
+                for c in self.get_contents() {
+                    weight_total += c.get_weight_total();
+                }
+                return weight_total;
+            },
+            _ => {
+                weight_total += self.get_self_item().weight.clone();
+            }
+        }
+        weight_total
+    }
+
     pub fn get_loot_value(&self) -> i32 {
         let mut loot_total = 0;
         for c in &self.contents {
@@ -60,7 +77,15 @@ impl Container {
     pub fn add(&mut self, container : Container) {
         match container.container_type {
            ContainerType::ITEM | ContainerType::OBJECT => {
-                self.contents.push(container);
+               let total_weight = self.get_weight_total();
+               let adding_weight_limit = container.weight_limit;
+               let max_weight_limit = total_weight + adding_weight_limit;
+
+               let within_potential_weight_limit = max_weight_limit <= self.weight_limit;
+               let potential_weight = total_weight.clone() + container.get_weight_total();
+               if within_potential_weight_limit && potential_weight <= self.weight_limit {
+                   self.contents.push(container);
+               }
             },
             _ => {}
         }
@@ -78,11 +103,18 @@ impl Container {
                 return;
             },
             _ => {
-                let container = Container { item: item.clone(), container_type: ContainerType::ITEM, weight_limit: item.weight.clone(), contents : Vec::new() };
-                self.contents.push(container);
+                if self.get_weight_total() + item.weight <= self.weight_limit {
+                    let container = wrap_item(item.clone());
+                    self.contents.push(container);
+                }
             }
         }
     }
+
+}
+
+pub fn wrap_item(item: Item) -> Container {
+    Container { item, container_type: ContainerType::ITEM, weight_limit: 0, contents: Vec::new() }
 }
 
 pub fn build(id: u64, name: String, symbol: char, weight : i32, value : i32, container_type : ContainerType, weight_limit : i32) -> Container {
@@ -113,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_container_add() {
+    fn test_container_add_item() {
         // GIVEN we have a valid container
         let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         // AND it has no items in it's contents
@@ -125,6 +157,70 @@ mod tests {
 
         // THEN we expect it's contents size to increase
         assert_eq!(1, container.get_contents().len());
+    }
+
+    #[test]
+    fn test_container_add_item_weight_limit() {
+        // GIVEN we have a valid container
+        let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        // AND it has no items in it's contents
+        assert_eq!(0, container.get_contents().len());
+
+        // WHEN we try to add more items than the supported weight limit
+        let item = crate::items::build_item(1, "Test Item".to_owned(), 'X', 100, 1);
+        let item2 = crate::items::build_item(1, "Test Item".to_owned(), 'X', 1, 1);
+        container.add_item(item);
+        container.add_item(item2);
+
+        // THEN we expect only the first item to be added
+        assert_eq!(1, container.get_contents().len());
+    }
+
+    #[test]
+    fn test_container_add() {
+        // GIVEN we have a valid container
+        let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
+        // AND it has no items in it's contents
+        assert_eq!(0, container.get_contents().len());
+
+        // WHEN we call to add either an wrapped ITEM or OBJECT container
+        let gold_bar = crate::container::wrap_item(crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 10, 100));
+        let bag_object = crate::container::build(2, "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
+        container.add(gold_bar);
+        container.add(bag_object);
+
+        // THEN we expect it's contents size to increase
+        assert_eq!(2, container.get_contents().len());
+    }
+
+    #[test]
+    fn test_container_add_weight_limit() {
+        // GIVEN we have a valid container with a weight limit of 40
+        let mut container =  crate::container::build(0, "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
+        // AND it has no items in it's contents
+        assert_eq!(0, container.get_contents().len());
+
+        let gold_bar_1 = crate::container::wrap_item(crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 10, 100));
+        let mut bag_object = crate::container::build(2, "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
+        let gold_bar_2 = crate::container::wrap_item(crate::items::build_item(3, "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar_3 = crate::container::wrap_item(crate::items::build_item(4, "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar_4 = crate::container::wrap_item(crate::items::build_item(5, "Gold Bar".to_owned(), 'X', 10, 100));
+        let lockpick_1 = crate::container::wrap_item(crate::items::build_item(6, "Lockpick".to_owned(), 'X', 1, 5));
+        let lockpick_2 = crate::container::wrap_item(crate::items::build_item(6, "Lockpick".to_owned(), 'X', 1, 5));
+        bag_object.add(gold_bar_2);
+        bag_object.add(gold_bar_3);
+        bag_object.add(gold_bar_4);
+
+        // WHEN we add more items than the container can support (total of 42 weight)
+        container.add(gold_bar_1);
+        container.add(bag_object);
+        container.add(lockpick_1);
+        container.add(lockpick_2);
+
+        // THEN we expect only the first 2 objects to be added
+        // Along with the bag contents
+        assert_eq!(2, container.get_contents().len());
+        assert_eq!(3, container.get_contents()[1].get_contents().len());
     }
 
     #[test]

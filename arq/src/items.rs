@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_build_container() {
-        let item = crate::items::build_container(0, "Test Container".to_owned(), 'X', 1, 1);
+        let item = crate::items::build_container_item(0, "Test Container".to_owned(), 'X', 1, 1);
 
         assert_eq!(0, item.get_id());
         assert_eq!(ItemType::CONTAINER, item.item_type);
