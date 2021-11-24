@@ -20,6 +20,7 @@ mod pathfinding;
 mod map_view;
 mod character_view;
 mod container_view;
+mod list_selection;
 
 use std::io;
 
