@@ -7,6 +7,7 @@ pub enum SelectionMode {
 }
 
 pub trait ListSelection {
+    fn get_start_index(&self) -> i32;
     fn get_items(&self) -> Vec<&Item>;
     fn get_selected_items(&self) -> VecDeque<&Item>;
     fn is_selecting(&self) -> bool;
@@ -25,10 +26,11 @@ pub struct ItemListSelection<'a> {
     previous_selection_index: Option<i32>,
     selection_index: Option<i32>,
     //The index of the topmost item on the screen, allows scrolling
-    inv_start_index: i32,
+    start_index: i32,
     // The pivot index is the 'initial' selected index
     pivot_index: Option<i32>,
     previous_container_index: i32,
+    // The 'current' index
     container_index: i32,
     selecting_items: bool,
     // Storage of items in the selection
@@ -125,11 +127,11 @@ impl ItemListSelection<'_> {
                 self.previous_selection_index = Some(idx);
                 self.previous_container_index = self.container_index;
                 self.selection_index = Some(new_selection_index);
-                self.container_index = new_selection_index.clone() + self.inv_start_index.clone();
+                self.container_index = new_selection_index.clone() + self.start_index.clone();
 
                 let no_pivot_point = !self.has_pivot_point();
                 if no_pivot_point {
-                    self.pivot_index = Some(new_selection_index.clone() + self.inv_start_index.clone());
+                    self.pivot_index = Some(new_selection_index.clone() + self.start_index.clone());
                 }
             },
             None => {}
@@ -157,9 +159,30 @@ impl ItemListSelection<'_> {
             self.check_reducing_selection_below();
         }
     }
+
+    fn should_turn_page(&mut self, selection_index: i32) -> bool {
+        let max_scroll_index = self.determine_max_scroll_index();
+        let max_selection_index = self.determine_max_selection_index();
+        let end_of_page = selection_index == max_selection_index;
+        let can_scroll = self.start_index + self.item_view_line_count <= max_scroll_index;
+        return end_of_page && can_scroll;
+    }
+
+    fn get_selected_count(&self) -> i32 {
+        self.selected_indices.len() as i32
+    }
+
+    fn set_initial_selection(&mut self, index : i32) {
+        self.select(index);
+        self.update_selection(index.clone());
+    }
 }
 
 impl ListSelection for ItemListSelection<'_> {
+    fn get_start_index(&self) -> i32 {
+        self.start_index.clone()
+    }
+
     fn get_items(&self) -> Vec<&Item> {
         self.items.clone()
     }
@@ -201,7 +224,6 @@ impl ListSelection for ItemListSelection<'_> {
                         }
                     }
                     self.selection_index = Some(index.clone());
-                    self.update_selection(index.clone());
                 },
                 None => {}
             }
@@ -234,20 +256,21 @@ impl ListSelection for ItemListSelection<'_> {
             Some(selection_index) => {
                 let mut new_selection_index = selection_index;
                 let mut max_selection_index = self.determine_max_selection_index();
-                if selection_index == 0 && self.inv_start_index >= self.item_view_line_count {
+                if selection_index == 0 && self.start_index >= self.item_view_line_count {
                     new_selection_index = max_selection_index;
-                    self.inv_start_index = self.inv_start_index - self.item_view_line_count;
+                    self.start_index = self.start_index - self.item_view_line_count;
                     if self.selecting_items {
                         self.select_range(new_selection_index, selection_index);
                     }
                     // TODO redraw list flag?
                 } else if selection_index == 0 {
                     new_selection_index = 0;
-                    self.inv_start_index = 0;
+                    self.start_index = 0;
                     // TODO redraw list flag?
                 } else {
                     new_selection_index = 0;
                 }
+                self.update_selection(new_selection_index);
             },
             None => {}
         }
@@ -257,19 +280,21 @@ impl ListSelection for ItemListSelection<'_> {
         match self.selection_index {
             Some(selection_index) => {
                 let mut new_selection_index = selection_index;
-                let max_scroll_index = self.determine_max_selection_index();
+                let max_scroll_index = self.determine_max_scroll_index();
                 let mut max_selection_index = self.determine_max_selection_index();
 
-                if selection_index == max_selection_index && self.inv_start_index + self.item_view_line_count <= max_scroll_index {
+                if self.should_turn_page(selection_index) {
+                    // Reset the selection index to 0 and the start index to begin the new page
                     new_selection_index = 0;
-                    self.inv_start_index += self.item_view_line_count;
+                    self.start_index += self.item_view_line_count;
                     // TODO redraw list flag?
                 } else if selection_index == max_selection_index {
-                    self.inv_start_index = max_scroll_index;
+                    self.start_index = max_scroll_index;
                     // TODO redraw list flag?
                 } else {
                     new_selection_index = max_selection_index;
                 }
+                self.update_selection(new_selection_index);
             },
             None => {}
         }
@@ -281,7 +306,7 @@ impl ListSelection for ItemListSelection<'_> {
                 let mut new_selection_index = selection_index;
                 if selection_index > 0 {
                     new_selection_index = selection_index - 1;
-                } else if selection_index == 0 && self.inv_start_index > 0 {
+                } else if selection_index == 0 && self.start_index > 0 {
                     new_selection_index = selection_index - 1;
                     // TODO redraw list flag?
                 }
@@ -299,8 +324,8 @@ impl ListSelection for ItemListSelection<'_> {
                 let max_selection_index = self.determine_max_selection_index();
                 if selection_index < max_selection_index {
                     new_selection_index = selection_index + 1;
-                } else if selection_index == self.item_view_line_count - 1 && self.inv_start_index < max_scroll_index {
-                    new_selection_index = self.inv_start_index + 1;
+                } else if selection_index == self.item_view_line_count - 1 && self.start_index < max_scroll_index {
+                    new_selection_index = self.start_index + 1;
                     // TODO redraw list flag?
                 }
                 self.update_selection(new_selection_index);
@@ -321,7 +346,7 @@ pub fn build_list_selection(items : Vec<&Item>, item_view_line_count: i32) -> It
     let selecting_items = false;
     let selected_indices = VecDeque::new();
     let selected_items = VecDeque::new();
-    ItemListSelection { selection_mode, previous_selection_index, selection_index, inv_start_index, pivot_index, previous_container_index, container_index, selecting_items, selected_indices, selected_items, items, item_view_line_count }
+    ItemListSelection { selection_mode, previous_selection_index, selection_index, start_index: inv_start_index, pivot_index, previous_container_index, container_index, selecting_items, selected_indices, selected_items, items, item_view_line_count }
 }
 
 #[cfg(test)]
@@ -403,7 +428,7 @@ mod tests {
         let mut list_selection = build_list_selection(items, 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
-        list_selection.select(1);
+        list_selection.set_initial_selection(1);
         list_selection.toggle_select();
         // WHEN we call to move up the selection
         list_selection.move_up();
@@ -431,7 +456,7 @@ mod tests {
         let mut list_selection = build_list_selection(items, 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
-        list_selection.select(2);
+        list_selection.set_initial_selection(2);
         list_selection.toggle_select();
         // WHEN we call to move up the selection multiple times
         list_selection.move_up();
@@ -463,7 +488,7 @@ mod tests {
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting above that twice
-        list_selection.select(2);
+        list_selection.set_initial_selection(2);
         list_selection.toggle_select();
         list_selection.move_up();
         list_selection.move_up();
@@ -502,6 +527,7 @@ mod tests {
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.select(1);
+        list_selection.update_selection(1);
         list_selection.toggle_select();
         // WHEN we call to move down the selection
         list_selection.move_down();
@@ -561,7 +587,7 @@ mod tests {
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting below that twice
-        list_selection.select(1);
+        list_selection.set_initial_selection(1);
         list_selection.toggle_select();
         list_selection.move_down();
         list_selection.move_down();
@@ -585,4 +611,125 @@ mod tests {
         assert_eq!(&item2, selected_items[0]);
         assert_eq!(&item3, selected_items[1]);
     }
+
+    #[test]
+    fn test_page_down_same_page() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item, &item2, &item3, &item4 ];
+
+        // AND a valid list selection that has a line count matching our items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index  and ensuring we're selecting items
+        list_selection.set_initial_selection(1);
+        list_selection.toggle_select();
+        // WHEN we call to go down a page
+        list_selection.page_down();
+
+        // THEN we expect everything below this point to be selected
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+
+        // AND the start index remains unchanged
+        assert_eq!(0, list_selection.get_start_index());
+
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(&item4, selected_items[2]);
+    }
+
+    #[test]
+    fn test_page_down_multi_page_same_page() {
+        // GIVEN a series of items to select from
+        let item1 = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item6 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item7 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item8 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+
+        // AND a valid list selection that has a line count that fits half of these items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index  and ensuring we're selecting items
+        list_selection.set_initial_selection(1);
+        list_selection.toggle_select();
+        // WHEN we call to go down a page
+        list_selection.page_down();
+
+        // THEN we expect everything below this point to be selected
+        // up to the end of the page
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+
+        // AND the start index remains unchanged
+        assert_eq!(0, list_selection.get_start_index());
+
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(&item4, selected_items[2]);
+    }
+
+    #[test]
+    fn test_page_down_multi_page_next_page() {
+        // GIVEN a series of items to select from
+        let item1 = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = crate::items::build_item(5, "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = crate::items::build_item(6, "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = crate::items::build_item(7, "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = crate::items::build_item(8, "Test Item 8".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+
+        // AND a valid list selection that has a line count that fits half of these items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index
+        list_selection.set_initial_selection(1);
+        // AND ensuring we're selecting items
+        list_selection.toggle_select();
+        // AND paging down to the end of the page
+        list_selection.page_down();
+
+        // WHEN we call to page down again
+        list_selection.page_down();
+
+        // THEN we expect the selection to turn the page
+        // and select the first item on the next page
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(4, list_selection.get_selected_count());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+        // 4 items per page so index 4 is the first item on the 2nd page
+        assert_eq!(true, list_selection.is_selected(4));
+        // AND the start index will be the next page start index
+        assert_eq!(4, list_selection.get_start_index());
+
+        // AND the items themselves will also be selected
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(4, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(&item4, selected_items[2]);
+        assert_eq!(&item5, selected_items[3]);
+    }
+
 }
