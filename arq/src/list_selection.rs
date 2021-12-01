@@ -69,7 +69,7 @@ impl ItemListSelection<'_> {
         // Deselect anything we were previously selecting
         let reducing_selection_below = self.container_index < self.previous_container_index && self.container_index > self.get_pivot_index();
         if reducing_selection_below || self.selected_start_position() {
-            for i in self.previous_container_index.clone() - 1..self.container_index {
+            for i in self.container_index.clone()..=self.previous_container_index {
                 self.deselect(i);
             }
         }
@@ -321,7 +321,7 @@ pub fn build_list_selection(items : Vec<&Item>, item_view_line_count: i32) -> It
     let selecting_items = false;
     let selected_indices = VecDeque::new();
     let selected_items = VecDeque::new();
-    ItemListSelection { selection_mode, previous_selection_index, selcurrent_indexection_index, inv_start_index, pivot_index, previous_container_index, container_index, selecting_items, selected_indices, selected_items, items, item_view_line_count }
+    ItemListSelection { selection_mode, previous_selection_index, selection_index, inv_start_index, pivot_index, previous_container_index, container_index, selecting_items, selected_indices, selected_items, items, item_view_line_count }
 }
 
 #[cfg(test)]
@@ -419,6 +419,76 @@ mod tests {
     }
 
     #[test]
+    fn test_selecting_above_multi() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item, &item2, &item3, &item4 ];
+
+        // AND a valid list selection
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index  and ensuring we're selecting items
+        list_selection.select(2);
+        list_selection.toggle_select();
+        // WHEN we call to move up the selection multiple times
+        list_selection.move_up();
+        list_selection.move_up();
+
+        // THEN we expect multiple items/indices to be returned
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(0));
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+        assert_eq!(&item, selected_items[0]);
+        assert_eq!(&item2, selected_items[1]);
+        assert_eq!(&item3, selected_items[2]);
+    }
+
+    #[test]
+    fn test_reducing_selection_above() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item, &item2, &item3, &item4 ];
+
+        // AND a valid list selection
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index (the pivot point)
+        // AND then selecting above that twice
+        list_selection.select(2);
+        list_selection.toggle_select();
+        list_selection.move_up();
+        list_selection.move_up();
+
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(0));
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+
+        // WHEN we call to select down
+        list_selection.move_down();
+
+        // THEN we expect the selection to decrease towards the initial selection/pivot point (2)
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(2, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+    }
+
+    #[test]
     fn test_selecting_downwards() {
         // GIVEN a series of items to select from
         let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
@@ -437,6 +507,76 @@ mod tests {
         list_selection.move_down();
 
         // THEN we expect multiple items/indices to be returned
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(2, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+    }
+
+    #[test]
+    fn test_selecting_downwards_multi() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item, &item2, &item3, &item4 ];
+
+        // AND a valid list selection
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index  and ensuring we're selecting items
+        list_selection.select(1);
+        list_selection.toggle_select();
+        // WHEN we call to move down the selection multiple times
+        list_selection.move_down();
+        list_selection.move_down();
+
+        // THEN we expect multiple items/indices to be returned
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(&item4, selected_items[2]);
+    }
+
+    #[test]
+    fn test_reducing_selection_below() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item, &item2, &item3, &item4 ];
+
+        // AND a valid list selection
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting an index (the pivot point)
+        // AND then selecting below that twice
+        list_selection.select(1);
+        list_selection.toggle_select();
+        list_selection.move_down();
+        list_selection.move_down();
+
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+        let mut selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+
+        // WHEN we call to select up
+        list_selection.move_up();
+
+        // THEN we expect the selection to decrease towards the initial selection/pivot point
         assert_eq!(true, list_selection.is_selecting());
         assert_eq!(true, list_selection.is_selected(1));
         assert_eq!(true, list_selection.is_selected(2));
