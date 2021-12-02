@@ -143,8 +143,8 @@ impl ItemListSelection<'_> {
         match self.selection_index {
             Some(idx) => {
                 self.previous_container_index = Some(self.container_index);
-                self.selection_index = Some(new_selection_index);
                 self.container_index = new_selection_index.clone() + self.start_index.clone();
+                self.selection_index = Some( self.container_index.clone());
 
                 let no_pivot_point = !self.has_pivot_point();
                 if no_pivot_point {
@@ -181,7 +181,13 @@ impl ItemListSelection<'_> {
         }
     }
 
-    fn should_turn_page(&mut self, selection_index: i32) -> bool {
+    fn should_turn_to_previous_page(&mut self, selection_index: i32) -> bool {
+        let selection_at_start_of_a_page = selection_index % self.item_view_line_count == 0;
+        let can_turn_back = self.start_index >= self.item_view_line_count;
+        selection_at_start_of_a_page && can_turn_back
+    }
+
+    fn should_turn_to_next_page(&mut self, selection_index: i32) -> bool {
         let max_scroll_index = self.determine_max_scroll_index();
         let max_selection_index = self.determine_max_selection_index();
         let end_of_page = selection_index == max_selection_index;
@@ -276,7 +282,7 @@ impl ListSelection for ItemListSelection<'_> {
             Some(selection_index) => {
                 let mut new_selection_index = selection_index;
                 let mut max_selection_index = self.determine_max_selection_index();
-                if selection_index == 0 && self.start_index >= self.item_view_line_count {
+                if self.should_turn_to_previous_page(selection_index) {
                     new_selection_index = max_selection_index;
                     self.start_index = self.start_index - self.item_view_line_count;
                     if self.selecting_items {
@@ -305,7 +311,7 @@ impl ListSelection for ItemListSelection<'_> {
         match self.selection_index {
             Some(selection_index) => {
                 let mut new_selection_index = selection_index;
-                if self.should_turn_page(selection_index) {
+                if self.should_turn_to_next_page(selection_index) {
                     // Reset the selection index to 0 and the start index to begin the new page
                     new_selection_index = 0;
                     self.start_index += self.item_view_line_count;
@@ -795,5 +801,51 @@ mod tests {
         assert_eq!(&item5, selected_items[0]);
         assert_eq!(&item6, selected_items[1]);
         assert_eq!(&item7, selected_items[2]);
+    }
+
+    #[test]
+    fn test_page_up_multi_page_previous_page() {
+        // GIVEN a series of items to select from
+        let item1 = crate::items::build_item(0, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(1, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(2, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(3, "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = crate::items::build_item(4, "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = crate::items::build_item(5, "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = crate::items::build_item(6, "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = crate::items::build_item(7, "Test Item 8".to_owned(), 'X', 1, 1);
+        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+
+        // AND a valid list selection that has a line count that fits half of these items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by navigating to the correct index and initialising selection
+        list_selection.page_down();  // end of first page
+        list_selection.page_down();  // 2nd page
+        list_selection.set_initial_selection(2); // 3rd item of 2nd page
+        list_selection.toggle_select();
+        assert_eq!(4, list_selection.get_start_index());
+
+        // WHEN we call to go up a page twice
+        list_selection.page_up();
+        list_selection.page_up();
+
+        // THEN we expect the selection to turn back the page and select the last item on the previous page
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(3));
+        assert_eq!(true, list_selection.is_selected(4));
+        assert_eq!(true, list_selection.is_selected(5));
+        assert_eq!(true, list_selection.is_selected(6));
+
+        // AND the start index is now the start of the previous page
+        assert_eq!(0, list_selection.get_start_index());
+
+        // AND our selection is the last item of page 1 and the first 3 items of page 2
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(4, selected_items.len());
+        assert_eq!(&item4, selected_items[0]);
+        assert_eq!(&item5, selected_items[1]);
+        assert_eq!(&item6, selected_items[2]);
+        assert_eq!(&item7, selected_items[3]);
     }
 }
