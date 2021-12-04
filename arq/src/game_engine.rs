@@ -22,6 +22,7 @@ use crate::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::container::ContainerType;
+use crate::list_selection::build_list_selection;
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,

@@ -8,11 +8,15 @@ pub enum SelectionMode {
 
 pub trait ListSelection {
     fn get_start_index(&self) -> i32;
-    fn get_items(&self) -> Vec<&Item>;
-    fn get_selected_items(&self) -> VecDeque<&Item>;
+    fn get_container_index(&self) -> Option<i32>;
+    fn get_items(&self) -> &Vec<Item>;
+    fn get_items_mut(&mut self) -> &mut Vec<Item>;
+    fn get_selected_items(&self) -> &VecDeque<Item>;
     fn is_selecting(&self) -> bool;
     fn toggle_select(&mut self);
+    fn cancel_selection(&mut self);
     fn is_selected(&self, index : i32) -> bool;
+    fn is_current_index(&self, index : i32) -> bool;
     fn select(&mut self, index : i32);
     fn deselect(&mut self, index : i32);
     fn page_up(&mut self);
@@ -21,7 +25,7 @@ pub trait ListSelection {
     fn move_down(&mut self);
 }
 
-pub struct ItemListSelection<'a> {
+pub struct ItemListSelection {
     selection_mode : SelectionMode,
     //The index of the topmost item on the screen, allows scrolling
     start_index: i32,
@@ -33,12 +37,12 @@ pub struct ItemListSelection<'a> {
     selecting_items: bool,
     // Storage of items in the selection
     selected_indices: VecDeque<i32>,
-    selected_items: VecDeque<&'a Item>,
-    items : Vec<&'a Item>,
-    item_view_line_count: i32,
+    selected_items: VecDeque<Item>,
+    items : Vec<Item>,
+    pub item_view_line_count: i32,
 }
 
-impl ItemListSelection<'_> {
+impl ItemListSelection {
     fn get_pivot_index(&self) -> i32 {
         match self.pivot_index {
             Some(idx) => { idx },
@@ -220,6 +224,11 @@ impl ItemListSelection<'_> {
         self.selected_indices.len() as i32
     }
 
+    fn set_container_index(&mut self, index : i32) {
+        let container_index = index + self.start_index.clone();
+        self.container_index = Some(container_index);
+    }
+
     fn set_initial_selection(&mut self, index : i32) {
         let container_index = index + self.start_index.clone();
         self.select(container_index);
@@ -227,17 +236,25 @@ impl ItemListSelection<'_> {
     }
 }
 
-impl ListSelection for ItemListSelection<'_> {
+impl ListSelection for ItemListSelection {
     fn get_start_index(&self) -> i32 {
         self.start_index.clone()
     }
 
-    fn get_items(&self) -> Vec<&Item> {
-        self.items.clone()
+    fn get_container_index(&self) -> Option<i32> {
+        self.container_index.clone()
     }
 
-    fn get_selected_items(&self) -> VecDeque<&Item> {
-        self.selected_items.clone()
+    fn get_items(&self) -> &Vec<Item> {
+        &self.items
+    }
+
+    fn get_items_mut(&mut self) -> &mut Vec<Item> {
+        &mut self.items
+    }
+
+    fn get_selected_items(&self) -> &VecDeque<Item> {
+        &self.selected_items
     }
 
     fn is_selecting(&self) -> bool {
@@ -248,8 +265,22 @@ impl ListSelection for ItemListSelection<'_> {
         self.selecting_items = !self.selecting_items.clone();
     }
 
+    fn cancel_selection(&mut self) {
+        self.selecting_items = false;
+        self.selected_items.clear();
+    }
+
     fn is_selected(&self, index : i32) -> bool {
         self.selected_indices.contains(&index)
+    }
+
+    fn is_current_index(&self, index : i32) -> bool {
+        match self.container_index {
+            Some(container_index) => {
+                container_index == index
+            },
+            None => { false }
+        }
     }
 
     fn select(&mut self, index : i32) {
@@ -261,7 +292,7 @@ impl ListSelection for ItemListSelection<'_> {
                         Some(previous_container_index) => {
                             if previous_container_index <= index {
                                 self.selected_indices.push_back(index.clone());
-                                self.selected_items.push_back(item);
+                                self.selected_items.push_back(item.clone());
                                 self.container_index = Some(index.clone());
                                 return;
                             }
@@ -269,7 +300,7 @@ impl ListSelection for ItemListSelection<'_> {
                         None => {}
                     }
                     self.selected_indices.push_front(index.clone());
-                    self.selected_items.push_front(item);
+                    self.selected_items.push_front(item.clone());
                     self.container_index = Some(index.clone());
                 },
                 None => {}
@@ -385,7 +416,7 @@ impl ListSelection for ItemListSelection<'_> {
     }
 }
 
-pub fn build_list_selection(items : Vec<&Item>, item_view_line_count: i32) -> ItemListSelection {
+pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> ItemListSelection {
     let selection_mode = SelectionMode::SelectingItems;
     let inv_start_index = 0;
     let pivot_index = None;
@@ -408,7 +439,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items
         let list_selection = build_list_selection(items, 4);
@@ -416,12 +447,102 @@ mod tests {
         // THEN we expect it to wrap the items provided
         let wrapped_items = list_selection.get_items();
         assert_eq!(4, wrapped_items.len());
-        assert_eq!(item, *wrapped_items[0]);
-        assert_eq!(item2, *wrapped_items[1]);
-        assert_eq!(item3, *wrapped_items[2]);
-        assert_eq!(item4, *wrapped_items[3]);
+        assert_eq!(item, wrapped_items[0]);
+        assert_eq!(item2, wrapped_items[1]);
+        assert_eq!(item3, wrapped_items[2]);
+        assert_eq!(item4, wrapped_items[3]);
 
         // AND have no currently selected items
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(0, selected_items.len());
+    }
+
+    #[test]
+    fn test_move_up() {
+        // GIVEN a selection with a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let mut list_selection = build_list_selection(items, 4);
+        // AND an initial container index of 2
+        list_selection.set_container_index(2);
+
+        // WHEN we call to move up
+        list_selection.move_up();
+
+        // THEN we expect the container index to be 1 (2nd item)
+        assert_eq!(1, list_selection.get_container_index().unwrap());
+        // AND we should have no currently selected items
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(0, selected_items.len());
+    }
+
+    #[test]
+    fn test_move_down_up_of_list() {
+        // GIVEN a selection with a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let mut list_selection = build_list_selection(items, 4);
+        // AND an initial container index of 3
+        list_selection.set_container_index(3);
+
+        // WHEN we move up 3 times
+        list_selection.move_up();
+        list_selection.move_up();
+        list_selection.move_up();
+
+        // THEN we expect the container index to be 0 (1st item)
+        assert_eq!(0, list_selection.get_container_index().unwrap());
+        // AND we should have no currently selected items
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(0, selected_items.len());
+    }
+
+    #[test]
+    fn test_move_down() {
+        // GIVEN a selection with a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let mut list_selection = build_list_selection(items, 4);
+        list_selection.set_container_index(0);
+
+        // WHEN we call to move down
+        list_selection.move_down();
+
+        // THEN we expect the container index to be 1 (2nd item)
+        assert_eq!(1, list_selection.get_container_index().unwrap());
+        // AND we should have no currently selected items
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(0, selected_items.len());
+    }
+
+    #[test]
+    fn test_move_down_end_of_list() {
+        // GIVEN a selection with a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let mut list_selection = build_list_selection(items, 4);
+        list_selection.set_container_index(0);
+
+        // WHEN we move down 3 times
+        list_selection.move_down();
+        list_selection.move_down();
+        list_selection.move_down();
+
+        // THEN we expect the container index to be 3 (4th item)
+        assert_eq!(3, list_selection.get_container_index().unwrap());
+        // AND we should have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
     }
@@ -448,7 +569,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -460,7 +581,7 @@ mod tests {
         assert!(list_selection.is_selected(1));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(1, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
+        assert_eq!(item2, selected_items[0]);
     }
 
     #[test]
@@ -470,7 +591,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -487,8 +608,8 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(1));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(&item, selected_items[0]);
-        assert_eq!(&item2, selected_items[1]);
+        assert_eq!(item, selected_items[0]);
+        assert_eq!(item2, selected_items[1]);
     }
 
     #[test]
@@ -498,7 +619,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -517,9 +638,9 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(&item, selected_items[0]);
-        assert_eq!(&item2, selected_items[1]);
-        assert_eq!(&item3, selected_items[2]);
+        assert_eq!(item, selected_items[0]);
+        assert_eq!(item2, selected_items[1]);
+        assert_eq!(item3, selected_items[2]);
     }
 
     #[test]
@@ -529,7 +650,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -557,8 +678,8 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
     }
 
     #[test]
@@ -568,7 +689,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -586,8 +707,8 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
     }
 
     #[test]
@@ -597,7 +718,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -616,9 +737,9 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(3));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
-        assert_eq!(&item4, selected_items[2]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
+        assert_eq!(item4, selected_items[2]);
     }
 
     #[test]
@@ -628,7 +749,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
         let mut list_selection = build_list_selection(items, 4);
@@ -656,8 +777,8 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
     }
 
     #[test]
@@ -667,7 +788,7 @@ mod tests {
         let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item, &item2, &item3, &item4 ];
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection that has a line count matching our items
         let mut list_selection = build_list_selection(items, 4);
@@ -689,9 +810,9 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
-        assert_eq!(&item4, selected_items[2]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
+        assert_eq!(item4, selected_items[2]);
     }
 
     #[test]
@@ -705,7 +826,7 @@ mod tests {
         let item6 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
         let item7 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
         let item8 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
         let mut list_selection = build_list_selection(items, 4);
@@ -728,9 +849,9 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
-        assert_eq!(&item4, selected_items[2]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
+        assert_eq!(item4, selected_items[2]);
     }
 
     #[test]
@@ -744,7 +865,7 @@ mod tests {
         let item6 = crate::items::build_item(6, "Test Item 6".to_owned(), 'X', 1, 1);
         let item7 = crate::items::build_item(7, "Test Item 7".to_owned(), 'X', 1, 1);
         let item8 = crate::items::build_item(8, "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
         let mut list_selection = build_list_selection(items, 4);
@@ -774,10 +895,10 @@ mod tests {
         // AND the items themselves will also be selected
         let selected_items = list_selection.get_selected_items();
         assert_eq!(4, selected_items.len());
-        assert_eq!(&item2, selected_items[0]);
-        assert_eq!(&item3, selected_items[1]);
-        assert_eq!(&item4, selected_items[2]);
-        assert_eq!(&item5, selected_items[3]);
+        assert_eq!(item2, selected_items[0]);
+        assert_eq!(item3, selected_items[1]);
+        assert_eq!(item4, selected_items[2]);
+        assert_eq!(item5, selected_items[3]);
     }
 
     #[test]
@@ -791,7 +912,7 @@ mod tests {
         let item6 = crate::items::build_item(5, "Test Item 6".to_owned(), 'X', 1, 1);
         let item7 = crate::items::build_item(6, "Test Item 7".to_owned(), 'X', 1, 1);
         let item8 = crate::items::build_item(7, "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
         let mut list_selection = build_list_selection(items, 4);
@@ -818,9 +939,9 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(&item5, selected_items[0]);
-        assert_eq!(&item6, selected_items[1]);
-        assert_eq!(&item7, selected_items[2]);
+        assert_eq!(item5, selected_items[0]);
+        assert_eq!(item6, selected_items[1]);
+        assert_eq!(item7, selected_items[2]);
     }
 
     #[test]
@@ -834,7 +955,7 @@ mod tests {
         let item6 = crate::items::build_item(5, "Test Item 6".to_owned(), 'X', 1, 1);
         let item7 = crate::items::build_item(6, "Test Item 7".to_owned(), 'X', 1, 1);
         let item8 = crate::items::build_item(7, "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ &item1, &item2, &item3, &item4, &item5, &item6, &item7, &item8  ];
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
         let mut list_selection = build_list_selection(items, 4);
@@ -863,9 +984,9 @@ mod tests {
         // AND our selection is the last item of page 1 and the first 3 items of page 2
         let selected_items = list_selection.get_selected_items();
         assert_eq!(4, selected_items.len());
-        assert_eq!(&item4, selected_items[0]);
-        assert_eq!(&item5, selected_items[1]);
-        assert_eq!(&item6, selected_items[2]);
-        assert_eq!(&item7, selected_items[3]);
+        assert_eq!(item4, selected_items[0]);
+        assert_eq!(item5, selected_items[1]);
+        assert_eq!(item6, selected_items[2]);
+        assert_eq!(item7, selected_items[3]);
     }
 }
