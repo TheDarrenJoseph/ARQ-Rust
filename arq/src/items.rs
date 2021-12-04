@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 #[derive(Clone)]
 #[derive(PartialEq, Debug)]
 pub enum ItemType {
@@ -11,7 +13,7 @@ pub enum ItemType {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Item {
-    id : u64,
+    id : Uuid,
     pub item_type: ItemType,
     pub name : String,
     pub symbol : char,
@@ -21,7 +23,7 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn get_id(&self) -> u64 {
+    pub fn get_id(&self) -> Uuid {
         self.id
     }
     pub fn get_name(&self) -> String {
@@ -35,23 +37,24 @@ impl Item {
     }
 }
 
-pub fn build_item(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
+pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
     Item {id: id, item_type: ItemType::ITEM, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
 }
 
-pub fn build_container_item(id: u64, name: String, symbol: char, weight : i32, value : i32) -> Item {
+pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
     Item {id: id, item_type: ItemType::CONTAINER, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
 }
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
     use crate::items::ItemType;
 
     #[test]
     fn test_build_item() {
-        let item = crate::items::build_item(0, "Test Item".to_owned(), 'X', 1, 1);
-
-        assert_eq!(0, item.get_id());
+        let id = Uuid::new_v4();
+        let item = crate::items::build_item(id, "Test Item".to_owned(), 'X', 1, 1);
+        assert_eq!(id, item.get_id());
         assert_eq!(ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
         assert_eq!('X', item.symbol);
@@ -62,9 +65,10 @@ mod tests {
 
     #[test]
     fn test_build_container() {
-        let item = crate::items::build_container_item(0, "Test Container".to_owned(), 'X', 1, 1);
+        let id = Uuid::new_v4();
+        let item = crate::items::build_container_item(id, "Test Container".to_owned(), 'X', 1, 1);
 
-        assert_eq!(0, item.get_id());
+        assert_eq!(id, item.get_id());
         assert_eq!(ItemType::CONTAINER, item.item_type);
         assert_eq!("Test Container", item.name);
         assert_eq!('X', item.symbol);

@@ -4,6 +4,7 @@ use tui::backend::TermionBackend;
 use termion::event::Key;
 use std::io;
 use std::convert::TryInto;
+use uuid::Uuid;
 
 use crate::ui;
 use crate::ui::Draw;
@@ -207,15 +208,15 @@ impl GameEngine {
                 self.terminal_manager.terminal.clear()?;
 
                 let inventory = self.characters[0].get_inventory();
-                let gold_bar = crate::items::build_item(1, "Gold Bar".to_owned(), 'X', 1, 100);
+                let gold_bar = crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
                 inventory.add_item(gold_bar);
 
-                let silver_bar = crate::items::build_item(2, "Silver Bar".to_owned(), 'X', 1, 50);
+                let silver_bar = crate::items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
                 inventory.add_item(silver_bar);
 
-                let bronze_bar = crate::items::build_item(2, "Bronze Bar".to_owned(), 'X', 1, 50);
-                let mut bag = crate::container::build(3, "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
-                let carton = crate::container::build(4, "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+                let bronze_bar = crate::items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+                let mut bag = crate::container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+                let carton = crate::container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
                 bag.add(carton);
                 bag.add_item(bronze_bar);
                 inventory.add(bag);

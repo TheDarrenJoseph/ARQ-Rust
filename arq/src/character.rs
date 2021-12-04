@@ -1,4 +1,5 @@
 use std::fmt::{Formatter, Display, Result, Debug};
+use uuid::Uuid;
 
 use crate::container::{Container,ContainerType};
 use crate::position::Position;
@@ -85,7 +86,7 @@ pub fn build_default_character_details() -> CharacterDetails{
 pub fn build_player(name : String, position: Position) -> Character {
     let health = 100;
     let colour = Colour::Green;
-    let inventory = crate::container::build(0, name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+    let inventory = crate::container::build(Uuid::new_v4(), name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
     let character_details = build_default_character_details();
     let player = Character { name, character_details, health, colour, position, inventory };
     return player;
@@ -167,6 +168,8 @@ impl Character {
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use crate::character::{Character, build_player, build_default_character_details};
     use crate::container::{ContainerType};
     use crate::tile::Colour;
@@ -179,7 +182,7 @@ mod tests {
         let health = 100;
         let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::container::build(0, "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = crate::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let mut character = Character { name, character_details, health, colour, position, inventory };
 
         assert_eq!("Test Person", character.get_name());
@@ -196,7 +199,7 @@ mod tests {
         let health = 100;
         let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::container::build(0, "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = crate::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let mut character = build_player(name, position);
 
         assert_eq!("Test Person", character.get_name());
