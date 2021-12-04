@@ -9,6 +9,7 @@ pub enum SelectionMode {
 pub trait ListSelection {
     fn get_start_index(&self) -> i32;
     fn get_container_index(&self) -> Option<i32>;
+    fn get_current_index(&self) -> i32;
     fn get_items(&self) -> &Vec<Item>;
     fn get_items_mut(&mut self) -> &mut Vec<Item>;
     fn get_selected_items(&self) -> &VecDeque<Item>;
@@ -32,14 +33,14 @@ pub struct ItemListSelection {
     // The pivot index is the 'initial' selected index
     pivot_index: Option<i32>,
     previous_container_index: Option<i32>,
-    // The 'current' index
+    current_index: i32,
     container_index: Option<i32>,
     selecting_items: bool,
     // Storage of items in the selection
     selected_indices: VecDeque<i32>,
     selected_items: VecDeque<Item>,
     items : Vec<Item>,
-    pub item_view_line_count: i32,
+    pub page_line_count: i32,
 }
 
 impl ItemListSelection {
@@ -53,17 +54,17 @@ impl ItemListSelection {
     fn determine_max_scroll_index(&mut self) -> i32 {
         let item_count = self.items.len() as i32;
         let mut max_scroll_index = 0;
-        if item_count > self.item_view_line_count {
-            max_scroll_index = item_count - self.item_view_line_count;
+        if item_count > self.page_line_count {
+            max_scroll_index = item_count - self.page_line_count;
         }
         max_scroll_index
     }
 
     fn determine_max_selection_index(&mut self) -> i32 {
         let item_count = self.items.len() as i32;
-        let mut max_selection_index = self.item_view_line_count-1;
-        if item_count < self.item_view_line_count {
-            let max =  self.item_view_line_count  - (self.item_view_line_count - item_count) - 1;
+        let mut max_selection_index = self.page_line_count -1;
+        if item_count < self.page_line_count {
+            let max =  self.page_line_count - (self.page_line_count - item_count) - 1;
             max_selection_index = max.clone();
         }
         max_selection_index
@@ -161,11 +162,11 @@ impl ItemListSelection {
         }
     }
 
-    fn update_selection_indices(&mut self, new_container_index : i32) {
+    fn update_selection_indices(&mut self, index : i32) {
         match self.container_index {
             Some(idx) => {
                 self.previous_container_index = Some(idx);
-                self.container_index = Some(new_container_index.clone() + self.start_index.clone());
+                self.container_index = Some(index.clone() + self.start_index.clone());
 
                 let no_pivot_point = !self.has_pivot_point();
                 if no_pivot_point {
@@ -187,8 +188,9 @@ impl ItemListSelection {
         }
     }
 
-    pub fn update_selection(&mut self, new_container_index : i32) {
-        self.update_selection_indices(new_container_index);
+    pub fn update_selection(&mut self, index : i32) {
+        self.current_index = index.clone() + self.start_index.clone();
+        self.update_selection_indices(index);
         match self.previous_container_index {
             Some(previous_container_index) => {
                 match self.container_index {
@@ -207,8 +209,8 @@ impl ItemListSelection {
     }
 
     fn should_turn_to_previous_page(&mut self, selection_index: i32) -> bool {
-        let selection_at_start_of_a_page = selection_index % self.item_view_line_count == 0;
-        let can_turn_back = self.start_index >= self.item_view_line_count;
+        let selection_at_start_of_a_page = selection_index % self.page_line_count == 0;
+        let can_turn_back = self.start_index >= self.page_line_count;
         selection_at_start_of_a_page && can_turn_back
     }
 
@@ -216,7 +218,7 @@ impl ItemListSelection {
         let max_scroll_index = self.determine_max_scroll_index();
         let max_selection_index = self.determine_max_selection_index();
         let end_of_page = selection_index == max_selection_index;
-        let can_scroll = self.start_index + self.item_view_line_count <= max_scroll_index;
+        let can_scroll = self.start_index + self.page_line_count <= max_scroll_index;
         return end_of_page && can_scroll;
     }
 
@@ -224,14 +226,14 @@ impl ItemListSelection {
         self.selected_indices.len() as i32
     }
 
-    fn set_container_index(&mut self, index : i32) {
-        let container_index = index + self.start_index.clone();
-        self.container_index = Some(container_index);
+    fn set_current_index(&mut self, index : i32) {
+        self.current_index = index + self.start_index.clone();
     }
 
     fn set_initial_selection(&mut self, index : i32) {
         let container_index = index + self.start_index.clone();
         self.select(container_index);
+        self.selecting_items = true;
         self.update_selection(index.clone());
     }
 }
@@ -243,6 +245,10 @@ impl ListSelection for ItemListSelection {
 
     fn get_container_index(&self) -> Option<i32> {
         self.container_index.clone()
+    }
+
+    fn get_current_index(&self) -> i32 {
+        self.current_index.clone()
     }
 
     fn get_items(&self) -> &Vec<Item> {
@@ -263,11 +269,19 @@ impl ListSelection for ItemListSelection {
 
     fn toggle_select(&mut self) {
         self.selecting_items = !self.selecting_items.clone();
+        // Select the current item
+        if self.selecting_items {
+            self.select(self.current_index.clone());
+            self.update_selection(self.current_index.clone());
+        }
     }
 
     fn cancel_selection(&mut self) {
         self.selecting_items = false;
         self.selected_items.clear();
+        self.selected_indices.clear();
+        self.pivot_index = None;
+        self.container_index = None;
     }
 
     fn is_selected(&self, index : i32) -> bool {
@@ -275,12 +289,7 @@ impl ListSelection for ItemListSelection {
     }
 
     fn is_current_index(&self, index : i32) -> bool {
-        match self.container_index {
-            Some(container_index) => {
-                container_index == index
-            },
-            None => { false }
-        }
+        self.current_index == index
     }
 
     fn select(&mut self, index : i32) {
@@ -294,6 +303,7 @@ impl ListSelection for ItemListSelection {
                                 self.selected_indices.push_back(index.clone());
                                 self.selected_items.push_back(item.clone());
                                 self.container_index = Some(index.clone());
+                                self.current_index = index.clone();
                                 return;
                             }
                         },
@@ -302,6 +312,7 @@ impl ListSelection for ItemListSelection {
                     self.selected_indices.push_front(index.clone());
                     self.selected_items.push_front(item.clone());
                     self.container_index = Some(index.clone());
+                    self.current_index = index.clone();
                 },
                 None => {}
             }
@@ -330,90 +341,63 @@ impl ListSelection for ItemListSelection {
     }
 
     fn page_up(&mut self) {
-        match self.container_index {
-            Some(container_index) => {
-                let mut new_container_index = container_index;
-                let mut max_selection_index = self.determine_max_selection_index();
-                if self.should_turn_to_previous_page(container_index) {
-                    new_container_index = max_selection_index;
-                    self.start_index = self.start_index - self.item_view_line_count;
-                    if self.selecting_items {
-                        self.select_range(new_container_index, container_index);
-                    }
-                    // TODO redraw list flag?
-                } else if container_index == 0 {
-                    new_container_index = 0;
-                    self.start_index = 0;
-                    // TODO redraw list flag?
-                } else {
-                    new_container_index = 0;
-                }
-                self.update_selection(new_container_index);
-            },
-            None => {
-                // Turn back a page
-                if self.start_index >= self.item_view_line_count {
-                    self.start_index = self.start_index - self.item_view_line_count;
-                }
+        let mut new_index = self.current_index.clone();
+        let mut max_selection_index = self.determine_max_selection_index();
+        if self.should_turn_to_previous_page(self.current_index.clone()) {
+            new_index = max_selection_index;
+            self.start_index = self.start_index - self.page_line_count;
+            if self.selecting_items {
+                self.select_range(new_index, self.current_index.clone());
             }
+            // TODO redraw list flag?
+        } else if self.current_index == 0 {
+            new_index = 0;
+            self.start_index = 0;
+            // TODO redraw list flag?
+        } else {
+            new_index = 0;
         }
+        self.update_selection(new_index);
     }
 
     fn page_down(&mut self) {
-        match self.container_index {
-            Some(container_index) => {
-                let mut new_container_index = container_index;
-                if self.should_turn_to_next_page(container_index) {
-                    // Reset the selection index to 0 and the start index to begin the new page
-                    new_container_index = 0;
-                    self.start_index += self.item_view_line_count;
-                } else {
-                    // Select the lowest item
-                    let mut max_selection_index = self.determine_max_selection_index();
-                    new_container_index = max_selection_index;
-                }
-                self.update_selection(new_container_index);
-            },
-            None => {
-                // Move to the next page
-                self.start_index = self.item_view_line_count;
-            }
+        let mut new_index = self.current_index.clone();
+        if self.should_turn_to_next_page(self.current_index.clone()) {
+            // Reset the selection index to 0 and the start index to begin the new page
+            new_index = 0;
+            self.start_index += self.page_line_count;
+        } else {
+            // Select the lowest item
+            let mut max_selection_index = self.determine_max_selection_index();
+            new_index = max_selection_index;
         }
+        self.update_selection(new_index);
     }
 
     fn move_up(&mut self) {
-        match self.container_index {
-            Some(container_index) => {
-                let mut new_container_index = container_index;
-                if container_index > 0 {
-                    new_container_index = container_index - 1;
-                } else if container_index == 0 && self.start_index > 0 {
-                    new_container_index = container_index - 1;
-                    // TODO redraw list flag?
-                }
-                self.update_selection(new_container_index);
-            },
-            None => {}
+        let mut new_index = self.current_index.clone();
+        if self.current_index > 0 {
+            new_index = self.current_index.clone() - 1;
+        } else if self.current_index == 0 && self.start_index > 0 {
+            new_index = self.current_index.clone() - 1;
+            // TODO redraw list flag?
         }
+        self.update_selection(new_index);
     }
 
     fn move_down(&mut self) {
-        match self.container_index {
-            Some(container_index) => {
-                let mut new_container_index = container_index;
-                let max_scroll_index = self.determine_max_scroll_index();
-                let max_selection_index = self.determine_max_selection_index();
-                if container_index < max_selection_index {
-                    new_container_index = container_index + 1;
-                } else if container_index == self.item_view_line_count - 1 && self.start_index < max_scroll_index {
-                    new_container_index = self.start_index + 1;
-                    // TODO redraw list flag?
-                }
-                self.update_selection(new_container_index);
-            },
-            None => {}
+        let mut new_index = self.current_index.clone();
+        let max_scroll_index = self.determine_max_scroll_index();
+        let max_selection_index = self.determine_max_selection_index();
+        if self.current_index < max_selection_index {
+            new_index = self.current_index.clone() + 1;
+        } else if self.current_index == self.page_line_count - 1 && self.start_index < max_scroll_index {
+            new_index = self.start_index + 1;
+            // TODO redraw list flag?
         }
+        self.update_selection(new_index);
     }
+
 }
 
 pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> ItemListSelection {
@@ -425,7 +409,7 @@ pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> Ite
     let selecting_items = false;
     let selected_indices = VecDeque::new();
     let selected_items = VecDeque::new();
-    ItemListSelection { selection_mode, start_index: inv_start_index, pivot_index, previous_container_index, container_index, selecting_items, selected_indices, selected_items, items, item_view_line_count }
+    ItemListSelection { selection_mode, start_index: inv_start_index, pivot_index, previous_container_index, current_index: 0, container_index, selecting_items, selected_indices, selected_items, items, page_line_count: item_view_line_count }
 }
 
 #[cfg(test)]
@@ -467,13 +451,13 @@ mod tests {
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         // AND an initial container index of 2
-        list_selection.set_container_index(2);
+        list_selection.set_current_index(2);
 
         // WHEN we call to move up
         list_selection.move_up();
 
         // THEN we expect the container index to be 1 (2nd item)
-        assert_eq!(1, list_selection.get_container_index().unwrap());
+        assert_eq!(1, list_selection.get_current_index());
         // AND we should have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
@@ -489,7 +473,7 @@ mod tests {
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         // AND an initial container index of 3
-        list_selection.set_container_index(3);
+        list_selection.set_current_index(3);
 
         // WHEN we move up 3 times
         list_selection.move_up();
@@ -497,7 +481,7 @@ mod tests {
         list_selection.move_up();
 
         // THEN we expect the container index to be 0 (1st item)
-        assert_eq!(0, list_selection.get_container_index().unwrap());
+        assert_eq!(0, list_selection.get_current_index());
         // AND we should have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
@@ -512,13 +496,13 @@ mod tests {
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
-        list_selection.set_container_index(0);
+        list_selection.set_current_index(0);
 
         // WHEN we call to move down
         list_selection.move_down();
 
-        // THEN we expect the container index to be 1 (2nd item)
-        assert_eq!(1, list_selection.get_container_index().unwrap());
+        // THEN we expect the current index to be 1 (2nd item)
+        assert_eq!(1, list_selection.get_current_index());
         // AND we should have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
@@ -533,7 +517,7 @@ mod tests {
         let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
-        list_selection.set_container_index(0);
+        list_selection.set_current_index(0);
 
         // WHEN we move down 3 times
         list_selection.move_down();
@@ -541,7 +525,7 @@ mod tests {
         list_selection.move_down();
 
         // THEN we expect the container index to be 3 (4th item)
-        assert_eq!(3, list_selection.get_container_index().unwrap());
+        assert_eq!(3, list_selection.get_current_index());
         // AND we should have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
@@ -598,7 +582,6 @@ mod tests {
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
-        list_selection.toggle_select();
         // WHEN we call to move up the selection
         list_selection.move_up();
 
@@ -626,7 +609,6 @@ mod tests {
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(2);
-        list_selection.toggle_select();
         // WHEN we call to move up the selection multiple times
         list_selection.move_up();
         list_selection.move_up();
@@ -658,7 +640,6 @@ mod tests {
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting above that twice
         list_selection.set_initial_selection(2);
-        list_selection.toggle_select();
         list_selection.move_up();
         list_selection.move_up();
 
@@ -757,7 +738,6 @@ mod tests {
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting below that twice
         list_selection.set_initial_selection(1);
-        list_selection.toggle_select();
         list_selection.move_down();
         list_selection.move_down();
 
@@ -795,7 +775,6 @@ mod tests {
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
-        list_selection.toggle_select();
         // WHEN we call to go down a page
         list_selection.page_down();
 
@@ -833,7 +812,6 @@ mod tests {
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
-        list_selection.toggle_select();
         // WHEN we call to go down a page
         list_selection.page_down();
 
@@ -872,8 +850,6 @@ mod tests {
 
         // AND we've begun by selecting an index
         list_selection.set_initial_selection(1);
-        // AND ensuring we're selecting items
-        list_selection.toggle_select();
         // AND paging down to the end of the page
         list_selection.page_down();
 
@@ -921,7 +897,6 @@ mod tests {
         list_selection.page_down();  // end of first page
         list_selection.page_down();  // 2nd page
         list_selection.set_initial_selection(2); // 3rd item of 2nd page
-        list_selection.toggle_select();
         assert_eq!(4, list_selection.get_start_index());
 
         // WHEN we call to go up a page
@@ -964,7 +939,6 @@ mod tests {
         list_selection.page_down();  // end of first page
         list_selection.page_down();  // 2nd page
         list_selection.set_initial_selection(2); // 3rd item of 2nd page
-        list_selection.toggle_select();
         assert_eq!(4, list_selection.get_start_index());
 
         // WHEN we call to go up a page twice

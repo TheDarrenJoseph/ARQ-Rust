@@ -133,6 +133,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
         let container_len = container.get_contents().len() as i32;
         let row_count = get_row_count(frame.size().height.clone() as i32, container_len);
         self.row_count = row_count;
+        self.item_list_selection.page_line_count = row_count.clone();
 
         let window_block = Block::default()
             .borders(Borders::ALL)
@@ -199,25 +200,17 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                 },
                 Key::Char('o') => {
                     if !self.frame_handler.item_list_selection.is_selecting() {
-                        let container_index_result = self.frame_handler.item_list_selection.get_container_index();
-
-                        match container_index_result {
-                            Some(container_index) => {
-                                let mut item = self.container.get_mut(container_index);
-                                if item.can_open() {
-                                    let mut items = Vec::new();
-                                    for c in item.get_contents() {
-                                        let self_item = c.get_self_item();
-                                        items.push(self_item);
-                                    }
-                                    let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
-                                    view.begin();
-                                }
-                            }, None => {
-                                // No initial container index / selection set yet
+                        let current_index = self.frame_handler.item_list_selection.get_current_index();
+                        let mut item = self.container.get_mut(current_index);
+                        if item.can_open() {
+                            let mut items = Vec::new();
+                            for c in item.get_contents() {
+                                let self_item = c.get_self_item();
+                                items.push(self_item);
                             }
+                            let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
+                            view.begin();
                         }
-
                     }
                 },
                 Key::Char('\n') => {
