@@ -78,7 +78,7 @@ impl ItemListSelection {
                         // Deselect anything we were previously selecting
                         let reducing_selection_below = container_index < previous_container_index && container_index > self.get_pivot_index();
                         if reducing_selection_below || self.selected_start_position() {
-                            for i in container_index.clone()..=previous_container_index {
+                            for i in container_index+1..=previous_container_index {
                                 self.deselect(i);
                             }
                         }
@@ -324,8 +324,9 @@ impl ListSelection for ItemListSelection {
             let item_result = self.items.get(index.clone() as usize);
             match item_result {
                 Some(_) => {
-                    self.selected_indices.remove(index.clone() as usize);
-                    self.selected_items.remove(index.clone() as usize);
+                    let true_index = self.selected_indices.binary_search(&index).unwrap();
+                    self.selected_indices.remove(true_index.clone() as usize);
+                    self.selected_items.remove(true_index.clone() as usize);
                     match self.container_index {
                         Some(idx) => {
                             if idx == index {
@@ -721,6 +722,48 @@ mod tests {
         assert_eq!(item2, selected_items[0]);
         assert_eq!(item3, selected_items[1]);
         assert_eq!(item4, selected_items[2]);
+    }
+
+    #[test]
+    fn test_reducing_selection_below_all_selected() {
+        // GIVEN a series of items to select from
+        let item = crate::items::build_item(1, "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = crate::items::build_item(2, "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = crate::items::build_item(3, "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = crate::items::build_item(4, "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+
+        // AND a valid list selection
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've begun by selecting the first item in the container
+        // AND then selecting below that until we reach the bottom of the container
+        list_selection.set_initial_selection(0);
+        list_selection.move_down();
+        list_selection.move_down();
+        list_selection.move_down();
+
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(0));
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        assert_eq!(true, list_selection.is_selected(3));
+        let mut selected_items = list_selection.get_selected_items();
+        assert_eq!(4, selected_items.len());
+
+        // WHEN we call to select up
+        list_selection.move_up();
+
+        // THEN we expect the selection to decrease towards the initial selection/pivot point
+        assert_eq!(true, list_selection.is_selecting());
+        assert_eq!(true, list_selection.is_selected(0));
+        assert_eq!(true, list_selection.is_selected(1));
+        assert_eq!(true, list_selection.is_selected(2));
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(3, selected_items.len());
+        assert_eq!(item, selected_items[0]);
+        assert_eq!(item2, selected_items[1]);
+        assert_eq!(item3, selected_items[2]);
     }
 
     #[test]
