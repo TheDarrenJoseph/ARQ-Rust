@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::items::{Item, ItemType};
+use crate::map::objects::items::{Item, ItemType};
 
 pub enum SelectionMode {
     SelectingItems

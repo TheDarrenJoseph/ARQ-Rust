@@ -1,9 +1,9 @@
 use std::fmt::{Formatter, Display, Result, Debug};
 use uuid::Uuid;
 
-use crate::container::{Container,ContainerType};
-use crate::position::Position;
-use crate::tile::Colour;
+use crate::map::objects::container::{build, Container, ContainerType};
+use crate::map::position::Position;
+use crate::map::tile::Colour;
 
 #[derive(Clone, Debug)]
 pub struct Character {
@@ -86,7 +86,7 @@ pub fn build_default_character_details() -> CharacterDetails{
 pub fn build_player(name : String, position: Position) -> Character {
     let health = 100;
     let colour = Colour::Green;
-    let inventory = crate::container::build(Uuid::new_v4(), name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+    let inventory = build(Uuid::new_v4(), name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
     let character_details = build_default_character_details();
     let player = Character { name, character_details, health, colour, position, inventory };
     return player;
@@ -172,8 +172,8 @@ mod tests {
 
     use crate::character::{Character, build_player, build_default_character_details};
     use crate::container::{ContainerType};
-    use crate::tile::Colour;
-    use crate::position::Position;
+    use crate::map::tile::Colour;
+    use crate::map::position::Position;
 
     #[test]
     fn test_character_build() {

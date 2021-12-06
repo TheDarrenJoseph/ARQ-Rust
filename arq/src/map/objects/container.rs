@@ -1,4 +1,4 @@
-use crate::items::{Item, ItemType};
+use crate::map::objects::items::{build_container_item, Item, ItemType};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -119,7 +119,7 @@ pub fn wrap_item(item: Item) -> Container {
 }
 
 pub fn build(id: Uuid, name: String, symbol: char, weight : i32, value : i32, container_type : ContainerType, weight_limit : i32) -> Container {
-    let container_item = crate::items::build_container_item(id, name, symbol, weight, value);
+    let container_item = build_container_item(id, name, symbol, weight, value);
     Container { item: container_item, container_type, weight_limit, contents: Vec::new()}
 }
 

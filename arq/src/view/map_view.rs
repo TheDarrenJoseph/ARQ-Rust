@@ -3,8 +3,8 @@ use tui::buffer::Cell;
 use std::io::Error;
 use crate::map::Map;
 use crate::ui::{UI};
-use crate::terminal_manager::TerminalManager;
-use crate::colour_mapper;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::terminal::colour_mapper;
 use crate::character::Character;
 use crate::view::View;
 

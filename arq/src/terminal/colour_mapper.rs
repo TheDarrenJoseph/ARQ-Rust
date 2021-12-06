@@ -1,4 +1,4 @@
-use crate::tile::{Colour};
+use crate::map::tile::{Colour};
 
 pub fn map_colour(tile_colour: Colour) -> tui::style::Color {
     match tile_colour {

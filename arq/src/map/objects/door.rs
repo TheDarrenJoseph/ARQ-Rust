@@ -1,5 +1,6 @@
-use crate::tile::{Tile, TileDetails};
-use crate::position::Position;
+use crate::map;
+use crate::map::position::Position;
+use crate::map::tile::{Tile, TileDetails};
 
 #[derive(Clone)]
 pub struct Door {
@@ -46,15 +47,15 @@ impl DoorLike for Door {
 }
 
 pub fn build_door(position : Position) -> Door {
-    let tile_library = crate::tile::build_library();
+    let tile_library = map::tile::build_library();
     let door_tile_details = tile_library[&Tile::Door].clone();
     Door { tile_details : door_tile_details, position, open: false, locked: false, health: 100, locks: 0, unlocked_locks: 0 }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
-    use crate::door::{build_door};
+    use crate::map::door::build_door;
+    use crate::map::position::Position;
 
     #[test]
     fn test_build_door() {

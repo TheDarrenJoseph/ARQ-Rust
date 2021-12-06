@@ -12,9 +12,9 @@ use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::View;
-use crate::terminal_manager::TerminalManager;
-use crate::container::Container;
-use crate::items::Item;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::map::objects::container::Container;
+use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
 
 pub struct ContainerView<'a, B : tui::backend::Backend> {

@@ -9,7 +9,7 @@ use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::View;
-use crate::terminal_manager::TerminalManager;
+use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
 use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};

@@ -1,6 +1,13 @@
-use crate::room::Room;
-use crate::position::{Position, Area};
-use crate::tile::{Tile, TileDetails};
+use room::Room;
+
+use crate::map::position::{Area, Position};
+use crate::map::tile::{Tile, TileDetails};
+
+pub mod objects;
+pub mod map_generator;
+pub mod position;
+pub mod room;
+pub mod tile;
 
 #[derive(Clone)]
 pub struct Map {
@@ -73,13 +80,13 @@ impl Map {
 
 #[cfg(test)]
 mod tests {
-    use crate::tile::{Tile};
-    use crate::room::Room;
-    use crate::position::{Position, build_square_area};
+    use crate::map::position::{build_square_area, Position};
+    use crate::map::room::Room;
+    use crate::map::tile::Tile;
 
     #[test]
     fn test_build_map() {
-        let tile_library = crate::tile::build_library();
+        let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
         let rom = tile_library[&Tile::Room].clone();
@@ -113,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_adjust_map() {
-        let tile_library = crate::tile::build_library();
+        let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
         let wall = tile_library[&Tile::Wall].clone();
@@ -143,13 +150,13 @@ mod tests {
         assert_eq!(4, map.tiles[0].len());
 
         // THEN we expect it to be available at 0,1
-        assert_eq!(crate::tile::Tile::Wall, map.tiles[0][1].tile_type);
+        assert_eq!(crate::map::tile::Tile::Wall, map.tiles[0][1].tile_type);
 
         // AND WHEN we push an new row to the map
         map.tiles.push(vec![wall.clone()]);
         // THEN we expect the length to increase
         assert_eq!(1, map.tiles[1].len());
         // AND the new tile to be available at 1,0
-        assert_eq!(crate::tile::Tile::Wall, map.tiles[1][0].tile_type);
+        assert_eq!(crate::map::tile::Tile::Wall, map.tiles[1][0].tile_type);
     }
 }

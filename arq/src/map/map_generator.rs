@@ -1,11 +1,11 @@
 use rand::Rng;
 use std::collections::HashMap;
 use crate::map::Map;
-use crate::room::Room;
-use crate::door::{build_door};
-use crate::position::{Position, Area, build_square_area, Side};
-use crate::tile::{Tile, TileDetails, build_library};
-use crate::pathfinding::{Pathfinding};
+use crate::map::room::Room;
+use crate::map::objects::door::{build_door};
+use crate::map::position::{Position, Area, build_square_area, Side};
+use crate::map::tile::{Tile, TileDetails, build_library};
+use crate::engine::pathfinding::{Pathfinding};
 
 pub struct MapGenerator {
     min_room_size: u16,
@@ -37,7 +37,7 @@ impl MapGenerator {
     }
 
     fn path_rooms(&mut self){
-        let tile_library = crate::tile::build_library();
+        let tile_library = crate::map::tile::build_library();
         let corridor_tile = &tile_library[&Tile::Corridor].clone();
         let rooms = self.map.get_rooms().clone();
         for i in 0..rooms.len()-1 {
@@ -193,7 +193,7 @@ impl MapGenerator {
     }
 
     fn add_room_to_map(&mut self, room: &Room) {
-        let tile_library = crate::tile::build_library();
+        let tile_library = crate::map::tile::build_library();
         let room_tile = &tile_library[&Tile::Room].clone();
         let wall_tile = &tile_library[&Tile::Wall].clone();
 
@@ -238,8 +238,8 @@ impl MapGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, build_square_area};
-    use crate::map_generator::{build_generator};
+    use crate::map::position::{Position, build_square_area};
+    use crate::map::map_generator::{build_generator};
 
     #[test]
     fn test_build_generator() {

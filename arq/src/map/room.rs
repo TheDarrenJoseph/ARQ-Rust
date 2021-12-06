@@ -1,5 +1,5 @@
-use crate::position::{Area, Position, AreaSide, build_rectangular_area};
-use crate::door::Door;
+use crate::map::position::{Area, Position, AreaSide, build_rectangular_area};
+use crate::map::objects::door::Door;
 
 #[derive(Clone)]
 pub struct Room {
@@ -21,9 +21,9 @@ impl Room {
 
 #[cfg(test)]
 mod tests {
-    use crate::door::build_door;
-    use crate::room::Room;
-    use crate::position::{Position, Side, build_square_area};
+    use crate::map::door::build_door;
+    use crate::map::room::Room;
+    use crate::map::position::{Position, Side, build_square_area};
 
     #[test]
     fn test_get_sides() {

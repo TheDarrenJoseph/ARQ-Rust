@@ -257,7 +257,7 @@ pub fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u1
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, Side, build_square_area, build_rectangular_area};
+    use crate::map::position::{Position, Side, build_square_area, build_rectangular_area};
 
     #[test]
     fn test_get_neighbors_top_left() {

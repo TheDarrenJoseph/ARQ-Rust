@@ -2,7 +2,7 @@ use std::collections::{BinaryHeap,HashMap};
 use std::cmp::{Reverse,Ordering};
 
 use crate::map::Map;
-use crate::position::Position;
+use crate::map::position::Position;
 
 trait ManhattanPathCosting {
     fn manhattan_path_cost(&self, a: Position, b: Position) -> i32;
@@ -146,14 +146,14 @@ impl Pathfinding {
 
 #[cfg(test)]
 mod tests {
-    use crate::tile::{Tile};
-    use crate::room::Room;
+    use crate::map::tile::{Tile};
+    use crate::map::room::Room;
     use crate::map;
-    use crate::position::{Position, build_square_area};
+    use crate::map::position::{Position, build_square_area};
     use crate::pathfinding::{ManhattanPathCosting, Pathfinding, Node};
 
     fn build_test_map() -> map::Map {
-        let tile_library = crate::tile::build_library();
+        let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
         let non = tile_library[&Tile::NoTile].clone();

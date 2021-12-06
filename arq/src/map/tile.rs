@@ -46,7 +46,7 @@ pub fn build_library() -> HashMap<Tile, TileDetails> {
 
 #[cfg(test)]
 mod tests {
-    use crate::tile::build_library;
+    use crate::map::tile::build_library;
 
     #[test]
     fn test_build_library() {
