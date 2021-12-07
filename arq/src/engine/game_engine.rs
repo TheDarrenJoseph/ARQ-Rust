@@ -213,7 +213,7 @@ impl GameEngine {
         bag.add(carton);
         bag.add_item(bronze_bar);
 
-        for i in 0..50 {
+        for i in 1..=30 {
             let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
             inventory.add_item(test_item);
         }

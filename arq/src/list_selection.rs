@@ -214,6 +214,14 @@ impl ItemListSelection {
         selection_at_start_of_a_page && can_scroll_up_one
     }
 
+    fn should_scroll_down(&mut self, selection_index: i32) -> bool {
+        let max_scroll_index = self.determine_max_scroll_index();
+        let max_selection_index = self.determine_max_selection_index();
+        let end_of_page = selection_index == max_selection_index;
+        let can_scroll = self.start_index <= max_scroll_index;
+        return end_of_page && can_scroll;
+    }
+
     fn should_turn_to_previous_page(&mut self, selection_index: i32) -> bool {
         let selection_at_start_of_a_page = selection_index % self.page_line_count == 0;
         let can_turn_back = self.start_index >= self.page_line_count;
@@ -398,9 +406,10 @@ impl ListSelection for ItemListSelection {
     fn move_down(&mut self) {
         let mut new_index = self.current_index.clone();
         let max_selection_index = self.determine_max_selection_index();
-        if self.current_index < max_selection_index {
+        let valid_index = self.start_index + new_index < (self.items.len() as i32) as i32;
+        if valid_index && self.current_index < max_selection_index {
             new_index = self.current_index.clone() + 1;
-        } else if self.should_turn_to_next_page(self.current_index.clone()) {
+        } else if valid_index && self.should_scroll_down(self.current_index.clone()) {
             // Bump the start index forward to scroll
             self.start_index += 1;
         }

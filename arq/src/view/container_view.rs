@@ -149,7 +149,15 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
         let mut line_index = 0;
         let current_index= self.item_list_selection.get_current_index();
         let start_index= self.item_list_selection.get_start_index();
-        let view_contents = &container.get_contents()[start_index as usize..start_index as usize + inventory_item_lines as usize];
+
+        let remaining_item_count = container_len - 1  - start_index;
+        let mut end_of_view_represented_index = start_index as usize + inventory_item_lines as usize;
+        end_of_view_represented_index = if end_of_view_represented_index >= remaining_item_count.try_into().unwrap()  {
+            (start_index.clone() as i32 + remaining_item_count as i32).try_into().unwrap()
+        } else {
+            end_of_view_represented_index
+        };
+        let view_contents = &container.get_contents()[start_index as usize..end_of_view_represented_index];
         for c in view_contents {
             let represented_index = start_index.clone() + line_index.clone();
             if line_index < inventory_item_lines.into() {
