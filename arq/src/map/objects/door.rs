@@ -54,7 +54,7 @@ pub fn build_door(position : Position) -> Door {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::door::build_door;
+    use crate::map::objects::door::build_door;
     use crate::map::position::Position;
 
     #[test]

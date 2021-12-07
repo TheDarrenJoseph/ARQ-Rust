@@ -21,7 +21,7 @@ impl Room {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::door::build_door;
+    use crate::map::objects::door::build_door;
     use crate::map::room::Room;
     use crate::map::position::{Position, Side, build_square_area};
 

@@ -126,12 +126,14 @@ pub fn build(id: Uuid, name: String, symbol: char, weight : i32, value : i32, co
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
-    use crate::container::ContainerType;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, ContainerType};
+    use crate::map::objects::items;
 
     #[test]
     fn test_container_build() {
         let id = Uuid::new_v4();
-        let container =  crate::container::build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
         assert_eq!(id, container.item.get_id());
         assert_eq!("Test Container", container.item.name);
@@ -150,12 +152,12 @@ mod tests {
     #[test]
     fn test_container_add_item() {
         // GIVEN we have a valid container
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add a new item
-        let item = crate::items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
+        let item = items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
         container.add_item(item);
 
         // THEN we expect it's contents size to increase
@@ -165,13 +167,13 @@ mod tests {
     #[test]
     fn test_container_add_item_weight_limit() {
         // GIVEN we have a valid container
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we try to add more items than the supported weight limit
-        let item = crate::items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 100, 1);
-        let item2 = crate::items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
+        let item = items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 100, 1);
+        let item2 = items::build_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
         container.add_item(item);
         container.add_item(item2);
 
@@ -182,13 +184,13 @@ mod tests {
     #[test]
     fn test_container_add() {
         // GIVEN we have a valid container
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
+        let mut container = build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add either an wrapped ITEM or OBJECT container
-        let gold_bar = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let bag_object = crate::container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
+        let gold_bar = container::wrap_item(items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let bag_object = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
         container.add(gold_bar);
         container.add(bag_object);
 
@@ -199,17 +201,17 @@ mod tests {
     #[test]
     fn test_container_add_weight_limit() {
         // GIVEN we have a valid container with a weight limit of 40
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
+        let mut container =  build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
-        let gold_bar_1 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let mut bag_object = crate::container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
-        let gold_bar_2 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let gold_bar_3 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let gold_bar_4 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let lockpick_1 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
-        let lockpick_2 = crate::container::wrap_item(crate::items::build_item(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
+        let gold_bar_1 = container::wrap_item(items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let mut bag_object = container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
+        let gold_bar_2 = container::wrap_item(items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar_3 = container::wrap_item(items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar_4 = container::wrap_item(items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let lockpick_1 = container::wrap_item(items::build_item(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
+        let lockpick_2 = container::wrap_item(items::build_item(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
         bag_object.add(gold_bar_2);
         bag_object.add(gold_bar_3);
         bag_object.add(gold_bar_4);
@@ -229,7 +231,7 @@ mod tests {
     #[test]
     fn test_get_loot_value_empty() {
         // GIVEN we have a valid container with no items
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the total item value
         let total_value = container.get_loot_value();
@@ -240,14 +242,14 @@ mod tests {
     #[test]
     fn test_get_loot_value() {
         // GIVEN we have a valid container
-        let mut container =  crate::container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
 
         // AND we've added 2 items with different values
-        let gold_bar = crate::items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
         container.add_item(gold_bar);
 
-        let silver_bar = crate::items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
         container.add_item(silver_bar);
         assert_eq!(2, container.get_contents().len());
 

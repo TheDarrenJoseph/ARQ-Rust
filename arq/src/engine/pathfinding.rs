@@ -150,7 +150,7 @@ mod tests {
     use crate::map::room::Room;
     use crate::map;
     use crate::map::position::{Position, build_square_area};
-    use crate::pathfinding::{ManhattanPathCosting, Pathfinding, Node};
+    use crate::engine::pathfinding::{ManhattanPathCosting, Pathfinding, Node};
 
     fn build_test_map() -> map::Map {
         let tile_library = crate::map::tile::build_library();

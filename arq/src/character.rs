@@ -171,7 +171,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::{Character, build_player, build_default_character_details};
-    use crate::container::{ContainerType};
+    use crate::map::objects::container::{ContainerType};
     use crate::map::tile::Colour;
     use crate::map::position::Position;
 
@@ -182,7 +182,7 @@ mod tests {
         let health = 100;
         let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let mut character = Character { name, character_details, health, colour, position, inventory };
 
         assert_eq!("Test Person", character.get_name());
@@ -199,7 +199,7 @@ mod tests {
         let health = 100;
         let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let mut character = build_player(name, position);
 
         assert_eq!("Test Person", character.get_name());

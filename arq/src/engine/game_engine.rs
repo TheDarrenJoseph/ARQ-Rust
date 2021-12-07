@@ -182,6 +182,7 @@ impl GameEngine {
                 let updated_character = character_view.get_character();
                 characters[0] = updated_character;
                 self.characters = characters.clone();
+                self.build_testing_inventory();
             }
 
             if self.ui.additional_widgets.is_empty() {
@@ -198,6 +199,28 @@ impl GameEngine {
         Ok(())
     }
 
+    fn build_testing_inventory(&mut self) {
+        let inventory = self.characters[0].get_inventory();
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        inventory.add_item(gold_bar);
+
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        inventory.add_item(silver_bar);
+
+        let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+        let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+        let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+        bag.add(carton);
+        bag.add_item(bronze_bar);
+
+        for i in 0..50 {
+            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            inventory.add_item(test_item);
+        }
+
+        inventory.add(bag);
+    }
+
     fn game_loop(&mut self) -> Result<(), io::Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         match key {
@@ -210,19 +233,6 @@ impl GameEngine {
                 self.terminal_manager.terminal.clear()?;
 
                 let inventory = self.characters[0].get_inventory();
-                let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
-                inventory.add_item(gold_bar);
-
-                let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
-                inventory.add_item(silver_bar);
-
-                let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
-                let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
-                let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-                bag.add(carton);
-                bag.add_item(bronze_bar);
-                inventory.add(bag);
-
                 let mut inventory_view = build_container_view( inventory, &mut self.ui, &mut self.terminal_manager);
                 inventory_view.begin();
 

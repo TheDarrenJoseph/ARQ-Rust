@@ -48,14 +48,14 @@ pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, 
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
-    use crate::items::ItemType;
+    use crate::map::objects::items;
 
     #[test]
     fn test_build_item() {
         let id = Uuid::new_v4();
-        let item = crate::items::build_item(id, "Test Item".to_owned(), 'X', 1, 1);
+        let item = items::build_item(id, "Test Item".to_owned(), 'X', 1, 1);
         assert_eq!(id, item.get_id());
-        assert_eq!(ItemType::ITEM, item.item_type);
+        assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
         assert_eq!('X', item.symbol);
         assert_eq!(0, item.colour);
@@ -66,10 +66,10 @@ mod tests {
     #[test]
     fn test_build_container() {
         let id = Uuid::new_v4();
-        let item = crate::items::build_container_item(id, "Test Container".to_owned(), 'X', 1, 1);
+        let item = items::build_container_item(id, "Test Container".to_owned(), 'X', 1, 1);
 
         assert_eq!(id, item.get_id());
-        assert_eq!(ItemType::CONTAINER, item.item_type);
+        assert_eq!(items::ItemType::CONTAINER, item.item_type);
         assert_eq!("Test Container", item.name);
         assert_eq!('X', item.symbol);
         assert_eq!(0, item.colour);

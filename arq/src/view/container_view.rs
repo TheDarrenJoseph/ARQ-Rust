@@ -79,7 +79,7 @@ impl ContainerFrameHandler {
         let mut spans = Vec::new();
         for column in &self.columns {
             let name = column.name.clone();
-            let padding = build_padding(column.size - name.len() as i8);
+            let padding = build_padding(column.size - name.len() as i8 + 2);
             spans.push(Span::raw(column.name.clone()));
             spans.push(Span::raw(padding));
         }
@@ -108,7 +108,7 @@ fn build_column_text(column: &Column, item: &Item) -> String {
     }
 }
 
-fn build_cell<'a>(text: String) -> Paragraph<'a> {
+fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
     let spans = vec![Spans::from(Span::raw(text.clone()))];
     let spans_len = spans.len() as u16;
     let paragraph = Paragraph::new(spans)
@@ -131,44 +131,55 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
         let container = data.unpack();
         let container_len = container.get_contents().len() as i32;
-        let row_count = get_row_count(frame.size().height.clone() as i32, container_len);
-        self.row_count = row_count;
-        self.item_list_selection.page_line_count = row_count.clone();
 
         let window_block = Block::default()
             .borders(Borders::ALL)
             .title(container.get_self_item().name.clone());
         let window_area = Rect::new(1, 1, frame.size().width.clone() - 4, frame.size().height.clone() - 4);
+        let inventory_item_lines = window_area.height - 3;
+        self.row_count = inventory_item_lines as i32;
+        self.item_list_selection.page_line_count = inventory_item_lines as i32;
         frame.render_widget(window_block, window_area);
 
         let headings = self.build_headings();
         let headings_area = Rect::new(2, 2, frame.size().width.clone() - 4, 2);
         frame.render_widget(headings, headings_area);
 
-        let mut index = 0;
-        for c in container.get_contents() {
-            let item = &c.get_self_item();
-            let mut offset : u16 = 2;
-            for column in &self.columns {
-                let text = build_column_text(column, item);
-                let current_index = self.item_list_selection.is_current_index(index.clone());
-                let selected = self.item_list_selection.is_selected(index.clone());
-                let mut cell = build_cell(text);
-                if current_index && selected {
-                    cell = cell.style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
-                } else  if current_index {
-                    cell = cell.style(Style::default().add_modifier(Modifier::REVERSED));
-                } else if selected {
-                    cell = cell.style(Style::default().fg(Color::Green));
-                }
+        // -3 for the heading and 2  borders
+        let mut line_index = 0;
+        let current_index= self.item_list_selection.get_current_index();
+        let start_index= self.item_list_selection.get_start_index();
+        let view_contents = &container.get_contents()[start_index as usize..start_index as usize + inventory_item_lines as usize];
+        for c in view_contents {
+            let represented_index = start_index.clone() + line_index.clone();
+            if line_index < inventory_item_lines.into() {
+                let item = &c.get_self_item();
+                let mut offset: u16 = 2;
+                for column in &self.columns {
+                    let text = build_column_text(column, item);
+                    let current_index = self.item_list_selection.is_focused(represented_index);
+                    let selected = self.item_list_selection.is_selected(represented_index);
+                    let mut column_text = build_paragraph(text);
+                    if current_index && selected {
+                        column_text = column_text.style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
+                    } else if current_index {
+                        column_text = column_text.style(Style::default().add_modifier(Modifier::REVERSED));
+                    } else if selected {
+                        column_text = column_text.style(Style::default().fg(Color::Green));
+                    }
 
-                let column_length = column.size as i8;
-                let cell_area = Rect::new( offset.clone(), (3 + index.clone()).try_into().unwrap(), column_length.try_into().unwrap(), 1);
-                frame.render_widget(cell.clone(), cell_area);
-                offset += column_length as u16;
+                    let column_length = column.size as i8;
+                    let text_area = Rect::new(offset.clone(), (3 + line_index.clone()).try_into().unwrap(), column_length.try_into().unwrap(), 1);
+                    frame.render_widget(column_text.clone(), text_area);
+                    offset += column_length as u16 + 1;
+                }
+                line_index += 1;
             }
-            index += 1;
         }
+        let usage_description = "(o)pen, (d)rop, (m)ove";
+        let mut usage_text = build_paragraph(String::from(usage_description));
+        let text_area = Rect::new( window_area.x.clone() + 1, window_area.height.clone(), usage_description.len().try_into().unwrap(), 1);
+        frame.render_widget(usage_text.clone(), text_area);
     }
 }
 
@@ -221,8 +232,14 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                 Key::Up => {
                     self.frame_handler.item_list_selection.move_up();
                 },
+                Key::PageUp => {
+                    self.frame_handler.item_list_selection.page_up();
+                },
                 Key::Down => {
                     self.frame_handler.item_list_selection.move_down();
+                },
+                Key::PageDown => {
+                    self.frame_handler.item_list_selection.page_down();
                 },
                 _ => {}
             }
