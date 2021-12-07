@@ -232,7 +232,8 @@ impl ItemListSelection {
         let max_scroll_index = self.determine_max_scroll_index();
         let max_selection_index = self.determine_max_selection_index();
         let end_of_page = selection_index == max_selection_index;
-        let can_scroll = self.start_index + self.page_line_count <= max_scroll_index;
+        let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
+        let can_scroll = self.start_index <= max_scroll_index && remaining_item_count > 0;
         return end_of_page && can_scroll;
     }
 
@@ -383,9 +384,14 @@ impl ListSelection for ItemListSelection {
             new_index = 0;
             self.start_index += self.page_line_count;
         } else {
-            // Select the lowest item
-            let mut max_selection_index = self.determine_max_selection_index();
-            new_index = max_selection_index;
+            let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
+            if remaining_item_count >= self.page_line_count {
+                // Select the lowest item
+                let mut max_selection_index = self.determine_max_selection_index();
+                new_index = max_selection_index;
+            } else {
+                new_index = remaining_item_count - 1;
+            }
         }
         self.update_selection(new_index);
     }
@@ -408,7 +414,12 @@ impl ListSelection for ItemListSelection {
         let max_selection_index = self.determine_max_selection_index();
         let valid_index = self.start_index + new_index < (self.items.len() as i32) as i32;
         if valid_index && self.current_index < max_selection_index {
-            new_index = self.current_index.clone() + 1;
+            let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
+            if remaining_item_count >= self.page_line_count {
+                new_index = self.current_index.clone() + 1;
+            } else {
+                new_index = remaining_item_count - 1;
+            }
         } else if valid_index && self.should_scroll_down(self.current_index.clone()) {
             // Bump the start index forward to scroll
             self.start_index += 1;
