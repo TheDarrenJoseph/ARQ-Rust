@@ -176,10 +176,21 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
                 }
                 line_index += 1;
             }
+
             let usage_description = "(o)pen, (d)rop, (m)ove";
             let mut usage_text = build_paragraph(String::from(usage_description));
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.height.clone(), usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
+
+
+            let page_number = self.item_list_selection.get_page_number();
+            let total_pages = self.item_list_selection.get_total_pages();
+
+            let page_count_text = format!("Page {}/{}", page_number, total_pages);
+            let width = page_count_text.len().try_into().unwrap();
+            let page_count_paragraph = build_paragraph(page_count_text);
+            let page_count_area = Rect::new( window_area.x.clone() + 1 + usage_description.len() as u16 + 2 , window_area.height.clone(), width, 1);
+            frame.render_widget(page_count_paragraph, page_count_area);
         }
     }
 }

@@ -7,6 +7,8 @@ pub enum SelectionMode {
 }
 
 pub trait ListSelection {
+    fn get_page_number(&self) -> i32;
+    fn get_total_pages(&self) -> i32;
     fn get_start_index(&self) -> i32;
     fn get_container_index(&self) -> Option<i32>;
     fn get_true_index(&self) -> i32;
@@ -275,6 +277,14 @@ impl ItemListSelection {
 }
 
 impl ListSelection for ItemListSelection {
+    fn get_page_number(&self) -> i32 {
+        (self.start_index.clone() / self.page_line_count) + 1
+    }
+
+    fn get_total_pages(&self) -> i32 {
+        (self.items.len() as i32 / self.page_line_count) + 1
+    }
+
     fn get_start_index(&self) -> i32 {
         self.start_index.clone()
     }
