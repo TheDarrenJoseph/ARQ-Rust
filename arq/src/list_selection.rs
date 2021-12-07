@@ -9,7 +9,8 @@ pub enum SelectionMode {
 pub trait ListSelection {
     fn get_start_index(&self) -> i32;
     fn get_container_index(&self) -> Option<i32>;
-    fn get_current_index(&self) -> i32;
+    fn get_true_index(&self) -> i32;
+    fn get_end_of_page_index(&mut self) -> i32;
     fn get_items(&self) -> &Vec<Item>;
     fn get_items_mut(&mut self) -> &mut Vec<Item>;
     fn get_selected_items(&self) -> &VecDeque<Item>;
@@ -28,15 +29,20 @@ pub trait ListSelection {
 
 pub struct ItemListSelection {
     selection_mode : SelectionMode,
-    //The index of the topmost item on the screen, allows scrolling
+    // The index of the topmost item on the screen, allows scrolling
     start_index: i32,
     // The pivot index is the 'initial' selected index
     pivot_index: Option<i32>,
-    previous_container_index: Option<i32>,
+    // --- These are for the focused lines
+    // This is relative to the current page
     current_index: i32,
+    // This is the current index + start offset to get the 'true' container index currently focused
+    true_index: i32,
+    // --- Set during selection of items
+    previous_container_index: Option<i32>,
     container_index: Option<i32>,
     selecting_items: bool,
-    // Storage of items in the selection
+    // --- Storage of items in the selection
     selected_indices: VecDeque<i32>,
     selected_items: VecDeque<Item>,
     items : Vec<Item>,
@@ -44,6 +50,10 @@ pub struct ItemListSelection {
 }
 
 impl ItemListSelection {
+    fn get_current_index(&self) -> i32 {
+        self.current_index.clone()
+    }
+
     fn get_pivot_index(&self) -> i32 {
         match self.pivot_index {
             Some(idx) => { idx },
@@ -60,14 +70,14 @@ impl ItemListSelection {
         max_scroll_index
     }
 
-    fn determine_max_selection_index(&mut self) -> i32 {
-        let item_count = self.items.len() as i32;
-        let mut max_selection_index = self.page_line_count -1;
-        if item_count < self.page_line_count {
-            let max =  self.page_line_count - (self.page_line_count - item_count) - 1;
-            max_selection_index = max.clone();
+    pub fn determine_max_selection_index(&mut self) -> i32 {
+        if self.items.is_empty() {
+            return 0;
+        } else {
+            let remaining_item_count = self.items.len() as i32 - 1 - self.start_index;
+            let max_selection_index = if remaining_item_count >= self.page_line_count { self.page_line_count.clone() - 1 } else { remaining_item_count };
+            max_selection_index
         }
-        max_selection_index
     }
 
     fn check_reducing_selection_below(&mut self) {
@@ -162,18 +172,26 @@ impl ItemListSelection {
         }
     }
 
-    fn update_selection_indices(&mut self, index : i32) {
-        match self.container_index {
-            Some(idx) => {
-                self.previous_container_index = Some(idx);
-                self.container_index = Some(index.clone() + self.start_index.clone());
+    fn update_indices(&mut self, index: i32) {
+        self.current_index = index.clone();
+        self.true_index = self.start_index.clone() + index.clone();
 
-                let no_pivot_point = !self.has_pivot_point();
-                if no_pivot_point {
-                    self.pivot_index = Some(idx.clone());
+        // Update container indices
+        if self.is_selecting() {
+            match self.container_index {
+                Some(previous_container_index) => {
+                    self.previous_container_index = Some(previous_container_index);
+                    let current_container_index = self.start_index.clone() + index.clone();
+                    self.container_index = Some(current_container_index);
+                },
+                None => {
+                    let previous_current_index = self.current_index.clone();
+                    self.previous_container_index = Some(previous_current_index);
+                    let current_container_index = self.start_index.clone() + index.clone();
+                    self.container_index = Some(current_container_index);
                 }
-            },
-            None => {}
+            }
+
         }
     }
 
@@ -189,22 +207,25 @@ impl ItemListSelection {
     }
 
     pub fn update_selection(&mut self, index : i32) {
-        self.current_index = index.clone();
-        self.update_selection_indices(index);
-        match self.previous_container_index {
-            Some(previous_container_index) => {
-                match self.container_index {
-                    Some(container_index) => {
-                        let selection_changed = container_index != previous_container_index;
-                        if selection_changed && self.selecting_items {
-                            self.check_selecting_items_above();
-                            self.check_reducing_selection_above();
-                            self.check_selecting_items_below();
-                            self.check_reducing_selection_below();
-                        }
-                    }, None => {}
-                }
-            }, None => {}
+        if self.current_index != index {
+            self.update_indices(index);
+            match self.previous_container_index {
+                Some(previous_container_index) => {
+                    match self.container_index {
+                        Some(container_index) => {
+                            let selection_changed = container_index != previous_container_index;
+                            if selection_changed && self.selecting_items {
+                                self.check_selecting_items_above();
+                                self.check_reducing_selection_above();
+                                self.check_selecting_items_below();
+                                self.check_reducing_selection_below();
+                            }
+                        },
+                        None => {}
+                    }
+                },
+                None => {}
+            }
         }
     }
 
@@ -242,13 +263,13 @@ impl ItemListSelection {
     }
 
     fn set_current_index(&mut self, index : i32) {
-        self.current_index = index + self.start_index.clone();
+        self.current_index = index;
     }
 
     fn set_initial_selection(&mut self, index : i32) {
         let container_index = index + self.start_index.clone();
-        self.select(container_index);
         self.selecting_items = true;
+        self.select(container_index);
         self.update_selection(index.clone());
     }
 }
@@ -262,8 +283,12 @@ impl ListSelection for ItemListSelection {
         self.container_index.clone()
     }
 
-    fn get_current_index(&self) -> i32 {
-        self.current_index.clone()
+    fn get_true_index(&self) -> i32 {
+        self.start_index.clone() + self.current_index.clone()
+    }
+
+    fn get_end_of_page_index(&mut self) -> i32 {
+        self.start_index.clone() + self.determine_max_selection_index()
     }
 
     fn get_items(&self) -> &Vec<Item> {
@@ -279,15 +304,16 @@ impl ListSelection for ItemListSelection {
     }
 
     fn is_selecting(&self) -> bool {
-        self.selecting_items.clone()
+        self.selecting_items.clone() || !self.selected_items.is_empty()
     }
 
     fn toggle_select(&mut self) {
         self.selecting_items = !self.selecting_items.clone();
         // Select the current item
         if self.selecting_items {
-            self.select(self.current_index.clone());
-            self.update_selection(self.current_index.clone());
+            // Reset the pivot index and select
+            self.pivot_index = Some(self.true_index.clone());
+            self.select( self.true_index.clone());
         }
     }
 
@@ -309,6 +335,11 @@ impl ListSelection for ItemListSelection {
     }
 
     fn select(&mut self, index : i32) {
+        // Set the pivot if not set
+        if !self.has_pivot_point() {
+            self.pivot_index = Some(index.clone());
+        }
+
         if !self.is_selected(index) {
             let item_result = self.items.get(index.clone() as usize);
             match item_result {
@@ -318,17 +349,16 @@ impl ListSelection for ItemListSelection {
                             if previous_container_index <= index {
                                 self.selected_indices.push_back(index.clone());
                                 self.selected_items.push_back(item.clone());
-                                self.container_index = Some(index.clone());
-                                self.current_index = index.clone();
-                                return;
+                            } else {
+                                self.selected_indices.push_front(index.clone());
+                                self.selected_items.push_front(item.clone());
                             }
                         },
-                        None => {}
+                        None => {
+                            self.selected_indices.push_front(index.clone());
+                            self.selected_items.push_front(item.clone());
+                        }
                     }
-                    self.selected_indices.push_front(index.clone());
-                    self.selected_items.push_front(item.clone());
-                    self.container_index = Some(index.clone());
-                    self.current_index = index.clone();
                 },
                 None => {}
             }
@@ -384,14 +414,9 @@ impl ListSelection for ItemListSelection {
             new_index = 0;
             self.start_index += self.page_line_count;
         } else {
-            let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
-            if remaining_item_count >= self.page_line_count {
-                // Select the lowest item
-                let mut max_selection_index = self.determine_max_selection_index();
-                new_index = max_selection_index;
-            } else {
-                new_index = remaining_item_count - 1;
-            }
+            // Select the lowest item
+            let mut max_selection_index = self.determine_max_selection_index();
+            new_index = max_selection_index;
         }
         self.update_selection(new_index);
     }
@@ -412,14 +437,11 @@ impl ListSelection for ItemListSelection {
     fn move_down(&mut self) {
         let mut new_index = self.current_index.clone();
         let max_selection_index = self.determine_max_selection_index();
-        let valid_index = self.start_index + new_index < (self.items.len() as i32) as i32;
-        if valid_index && self.current_index < max_selection_index {
-            let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
-            if remaining_item_count >= self.page_line_count {
-                new_index = self.current_index.clone() + 1;
-            } else {
-                new_index = remaining_item_count - 1;
-            }
+        let true_index = self.start_index.clone() + new_index;
+        let valid_index = true_index < (self.items.len() as i32) as i32;
+        let less_than_max = self.current_index <= max_selection_index;
+        if valid_index && less_than_max {
+            new_index = self.current_index.clone() + 1;
         } else if valid_index && self.should_scroll_down(self.current_index.clone()) {
             // Bump the start index forward to scroll
             self.start_index += 1;
@@ -431,14 +453,16 @@ impl ListSelection for ItemListSelection {
 
 pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> ItemListSelection {
     let selection_mode = SelectionMode::SelectingItems;
-    let inv_start_index = 0;
+    let start_index = 0;
+    let current_index = 0;
+    let true_index = 0;
     let pivot_index = None;
     let previous_container_index = None;
     let container_index = None;
     let selecting_items = false;
     let selected_indices = VecDeque::new();
     let selected_items = VecDeque::new();
-    ItemListSelection { selection_mode, start_index: inv_start_index, pivot_index, previous_container_index, current_index: 0, container_index, selecting_items, selected_indices, selected_items, items, page_line_count: item_view_line_count }
+    ItemListSelection { selection_mode, start_index, pivot_index, previous_container_index, current_index, true_index, container_index, selecting_items, selected_indices, selected_items, items, page_line_count: item_view_line_count }
 }
 
 #[cfg(test)]
@@ -708,9 +732,7 @@ mod tests {
         let mut list_selection = build_list_selection(items, 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
-        list_selection.select(1);
-        list_selection.update_selection(1);
-        list_selection.toggle_select();
+        list_selection.set_initial_selection(1);
         // WHEN we call to move down the selection
         list_selection.move_down();
 
@@ -737,8 +759,7 @@ mod tests {
         let mut list_selection = build_list_selection(items, 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
-        list_selection.select(1);
-        list_selection.toggle_select();
+        list_selection.set_initial_selection(1);
         // WHEN we call to move down the selection multiple times
         list_selection.move_down();
         list_selection.move_down();
@@ -1036,5 +1057,81 @@ mod tests {
         assert_eq!(item5, selected_items[1]);
         assert_eq!(item6, selected_items[2]);
         assert_eq!(item7, selected_items[3]);
+    }
+
+
+    #[test]
+    fn test_select_second_page() {
+        // GIVEN a series of items to select from
+        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+
+        // AND a valid list selection that has a line count that fits half of these items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've moved to the 2nd page of the view
+        list_selection.page_down();  // end of first page
+        list_selection.page_down();  // 2nd page
+
+        // WHEN we move down and select an item
+        list_selection.move_down();
+        list_selection.move_down();
+        list_selection.move_down();
+        list_selection.toggle_select();
+
+        // THEN we expect only that item to be selected
+        assert_eq!(4, list_selection.get_start_index());
+        assert_eq!(3, list_selection.get_current_index());
+        assert_eq!(7, list_selection.get_true_index());
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(1, selected_items.len());
+        assert_eq!(true, list_selection.is_selected(7));
+
+        // AND we're in the selection mode
+        assert_eq!(true, list_selection.is_selecting());
+    }
+
+    #[test]
+    fn test_downward_multi_select_second_page() {
+        // GIVEN a series of items to select from
+        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+
+        // AND a valid list selection that has a line count that fits half of these items
+        let mut list_selection = build_list_selection(items, 4);
+
+        // AND we've moved to the 2nd page of the view
+        list_selection.page_down();  // end of first page
+        list_selection.page_down();  // 2nd page
+
+        // WHEN we move down and select a range of items
+        list_selection.move_down();
+        list_selection.toggle_select(); // Item 5
+        list_selection.move_down(); // Item 6
+
+        // THEN we expect only these items to be selected
+        assert_eq!(4, list_selection.get_start_index());
+        assert_eq!(2, list_selection.get_current_index());
+        let selected_items = list_selection.get_selected_items();
+        assert_eq!(2, selected_items.len());
+        assert_eq!(true, list_selection.is_selected(5));
+        assert_eq!(true, list_selection.is_selected(6));
+
+        // AND we're in the selection mode
+        assert_eq!(true, list_selection.is_selecting());
     }
 }

@@ -147,28 +147,21 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 
         // -3 for the heading and 2  borders
         let mut line_index = 0;
-        let current_index= self.item_list_selection.get_current_index();
         let start_index= self.item_list_selection.get_start_index();
+        let end_of_page_representive_index = self.item_list_selection.get_end_of_page_index();
 
-        let remaining_item_count = container_len - 1  - start_index;
-        let mut end_of_view_represented_index = start_index as usize + inventory_item_lines as usize;
-        end_of_view_represented_index = if end_of_view_represented_index >= remaining_item_count.try_into().unwrap()  {
-            (start_index.clone() as i32 + remaining_item_count as i32).try_into().unwrap()
-        } else {
-            end_of_view_represented_index
-        };
-        let view_contents = &container.get_contents()[start_index as usize..end_of_view_represented_index];
-        for c in view_contents {
-            let represented_index = start_index.clone() + line_index.clone();
-            if line_index < inventory_item_lines.into() {
+        if !container.get_contents().is_empty() {
+            let view_contents = &container.get_contents()[start_index as usize..=end_of_page_representive_index as usize];
+            for c in view_contents {
+                let item_index = start_index.clone() + line_index.clone();
                 let item = &c.get_self_item();
                 let mut offset: u16 = 2;
+                let current_index = self.item_list_selection.is_focused(item_index);
+                let selected = self.item_list_selection.is_selected(item_index);
                 for column in &self.columns {
                     let text = build_column_text(column, item);
-                    let current_index = self.item_list_selection.is_focused(represented_index);
-                    let selected = self.item_list_selection.is_selected(represented_index);
                     let mut column_text = build_paragraph(text);
-                    if current_index && selected {
+                    if current_index.clone() && selected.clone() {
                         column_text = column_text.style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
                     } else if current_index {
                         column_text = column_text.style(Style::default().add_modifier(Modifier::REVERSED));
@@ -183,11 +176,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
                 }
                 line_index += 1;
             }
+            let usage_description = "(o)pen, (d)rop, (m)ove";
+            let mut usage_text = build_paragraph(String::from(usage_description));
+            let text_area = Rect::new( window_area.x.clone() + 1, window_area.height.clone(), usage_description.len().try_into().unwrap(), 1);
+            frame.render_widget(usage_text.clone(), text_area);
         }
-        let usage_description = "(o)pen, (d)rop, (m)ove";
-        let mut usage_text = build_paragraph(String::from(usage_description));
-        let text_area = Rect::new( window_area.x.clone() + 1, window_area.height.clone(), usage_description.len().try_into().unwrap(), 1);
-        frame.render_widget(usage_text.clone(), text_area);
     }
 }
 
@@ -219,7 +212,7 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                 },
                 Key::Char('o') => {
                     if !self.frame_handler.item_list_selection.is_selecting() {
-                        let current_index = self.frame_handler.item_list_selection.get_current_index();
+                        let current_index = self.frame_handler.item_list_selection.get_true_index();
                         let mut item = self.container.get_mut(current_index);
                         if item.can_open() {
                             let mut items = Vec::new();
