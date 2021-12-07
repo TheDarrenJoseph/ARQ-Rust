@@ -399,13 +399,13 @@ impl ListSelection for ItemListSelection {
 
     fn page_up(&mut self) {
         let mut new_index = self.current_index.clone();
-        let mut max_selection_index = self.determine_max_selection_index();
         if self.should_turn_to_previous_page(self.current_index.clone()) {
-            new_index = max_selection_index;
             self.start_index = self.start_index - self.page_line_count;
             if self.selecting_items {
                 self.select_range(new_index, self.current_index.clone());
             }
+            let mut max_selection_index = self.determine_max_selection_index();
+            new_index = max_selection_index;
             // TODO redraw list flag?
         } else if self.current_index == 0 {
             new_index = 0;
