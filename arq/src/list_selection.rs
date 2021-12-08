@@ -250,12 +250,13 @@ impl ItemListSelection {
     }
 
     fn should_turn_to_next_page(&mut self, selection_index: i32) -> bool {
+        let more_pages = self.get_page_number() < self.get_total_pages();
         let max_scroll_index = self.determine_max_scroll_index();
         let max_selection_index = self.determine_max_selection_index();
         let end_of_page = selection_index == max_selection_index;
         let remaining_item_count = self.items.len() as i32 - 1  - self.start_index;
         let can_scroll = self.start_index <= max_scroll_index && remaining_item_count > 0;
-        return end_of_page && can_scroll;
+        return more_pages && end_of_page && can_scroll;
     }
 
     fn get_selected_count(&self) -> i32 {

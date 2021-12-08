@@ -224,15 +224,17 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                 Key::Char('o') => {
                     if !self.frame_handler.item_list_selection.is_selecting() {
                         let current_index = self.frame_handler.item_list_selection.get_true_index();
-                        let mut item = self.container.get_mut(current_index);
-                        if item.can_open() {
-                            let mut items = Vec::new();
-                            for c in item.get_contents() {
-                                let self_item = c.get_self_item();
-                                items.push(self_item);
+                        if current_index < self.container.get_contents().len().try_into().unwrap() {
+                            let mut item = self.container.get_mut(current_index);
+                            if item.can_open() {
+                                let mut items = Vec::new();
+                                for c in item.get_contents() {
+                                    let self_item = c.get_self_item();
+                                    items.push(self_item);
+                                }
+                                let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
+                                view.begin();
                             }
-                            let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
-                            view.begin();
                         }
                     }
                 },
