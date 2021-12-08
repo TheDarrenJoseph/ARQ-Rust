@@ -209,25 +209,23 @@ impl ItemListSelection {
     }
 
     pub fn update_selection(&mut self, index : i32) {
-        if self.current_index != index {
-            self.update_indices(index);
-            match self.previous_container_index {
-                Some(previous_container_index) => {
-                    match self.container_index {
-                        Some(container_index) => {
-                            let selection_changed = container_index != previous_container_index;
-                            if selection_changed && self.selecting_items {
-                                self.check_selecting_items_above();
-                                self.check_reducing_selection_above();
-                                self.check_selecting_items_below();
-                                self.check_reducing_selection_below();
-                            }
-                        },
-                        None => {}
-                    }
-                },
-                None => {}
-            }
+        self.update_indices(index);
+        match self.previous_container_index {
+            Some(previous_container_index) => {
+                match self.container_index {
+                    Some(container_index) => {
+                        let selection_changed = container_index != previous_container_index;
+                        if selection_changed && self.selecting_items {
+                            self.check_selecting_items_above();
+                            self.check_reducing_selection_above();
+                            self.check_selecting_items_below();
+                            self.check_reducing_selection_below();
+                        }
+                    },
+                    None => {}
+                }
+            },
+            None => {}
         }
     }
 
@@ -324,6 +322,7 @@ impl ListSelection for ItemListSelection {
             // Reset the pivot index and select
             self.pivot_index = Some(self.true_index.clone());
             self.select( self.true_index.clone());
+            self.update_indices( self.current_index.clone());
         }
     }
 
@@ -449,7 +448,7 @@ impl ListSelection for ItemListSelection {
         let max_selection_index = self.determine_max_selection_index();
         let true_index = self.start_index.clone() + new_index;
         let valid_index = true_index < (self.items.len() as i32) as i32;
-        let less_than_max = self.current_index <= max_selection_index;
+        let less_than_max = self.current_index < max_selection_index;
         if valid_index && less_than_max {
             new_index = self.current_index.clone() + 1;
         } else if valid_index && self.should_scroll_down(self.current_index.clone()) {
