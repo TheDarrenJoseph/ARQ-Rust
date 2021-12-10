@@ -183,6 +183,7 @@ impl GameEngine {
                 characters[0] = updated_character;
                 self.characters = characters.clone();
                 self.build_testing_inventory();
+                character_created = true;
             }
 
             if self.ui.additional_widgets.is_empty() {
