@@ -116,7 +116,6 @@ impl GameEngine {
     }
 
     pub fn start_menu(&mut self) -> Result<(), io::Error> {
-        self.ui.start_menu = menu::build_start_menu(true);
         loop {
             // Hide additional widgets when paused
             self.ui.render_additional = false;
@@ -167,6 +166,7 @@ impl GameEngine {
     }
 
     fn start_game(&mut self) -> Result<(), io::Error>{
+        self.ui.start_menu = menu::build_start_menu(true);
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
         let map = &map_generator.generate();
