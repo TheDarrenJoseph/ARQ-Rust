@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::convert::TryInto;
 
 use crate::map::objects::items::{Item, ItemType};
 
@@ -12,10 +13,11 @@ pub trait ListSelection {
     fn get_start_index(&self) -> i32;
     fn get_container_index(&self) -> Option<i32>;
     fn get_true_index(&self) -> i32;
+    fn get_focused_item(&self) -> Option<&Item>;
     fn get_end_of_page_index(&mut self) -> i32;
     fn get_items(&self) -> &Vec<Item>;
     fn get_items_mut(&mut self) -> &mut Vec<Item>;
-    fn get_selected_items(&self) -> &VecDeque<Item>;
+    fn get_selected_items(&self) -> VecDeque<Item>;
     fn is_selecting(&self) -> bool;
     fn toggle_select(&mut self);
     fn cancel_selection(&mut self);
@@ -273,6 +275,22 @@ impl ItemListSelection {
         self.select(container_index);
         self.update_selection(index.clone());
     }
+
+    fn get_item(&self, index: i32) -> Option<&Item> {
+        let items_size : i32 = self.items.len().try_into().unwrap();
+        if index >= 0 && index < items_size {
+            return Some(&self.items[index as usize])
+        }
+        None
+    }
+
+    fn get_item_mut(&mut self, index: i32) -> Option<&mut Item> {
+        let items_size : i32 = self.items.len().try_into().unwrap();
+        if index >= 0 && index < items_size {
+            return Some(&mut self.items[index as usize])
+        }
+        None
+    }
 }
 
 impl ListSelection for ItemListSelection {
@@ -293,7 +311,11 @@ impl ListSelection for ItemListSelection {
     }
 
     fn get_true_index(&self) -> i32 {
-        self.start_index.clone() + self.current_index.clone()
+        self.true_index.clone()
+    }
+
+    fn get_focused_item(&self) -> Option<&Item> {
+        self.get_item(self.true_index.clone())
     }
 
     fn get_end_of_page_index(&mut self) -> i32 {
@@ -308,8 +330,8 @@ impl ListSelection for ItemListSelection {
         &mut self.items
     }
 
-    fn get_selected_items(&self) -> &VecDeque<Item> {
-        &self.selected_items
+    fn get_selected_items(&self) -> VecDeque<Item> {
+        self.selected_items.clone()
     }
 
     fn is_selecting(&self) -> bool {

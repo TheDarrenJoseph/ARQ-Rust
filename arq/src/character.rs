@@ -129,6 +129,10 @@ impl Character {
         return &mut self.inventory;
     }
 
+    pub fn set_inventory(&mut self, container: Container) {
+       self.inventory = container;
+    }
+
     pub fn get_race(&mut self) -> Race {
         self.character_details.race.clone()
     }

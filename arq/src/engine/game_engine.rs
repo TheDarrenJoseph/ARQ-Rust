@@ -175,7 +175,7 @@ impl GameEngine {
         let mut character_created = false;
         self.game_running = true;
         while self.game_running {
-            if !character_created {
+            if !&character_created {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_created = character_view.begin().unwrap();
@@ -232,9 +232,10 @@ impl GameEngine {
             Key::Char('i') => {
                 self.terminal_manager.terminal.clear()?;
 
-                let inventory = self.characters[0].get_inventory();
-                let mut inventory_view = build_container_view( inventory, &mut self.ui, &mut self.terminal_manager);
+                let mut inventory = self.characters[0].get_inventory().clone();
+                let mut inventory_view = build_container_view( &mut inventory, &mut self.ui, &mut self.terminal_manager);
                 inventory_view.begin();
+                self.characters[0].set_inventory(inventory_view.container.clone());
 
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};

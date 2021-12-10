@@ -1,6 +1,7 @@
 use std::io;
 use std::io::Error;
 use std::convert::TryInto;
+use std::collections::VecDeque;
 
 use tui::layout::{Alignment, Rect};
 use tui::style::{Style, Color, Modifier};
@@ -45,11 +46,100 @@ pub fn build_container_view<'a, B : tui::backend::Backend> (container: &'a mut C
     }
 }
 
+trait ContainerViewCommands {
+
+}
+
 impl <B : tui::backend::Backend> ContainerView<'_, B> {
     pub(crate) fn begin(&mut self) {
         self.draw();
         while !self.handle_input().unwrap() {
             self.draw();
+        }
+    }
+
+    pub fn rebuild_selection(&mut self, container: &Container) {
+        let mut items = Vec::new();
+        // Clone the self items for everything in the container
+        for c in container.get_contents() {
+            items.push(c.get_self_item().clone());
+        }
+        self.frame_handler.item_list_selection = build_list_selection(items, 1);
+    }
+
+    fn get_selected_items(&self) -> Vec<Item> {
+        Vec::from(self.frame_handler.item_list_selection.get_selected_items().clone())
+    }
+
+    fn find_container_for_item(&self, item: &Item) -> Option<&Container> {
+        self.container.find(item)
+    }
+
+    fn find_selected_containers(&self, selected_items : Vec<Item>) -> Vec<Container> {
+        let mut found = Vec::new();
+        for selected_item in selected_items.iter() {
+            // Collect our 'Container' wrappers matching the selection
+            if let Some(found_container) = self.find_container_for_item(&selected_item) {
+                found.push(found_container.clone());
+            }
+        }
+        found
+    }
+
+    fn get_selected_containers(&self) -> Vec<Container> {
+        let selected_items = self.get_selected_items();
+        let selected_containers = self.find_selected_containers(selected_items);
+        selected_containers
+    }
+
+    fn open_focused(&mut self) {
+        if !self.frame_handler.item_list_selection.is_selecting() {
+            if let Some(focused_item) = self.frame_handler.item_list_selection.get_focused_item() {
+                if focused_item.is_container() {
+                    if let Some(focused_container) = self.container.find_mut(focused_item) {
+                        let mut items = Vec::new();
+                        for c in focused_container.get_contents() {
+                            let self_item = c.get_self_item();
+                            items.push(self_item);
+                        }
+                        let mut view = build_container_view(focused_container, &mut self.ui, &mut self.terminal_manager);
+                        view.begin();
+                    }
+                }
+            }
+        }
+    }
+
+    fn move_selection(&mut self) {
+        let list_selection = &self.frame_handler.item_list_selection;
+        let selected_container_items = &self.get_selected_containers();
+        let mut updated = false;
+        if list_selection.is_selecting() {
+            let focused_item_result = list_selection.get_focused_item();
+            let true_index = list_selection.get_true_index();
+            if let Some(focused_item) = focused_item_result {
+                // Make sure we've not focused any of the selected items
+                let focused_items = selected_container_items.iter().find(|ci| ci.get_self_item().get_id() == focused_item.get_id());
+                if let None = focused_items {
+                    if focused_item.is_container() {
+                        if let Some(focused_container) = self.container.find_mut(focused_item) {
+                            // Move items into the container
+                            focused_container.push(selected_container_items.clone());
+                            self.container.remove(selected_container_items.to_vec());
+                        }
+                    } else {
+                        // Move items to this location
+                        self.container.remove(selected_container_items.to_vec());
+                        self.container.insert(true_index as usize - selected_container_items.len(), selected_container_items.clone());
+                    }
+                    &mut self.frame_handler.item_list_selection.cancel_selection();
+                    updated = true;
+                }
+            }
+        }
+
+        if updated {
+            self.rebuild_selection(&self.container.clone());
         }
     }
 }
@@ -222,21 +312,10 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                     }
                 },
                 Key::Char('o') => {
-                    if !self.frame_handler.item_list_selection.is_selecting() {
-                        let current_index = self.frame_handler.item_list_selection.get_true_index();
-                        if current_index < self.container.get_contents().len().try_into().unwrap() {
-                            let mut item = self.container.get_mut(current_index);
-                            if item.can_open() {
-                                let mut items = Vec::new();
-                                for c in item.get_contents() {
-                                    let self_item = c.get_self_item();
-                                    items.push(self_item);
-                                }
-                                let mut view = build_container_view(item, &mut self.ui, &mut self.terminal_manager);
-                                view.begin();
-                            }
-                        }
-                    }
+                    self.open_focused();
+                },
+                Key::Char('m') => {
+                    self.move_selection();
                 },
                 Key::Char('\n') => {
                     self.frame_handler.item_list_selection.toggle_select();

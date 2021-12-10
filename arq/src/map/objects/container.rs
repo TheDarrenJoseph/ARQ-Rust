@@ -1,5 +1,6 @@
 use crate::map::objects::items::{build_container_item, Item, ItemType};
 use uuid::Uuid;
+use std::convert::TryInto;
 
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -35,8 +36,56 @@ impl Container {
         &self.contents[index as usize]
     }
 
-    pub fn get_mut(&mut self, index: i32) -> &mut Container {
-        &mut self.contents[index as usize]
+    pub fn find(&self, item: &Item) -> Option<&Container> {
+        self.contents.iter().find(|c| {
+            let expected_id = item.get_id();
+            let self_item = c.get_self_item();
+            self_item.get_id() == expected_id
+        })
+    }
+
+    pub fn push(&mut self, containers : Vec<Container>) {
+        self.contents.extend(containers);
+    }
+
+    pub fn insert(&mut self, index: usize, containers : Vec<Container>) {
+        let mut to_move : Vec<Container> = Vec::new();
+        for c in containers {
+            to_move.push(c.clone())
+        }
+        self.contents.splice(index..index, to_move);
+    }
+
+    pub fn remove(&mut self, items : Vec<Container>) {
+        for item in items.iter() {
+            if let Some(position) = self.position(item) {
+                self.contents.remove(position);
+            }
+        }
+    }
+
+    pub fn position(&self, container: &Container) -> Option<usize> {
+        self.contents.iter().position(|c| {
+            let expected_id = container.get_self_item().get_id();
+            let self_item = c.get_self_item();
+            self_item.get_id() == expected_id
+        })
+    }
+
+    pub fn find_mut(&mut self, item: &Item) -> Option<&mut Container> {
+        self.contents.iter_mut().find(|c| {
+            let expected_id = item.get_id();
+            let self_item = c.get_self_item();
+            self_item.get_id() == expected_id
+        })
+    }
+
+    pub fn get_mut(&mut self, index: i32) -> Option<&mut Container> {
+        let contents_size : i32 = self.contents.len().try_into().unwrap();
+        if index >= 0 && index < contents_size {
+            return Some(&mut self.contents[index as usize])
+        }
+        None
     }
 
     fn get_weight_total(&self) -> i32 {

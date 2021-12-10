@@ -35,6 +35,9 @@ impl Item {
     pub fn get_value(&self) -> i32 {
         self.value.clone()
     }
+    pub fn is_container(&self) -> bool {
+        self.item_type == ItemType::CONTAINER
+    }
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
