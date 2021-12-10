@@ -92,6 +92,36 @@ impl <B : tui::backend::Backend> ContainerView<'_, B> {
         selected_containers
     }
 
+    fn handle_quit(&mut self) -> Result<bool, Error> {
+        if !self.frame_handler.item_list_selection.get_selected_items().is_empty() {
+            self.frame_handler.item_list_selection.cancel_selection();
+            Ok(false)
+        } else {
+            self.terminal_manager.terminal.clear()?;
+            Ok(true)
+        }
+    }
+
+    fn toggle_select(&mut self) {
+        self.frame_handler.item_list_selection.toggle_select();
+    }
+
+    fn move_up(&mut self) {
+        self.frame_handler.item_list_selection.move_up();
+    }
+
+    fn move_down(&mut self) {
+        self.frame_handler.item_list_selection.move_down();
+    }
+
+    fn page_up(&mut self) {
+        self.frame_handler.item_list_selection.page_up();
+    }
+
+    fn page_down(&mut self) {
+        self.frame_handler.item_list_selection.page_down();
+    }
+
     fn open_focused(&mut self) {
         if !self.frame_handler.item_list_selection.is_selecting() {
             if let Some(focused_item) = self.frame_handler.item_list_selection.get_focused_item() {
@@ -304,10 +334,7 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
             let key = io::stdin().keys().next().unwrap().unwrap();
             match key {
                 Key::Char('q') => {
-                    if !self.frame_handler.item_list_selection.get_selected_items().is_empty() {
-                        self.frame_handler.item_list_selection.cancel_selection();
-                    } else {
-                        self.terminal_manager.terminal.clear()?;
+                    if self.handle_quit()? {
                         return Ok(true)
                     }
                 },
@@ -318,21 +345,21 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                     self.move_selection();
                 },
                 Key::Char('\n') => {
-                    self.frame_handler.item_list_selection.toggle_select();
+                    self.toggle_select();
                 },
                 Key::Char(c) => {},
                 Key::Backspace => {},
                 Key::Up => {
-                    self.frame_handler.item_list_selection.move_up();
+                    self.move_up();
                 },
                 Key::PageUp => {
-                    self.frame_handler.item_list_selection.page_up();
+                    self.page_up();
                 },
                 Key::Down => {
-                    self.frame_handler.item_list_selection.move_down();
+                    self.move_down();
                 },
                 Key::PageDown => {
-                    self.frame_handler.item_list_selection.page_down();
+                    self.page_down();
                 },
                 _ => {}
             }

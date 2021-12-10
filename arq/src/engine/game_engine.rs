@@ -152,7 +152,6 @@ impl GameEngine {
                 }
             }
         }
-        self.terminal_manager.terminal.clear()?;
         Ok(())
     }
 
@@ -194,9 +193,9 @@ impl GameEngine {
             let mut map_view = MapView { map, characters: characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
             map_view.draw()?;
             map_view.draw_characters()?;
-
             self.game_loop()?;
         }
+        self.terminal_manager.terminal.clear()?;
         Ok(())
     }
 
@@ -241,11 +240,11 @@ impl GameEngine {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
                 let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_view.draw()?;
-                let key = io::stdin().keys().next().unwrap().unwrap();
+                //let key = io::stdin().keys().next().unwrap().unwrap();
             }
             _ => {}
         }
-
+        self.terminal_manager.terminal.clear()?;
         Ok(())
     }
 }
