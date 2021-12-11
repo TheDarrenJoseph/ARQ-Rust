@@ -367,3 +367,184 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use tui::backend::TestBackend;
+
+    use crate::ui;
+    use crate::terminal;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, ContainerType, Container};
+    use crate::map::objects::items;
+    use crate::menu;
+    use crate::view::container_view::{ContainerView, build_container_view};
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui::UI;
+    use crate::list_selection::ListSelection;
+
+    fn build_test_container() -> Container {
+        let id = Uuid::new_v4();
+        let mut container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container_self_item = container.get_self_item();
+        assert_eq!(id, container_self_item.get_id());
+        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!('X', container_self_item.symbol);
+        assert_eq!(0, container_self_item.colour);
+        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1, container_self_item.value);
+
+        for i in 1..=4 {
+            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            container.add_item(test_item);
+        }
+
+        assert_eq!(ContainerType::OBJECT, container.container_type);
+        assert_eq!(100, container.get_weight_limit());
+        let contents = container.get_contents();
+        assert_eq!(4, contents.len());
+        container
+    }
+
+    #[test]
+    fn test_view_build() {
+        // GIVEN valid components
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        // WHEN we call to build a new view
+        let view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        // THEN we expect to reach this point succesfully
+    }
+
+    #[test]
+    fn test_move_focus_down() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 4;
+
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+
+        // WHEN we call to move down
+        view.move_down();
+
+        // THEN we expect the focused index to move
+        assert_eq!(1, view.frame_handler.item_list_selection.get_true_index());
+    }
+
+    #[test]
+    fn test_page_down() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 4;
+
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+
+        // WHEN we call to page down
+        view.page_down();
+
+        // THEN we expect the focused index to move to the end of the view / item count
+        assert_eq!(3, view.frame_handler.item_list_selection.get_true_index());
+    }
+
+    #[test]
+    fn test_move_focus_up() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 4;
+
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+
+        // AND we've moved down a few times
+        view.move_down();
+        view.move_down();
+        assert_eq!(2, view.frame_handler.item_list_selection.get_true_index());
+
+        // WHEN we call to move up
+        view.move_up();
+        // THEN we expect the focused index to move
+        assert_eq!(1, view.frame_handler.item_list_selection.get_true_index());
+    }
+
+
+    #[test]
+    fn test_page_up() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 4;
+
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+
+        // AND we've already moved to the bottom of the view
+        view.page_down();
+
+        // WHEN we call to page up
+        view.page_up();
+
+        // THEN we expect the focused index to move to the start of the view
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+    }
+
+    #[test]
+    fn test_move_items() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+
+        // AND we've started selecting items
+        view.toggle_select();
+        // AND we've selected the first 2 items
+        view.move_down();
+        view.toggle_select();
+
+        // WHEN we move to the bottom of the view and try to move the items
+        view.page_down();
+        view.move_selection();
+
+        // THEN we expect the focused index to remain at the top of the view
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+
+        // AND the chosen items will be moved to the bottom of the view above the last item
+        let contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+    }
+}

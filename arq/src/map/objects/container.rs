@@ -31,7 +31,9 @@ impl Container {
     pub fn get_contents(&self) -> &Vec<Container> {
         &self.contents
     }
-
+    pub fn get_weight_limit(&self) -> i32 {
+        self.weight_limit.clone()
+    }
     pub fn get(&self, index: i32) -> &Container {
         &self.contents[index as usize]
     }

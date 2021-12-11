@@ -169,12 +169,12 @@ impl GameEngine {
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
         let map = &map_generator.generate();
-        let mut characters = self.build_characters();
 
         let mut character_created = false;
         self.game_running = true;
         while self.game_running {
             if !&character_created {
+                let mut characters = self.build_characters();
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_created = character_view.begin().unwrap();
@@ -186,11 +186,12 @@ impl GameEngine {
             }
 
             if self.ui.additional_widgets.is_empty() {
-                let stat_line = build_character_stat_line(characters[0].get_health(), characters[0].get_details(), characters[0].get_inventory().get_loot_value());
+                let player = self.get_player_mut();
+                let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory().get_loot_value());
                 self.ui.additional_widgets.push(stat_line);
             }
 
-            let mut map_view = MapView { map, characters: characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+            let mut map_view = MapView { map, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
             map_view.draw()?;
             map_view.draw_characters()?;
             self.game_loop()?;
@@ -221,26 +222,37 @@ impl GameEngine {
         inventory.add(bag);
     }
 
+    fn get_player(&mut self) -> &Character {
+        &self.characters[0]
+    }
+
+    fn get_player_mut(&mut self) -> &mut Character {
+        &mut self.characters[0]
+    }
+
     fn game_loop(&mut self) -> Result<(), io::Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
+        self.terminal_manager.terminal.clear()?;
         match key {
             Key::Char('q') => {
-                self.terminal_manager.terminal.clear()?;
                 self.start_menu()?;
                 self.terminal_manager.terminal.clear()?;
             },
             Key::Char('i') => {
-                self.terminal_manager.terminal.clear()?;
-
                 let mut inventory = self.characters[0].get_inventory().clone();
                 let mut inventory_view = build_container_view( &mut inventory, &mut self.ui, &mut self.terminal_manager);
                 inventory_view.begin();
                 self.characters[0].set_inventory(inventory_view.container.clone());
 
-                let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
-                let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
+                //let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
+                //let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_view.draw()?;
                 //let key = io::stdin().keys().next().unwrap().unwrap();
+            },
+            Key::Down => {
+                let player = self.get_player_mut();
+                let position = player.get_position();
+                self.characters[0].set_position(Position { x: position.x, y: position.y + 1 });
             }
             _ => {}
         }
