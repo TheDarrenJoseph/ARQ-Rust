@@ -1,6 +1,6 @@
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
-use tui::backend::TermionBackend;
+use tui::backend::{TermionBackend, Backend};
 use termion::event::Key;
 use std::io;
 use std::convert::TryInto;
@@ -29,8 +29,8 @@ use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
 
-pub struct GameEngine  {
-    terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
+pub struct GameEngine<B: tui::backend::Backend>  {
+    terminal_manager : TerminalManager<B>,
     map : Option<Map>,
     ui : ui::UI,
     settings : settings::EnumSettings,
@@ -38,7 +38,7 @@ pub struct GameEngine  {
     characters : Vec<Character>,
 }
 
-impl GameEngine {
+impl <B : Backend> GameEngine<B> {
 
     fn draw_settings_menu(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
@@ -213,7 +213,7 @@ impl GameEngine {
             }
             self.game_loop()?;
         }
-        self.terminal_manager.terminal.clear()?;
+        //self.terminal_manager.terminal.clear()?;
         Ok(())
     }
 
@@ -285,13 +285,15 @@ impl GameEngine {
 
     fn game_loop(&mut self) -> Result<(), io::Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
-        self.terminal_manager.terminal.clear()?;
+        //self.terminal_manager.terminal.clear()?;
         match key {
             Key::Char('q') => {
+                self.terminal_manager.terminal.clear()?;
                 self.start_menu()?;
                 self.terminal_manager.terminal.clear()?;
             },
             Key::Char('i') => {
+                self.terminal_manager.terminal.clear()?;
                 let mut inventory = self.characters[0].get_inventory().clone();
                 let mut inventory_view = build_container_view( &mut inventory, &mut self.ui, &mut self.terminal_manager);
                 inventory_view.begin();
@@ -301,6 +303,7 @@ impl GameEngine {
                 //let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_view.draw()?;
                 //let key = io::stdin().keys().next().unwrap().unwrap();
+                self.terminal_manager.terminal.clear()?;
             },
             Key::Down => {
                 self.handle_player_movement(Side::BOTTOM);
@@ -316,21 +319,64 @@ impl GameEngine {
             }
             _ => {}
         }
-        self.terminal_manager.terminal.clear()?;
+        //self.terminal_manager.terminal.clear()?;
         Ok(())
     }
 }
 
-pub fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<RawTerminal<std::io::Stdout>>>) -> Result<GameEngine, io::Error> {
+pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let start_menu = menu::build_start_menu(false);
     let settings_menu = menu::build_settings_menu();
 
     let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
 
-    terminal_manager.terminal.clear()?;
+    //terminal_manager.terminal.clear()?;
 
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
 
     Ok(GameEngine { terminal_manager, map: None, ui, settings, game_running: false, characters: Vec::new()})
+}
+
+
+#[cfg(test)]
+mod tests {
+    use termion::input::TermRead;
+    use termion::raw::RawTerminal;
+    use tui::backend::TermionBackend;
+    use termion::event::Key;
+    use std::io;
+    use std::convert::TryInto;
+    use uuid::Uuid;
+
+    use crate::terminal::terminal_manager;
+    use crate::ui;
+    use crate::ui::Draw;
+    use crate::settings;
+    use crate::settings::Toggleable;
+    use crate::menu;
+    use crate::menu::{Selection};
+    use crate::ui::{SettingsMenuChoice, StartMenuChoice};
+    use crate::view::View;
+    use crate::view::map_view::MapView;
+    use crate::view::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
+    use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
+    use crate::map::map_generator::build_generator;
+    use crate::map::Map;
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::map::position::{Position, build_rectangular_area};
+    use crate::character::{Character, build_player};
+    use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
+    use crate::map::objects::container;
+    use crate::map::objects::container::ContainerType;
+    use crate::list_selection::build_list_selection;
+    use crate::map::objects::items;
+    use crate::map::position::Side;
+    use crate::engine::game_engine::build_game_engine;
+
+    #[test]
+    fn test_build_game_engine() {
+        let terminal_manager = terminal_manager::init_test().unwrap();
+        let game_engine = build_game_engine(terminal_manager);
+    }
 }
