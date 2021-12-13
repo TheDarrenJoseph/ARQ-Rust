@@ -521,6 +521,7 @@ mod tests {
         assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
         assert_eq!(4, contents.len());
+        // with a series of items
         assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
         assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
         assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
@@ -546,5 +547,51 @@ mod tests {
         assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
         assert_eq!("Test Item 2", contents[2].get_self_item().get_name());
         assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_move_items_into_container() {
+        // GIVEN a valid view
+        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut container = build_test_container();
+        // With a main container including items and another container
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
+        container.add(bag);
+
+        let start_menu = menu::build_start_menu(false);
+        let settings_menu = menu::build_settings_menu();
+        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        view.frame_handler.item_list_selection.page_line_count = 5;
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(5, contents.len());
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+        assert_eq!("Bag", contents[4].get_self_item().get_name());
+
+        view.toggle_select();
+        // AND we've selected the first 2 items
+        view.move_down();
+        view.toggle_select();
+
+        // WHEN we move to the bottom of the view and try to move the items into the bag
+        view.page_down();
+        view.move_selection();
+
+        // THEN the chosen items will be moved into the bag
+        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        let contents = view.container.get_contents();
+        assert_eq!(3, contents.len());
+        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
+        assert_eq!("Bag",         contents[2].get_self_item().get_name());
+
+        let bag_contents = contents[2].get_contents();
+        assert_eq!(2, bag_contents.len());
+        assert_eq!("Test Item 1", bag_contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", bag_contents[1].get_self_item().get_name());
     }
 }
