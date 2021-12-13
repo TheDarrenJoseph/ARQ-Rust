@@ -49,7 +49,7 @@ impl Map {
     pub fn is_paveable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {
-                // All traversible tile types are paveable, including NoTile
+                // All traversable tile types are paveable, including NoTile
                 if tile.tile_type == Tile::NoTile {
                     true
                 } else {
@@ -61,7 +61,7 @@ impl Map {
         }
     }
 
-    pub fn is_traversible(&self, position: Position) -> bool {
+    pub fn is_traversable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {
                 tile.traversable
