@@ -18,6 +18,7 @@ use crate::view::map_view::MapView;
 use crate::view::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
 use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
 use crate::map::map_generator::build_generator;
+use crate::map::Map;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
@@ -26,9 +27,11 @@ use crate::map::objects::container;
 use crate::map::objects::container::ContainerType;
 use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
+use crate::map::position::Side;
 
 pub struct GameEngine  {
     terminal_manager : TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>,
+    map : Option<Map>,
     ui : ui::UI,
     settings : settings::EnumSettings,
     game_running : bool,
@@ -168,7 +171,7 @@ impl GameEngine {
         self.ui.start_menu = menu::build_start_menu(true);
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
-        let map = &map_generator.generate();
+        self.map = Some(map_generator.generate());
 
         let mut character_created = false;
         self.game_running = true;
@@ -178,7 +181,16 @@ impl GameEngine {
                 let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
                 let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
                 //character_created = character_view.begin().unwrap();
-                let updated_character = character_view.get_character();
+                let mut updated_character = character_view.get_character();
+
+                // Grab the first room and set the player's position there
+                if let Some(map) = &self.map {
+                    let room = &map.get_rooms()[0];
+                    let area = room.get_inside_area();
+                    let start_position = area.start_position;
+                    updated_character.set_position(start_position);
+                }
+
                 characters[0] = updated_character;
                 self.characters = characters.clone();
                 self.build_testing_inventory();
@@ -191,9 +203,14 @@ impl GameEngine {
                 self.ui.additional_widgets.push(stat_line);
             }
 
-            let mut map_view = MapView { map, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
-            map_view.draw()?;
-            map_view.draw_characters()?;
+            match &mut self.map {
+                Some(m) => {
+                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+                    map_view.draw()?;
+                    map_view.draw_characters()?;
+                },
+                None => {}
+            }
             self.game_loop()?;
         }
         self.terminal_manager.terminal.clear()?;
@@ -222,12 +239,48 @@ impl GameEngine {
         inventory.add(bag);
     }
 
+    fn get_map(&self) -> &Option<Map> {
+        &self.map
+    }
+
     fn get_player(&mut self) -> &Character {
         &self.characters[0]
     }
 
     fn get_player_mut(&mut self) -> &mut Character {
         &mut self.characters[0]
+    }
+
+    fn handle_player_movement(&mut self, side: Side) {
+        let position = self.get_player_mut().get_position().clone();
+        let mut updated_position = None;
+        match side {
+            Side::TOP => {
+                updated_position = Some(Position { x: position.x, y: position.y - 1 });
+            },
+            Side::BOTTOM => {
+                updated_position = Some(Position { x: position.x, y: position.y + 1 });
+            },
+            Side::LEFT => {
+                updated_position = Some(Position { x: position.x - 1, y: position.y });
+            },
+            Side::RIGHT => {
+                updated_position = Some(Position { x: position.x + 1, y: position.y });
+            }
+        }
+
+        let map = self.get_map();
+        match updated_position {
+            Some(pos) => {
+                if let Some(m) = map {
+                    if m.is_traversible(pos) {
+                        let player = self.get_player_mut();
+                        player.set_position(pos);
+                    }
+                }
+            },
+            None => {}
+        }
     }
 
     fn game_loop(&mut self) -> Result<(), io::Error> {
@@ -250,9 +303,16 @@ impl GameEngine {
                 //let key = io::stdin().keys().next().unwrap().unwrap();
             },
             Key::Down => {
-                let player = self.get_player_mut();
-                let position = player.get_position();
-                self.characters[0].set_position(Position { x: position.x, y: position.y + 1 });
+                self.handle_player_movement(Side::BOTTOM);
+            },
+            Key::Up => {
+                self.handle_player_movement(Side::TOP);
+            },
+            Key::Left => {
+                self.handle_player_movement(Side::LEFT);
+            },
+            Key::Right => {
+                self.handle_player_movement(Side::RIGHT);
             }
             _ => {}
         }
@@ -272,5 +332,5 @@ pub fn build_game_engine(mut terminal_manager : TerminalManager<TermionBackend<R
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
 
-    Ok(GameEngine { terminal_manager, ui, settings, game_running: false, characters: Vec::new()})
+    Ok(GameEngine { terminal_manager, map: None, ui, settings, game_running: false, characters: Vec::new()})
 }

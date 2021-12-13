@@ -61,6 +61,16 @@ impl Map {
         }
     }
 
+    pub fn is_traversible(&self, position: Position) -> bool {
+        match self.get_tile(position) {
+            Some(tile) => {
+                tile.traversable
+            }, None => {
+                false
+            }
+        }
+    }
+
     pub fn get_neighbors(&self, position: Position) -> Vec<Position> {
 
         let mut results = Vec::new();
