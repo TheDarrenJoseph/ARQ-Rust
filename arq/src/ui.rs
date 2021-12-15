@@ -7,13 +7,14 @@ use std::convert::TryInto;
 
 use crate::menu::{Menu, ToList};
 use crate::widget::{Widget, WidgetType};
+use crate::map::position::Area;
 
 pub struct UI {
     pub start_menu : Menu,
     pub settings_menu : Menu,
     pub render_additional: bool,
     pub additional_widgets: Vec<Widget>,
-    pub frame_size : Option<Rect>
+    pub frame_size : Option<Area>
 }
 
 pub enum StartMenuChoice {
@@ -28,12 +29,16 @@ pub trait FrameHandler<B: tui::backend::Backend, T> {
 }
 
 pub struct FrameData<T> {
-    pub data : T
+    pub data : T,
+    pub frame_size : Rect
 }
 
 impl <T> FrameData<T> {
     pub fn unpack(&mut self) -> &mut T {
         &mut self.data
+    }
+    pub fn get_frame_size(&mut self) -> &Rect {
+        &self.frame_size
     }
 }
 

@@ -12,11 +12,12 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::View;
+use crate::view::{View, resolve_input, resolve_area};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
+use crate::map::position::Area;
 
 pub struct ContainerView<'a, B : tui::backend::Backend> {
     pub container : &'a mut Container,
@@ -52,9 +53,9 @@ trait ContainerViewCommands {
 
 impl <B : tui::backend::Backend> ContainerView<'_, B> {
     pub(crate) fn begin(&mut self) {
-        self.draw();
-        while !self.handle_input().unwrap() {
-            self.draw();
+        self.draw(None);
+        while !self.handle_input(None).unwrap() {
+            self.draw(None);
         }
     }
 
@@ -249,20 +250,21 @@ fn get_row_count(frame_height: i32, container_len: i32) -> i32 {
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
+        let frame_size = data.get_frame_size().clone();
         let container = data.unpack();
         let container_len = container.get_contents().len() as i32;
 
         let window_block = Block::default()
             .borders(Borders::ALL)
             .title(container.get_self_item().name.clone());
-        let window_area = Rect::new(1, 1, frame.size().width.clone() - 4, frame.size().height.clone() - 4);
+        let window_area = Rect::new(frame_size.x.clone(), frame_size.y.clone(), frame_size.width.clone() - 4, frame_size.height.clone() - 4);
         let inventory_item_lines = window_area.height - 3;
         self.row_count = inventory_item_lines as i32;
         self.item_list_selection.page_line_count = inventory_item_lines as i32;
         frame.render_widget(window_block, window_area);
 
         let headings = self.build_headings();
-        let headings_area = Rect::new(2, 2, frame.size().width.clone() - 4, 2);
+        let headings_area = Rect::new(frame_size.x.clone() + 1, frame_size.y.clone() + 1, frame_size.width.clone() - 4, 2);
         frame.render_widget(headings, headings_area);
 
         // -3 for the heading and 2  borders
@@ -316,24 +318,32 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 }
 
 impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
-    fn draw(&mut self) -> Result<(), Error> {
+    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         let ui = &mut self.ui;
         let terminal =  &mut self.terminal_manager.terminal;
         let container = &mut (*self.container);
         let frame_handler = &mut self.frame_handler;
+
         terminal.draw(|frame| {
-            ui.render(frame);
-            frame_handler.handle_frame(frame, FrameData { data: container });
+            //ui.render(frame);
+            let frame_area = resolve_area(area, frame);
+            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: container });
         })?;
 
         Ok(())
     }
 
-    fn handle_input(&mut self) -> Result<bool, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
         loop {
-            let key = io::stdin().keys().next().unwrap().unwrap();
+            let _horizontal_tab = char::from_u32(0x2409);
+            let key = resolve_input(input);
             match key {
                 Key::Char('q') => {
+                    if self.handle_quit()? {
+                        return Ok(true)
+                    }
+                },
+                Key::Char(_horizontal_tab) => {
                     if self.handle_quit()? {
                         return Ok(true)
                     }

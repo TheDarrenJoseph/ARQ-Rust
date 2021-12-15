@@ -7,6 +7,9 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::terminal::colour_mapper;
 use crate::character::Character;
 use crate::view::View;
+use termion::event::Key;
+use crate::map::position::Area;
+use tui::layout::Rect;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -37,7 +40,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
 }
 
 impl<B : tui::backend::Backend> View for MapView<'_, B>{
-    fn draw(&mut self) -> Result<(), Error> {
+    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         log::info!("Drawing map tiles...");
 
         let mut ui = &mut self.ui;
@@ -74,7 +77,7 @@ impl<B : tui::backend::Backend> View for MapView<'_, B>{
         Ok(())
     }
 
-    fn handle_input(&mut self) -> Result<bool, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
         Ok(true)
     }
 }

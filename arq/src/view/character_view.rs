@@ -8,7 +8,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::View;
+use crate::view::{View, resolve_input};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -18,6 +18,7 @@ use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::widget::{Focusable, Widget, WidgetType, Named};
 use crate::character;
+use crate::map::position::Area;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ViewMode {
@@ -209,10 +210,10 @@ impl <B : tui::backend::Backend> CharacterView<'_, B> {
 
     pub fn begin(&mut self) -> Result<bool, Error> {
         let mut character_created = false;
-        self.draw()?;
+        self.draw(None)?;
         while !character_created {
-            character_created = self.handle_input().unwrap();
-            self.draw()?;
+            character_created = self.handle_input(None).unwrap();
+            self.draw(None)?;
         }
         Ok(true)
     }
@@ -306,21 +307,22 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterViewFra
 }
 
 impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
-    fn draw(&mut self) -> Result<(), Error> {
+    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
 
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
-            frame_handler.handle_frame(frame, FrameData { data: character });
+            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: character });
         })?;
 
         Ok(())
     }
 
-    fn handle_input(&mut self) -> Result<bool, Error> {
-        let key = io::stdin().keys().next().unwrap().unwrap();
+    fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error> {
+        let _horizontal_tab = char::from_u32(0x2409);
+
         let frame_handler = &mut self.frame_handler;
         let widgets = &mut frame_handler.widgets;
 
@@ -334,8 +336,13 @@ impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
             None => {}
         }
 
+        let key = resolve_input(input);
         match key {
             Key::Char('q') => {
+                self.terminal_manager.terminal.clear()?;
+                return Ok(true)
+            },
+            Key::Char(_horizontal_tab) => {
                 self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             },

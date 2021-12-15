@@ -28,6 +28,7 @@ use crate::map::objects::container::ContainerType;
 use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
+use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 
 pub struct GameEngine<B: tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -211,7 +212,7 @@ impl <B : Backend> GameEngine<B> {
             match &mut self.map {
                 Some(m) => {
                     let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
-                    map_view.draw()?;
+                    map_view.draw(None)?;
                     map_view.draw_characters()?;
                 },
                 None => {}
@@ -304,17 +305,10 @@ impl <B : Backend> GameEngine<B> {
                 self.terminal_manager.terminal.clear()?;
             },
             Key::Char('i') => {
-                self.terminal_manager.terminal.clear()?;
-                let mut inventory = self.characters[0].get_inventory().clone();
-                let mut inventory_view = build_container_view( &mut inventory, &mut self.ui, &mut self.terminal_manager);
-                inventory_view.begin();
-                self.characters[0].set_inventory(inventory_view.container.clone());
-
-                //let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
-                //let mut character_view = CharacterView { character: self.characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
-                //character_view.draw()?;
-                //let key = io::stdin().keys().next().unwrap().unwrap();
-                self.terminal_manager.terminal.clear()?;
+                let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, character_view: None };
+                let player = &mut self.characters[0];
+                let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
+                character_info_view.begin();
             },
             Key::Down => {
                 self.handle_player_movement(Side::BOTTOM);
