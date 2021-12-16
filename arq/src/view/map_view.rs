@@ -40,6 +40,12 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
 }
 
 impl<B : tui::backend::Backend> View for MapView<'_, B>{
+
+    fn begin(&mut self) -> Result<bool, Error> {
+        self.draw(None)?;
+        Ok(true)
+    }
+
     fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         log::info!("Drawing map tiles...");
 

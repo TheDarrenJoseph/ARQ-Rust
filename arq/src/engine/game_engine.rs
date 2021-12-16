@@ -171,8 +171,7 @@ impl <B : Backend> GameEngine<B> {
     fn initialise_characters(&mut self) {
         let mut characters = self.build_characters();
         let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
-
-        let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler};
+        let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), frame_handler};
         //character_created = character_view.begin().unwrap();
         let mut updated_character = character_view.get_character();
 

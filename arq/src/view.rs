@@ -13,7 +13,12 @@ use tui::Frame;
 use tui::layout::Rect;
 
 pub trait View {
+    fn begin(&mut self) -> Result<bool, Error>;
     fn draw(&mut self, area : Option<Rect>) -> Result<(), Error>;
+    fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
+}
+
+pub trait InputHandler {
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
 }
 

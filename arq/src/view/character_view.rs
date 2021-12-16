@@ -8,7 +8,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input};
+use crate::view::{View, resolve_input, InputHandler};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -26,11 +26,9 @@ pub enum ViewMode {
     VIEW
 }
 
-pub struct CharacterView<'a, B : tui::backend::Backend> {
+pub struct CharacterView {
     pub character : Character,
-    pub ui : &'a mut UI,
-    pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: CharacterViewFrameHandler,
+    pub frame_handler: CharacterViewFrameHandler
 }
 
 pub struct CharacterViewFrameHandler {
@@ -206,17 +204,7 @@ impl CharacterViewFrameHandler {
     }
 }
 
-impl <B : tui::backend::Backend> CharacterView<'_, B> {
-
-    pub fn begin(&mut self) -> Result<bool, Error> {
-        let mut character_created = false;
-        self.draw(None)?;
-        while !character_created {
-            character_created = self.handle_input(None).unwrap();
-            self.draw(None)?;
-        }
-        Ok(true)
-    }
+impl CharacterView {
 
     pub fn update_free_points(&mut self, free_points: i32) {
         for widget in self.frame_handler.widgets.iter_mut() {
@@ -306,20 +294,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterViewFra
     }
 }
 
-impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
-    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
-        let frame_handler = &mut self.frame_handler;
-        let character = self.character.clone();
-        let ui = &mut self.ui;
-
-        self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: character });
-        })?;
-
-        Ok(())
-    }
-
+impl InputHandler for CharacterView {
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error> {
         let _horizontal_tab = char::from_u32(0x2409);
 
@@ -339,11 +314,11 @@ impl <B : tui::backend::Backend> View for CharacterView<'_, B> {
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                self.terminal_manager.terminal.clear()?;
+                //self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             },
             Key::Char(_horizontal_tab) => {
-                self.terminal_manager.terminal.clear()?;
+                //self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             },
             Key::Char('\n') => {

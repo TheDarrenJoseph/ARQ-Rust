@@ -52,13 +52,6 @@ trait ContainerViewCommands {
 }
 
 impl <B : tui::backend::Backend> ContainerView<'_, B> {
-    pub(crate) fn begin(&mut self) {
-        self.draw(None);
-        while !self.handle_input(None).unwrap() {
-            self.draw(None);
-        }
-    }
-
     pub fn rebuild_selection(&mut self, container: &Container) {
         let mut items = Vec::new();
         // Clone the self items for everything in the container
@@ -318,6 +311,14 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 }
 
 impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
+    fn begin(&mut self) -> Result<bool, std::io::Error> {
+        self.draw(None);
+        while !self.handle_input(None).unwrap() {
+            self.draw(None);
+        }
+        Ok(true)
+    }
+
     fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         let ui = &mut self.ui;
         let terminal =  &mut self.terminal_manager.terminal;

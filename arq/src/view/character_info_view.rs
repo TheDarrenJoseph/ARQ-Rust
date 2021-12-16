@@ -37,28 +37,24 @@ impl TabChoice {
     }
 }
 
+struct CharacterInfoViewFrameData {
+    pub character : Character
+}
+
 // Combines multiple character info views into one w/ tabbing
 pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub character : &'a mut Character,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: CharacterInfoViewFrameHandler<'a, B>
+    pub frame_handler: CharacterInfoViewFrameHandler
 }
 
-pub struct CharacterInfoViewFrameHandler<'a, B : tui::backend::Backend> {
+pub struct CharacterInfoViewFrameHandler {
     pub tab_choice : TabChoice,
-    pub character_view : Option<CharacterView<'a, B>>
+    pub character_view : Option<CharacterView>
 }
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
-
-
-    pub(crate) fn begin(&mut self) {
-        self.draw(None);
-        while !self.handle_input(None).unwrap() {
-            self.draw(None);
-        }
-    }
 
     fn next_tab(&mut self)  {
         let tab_iter = TabChoice::iterator();
@@ -90,32 +86,34 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 }
 
 impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
+    fn begin(&mut self)  -> Result<bool, Error> {
+        let character_view_frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
+        let mut character_view = CharacterView { character: self.character.clone(), frame_handler: character_view_frame_handler };
+        self.frame_handler.character_view = Some(character_view);
+
+        self.draw(None);
+        while !self.handle_input(None).unwrap() {
+            self.draw(None);
+        }
+        Ok(true)
+    }
+
+
     fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
         self.terminal_manager.terminal.clear();
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
-        let terminal_manager = &mut self.terminal_manager;
-        let tab_choice = frame_handler.tab_choice.clone();
-
-        let mut inventory_character = self.character.clone();
-
 
         let mut frame_area = Rect::default();
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
             let size = frame.size();
             frame_area = Rect { x : size.x.clone() + 1, y : size.y.clone() + 2, width: size.width.clone() -2,  height: size.height.clone() - 2};
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: character });
 
-            match tab_choice {
-                TabChoice::INVENTORY => {
-                    let mut inventory = inventory_character.get_inventory().clone();
-                    // TODO use a pure frame handler instead of a view?
-                    //let mut inventory_view = build_container_view(&mut inventory, ui, terminal_manager);
-                }
-                _ => {}
-            }
+
+            let specific_frame_data = CharacterInfoViewFrameData { character };
+            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: specific_frame_data });
         })?;
 
         /** TODO
@@ -163,8 +161,8 @@ impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterInfoViewFrameHandler<'_, B> {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
+impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoViewFrameHandler {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<CharacterInfoViewFrameData>) {
         let titles =  ["Inventory", "Character"].iter().cloned().map(Spans::from).collect();
         let selection_index = self.tab_choice.clone() as i32;
         let mut tabs = Tabs::new(titles)
@@ -177,5 +175,24 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterInfoVie
         let frame_size = frame.size();
         let tab_area = Rect::new(1, 1, frame_size.width - 4, frame_size.height - 4);
         frame.render_widget(tabs, tab_area);
+
+
+        let mut character = data.data.character;
+        match self.tab_choice {
+            TabChoice::INVENTORY => {
+                let mut inventory = character.get_inventory().clone();
+                // TODO use a pure frame handler instead of a view?
+                //let mut inventory_view = build_container_view(&mut inventory, ui, terminal_manager);
+            },
+            TabChoice::CHARACTER => {
+                match &mut self.character_view {
+                    Some(char_view) => {
+                        char_view.frame_handler.handle_frame(frame,  FrameData { frame_size: frame.size(), data: character.clone() } );
+                    },
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 }
