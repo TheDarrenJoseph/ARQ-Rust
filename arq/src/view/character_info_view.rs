@@ -21,7 +21,7 @@ use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::widget::{Focusable, Widget, WidgetType, Named};
 use crate::character;
-use crate::view::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
+use crate::view::character_view::{CharacterView, ViewMode};
 use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
 use crate::map::position::Area;
 
@@ -87,8 +87,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 
 impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
-        let character_view_frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
-        let mut character_view = CharacterView { character: self.character.clone(), frame_handler: character_view_frame_handler };
+        let mut character_view = CharacterView { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
 
         self.draw(None);
@@ -187,7 +186,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             TabChoice::CHARACTER => {
                 match &mut self.character_view {
                     Some(char_view) => {
-                        char_view.frame_handler.handle_frame(frame,  FrameData { frame_size: frame.size(), data: character.clone() } );
+                        char_view.handle_frame(frame,  FrameData { frame_size: frame.size(), data: character.clone() } );
                     },
                     _ => {}
                 }

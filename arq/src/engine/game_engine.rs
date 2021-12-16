@@ -1,21 +1,22 @@
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
 use tui::backend::{TermionBackend, Backend};
+use tui::layout::{Rect};
 use termion::event::Key;
 use std::io;
 use std::convert::TryInto;
 use uuid::Uuid;
 
 use crate::ui;
-use crate::ui::Draw;
+use crate::ui::{Draw, FrameHandler, FrameData};
 use crate::settings;
 use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::View;
+use crate::view::{View, InputHandler};
 use crate::view::map_view::MapView;
-use crate::view::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
+use crate::view::character_view::{CharacterView, ViewMode};
 use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
 use crate::map::map_generator::build_generator;
 use crate::map::Map;
@@ -170,9 +171,21 @@ impl <B : Backend> GameEngine<B> {
 
     fn initialise_characters(&mut self) {
         let mut characters = self.build_characters();
-        let frame_handler = CharacterViewFrameHandler { widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
-        let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(), frame_handler};
-        //character_created = character_view.begin().unwrap();
+        let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
+        // Being capture of a new character
+        let mut character_created = false;
+        while !character_created {
+            let ui = &mut self.ui;
+            let mut frame_area = Rect::default();
+
+            self.terminal_manager.terminal.draw(|frame| {
+                ui.render(frame);
+                character_view.handle_frame(frame, FrameData { data: characters.get(0).unwrap().clone(), frame_size: frame_area });
+            });
+
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            character_created = character_view.handle_input(Some(key)).unwrap();
+        }
         let mut updated_character = character_view.get_character();
 
         // Grab the first room and set the player's position there

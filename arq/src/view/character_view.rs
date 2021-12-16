@@ -28,16 +28,12 @@ pub enum ViewMode {
 
 pub struct CharacterView {
     pub character : Character,
-    pub frame_handler: CharacterViewFrameHandler
-}
-
-pub struct CharacterViewFrameHandler {
     pub selected_widget: Option<i8>,
     pub widgets: Vec<Widget>,
     pub view_mode : ViewMode
 }
 
-impl CharacterViewFrameHandler {
+impl CharacterView {
 
     fn previous_widget(&mut self) {
         let selected_widget = self.selected_widget.unwrap();
@@ -202,12 +198,9 @@ impl CharacterViewFrameHandler {
         let name = character.get_name().clone();
         self.draw_character_details(frame, character,name);
     }
-}
-
-impl CharacterView {
 
     pub fn update_free_points(&mut self, free_points: i32) {
-        for widget in self.frame_handler.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match &mut widget.state_type {
                 WidgetType::Number(state) => {
                     if state.name == "Free points" {
@@ -222,7 +215,7 @@ impl CharacterView {
     pub fn get_character(&mut self) -> Character {
         let mut character = self.character.clone();
         let mut scores  = character.get_attribute_scores();
-        for widget in self.frame_handler.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             let mut state_type = &mut widget.state_type;
             if String::from("Name") == state_type.get_name() {
                 match state_type {
@@ -250,7 +243,7 @@ impl CharacterView {
         }
 
         let mut number_states : Vec<NumberInputState> = Vec::new();
-        let ns_options : Vec<Option<NumberInputState>> = self.frame_handler.widgets.iter_mut().map(|w| map_state(  w)).collect();
+        let ns_options : Vec<Option<NumberInputState>> = self.widgets.iter_mut().map(|w| map_state(  w)).collect();
         for ns_option in ns_options {
             match ns_option {
                 Some(ns) => {
@@ -281,7 +274,7 @@ impl CharacterView {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterViewFrameHandler {
+impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterView {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
@@ -296,13 +289,10 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterViewFra
 
 impl InputHandler for CharacterView {
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error> {
-        let _horizontal_tab = char::from_u32(0x2409);
-
-        let frame_handler = &mut self.frame_handler;
-        let widgets = &mut frame_handler.widgets;
-
+        let horizontal_tab : char = char::from_u32(0x2409).unwrap();
+        let widgets = &mut self.widgets;
         let mut selected_widget = None;
-        match frame_handler.selected_widget {
+        match self.selected_widget {
             Some(idx) => {
                 let widget = &mut widgets[idx as usize];
                 widget.state_type.focus();
@@ -314,10 +304,6 @@ impl InputHandler for CharacterView {
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                //self.terminal_manager.terminal.clear()?;
-                return Ok(true)
-            },
-            Key::Char(_horizontal_tab) => {
                 //self.terminal_manager.terminal.clear()?;
                 return Ok(true)
             },
@@ -344,6 +330,14 @@ impl InputHandler for CharacterView {
                 }
             },
             Key::Char(c) => {
+                // For view mode, tab should exit the view
+                if c == horizontal_tab {
+                    if self.view_mode == ViewMode::VIEW {
+                        //self.terminal_manager.terminal.clear()?;
+                        return Ok(true)
+                    }
+                }
+
                 match selected_widget {
                     Some(widget) => {
                         log::info!("Input: {}", c.to_string());
@@ -382,12 +376,12 @@ impl InputHandler for CharacterView {
                                     if state.is_showing_options() {
                                         state.select_next();
                                     } else {
-                                        frame_handler.next_widget();
+                                        self.next_widget();
                                     }
                                 }
                             },
                             _ => {
-                                frame_handler.next_widget();
+                                self.next_widget();
                             }
                         }
                     }
@@ -403,12 +397,12 @@ impl InputHandler for CharacterView {
                                     if state.is_showing_options() {
                                         state.select_previous();
                                     } else {
-                                        frame_handler.previous_widget();
+                                        self.previous_widget();
                                     }
                                 }
                             },
                             _ => {
-                                frame_handler.previous_widget();
+                                self.previous_widget();
                             }
                         }
                     },
