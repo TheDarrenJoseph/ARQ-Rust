@@ -108,10 +108,19 @@ impl Area {
         self_adjusted_area.intersects(area)
     }
 
-    pub fn contains(&self, position: Position) -> bool {
+    pub fn contains_position(&self, position: Position) -> bool {
         let x= position.x;
         let y = position.y;
 
+        let lower_x_bound = x >= self.start_position.x;
+        let lower_y_bound = y >= self.start_position.y;
+        let upper_x_bound = x <= self.end_position.x;
+        let upper_y_bound = y <= self.end_position.y;
+        let in_bounds = lower_x_bound && lower_y_bound && upper_x_bound && upper_y_bound;
+        in_bounds
+    }
+
+    pub fn contains(&self, x: u16, y: u16) -> bool {
         let lower_x_bound = x >= self.start_position.x;
         let lower_y_bound = y >= self.start_position.y;
         let upper_x_bound = x <= self.end_position.x;
@@ -127,7 +136,7 @@ impl Area {
 
         let x= position.x;
         let y = position.y;
-        let in_bounds = self.contains(position);
+        let in_bounds = self.contains_position(position);
         if in_bounds && size <= self.size_x && size <= self.size_y {
             let end_x = x + size - 1;
             let end_y = y + size - 1;

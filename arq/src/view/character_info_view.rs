@@ -104,7 +104,7 @@ impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
     }
 
 
-    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
+    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;

@@ -8,13 +8,15 @@ use std::convert::TryInto;
 use crate::menu::{Menu, ToList};
 use crate::widget::{Widget, WidgetType};
 use crate::map::position::Area;
+use crate::view::console_view::{ConsoleView, ConsoleBuffer};
 
 pub struct UI {
     pub start_menu : Menu,
     pub settings_menu : Menu,
     pub render_additional: bool,
     pub additional_widgets: Vec<Widget>,
-    pub frame_size : Option<Area>
+    pub frame_size : Option<Area>,
+    pub console_view : ConsoleView
 }
 
 pub enum StartMenuChoice {
@@ -78,6 +80,7 @@ pub trait Draw {
     fn draw_start_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_settings_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>);
 }
 
@@ -92,12 +95,14 @@ impl UI {
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let main_block = build_main_block();
         let frame_size = frame.size();
-        let window_size = Rect::new(frame_size.x, frame_size.y, frame_size.width - 2, frame_size.height - 2);
+        let window_size = Rect::new(frame_size.x, frame_size.y, frame_size.width, frame_size.height);
         frame.render_widget(main_block, window_size);
 
         if self.render_additional {
             self.draw_additional_widgets(frame);
         }
+
+        //self.draw_console(frame);
     }
 }
 
@@ -137,6 +142,13 @@ impl Draw for UI {
         let frame_size = frame.size();
         let paragraph_size = Rect::new(4, 4, frame_size.width / 2, spans_len + 2);
         frame.render_widget(paragraph, paragraph_size);
+    }
+
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+        let frame_size = frame.size();
+        let console_frame_size = Rect::new(frame_size.x + 1, frame_size.height - 7,  frame_size.width - 2, 6);
+        let frame_data = FrameData { frame_size: console_frame_size, data: ConsoleBuffer {} };
+        self.console_view.handle_frame(frame, frame_data);
     }
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {

@@ -30,13 +30,18 @@ pub fn build_generator(map_area : Area) -> MapGenerator {
 
 impl MapGenerator {
     pub fn generate(&mut self) -> Map {
+        log::info!("Generating map...");
         self.map = self.build_map();
+        log::info!("Applying rooms...");
         self.add_rooms_to_map();
+        log::info!("Pathfinding...");
         self.path_rooms();
-        self.map.clone()
+        log::info!("Map generated!");
+        return self.map.clone();
     }
 
     fn path_rooms(&mut self){
+        log::info!("Pathing rooms...");
         let tile_library = crate::map::tile::build_library();
         let corridor_tile = &tile_library[&Tile::Corridor].clone();
         let rooms = self.map.get_rooms().clone();
@@ -83,7 +88,7 @@ impl MapGenerator {
 
                 // Don't allow doors at the edges of the map
                 for map_side in &map_sides {
-                    if map_side.area.contains(door_position) {
+                    if map_side.area.contains_position(door_position) {
                         continue;
                     }
                 }
@@ -123,15 +128,15 @@ impl MapGenerator {
             let random_pos = rng.gen_range(0..self.possible_room_positions.len());
             let position = *self.possible_room_positions.get(random_pos).unwrap();
 
-            // Try each position 3 times with a different size
-            for _x in 0..=2 {
+            // Try each position 2 times with a different size
+            for _x in 0..=1 {
                 let size = rng.gen_range(self.min_room_size..=self.max_room_size);
                 let potential_area = build_square_area(position, size);
                 let mut position_taken = false;
                 for r in &rooms {
                     let taken_area = r.area;
                     if taken_area.intersects_or_touches(potential_area.clone()) {
-                        log::info!("Cannot fit, intersection of proposed Start:{},{}, End:{},{} itersects: {},{}..{},{}",
+                        log::debug!("Cannot fit room area, intersection of proposed Start:{},{}, End:{},{} itersects: {},{}..{},{}",
                             potential_area.start_position.x, potential_area.start_position.y, potential_area.end_position.x,potential_area.end_position.y,
                             taken_area.start_position.x, taken_area.start_position.y, taken_area.end_position.x,taken_area.end_position.y);
                         position_taken = true;
@@ -219,14 +224,17 @@ impl MapGenerator {
     }
 
     fn add_rooms_to_map(&mut self) {
+        log::info!("Adding rooms...");
         for room in self.map.get_rooms().clone() {
             self.add_room_to_map(&room);
         }
     }
 
     fn build_map(&mut self) -> Map {
+        log::info!("Generating rooms..");
         let rooms = self.generate_rooms();
         let map_area = self.map_area.clone();
+        log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
         return crate::map::Map {
             area: map_area,

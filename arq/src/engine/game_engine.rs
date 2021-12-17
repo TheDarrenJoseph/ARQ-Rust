@@ -30,6 +30,7 @@ use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+use crate::view::console_view::ConsoleView;
 
 pub struct GameEngine<B: tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -173,11 +174,12 @@ impl <B : Backend> GameEngine<B> {
         let mut characters = self.build_characters();
         let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
         // Being capture of a new character
+        /**
         let mut character_creation_result = InputResult { generic_input_result:
             GenericInputResult { done: false, requires_view_refresh: false },
             view_specific_result: None
-        };
-        while !character_creation_result.generic_input_result.done {
+        };**/
+        //while !character_creation_result.generic_input_result.done {
             let ui = &mut self.ui;
             let mut frame_area = Rect::default();
 
@@ -186,9 +188,9 @@ impl <B : Backend> GameEngine<B> {
                 character_view.handle_frame(frame, FrameData { data: characters.get(0).unwrap().clone(), frame_size: frame_area });
             });
 
-            let key = io::stdin().keys().next().unwrap().unwrap();
-            character_creation_result = character_view.handle_input(Some(key)).unwrap();
-        }
+            //let key = io::stdin().keys().next().unwrap().unwrap();
+            //character_creation_result = character_view.handle_input(Some(key)).unwrap();
+        //}
         let mut updated_character = character_view.get_character();
 
         // Grab the first room and set the player's position there
@@ -226,12 +228,16 @@ impl <B : Backend> GameEngine<B> {
 
             match &mut self.map {
                 Some(m) => {
-                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
                     map_view.draw(None)?;
                     map_view.draw_characters()?;
                 },
                 None => {}
             }
+
+            let console_view = ConsoleView {};
+
+
             self.game_loop()?;
         }
         //self.terminal_manager.terminal.clear()?;
@@ -355,7 +361,8 @@ pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : Termin
     let start_menu = menu::build_start_menu(false);
     let settings_menu = menu::build_settings_menu();
 
-    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
+    let console_view = ConsoleView { };
+    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new(), console_view };
 
     //terminal_manager.terminal.clear()?;
 

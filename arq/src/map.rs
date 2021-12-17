@@ -18,6 +18,15 @@ pub struct Map {
 
 impl Map {
 
+    pub fn in_bounds(&self, x: usize, y: usize) -> bool {
+        if let Some(row) = self.tiles.get(y) {
+            if let Some(_) = row.get(x) {
+                return true
+            }
+        }
+        false
+    }
+
     pub fn get_tile(&self, position: Position) -> Option<TileDetails> {
         match self.tiles.get(position.y as usize) {
             Some (row) => {
@@ -75,10 +84,10 @@ impl Map {
 
         let mut results = Vec::new();
         let area = self.area;
-        if area.contains(position) {
+        if area.contains_position(position) {
             let neighbors = position.get_neighbors();
             for n in neighbors {
-                if area.contains(n) {
+                if area.contains_position(n) {
                     results.push(n);
                 }
             }

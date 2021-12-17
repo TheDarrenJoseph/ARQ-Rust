@@ -4,6 +4,7 @@ use std::io;
 pub mod character_view;
 pub mod container_view;
 pub mod character_info_view;
+pub mod console_view;
 pub mod map_view;
 use termion::event::Key;
 use termion::input::TermRead;
@@ -14,7 +15,7 @@ use tui::layout::Rect;
 
 pub trait View {
     fn begin(&mut self) -> Result<bool, Error>;
-    fn draw(&mut self, area : Option<Rect>) -> Result<(), Error>;
+    fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
 }
 
