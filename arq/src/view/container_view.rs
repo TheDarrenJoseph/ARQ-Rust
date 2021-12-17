@@ -12,7 +12,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, resolve_area, InputHandler, InputResult};
+use crate::view::{View, resolve_input, resolve_area, InputHandler, InputResult, GenericInputResult};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
@@ -23,8 +23,12 @@ pub struct ContainerView {
     pub container : Container,
     columns : Vec<Column>,
     row_count: i32,
-    pub item_list_selection : ItemListSelection,
-    pub stacked_views: Vec<ContainerView>
+    pub item_list_selection : ItemListSelection
+}
+
+pub enum ContainerViewInputResult {
+    NONE,
+    OPEN_CONTAINER_VIEW(ContainerView)
 }
 
 pub fn build_container_view(container: Container) -> ContainerView {
@@ -42,8 +46,7 @@ pub fn build_container_view(container: Container) -> ContainerView {
     ContainerView { container: container.clone(),
             columns,
             row_count: 1,
-            item_list_selection: build_list_selection(items, 1),
-            stacked_views: Vec::new()
+            item_list_selection: build_list_selection(items, 1)
     }
 }
 
@@ -130,23 +133,17 @@ impl ContainerView {
         self.item_list_selection.page_down();
     }
 
-    fn open_focused(&mut self) {
+    fn open_focused(&mut self) -> Option<ContainerView> {
         if !self.item_list_selection.is_selecting() {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
                     if let Some(focused_container) = self.container.find_mut(focused_item) {
-                        let mut items = Vec::new();
-                        for c in focused_container.get_contents() {
-                            let self_item = c.get_self_item();
-                            items.push(self_item);
-                        }
-                        let mut view = build_container_view(focused_container.clone());
-                        self.stacked_views.push(view);
-                        //view.begin();
+                        return Some(build_container_view(focused_container.clone()))
                     }
                 }
             }
         }
+        None
     }
 
     fn move_selection(&mut self) {
@@ -302,48 +299,27 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
     }
 }
 
-impl InputHandler for ContainerView {
-    /**
-    fn begin(&mut self) -> Result<bool, std::io::Error> {
-        self.draw(None);
-        while !self.handle_input(None).unwrap() {
-            self.draw(None);
-        }
-        Ok(true)
-    }**/
-
-    /**
-    fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
-        let container = &mut (*self.container);
-        let frame_handler = &mut self.frame_handler;
-
-        terminal.draw(|frame| {
-            //ui.render(frame);
-            let frame_area = resolve_area(area, frame);
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: container });
-        })?;
-
-        Ok(())
-    }**/
-
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult, Error> {
+impl InputHandler<ContainerViewInputResult> for ContainerView {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerViewInputResult>, Error> {
+        let default_done_result = Ok(InputResult {
+            generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
+            view_specific_result: Some(ContainerViewInputResult::NONE)});
         loop {
-            let _horizontal_tab = char::from_u32(0x2409);
             let key = resolve_input(input);
             match key {
                 Key::Char('q') => {
                     if self.handle_quit()? {
-                        return Ok(InputResult { done: true, requires_view_refresh: true });
+                        return default_done_result;
                     }
                 },
-                /**
-                Key::Char(_horizontal_tab) => {
-                    if self.handle_quit()? {
-                        return Ok(true)
-                    }
-                },**/
                 Key::Char('o') => {
-                    self.open_focused();
+                    if let Some(stacked_view) = self.open_focused() {
+                        let new_view_result = Ok(InputResult {
+                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                            view_specific_result: Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view))
+                        });
+                        return new_view_result;
+                    }
                 },
                 Key::Char('m') => {
                     self.move_selection();
@@ -367,7 +343,10 @@ impl InputHandler for ContainerView {
                 },
                 _ => {}
             }
-            return Ok(InputResult { done: false, requires_view_refresh: false });
+            let continue_result = Ok(InputResult {
+                generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
+                view_specific_result: Some(ContainerViewInputResult::NONE)});
+            return continue_result;
         }
     }
 }

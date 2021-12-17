@@ -58,6 +58,12 @@ impl Container {
         self.contents.splice(index..index, to_move);
     }
 
+    pub fn replace(&mut self, index: usize, container : Container) {
+        if self.contents.len() > 0 && index < self.contents.len() {
+            self.contents[index] = container;
+        }
+    }
+
     pub fn remove(&mut self, items : Vec<Container>) {
         for item in items.iter() {
             if let Some(position) = self.position(item) {

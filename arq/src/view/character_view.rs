@@ -8,7 +8,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, InputHandler, InputResult};
+use crate::view::{View, resolve_input, InputHandler, InputResult, GenericInputResult};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -31,6 +31,10 @@ pub struct CharacterView {
     pub selected_widget: Option<i8>,
     pub widgets: Vec<Widget>,
     pub view_mode : ViewMode
+}
+
+pub enum CharacterViewInputResult {
+    NONE
 }
 
 impl CharacterView {
@@ -287,8 +291,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterView {
     }
 }
 
-impl InputHandler for CharacterView {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult, Error> {
+impl InputHandler<CharacterViewInputResult> for CharacterView {
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterViewInputResult>, Error> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets;
         let mut selected_widget = None;
@@ -301,10 +305,13 @@ impl InputHandler for CharacterView {
             None => {}
         }
 
+        let default_done_result = Ok(InputResult {
+            generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
+            view_specific_result: None});
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                return Ok(InputResult { done: true, requires_view_refresh: true })
+                return default_done_result;
             },
             Key::Char('\n') => {
                 match selected_widget {
@@ -316,7 +323,7 @@ impl InputHandler for CharacterView {
                             WidgetType::Button(state) => {
                                 match state.get_name().as_str() {
                                     "[Enter]" => {
-                                        return Ok(InputResult { done: true, requires_view_refresh: true })
+                                        return default_done_result;
                                     },
                                     _ => {}
                                 }
@@ -331,7 +338,7 @@ impl InputHandler for CharacterView {
             Key::Char(c) => {
                 // For view mode, tab should exit the view
                 if c == horizontal_tab && self.view_mode == ViewMode::VIEW {
-                    return Ok(InputResult { done: true, requires_view_refresh: true })
+                    return default_done_result;
                 }
 
                 match selected_widget {
@@ -448,7 +455,9 @@ impl InputHandler for CharacterView {
             _ => {
             }
         }
-        Ok(InputResult { done: false, requires_view_refresh: false })
+        Ok(InputResult {
+            generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
+            view_specific_result: None})
     }
 }
 
