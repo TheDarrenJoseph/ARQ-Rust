@@ -14,10 +14,10 @@ use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::{View, InputHandler};
+use crate::view::{View, InputHandler, InputResult};
 use crate::view::map_view::MapView;
 use crate::view::character_view::{CharacterView, ViewMode};
-use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
+use crate::view::container_view::{ContainerView, build_container_view};
 use crate::map::map_generator::build_generator;
 use crate::map::Map;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -173,8 +173,8 @@ impl <B : Backend> GameEngine<B> {
         let mut characters = self.build_characters();
         let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
         // Being capture of a new character
-        let mut character_created = false;
-        while !character_created {
+        let mut character_creation_result = InputResult { done: false, requires_view_refresh: false };
+        while !character_creation_result.done {
             let ui = &mut self.ui;
             let mut frame_area = Rect::default();
 
@@ -184,7 +184,7 @@ impl <B : Backend> GameEngine<B> {
             });
 
             let key = io::stdin().keys().next().unwrap().unwrap();
-            character_created = character_view.handle_input(Some(key)).unwrap();
+            character_creation_result = character_view.handle_input(Some(key)).unwrap();
         }
         let mut updated_character = character_view.get_character();
 
@@ -317,7 +317,7 @@ impl <B : Backend> GameEngine<B> {
                 self.terminal_manager.terminal.clear()?;
             },
             Key::Char('i') => {
-                let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, character_view: None };
+                let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, inventory_view: None, character_view: None };
                 let player = &mut self.characters[0];
                 let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
                 character_info_view.begin();

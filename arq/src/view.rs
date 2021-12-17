@@ -18,8 +18,13 @@ pub trait View {
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
 }
 
+pub struct InputResult {
+    pub(crate) done: bool,
+    pub(crate) requires_view_refresh: bool
+}
+
 pub trait InputHandler {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult, Error>;
 }
 
 fn map_rect_to_area(rect: Rect) -> Area {

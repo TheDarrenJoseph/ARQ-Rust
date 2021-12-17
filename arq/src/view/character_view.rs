@@ -8,7 +8,7 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, InputHandler};
+use crate::view::{View, resolve_input, InputHandler, InputResult};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -288,7 +288,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterView {
 }
 
 impl InputHandler for CharacterView {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error> {
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult, Error> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets;
         let mut selected_widget = None;
@@ -304,8 +304,7 @@ impl InputHandler for CharacterView {
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                //self.terminal_manager.terminal.clear()?;
-                return Ok(true)
+                return Ok(InputResult { done: true, requires_view_refresh: true })
             },
             Key::Char('\n') => {
                 match selected_widget {
@@ -317,7 +316,7 @@ impl InputHandler for CharacterView {
                             WidgetType::Button(state) => {
                                 match state.get_name().as_str() {
                                     "[Enter]" => {
-                                        return Ok(true)
+                                        return Ok(InputResult { done: true, requires_view_refresh: true })
                                     },
                                     _ => {}
                                 }
@@ -331,11 +330,8 @@ impl InputHandler for CharacterView {
             },
             Key::Char(c) => {
                 // For view mode, tab should exit the view
-                if c == horizontal_tab {
-                    if self.view_mode == ViewMode::VIEW {
-                        //self.terminal_manager.terminal.clear()?;
-                        return Ok(true)
-                    }
+                if c == horizontal_tab && self.view_mode == ViewMode::VIEW {
+                    return Ok(InputResult { done: true, requires_view_refresh: true })
                 }
 
                 match selected_widget {
@@ -452,7 +448,7 @@ impl InputHandler for CharacterView {
             _ => {
             }
         }
-        Ok(false)
+        Ok(InputResult { done: false, requires_view_refresh: false })
     }
 }
 

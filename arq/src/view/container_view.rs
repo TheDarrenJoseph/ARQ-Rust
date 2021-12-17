@@ -12,21 +12,22 @@ use termion::input::TermRead;
 use termion::event::Key;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, resolve_area};
+use crate::view::{View, resolve_input, resolve_area, InputHandler, InputResult};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
 use crate::map::position::Area;
 
-pub struct ContainerView<'a, B : tui::backend::Backend> {
-    pub container : &'a mut Container,
-    pub ui : &'a mut UI,
-    pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler : ContainerFrameHandler
+pub struct ContainerView {
+    pub container : Container,
+    columns : Vec<Column>,
+    row_count: i32,
+    pub item_list_selection : ItemListSelection,
+    pub stacked_views: Vec<ContainerView>
 }
 
-pub fn build_container_view<'a, B : tui::backend::Backend> (container: &'a mut Container, ui: &'a mut  UI, terminal_manager: &'a mut TerminalManager<B>) -> ContainerView<'a, B> {
+pub fn build_container_view(container: Container) -> ContainerView {
     let columns = vec![
         Column {name : "NAME".to_string(), size: 12},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
@@ -38,31 +39,45 @@ pub fn build_container_view<'a, B : tui::backend::Backend> (container: &'a mut C
     for c in container.get_contents() {
         items.push(c.get_self_item().clone());
     }
-    ContainerView::<B> { container, ui, terminal_manager,
-        frame_handler: ContainerFrameHandler {
+    ContainerView { container: container.clone(),
             columns,
             row_count: 1,
-            item_list_selection: build_list_selection(items, 1)
-        }
+            item_list_selection: build_list_selection(items, 1),
+            stacked_views: Vec::new()
     }
 }
 
-trait ContainerViewCommands {
+impl ContainerView {
 
-}
+    fn build_headings(&self) -> Paragraph {
+        let mut heading_spans = Vec::new();
+        let mut spans = Vec::new();
+        for column in &self.columns {
+            let name = column.name.clone();
+            let padding = build_padding(column.size - name.len() as i8 + 2);
+            spans.push(Span::raw(column.name.clone()));
+            spans.push(Span::raw(padding));
+        }
+        heading_spans.push(Spans::from(spans));
+        Paragraph::new(heading_spans)
+            .block(Block::default()
+                .borders(Borders::NONE))
+            .style(Style::default())
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: false })
+    }
 
-impl <B : tui::backend::Backend> ContainerView<'_, B> {
     pub fn rebuild_selection(&mut self, container: &Container) {
         let mut items = Vec::new();
         // Clone the self items for everything in the container
         for c in container.get_contents() {
             items.push(c.get_self_item().clone());
         }
-        self.frame_handler.item_list_selection = build_list_selection(items, 1);
+        self.item_list_selection = build_list_selection(items, 1);
     }
 
     fn get_selected_items(&self) -> Vec<Item> {
-        Vec::from(self.frame_handler.item_list_selection.get_selected_items().clone())
+        Vec::from(self.item_list_selection.get_selected_items().clone())
     }
 
     fn find_container_for_item(&self, item: &Item) -> Option<&Container> {
@@ -87,38 +102,37 @@ impl <B : tui::backend::Backend> ContainerView<'_, B> {
     }
 
     fn handle_quit(&mut self) -> Result<bool, Error> {
-        if !self.frame_handler.item_list_selection.get_selected_items().is_empty() {
-            self.frame_handler.item_list_selection.cancel_selection();
+        if !self.item_list_selection.get_selected_items().is_empty() {
+            self.item_list_selection.cancel_selection();
             Ok(false)
         } else {
-            self.terminal_manager.terminal.clear()?;
             Ok(true)
         }
     }
 
     fn toggle_select(&mut self) {
-        self.frame_handler.item_list_selection.toggle_select();
+        self.item_list_selection.toggle_select();
     }
 
     fn move_up(&mut self) {
-        self.frame_handler.item_list_selection.move_up();
+        self.item_list_selection.move_up();
     }
 
     fn move_down(&mut self) {
-        self.frame_handler.item_list_selection.move_down();
+        self.item_list_selection.move_down();
     }
 
     fn page_up(&mut self) {
-        self.frame_handler.item_list_selection.page_up();
+        self.item_list_selection.page_up();
     }
 
     fn page_down(&mut self) {
-        self.frame_handler.item_list_selection.page_down();
+        self.item_list_selection.page_down();
     }
 
     fn open_focused(&mut self) {
-        if !self.frame_handler.item_list_selection.is_selecting() {
-            if let Some(focused_item) = self.frame_handler.item_list_selection.get_focused_item() {
+        if !self.item_list_selection.is_selecting() {
+            if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
                     if let Some(focused_container) = self.container.find_mut(focused_item) {
                         let mut items = Vec::new();
@@ -126,8 +140,9 @@ impl <B : tui::backend::Backend> ContainerView<'_, B> {
                             let self_item = c.get_self_item();
                             items.push(self_item);
                         }
-                        let mut view = build_container_view(focused_container, &mut self.ui, &mut self.terminal_manager);
-                        view.begin();
+                        let mut view = build_container_view(focused_container.clone());
+                        self.stacked_views.push(view);
+                        //view.begin();
                     }
                 }
             }
@@ -135,7 +150,7 @@ impl <B : tui::backend::Backend> ContainerView<'_, B> {
     }
 
     fn move_selection(&mut self) {
-        let list_selection = &self.frame_handler.item_list_selection;
+        let list_selection = &self.item_list_selection;
         let selected_container_items = &self.get_selected_containers();
         let mut updated = false;
         if list_selection.is_selecting() {
@@ -156,7 +171,7 @@ impl <B : tui::backend::Backend> ContainerView<'_, B> {
                         self.container.remove(selected_container_items.to_vec());
                         self.container.insert(true_index as usize - selected_container_items.len(), selected_container_items.clone());
                     }
-                    &mut self.frame_handler.item_list_selection.cancel_selection();
+                    &mut self.item_list_selection.cancel_selection();
                     updated = true;
                 }
             }
@@ -173,12 +188,6 @@ pub struct Column {
     pub size : i8
 }
 
-pub struct ContainerFrameHandler {
-    columns : Vec<Column>,
-    row_count: i32,
-    pub item_list_selection : ItemListSelection
-}
-
 fn build_padding(length : i8) -> String {
     let mut s = String::new();
     for i in 1..length {
@@ -187,25 +196,6 @@ fn build_padding(length : i8) -> String {
     s
 }
 
-impl ContainerFrameHandler {
-    fn build_headings(&self) -> Paragraph {
-        let mut heading_spans = Vec::new();
-        let mut spans = Vec::new();
-        for column in &self.columns {
-            let name = column.name.clone();
-            let padding = build_padding(column.size - name.len() as i8 + 2);
-            spans.push(Span::raw(column.name.clone()));
-            spans.push(Span::raw(padding));
-        }
-        heading_spans.push(Spans::from(spans));
-        Paragraph::new(heading_spans)
-            .block(Block::default()
-                .borders(Borders::NONE))
-            .style(Style::default())
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: false })
-    }
-}
 
 fn build_column_text(column: &Column, item: &Item) -> String {
     match column.name.as_str() {
@@ -240,7 +230,7 @@ fn get_row_count(frame_height: i32, container_len: i32) -> i32 {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
+impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerView {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
         let frame_size = data.get_frame_size().clone();
@@ -270,7 +260,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
             for c in view_contents {
                 let item_index = start_index.clone() + line_index.clone();
                 let item = &c.get_self_item();
-                let mut offset: u16 = 2;
+                let mut x_offset: u16 = frame_size.x.clone() as u16 + 1;
+                let mut y_offset: u16 = frame_size.y.clone() as u16 + 2 + line_index.clone() as u16;
                 let current_index = self.item_list_selection.is_focused(item_index);
                 let selected = self.item_list_selection.is_selected(item_index);
                 for column in &self.columns {
@@ -285,16 +276,16 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
                     }
 
                     let column_length = column.size as i8;
-                    let text_area = Rect::new(offset.clone(), (3 + line_index.clone()).try_into().unwrap(), column_length.try_into().unwrap(), 1);
+                    let text_area = Rect::new(x_offset.clone(), y_offset.clone(), column_length.try_into().unwrap(), 1);
                     frame.render_widget(column_text.clone(), text_area);
-                    offset += column_length as u16 + 1;
+                    x_offset += column_length as u16 + 1;
                 }
                 line_index += 1;
             }
 
             let usage_description = "(o)pen, (d)rop, (m)ove";
             let mut usage_text = build_paragraph(String::from(usage_description));
-            let text_area = Rect::new( window_area.x.clone() + 1, window_area.height.clone(), usage_description.len().try_into().unwrap(), 1);
+            let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
 
 
@@ -302,26 +293,27 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
             let total_pages = self.item_list_selection.get_total_pages();
 
             let page_count_text = format!("Page {}/{}", page_number, total_pages);
+            let page_count_text_length = page_count_text.len();
             let width = page_count_text.len().try_into().unwrap();
             let page_count_paragraph = build_paragraph(page_count_text);
-            let page_count_area = Rect::new( window_area.x.clone() + 1 + usage_description.len() as u16 + 2 , window_area.height.clone(), width, 1);
+            let page_count_area = Rect::new( window_area.width.clone() - page_count_text_length as u16 , window_area.y.clone() + window_area.height.clone() - 1, width, 1);
             frame.render_widget(page_count_paragraph, page_count_area);
         }
     }
 }
 
-impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
+impl InputHandler for ContainerView {
+    /**
     fn begin(&mut self) -> Result<bool, std::io::Error> {
         self.draw(None);
         while !self.handle_input(None).unwrap() {
             self.draw(None);
         }
         Ok(true)
-    }
+    }**/
 
+    /**
     fn draw(&mut self, area: Option<Rect>) -> Result<(), Error> {
-        let ui = &mut self.ui;
-        let terminal =  &mut self.terminal_manager.terminal;
         let container = &mut (*self.container);
         let frame_handler = &mut self.frame_handler;
 
@@ -332,23 +324,24 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
         })?;
 
         Ok(())
-    }
+    }**/
 
-    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult, Error> {
         loop {
             let _horizontal_tab = char::from_u32(0x2409);
             let key = resolve_input(input);
             match key {
                 Key::Char('q') => {
                     if self.handle_quit()? {
-                        return Ok(true)
+                        return Ok(InputResult { done: true, requires_view_refresh: true });
                     }
                 },
+                /**
                 Key::Char(_horizontal_tab) => {
                     if self.handle_quit()? {
                         return Ok(true)
                     }
-                },
+                },**/
                 Key::Char('o') => {
                     self.open_focused();
                 },
@@ -374,7 +367,7 @@ impl <B : tui::backend::Backend> View for ContainerView<'_, B> {
                 },
                 _ => {}
             }
-            return Ok(false)
+            return Ok(InputResult { done: false, requires_view_refresh: false });
         }
     }
 }
@@ -440,15 +433,15 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 4;
+        view.item_list_selection.page_line_count = 4;
 
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
 
         // WHEN we call to move down
         view.move_down();
 
         // THEN we expect the focused index to move
-        assert_eq!(1, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(1, view.item_list_selection.get_true_index());
     }
 
     #[test]
@@ -460,15 +453,15 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 4;
+        view.item_list_selection.page_line_count = 4;
 
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
 
         // WHEN we call to page down
         view.page_down();
 
         // THEN we expect the focused index to move to the end of the view / item count
-        assert_eq!(3, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(3, view.item_list_selection.get_true_index());
     }
 
     #[test]
@@ -480,19 +473,19 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 4;
+        view.item_list_selection.page_line_count = 4;
 
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
 
         // AND we've moved down a few times
         view.move_down();
         view.move_down();
-        assert_eq!(2, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(2, view.item_list_selection.get_true_index());
 
         // WHEN we call to move up
         view.move_up();
         // THEN we expect the focused index to move
-        assert_eq!(1, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(1, view.item_list_selection.get_true_index());
     }
 
 
@@ -505,9 +498,9 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 4;
+        view.item_list_selection.page_line_count = 4;
 
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
 
         // AND we've already moved to the bottom of the view
         view.page_down();
@@ -516,7 +509,7 @@ mod tests {
         view.page_up();
 
         // THEN we expect the focused index to move to the start of the view
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
     }
 
     #[test]
@@ -528,8 +521,8 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
         assert_eq!(4, contents.len());
         // with a series of items
@@ -549,7 +542,7 @@ mod tests {
         view.move_selection();
 
         // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
 
         // AND the chosen items will be moved to the bottom of the view above the last item
         let contents = view.container.get_contents();
@@ -573,8 +566,8 @@ mod tests {
         let settings_menu = menu::build_settings_menu();
         let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
-        view.frame_handler.item_list_selection.page_line_count = 5;
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        view.item_list_selection.page_line_count = 5;
+        assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
         assert_eq!(5, contents.len());
         assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
@@ -593,7 +586,7 @@ mod tests {
         view.move_selection();
 
         // THEN the chosen items will be moved into the bag
-        assert_eq!(0, view.frame_handler.item_list_selection.get_true_index());
+        assert_eq!(0, view.item_list_selection.get_true_index());
         let contents = view.container.get_contents();
         assert_eq!(3, contents.len());
         assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
