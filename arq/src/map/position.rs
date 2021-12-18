@@ -36,8 +36,8 @@ impl Eq for Position {}
 pub struct Area {
     pub start_position : Position,
     pub end_position : Position,
-    size_x : u16,
-    size_y : u16
+    pub size_x : u16,
+    pub size_y : u16
 }
 
 impl Area {

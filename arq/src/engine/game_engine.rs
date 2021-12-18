@@ -184,8 +184,8 @@ impl <B : Backend> GameEngine<B> {
             let mut frame_area = Rect::default();
 
             self.terminal_manager.terminal.draw(|frame| {
-                ui.render(frame);
-                character_view.handle_frame(frame, FrameData { data: characters.get(0).unwrap().clone(), frame_size: frame_area });
+                //ui.render(frame);
+                //character_view.handle_frame(frame, FrameData { data: characters.get(0).unwrap().clone(), frame_size: frame_area });
             });
 
             //let key = io::stdin().keys().next().unwrap().unwrap();
@@ -213,13 +213,13 @@ impl <B : Backend> GameEngine<B> {
         self.map = Some(map_generator.generate());
 
         let mut character_created = false;
+        if !&character_created {
+            self.initialise_characters();
+            character_created = true;
+        }
+
         self.game_running = true;
         while self.game_running {
-            if !&character_created {
-                self.initialise_characters();
-                character_created = true;
-            }
-
             if self.ui.additional_widgets.is_empty() {
                 let player = self.get_player_mut();
                 let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory().get_loot_value());
@@ -228,9 +228,15 @@ impl <B : Backend> GameEngine<B> {
 
             match &mut self.map {
                 Some(m) => {
-                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
-                    map_view.draw(None)?;
-                    map_view.draw_characters()?;
+                    if let Some(frame_size) = self.ui.frame_size {
+                        let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+
+                        // Adjust the map view size to fit within our borders
+                        let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
+                        let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y -2 ));
+                        map_view.draw(map_view_frame_size)?;
+                        map_view.draw_characters()?;
+                    }
                 },
                 None => {}
             }
@@ -291,13 +297,17 @@ impl <B : Backend> GameEngine<B> {
         let mut updated_position = None;
         match side {
             Side::TOP => {
-                updated_position = Some(Position { x: position.x, y: position.y - 1 });
+                if position.y > 0 {
+                    updated_position = Some(Position { x: position.x, y: position.y - 1 });
+                }
             },
             Side::BOTTOM => {
                 updated_position = Some(Position { x: position.x, y: position.y + 1 });
             },
             Side::LEFT => {
-                updated_position = Some(Position { x: position.x - 1, y: position.y });
+                if position.x > 0 {
+                    updated_position = Some(Position { x: position.x - 1, y: position.y });
+                }
             },
             Side::RIGHT => {
                 updated_position = Some(Position { x: position.x + 1, y: position.y });

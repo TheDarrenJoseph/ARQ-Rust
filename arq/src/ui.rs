@@ -7,7 +7,7 @@ use std::convert::TryInto;
 
 use crate::menu::{Menu, ToList};
 use crate::widget::{Widget, WidgetType};
-use crate::map::position::Area;
+use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::view::console_view::{ConsoleView, ConsoleBuffer};
 
 pub struct UI {
@@ -96,6 +96,9 @@ impl UI {
         let main_block = build_main_block();
         let frame_size = frame.size();
         let window_size = Rect::new(frame_size.x, frame_size.y, frame_size.width, frame_size.height);
+
+        let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
+        self.frame_size = Some(build_rectangular_area(view_start_pos, frame_size.width, frame_size.height ));
         frame.render_widget(main_block, window_size);
 
         if self.render_additional {
