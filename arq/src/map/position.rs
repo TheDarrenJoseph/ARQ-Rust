@@ -593,15 +593,15 @@ mod tests {
 
         // WHEN we call to see if points 0,0 - 2,2 are contained
         // THEN we expect the results to be true
-        assert!(area.contains(Position { x: 0, y: 0 }));
-        assert!(area.contains(Position { x: 0, y: 1 }));
-        assert!(area.contains(Position { x: 0, y: 2 }));
-        assert!(area.contains(Position { x: 1, y: 0 }));
-        assert!(area.contains(Position { x: 1, y: 1 }));
-        assert!(area.contains(Position { x: 1, y: 2 }));
-        assert!(area.contains(Position { x: 2, y: 0 }));
-        assert!(area.contains(Position { x: 2, y: 1 }));
-        assert!(area.contains(Position { x: 2, y: 2 }));
+        assert!(area.contains_position(Position { x: 0, y: 0 }));
+        assert!(area.contains_position(Position { x: 0, y: 1 }));
+        assert!(area.contains_position(Position { x: 0, y: 2 }));
+        assert!(area.contains_position(Position { x: 1, y: 0 }));
+        assert!(area.contains_position(Position { x: 1, y: 1 }));
+        assert!(area.contains_position(Position { x: 1, y: 2 }));
+        assert!(area.contains_position(Position { x: 2, y: 0 }));
+        assert!(area.contains_position(Position { x: 2, y: 1 }));
+        assert!(area.contains_position(Position { x: 2, y: 2 }));
     }
 
     #[test]
@@ -617,9 +617,9 @@ mod tests {
 
         // WHEN we call to see if points above it's range are contained
         // THEN we expect the results to be false
-        assert!(!area.contains(Position { x: 3, y: 0 }));
-        assert!(!area.contains(Position { x: 0, y: 3 }));
-        assert!(!area.contains(Position { x: 3, y: 3 }));
+        assert!(!area.contains_position(Position { x: 3, y: 0 }));
+        assert!(!area.contains_position(Position { x: 0, y: 3 }));
+        assert!(!area.contains_position(Position { x: 3, y: 3 }));
     }
 
     #[test]

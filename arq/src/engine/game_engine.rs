@@ -8,7 +8,7 @@ use std::convert::TryInto;
 use uuid::Uuid;
 
 use crate::ui;
-use crate::ui::{Draw, FrameHandler, FrameData};
+use crate::ui::{Draw, FrameHandler, FrameData, build_ui};
 use crate::settings;
 use crate::settings::Toggleable;
 use crate::menu;
@@ -370,15 +370,9 @@ impl <B : Backend> GameEngine<B> {
 }
 
 pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
-    let start_menu = menu::build_start_menu(false);
-    let settings_menu = menu::build_settings_menu();
-
-    let console_view = ConsoleView { buffer: ConsoleBuffer { content: String::from("") } };
-    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), console_view };
-
+    let ui = build_ui();
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
-
     Ok(GameEngine { terminal_manager, map: None, ui, settings, game_running: false, characters: Vec::new()})
 }
 
@@ -403,8 +397,8 @@ mod tests {
     use crate::ui::{SettingsMenuChoice, StartMenuChoice};
     use crate::view::View;
     use crate::view::map_view::MapView;
-    use crate::view::character_view::{CharacterView, CharacterViewFrameHandler, ViewMode};
-    use crate::view::container_view::{ContainerView, ContainerFrameHandler, build_container_view};
+    use crate::view::character_view::{CharacterView, ViewMode};
+    use crate::view::container_view::{ContainerView, build_container_view};
     use crate::map::map_generator::build_generator;
     use crate::map::Map;
     use crate::terminal::terminal_manager::TerminalManager;

@@ -364,8 +364,9 @@ mod tests {
     use crate::menu;
     use crate::view::container_view::{ContainerView, build_container_view};
     use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui::UI;
+    use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
+    use crate::view::console_view::{ConsoleView, ConsoleBuffer};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -397,9 +398,8 @@ mod tests {
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
         // WHEN we call to build a new view
-        let view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let view : ContainerView = build_container_view(container);
         // THEN we expect to reach this point succesfully
     }
 
@@ -408,10 +408,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -428,10 +425,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -450,8 +444,7 @@ mod tests {
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -473,10 +466,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -496,10 +486,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
@@ -541,10 +528,7 @@ mod tests {
         let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
         container.add(bag);
 
-        let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
-        let mut ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new() };
-        let mut view : ContainerView<'_, tui::backend::TestBackend> = build_container_view(&mut container, &mut ui, &mut terminal_manager);
+        let mut view : ContainerView = build_container_view(container);
         view.item_list_selection.page_line_count = 5;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();

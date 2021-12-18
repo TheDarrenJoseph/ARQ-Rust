@@ -9,6 +9,7 @@ use crate::menu::{Menu, ToList};
 use crate::widget::{Widget, WidgetType};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::view::console_view::{ConsoleView, ConsoleBuffer};
+use crate::{menu, ui};
 
 pub struct UI {
     pub start_menu : Menu,
@@ -25,6 +26,13 @@ pub enum StartMenuChoice {
     Settings,
     Info,
     Quit
+}
+
+pub fn build_ui() -> UI {
+    let start_menu = menu::build_start_menu(false);
+    let settings_menu = menu::build_settings_menu();
+    let console_view = ConsoleView { buffer: ConsoleBuffer { content: String::from("") } };
+    ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), console_view :console_view }
 }
 
 pub trait FrameHandler<B: tui::backend::Backend, T> {
