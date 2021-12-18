@@ -14,6 +14,7 @@ pub struct UI {
     pub start_menu : Menu,
     pub settings_menu : Menu,
     pub render_additional: bool,
+    pub console_visible: bool,
     pub additional_widgets: Vec<Widget>,
     pub frame_size : Option<Area>,
     pub console_view : ConsoleView
@@ -105,7 +106,21 @@ impl UI {
             self.draw_additional_widgets(frame);
         }
 
-        //self.draw_console(frame);
+        if self.console_visible {
+            self.draw_console(frame);
+        }
+    }
+
+    pub fn show_console(&mut self) {
+        self.console_visible = true;
+    }
+
+    pub fn hide_console(&mut self) {
+        self.console_visible = false;
+    }
+
+    pub fn console_print(&mut self, input: String) {
+        self.console_view.buffer.content = input;
     }
 }
 
@@ -150,7 +165,7 @@ impl Draw for UI {
     fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
         let console_frame_size = Rect::new(frame_size.x + 1, frame_size.height - 7,  frame_size.width - 2, 6);
-        let frame_data = FrameData { frame_size: console_frame_size, data: ConsoleBuffer {} };
+        let frame_data = FrameData { frame_size: console_frame_size, data: ConsoleBuffer { content: self.console_view.buffer.content.clone() } };
         self.console_view.handle_frame(frame, frame_data);
     }
 

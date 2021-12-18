@@ -30,7 +30,7 @@ use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-use crate::view::console_view::ConsoleView;
+use crate::view::console_view::{ConsoleView, ConsoleBuffer};
 
 pub struct GameEngine<B: tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -226,24 +226,22 @@ impl <B : Backend> GameEngine<B> {
                 self.ui.additional_widgets.push(stat_line);
             }
 
+            self.ui.console_print("Arrow keys to move.".to_string());
+            self.ui.show_console();
             match &mut self.map {
                 Some(m) => {
                     if let Some(frame_size) = self.ui.frame_size {
                         let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
 
-                        // Adjust the map view size to fit within our borders
+                        // Adjust the map view size to fit within our borders / make space for the console
                         let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
-                        let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y -2 ));
+                        let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
                         map_view.draw(map_view_frame_size)?;
                         map_view.draw_characters()?;
                     }
                 },
                 None => {}
             }
-
-            let console_view = ConsoleView {};
-
-
             self.game_loop()?;
         }
         //self.terminal_manager.terminal.clear()?;
@@ -332,14 +330,18 @@ impl <B : Backend> GameEngine<B> {
         match key {
             Key::Char('q') => {
                 self.terminal_manager.terminal.clear()?;
+                self.ui.hide_console();
                 self.start_menu()?;
+                self.ui.show_console();
                 self.terminal_manager.terminal.clear()?;
             },
             Key::Char('i') => {
+                self.ui.hide_console();
                 let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
                 let player = &mut self.characters[0];
                 let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
                 character_info_view.begin();
+                self.ui.show_console();
             },
             Key::Down => {
                 self.handle_player_movement(Side::BOTTOM);
@@ -371,10 +373,8 @@ pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : Termin
     let start_menu = menu::build_start_menu(false);
     let settings_menu = menu::build_settings_menu();
 
-    let console_view = ConsoleView { };
-    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, additional_widgets: Vec::new(), console_view };
-
-    //terminal_manager.terminal.clear()?;
+    let console_view = ConsoleView { buffer: ConsoleBuffer { content: String::from("") } };
+    let ui = ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), console_view };
 
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };

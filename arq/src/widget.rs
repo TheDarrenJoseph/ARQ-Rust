@@ -3,6 +3,7 @@ pub mod dropdown_widget;
 pub mod number_widget;
 pub mod button_widget;
 pub mod character_stat_line;
+pub mod console_input_widget;
 
 use tui::widgets::StatefulWidget;
 use tui::layout::Rect;
@@ -14,6 +15,7 @@ use crate::widget::dropdown_widget::DropdownInputState;
 use crate::widget::number_widget::NumberInputState;
 use crate::widget::button_widget::ButtonState;
 use crate::widget::character_stat_line::CharacterStatLineState;
+use crate::widget::console_input_widget::ConsoleInputState;
 
 pub fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");
@@ -34,6 +36,7 @@ pub fn build_buffer(length: i8, input: String) -> String {
 #[derive(Debug)]
 pub enum WidgetType {
     Text(TextInputState),
+    Console(ConsoleInputState),
     Number(NumberInputState),
     Dropdown(DropdownInputState),
     Button(ButtonState),
@@ -53,6 +56,9 @@ impl Named for WidgetType {
     fn get_name(&mut self) -> String {
         match self {
             WidgetType::Text(state) => {
+                state.get_name()
+            },
+            WidgetType::Console(state) => {
                 state.get_name()
             },
             WidgetType::Number(state) => {
@@ -81,6 +87,9 @@ impl Focusable for WidgetType {
             WidgetType::Text(state) => {
                 state.selected = true;
             },
+            WidgetType::Console(state) => {
+                state.selected = true;
+            },
             WidgetType::Number(state) => {
                 state.selected = true;
             },
@@ -99,6 +108,9 @@ impl Focusable for WidgetType {
             WidgetType::Text(state) => {
                 state.selected = false;
             },
+            WidgetType::Console(state) => {
+                state.selected = false;
+            },
             WidgetType::Number(state) => {
                 state.selected = false;
             },
@@ -115,6 +127,9 @@ impl Focusable for WidgetType {
     fn is_focused(&mut self) -> bool {
         match self {
             WidgetType::Text(state) => {
+                state.selected.clone()
+            },
+            WidgetType::Console(state) => {
                 state.selected.clone()
             },
             WidgetType::Number(state) => {
