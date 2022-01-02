@@ -1,4 +1,4 @@
-use tui::layout::{Alignment, Rect};
+use tui::layout::{Alignment, Rect, Direction, Constraint, Layout};
 use tui::style::{Color, Style};
 use tui::text::{Spans,Span};
 use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
@@ -89,7 +89,7 @@ pub trait Draw {
     fn draw_start_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_settings_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>, area: Rect);
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>);
 }
 
@@ -104,18 +104,32 @@ impl UI {
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let main_block = build_main_block();
         let frame_size = frame.size();
-        let window_size = Rect::new(frame_size.x, frame_size.y, frame_size.width, frame_size.height);
+
+        let areas: Vec<Rect> = if self.console_visible {
+            Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Percentage(80),
+                        Constraint::Percentage(20)
+                    ].as_ref()
+                )
+                .split(frame.size())
+        } else {
+            vec![frame_size.clone()]
+        };
 
         let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
-        self.frame_size = Some(build_rectangular_area(view_start_pos, frame_size.width, frame_size.height ));
-        frame.render_widget(main_block, window_size);
+        let main_area = areas[0];
+        self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
+        frame.render_widget(main_block, areas[0]);
 
         if self.render_additional {
             self.draw_additional_widgets(frame);
         }
 
         if self.console_visible {
-            self.draw_console(frame);
+            self.draw_console(frame, areas[1]);
         }
     }
 
@@ -170,10 +184,8 @@ impl Draw for UI {
         frame.render_widget(paragraph, paragraph_size);
     }
 
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
-        let frame_size = frame.size();
-        let console_frame_size = Rect::new(frame_size.x + 1, frame_size.height - 7,  frame_size.width - 2, 6);
-        let frame_data = FrameData { frame_size: console_frame_size, data: ConsoleBuffer { content: self.console_view.buffer.content.clone() } };
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, area: Rect) {
+        let frame_data = FrameData { frame_size: area, data: ConsoleBuffer { content: self.console_view.buffer.content.clone() } };
         self.console_view.handle_frame(frame, frame_data);
     }
 
