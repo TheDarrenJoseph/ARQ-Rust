@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::map::tile::Colour;
 
 #[derive(Clone)]
 #[derive(PartialEq, Debug)]
@@ -17,7 +18,7 @@ pub struct Item {
     pub item_type: ItemType,
     pub name : String,
     pub symbol : char,
-    pub colour : i32,
+    pub colour : Colour,
     pub weight : i32,
     pub value : i32
 }
@@ -41,17 +42,18 @@ impl Item {
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id: id, item_type: ItemType::ITEM, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
+    Item {id: id, item_type: ItemType::ITEM, name : name, symbol : symbol, colour: Colour::White, weight: weight, value: value}
 }
 
 pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id: id, item_type: ItemType::CONTAINER, name : name, symbol : symbol, colour: 0, weight: weight, value: value}
+    Item {id: id, item_type: ItemType::CONTAINER, name : name, symbol : symbol, colour: Colour::White, weight: weight, value: value}
 }
 
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
     use crate::map::objects::items;
+    use crate::map::tile::Colour;
 
     #[test]
     fn test_build_item() {
@@ -61,7 +63,7 @@ mod tests {
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
         assert_eq!('X', item.symbol);
-        assert_eq!(0, item.colour);
+        assert_eq!(Colour::White, item.colour);
         assert_eq!(1, item.weight);
         assert_eq!(1, item.value);
     }
@@ -75,7 +77,7 @@ mod tests {
         assert_eq!(items::ItemType::CONTAINER, item.item_type);
         assert_eq!("Test Container", item.name);
         assert_eq!('X', item.symbol);
-        assert_eq!(0, item.colour);
+        assert_eq!(Colour::White, item.colour);
         assert_eq!(1, item.weight);
         assert_eq!(1, item.value);
     }

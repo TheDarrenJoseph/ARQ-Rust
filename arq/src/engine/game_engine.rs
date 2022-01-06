@@ -238,6 +238,7 @@ impl <B : Backend> GameEngine<B> {
                         let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
                         map_view.draw(map_view_frame_size)?;
                         map_view.draw_characters()?;
+                        map_view.draw_containers()?;
                     }
                 },
                 None => {}

@@ -1,10 +1,14 @@
+use std::collections::HashMap;
+
 use crate::map::position::{Area, Position, AreaSide, build_rectangular_area};
 use crate::map::objects::door::Door;
+use crate::map::objects::container::Container;
 
 #[derive(Clone)]
 pub struct Room {
     pub area: Area,
-    pub doors : Vec<Door>
+    pub doors : Vec<Door>,
+    pub containers : HashMap<Position, Container>
 }
 
 impl Room {

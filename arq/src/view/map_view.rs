@@ -44,6 +44,49 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         }
         Ok(())
     }
+
+    pub fn draw_containers(&mut self) -> Result<(), Error> {
+        log::info!("Drawing containers...");
+        if let Some(view_area) = self.view_area {
+            let view_start = view_area.start_position;
+
+            let backend = self.terminal_manager.terminal.backend_mut();
+            for room in &self.map.rooms {
+                for (position, container) in &room.containers {
+                    let container_item = container.get_self_item();
+                    let colour = container_item.colour;
+                    let fg = colour_mapper::map_colour(colour);
+                    let bg = tui::style::Color::Black;
+                    let modifier = tui::style::Modifier::empty();
+                    let cell = Cell { symbol: "X".to_string(), fg, bg, modifier };
+                    let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
+                    if view_area.contains_position(view_position) {
+                        let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+                        let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                        backend.draw(updates.into_iter())?;
+                        backend.flush()?;
+                    }
+                }
+            }
+
+            for (position, container) in &self.map.containers {
+                let container_item = container.get_self_item();
+                let colour = container_item.colour;
+                let fg = colour_mapper::map_colour(colour);
+                let bg = tui::style::Color::Black;
+                let modifier = tui::style::Modifier::empty();
+                let cell = Cell { symbol: "X".to_string(), fg, bg, modifier };
+                let view_position = Position { x: view_start.x + position.x, y:  position.y + view_start.y};
+                if view_area.contains_position(view_position) {
+                    let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+                    let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                    backend.draw(updates.into_iter())?;
+                    backend.flush()?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<B : tui::backend::Backend> View for MapView<'_, B>{
@@ -85,8 +128,6 @@ impl<B : tui::backend::Backend> View for MapView<'_, B>{
             for y in 0..view_area.get_size_y() {
                 let cell_x = x + view_start_position.x as u16;
                 let cell_y = y + view_start_position.y as u16;
-
-                log::info!("Drawing a position: {}, {}", x, y);
                 if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
                     let tile_details = &tiles[y as usize][x as usize];
 

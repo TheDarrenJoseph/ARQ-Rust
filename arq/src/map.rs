@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use room::Room;
 
 use crate::map::position::{Area, Position};
 use crate::map::tile::{Tile, TileDetails};
+use crate::map::objects::container::Container;
 
 pub mod objects;
 pub mod map_generator;
@@ -13,7 +16,9 @@ pub mod tile;
 pub struct Map {
     pub area : Area,
     pub tiles : Vec<Vec<TileDetails>>,
-    pub rooms : Vec<Room>
+    pub rooms : Vec<Room>,
+    // For containers not belonging to a room (loot containers for example)
+    pub containers : HashMap<Position, Container>
 }
 
 impl Map {

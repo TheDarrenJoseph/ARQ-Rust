@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, thread_rng};
 use std::collections::HashMap;
 use crate::map::Map;
 use crate::map::room::Room;
@@ -6,6 +6,9 @@ use crate::map::objects::door::{build_door};
 use crate::map::position::{Position, Area, build_square_area, Side};
 use crate::map::tile::{Tile, TileDetails, build_library};
 use crate::engine::pathfinding::{Pathfinding};
+use crate::map::objects::container::{Container, ContainerType};
+use crate::map::objects::container;
+use uuid::Uuid;
 
 pub struct MapGenerator {
     min_room_size: u16,
@@ -25,7 +28,27 @@ pub fn build_generator(map_area : Area) -> MapGenerator {
         room_area_quota_percentage: 30, room_area_percentage: 0, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new(),
-        map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new()}}
+        map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new(), containers: HashMap::new()}}
+}
+
+fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
+    let mut container_map = HashMap::new();
+    let inside_area = room.get_inside_area();
+    if inside_area.get_total_area() > 1 {
+        let size_x = inside_area.get_size_x();
+        let size_y = inside_area.get_size_y();
+        let mut rng = thread_rng();
+        let container_count = rng.gen_range(0..=2);
+        for i in 0..container_count {
+            let random_x: u16 = rng.gen_range(1..=size_x) as u16;
+            let random_y: u16 = rng.gen_range(1..=size_y) as u16;
+            let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
+            let container = container::build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+            container_map.insert(container_position, container);
+        }
+    }
+
+    container_map
 }
 
 impl MapGenerator {
@@ -34,6 +57,15 @@ impl MapGenerator {
         self.map = self.build_map();
         log::info!("Applying rooms...");
         self.add_rooms_to_map();
+
+        let mut container_count = 0;
+        for room in self.map.rooms.iter_mut() {
+            let room_containers = generate_room_containers(room.clone());
+            container_count += room_containers.len();
+            room.containers = room_containers;
+        }
+        log::info!("Added {} containers to rooms.", container_count);
+
         log::info!("Pathfinding...");
         self.path_rooms();
         log::info!("Map generated!");
@@ -66,7 +98,7 @@ impl MapGenerator {
 
     fn generate_room(&self, room_pos : Position, size: u16) -> Room {
         let room_area = build_square_area( room_pos, size);
-        let mut room = Room { area: room_area, doors: Vec::new() };
+        let mut room = Room { area: room_area, doors: Vec::new(), containers: HashMap::new() };
 
         let mut chosen_sides = Vec::<Side>::new();
         let room_sides = room.get_sides();
@@ -239,7 +271,8 @@ impl MapGenerator {
         return crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms
+            rooms,
+            containers: HashMap::new()
         }
     }
 }

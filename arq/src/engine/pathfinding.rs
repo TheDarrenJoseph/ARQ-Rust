@@ -105,23 +105,23 @@ impl Pathfinding {
         while !self.unvisited.is_empty() {
             let current_lowest_score_node = self.unvisited.pop().unwrap().0;
             if current_lowest_score_node.position == end_position {
-                log::info!("Found end position {:?}", end_position);
+                log::debug!("Found end position {:?}", end_position);
                 return self.build_path(end_position);
             }
 
             if map.is_paveable(current_lowest_score_node.position) {
                 let neighbors = current_lowest_score_node.position.get_neighbors();
-                log::info!("Found {} neighbors for current_lowest_score_node: {:?}", neighbors.len(), current_lowest_score_node.position);
+                log::debug!("Found {} neighbors for current_lowest_score_node: {:?}", neighbors.len(), current_lowest_score_node.position);
 
                 let current_position = current_lowest_score_node.position.clone();
                 let current_g_score = self.get_g_score(current_position);
-                log::info!("Current current_lowest_score_node gScore {}", current_g_score);
+                log::debug!("Current current_lowest_score_node gScore {}", current_g_score);
                 for n in neighbors {
-                    log::info!("Evaluating neighbor {:?}", n);
+                    log::debug!("Evaluating neighbor {:?}", n);
                     let neighbor_g_score = self.g_scores.get(&n).unwrap_or(&(i16::MAX as i32));
-                    log::info!("Current neighbor gScore {}", current_g_score);
+                    log::debug!("Current neighbor gScore {}", current_g_score);
                     let distance_through = self.manhattan_path_cost(current_position, n);
-                    log::info!("Distance through neighbor {}", distance_through);
+                    log::debug!("Distance through neighbor {}", distance_through);
                     let potential_g_score = current_g_score + distance_through;
                     if potential_g_score < *neighbor_g_score {
                         self.came_from.insert(n, current_position);
