@@ -206,6 +206,35 @@ impl <B : Backend> GameEngine<B> {
         self.build_testing_inventory();
     }
 
+    fn re_render(&mut self) -> Result<(), io::Error>  {
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(frame);
+        })?;
+        Ok(())
+    }
+
+    fn draw_map_view(&mut self) -> Result<(), io::Error> {
+        match &mut self.map {
+            Some(m) => {
+                if let Some(frame_size) = self.ui.frame_size {
+                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+
+                    // Adjust the map view size to fit within our borders / make space for the console
+                    let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
+                    let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
+                    map_view.draw(map_view_frame_size)?;
+                    map_view.draw_containers()?;
+                    map_view.draw_characters()?;
+                    self.ui.console_print("Arrow keys to move.".to_string());
+                    self.re_render();
+                }
+            },
+            None => {}
+        }
+        Ok(())
+    }
+
     fn start_game(&mut self) -> Result<(), io::Error>{
         self.ui.start_menu = menu::build_start_menu(true);
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
@@ -226,23 +255,8 @@ impl <B : Backend> GameEngine<B> {
                 self.ui.additional_widgets.push(stat_line);
             }
 
-            self.ui.console_print("Arrow keys to move.".to_string());
             self.ui.show_console();
-            match &mut self.map {
-                Some(m) => {
-                    if let Some(frame_size) = self.ui.frame_size {
-                        let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
-
-                        // Adjust the map view size to fit within our borders / make space for the console
-                        let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
-                        let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
-                        map_view.draw(map_view_frame_size)?;
-                        map_view.draw_characters()?;
-                        map_view.draw_containers()?;
-                    }
-                },
-                None => {}
-            }
+            self.draw_map_view();
             self.game_loop()?;
         }
         //self.terminal_manager.terminal.clear()?;
@@ -291,28 +305,32 @@ impl <B : Backend> GameEngine<B> {
         self.characters = characters;
     }
 
-    fn handle_player_movement(&mut self, side: Side) {
+    fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
         let position = self.get_player_mut().get_position().clone();
-        let mut updated_position = None;
+        let mut side_position = None;
         match side {
             Side::TOP => {
                 if position.y > 0 {
-                    updated_position = Some(Position { x: position.x, y: position.y - 1 });
+                    side_position = Some(Position { x: position.x, y: position.y - 1 });
                 }
             },
             Side::BOTTOM => {
-                updated_position = Some(Position { x: position.x, y: position.y + 1 });
+                side_position = Some(Position { x: position.x, y: position.y + 1 });
             },
             Side::LEFT => {
                 if position.x > 0 {
-                    updated_position = Some(Position { x: position.x - 1, y: position.y });
+                    side_position = Some(Position { x: position.x - 1, y: position.y });
                 }
             },
             Side::RIGHT => {
-                updated_position = Some(Position { x: position.x + 1, y: position.y });
+                side_position = Some(Position { x: position.x + 1, y: position.y });
             }
         }
+        side_position
+    }
 
+    fn handle_player_movement(&mut self, side: Side) {
+        let mut updated_position = self.find_player_side_position(side);
         let map = self.get_map();
         match updated_position {
             Some(pos) => {
@@ -327,35 +345,104 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
+    pub fn inventory_command(&mut self) -> Result<(), io::Error>  {
+        self.ui.hide_console();
+        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
+        let player = &mut self.characters[0];
+        let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
+        character_info_view.begin();
+        self.ui.show_console();
+        Ok(())
+    }
+
+    pub fn menu_command(&mut self) -> Result<(), io::Error> {
+        self.terminal_manager.terminal.clear()?;
+        self.ui.hide_console();
+        self.start_menu()?;
+        self.ui.show_console();
+        self.terminal_manager.terminal.clear()?;
+        Ok(())
+    }
+
+    fn key_to_side(&self, key : Key) -> Option<Side> {
+        return match key {
+            Key::Down => {
+                Some(Side::BOTTOM)
+            },
+            Key::Up => {
+                Some(Side::TOP)
+            },
+            Key::Left => {
+                Some(Side::LEFT)
+            },
+            Key::Right => {
+                Some(Side::RIGHT)
+            },
+            _ => {
+                None
+            }
+        }
+    }
+
+    pub fn look(&mut self) -> Result<(), io::Error> {
+        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+        self.re_render();
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        let position = match key {
+            Key::Down | Key::Up | Key::Left | Key::Right => {
+                if let Some(side) = self.key_to_side(key) {
+                    self.find_player_side_position(side)
+                } else {
+                    None
+                }
+            },
+            Key::Char('k') => {
+                Some(self.get_player_mut().get_position().clone())
+            }
+            _ => {
+                None
+            }
+        };
+
+        if let Some(p) = position {
+            log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
+            self.re_render();
+
+            if let Some(map) = &self.map {
+                if let Some(room) =  map.get_rooms().iter().find(|r| r.area.contains_position(p)) {
+                    log::info!("Position is in a room.");
+                    if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                        log::info!("Position is a door.");
+                        self.ui.console_print("There's a door here.".to_string());
+                        self.re_render();
+                    } else {
+                        self.ui.console_print("There's nothing here in this room.".to_string());
+                        self.re_render();
+                    }
+                }
+            }
+
+            let key = io::stdin().keys().next().unwrap().unwrap();
+        }
+        Ok(())
+    }
+
     pub fn handle_input(&mut self, key : Key) -> Result<(), io::Error>  {
         match key {
             Key::Char('q') => {
-                self.terminal_manager.terminal.clear()?;
-                self.ui.hide_console();
-                self.start_menu()?;
-                self.ui.show_console();
-                self.terminal_manager.terminal.clear()?;
+                self.menu_command();
             },
             Key::Char('i') => {
-                self.ui.hide_console();
-                let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
-                let player = &mut self.characters[0];
-                let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
-                character_info_view.begin();
-                self.ui.show_console();
+                self.inventory_command();
             },
-            Key::Down => {
-                self.handle_player_movement(Side::BOTTOM);
+            Key::Char('k') => {
+                self.look();
             },
-            Key::Up => {
-                self.handle_player_movement(Side::TOP);
+            Key::Down | Key::Up | Key::Left | Key::Right => {
+                if let Some(side) = self.key_to_side(key) {
+                    self.handle_player_movement(side);
+                }
             },
-            Key::Left => {
-                self.handle_player_movement(Side::LEFT);
-            },
-            Key::Right => {
-                self.handle_player_movement(Side::RIGHT);
-            }
             _ => {}
         }
         Ok(())
