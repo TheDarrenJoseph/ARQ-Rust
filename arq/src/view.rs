@@ -4,6 +4,7 @@ use std::io;
 pub mod framehandler;
 pub mod character_info_view;
 pub mod map_view;
+pub mod world_container_view;
 use termion::event::Key;
 use termion::input::TermRead;
 

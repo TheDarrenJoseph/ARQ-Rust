@@ -10,6 +10,7 @@ use crate::view::View;
 use termion::event::Key;
 use crate::map::position::{Area, Position, build_square_area, build_rectangular_area};
 use tui::layout::Rect;
+use crate::map::objects::container::Container;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -45,43 +46,38 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         Ok(())
     }
 
+    fn draw_container(&mut self, view_position: Position, container: &Container)  -> Result<(), Error> {
+        let backend = self.terminal_manager.terminal.backend_mut();
+        let container_item = container.get_self_item();
+        let colour = container_item.colour;
+        let fg = colour_mapper::map_colour(colour);
+        let bg = tui::style::Color::Black;
+        let modifier = tui::style::Modifier::empty();
+        let cell = Cell { symbol: container_item.symbol.to_string(), fg, bg, modifier };
+        let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+        let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+        backend.draw(updates.into_iter())?;
+        backend.flush()?;
+        Ok(())
+    }
+
     pub fn draw_containers(&mut self) -> Result<(), Error> {
         log::info!("Drawing containers...");
         if let Some(view_area) = self.view_area {
             let view_start = view_area.start_position;
-
-            let backend = self.terminal_manager.terminal.backend_mut();
             for room in &self.map.rooms {
                 for (position, container) in &room.containers {
-                    let container_item = container.get_self_item();
-                    let colour = container_item.colour;
-                    let fg = colour_mapper::map_colour(colour);
-                    let bg = tui::style::Color::Black;
-                    let modifier = tui::style::Modifier::empty();
-                    let cell = Cell { symbol: "X".to_string(), fg, bg, modifier };
                     let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
                     if view_area.contains_position(view_position) {
-                        let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
-                        let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                        backend.draw(updates.into_iter())?;
-                        backend.flush()?;
+                        self.draw_container(view_position, container);
                     }
                 }
             }
 
             for (position, container) in &self.map.containers {
-                let container_item = container.get_self_item();
-                let colour = container_item.colour;
-                let fg = colour_mapper::map_colour(colour);
-                let bg = tui::style::Color::Black;
-                let modifier = tui::style::Modifier::empty();
-                let cell = Cell { symbol: "X".to_string(), fg, bg, modifier };
-                let view_position = Position { x: view_start.x + position.x, y:  position.y + view_start.y};
+                let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
                 if view_area.contains_position(view_position) {
-                    let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
-                    let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                    backend.draw(updates.into_iter())?;
-                    backend.flush()?;
+                    self.draw_container(view_position, container);
                 }
             }
         }

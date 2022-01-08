@@ -32,6 +32,7 @@ use crate::map::position::Side;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
 use crate::view::framehandler::container_view;
+use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
 
 pub struct GameEngine<B: tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -417,17 +418,14 @@ impl <B : Backend> GameEngine<B> {
                         log::info!("Player opening container.");
                         let mut inventory_container = c.clone();
                         let mut frame_container = c.clone();
-                        let mut inventory_view = container_view::build_container_view( inventory_container);
+                        let mut view_container = c.clone();
+                        let mut container_view = container_view::build_container_view( inventory_container);
 
                         let ui = &mut self.ui;
-                        self.terminal_manager.terminal.clear();
-                        self.terminal_manager.terminal.draw(|frame| {
-                            ui.render(frame);
-                            let frame_size = frame.size();
-                            let inventory_area = Rect::new(1, 1, frame_size.width - 6, frame_size.height - 9);
-                            inventory_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_container });
-                        })?;
-
+                        let terminal_manager = &mut self.terminal_manager;
+                        let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
+                        let mut world_container_view = WorldContainerView { ui, terminal_manager, frame_handler, container:  view_container};
+                        world_container_view.begin();
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
