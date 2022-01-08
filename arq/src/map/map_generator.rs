@@ -50,12 +50,11 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
             let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
             bag.add(carton);
             bag.add_item(bronze_bar);
-
-            for i in 1..=30 {
+            container.add(bag);
+            for i in 1..=60 {
                 let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
                 container.add_item(test_item);
             }
-            container.add(bag);
             container_map.insert(container_position, container);
         }
     }

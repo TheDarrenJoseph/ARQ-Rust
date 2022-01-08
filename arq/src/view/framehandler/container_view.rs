@@ -237,7 +237,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
         let window_block = Block::default()
             .borders(Borders::ALL)
             .title(container.get_self_item().name.clone());
-        let window_area = Rect::new(frame_size.x.clone(), frame_size.y.clone(), frame_size.width.clone() - 4, frame_size.height.clone() - 4);
+        let window_area = Rect::new(frame_size.x.clone(), frame_size.y.clone(), frame_size.width.clone(), frame_size.height.clone());
         let inventory_item_lines = window_area.height - 3;
         self.row_count = inventory_item_lines as i32;
         self.item_list_selection.page_line_count = inventory_item_lines as i32;

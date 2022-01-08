@@ -62,14 +62,13 @@ impl <B : tui::backend::Backend> View for WorldContainerView<'_, B>  {
         let frame_handler = &mut self.frame_handler;
         let ui = &mut self.ui;
 
-        let mut frame_area = Rect::default();
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
-            let size = frame.size();
-            frame_area = Rect { x : size.x.clone() + 1, y : size.y.clone() + 2, width: size.width.clone() -2,  height: size.height.clone() - 2};
-
+            let areas = ui.get_view_areas(frame.size());
+            let view_area = areas[0];
+            let frame_area = Rect { x : view_area.x + 1, y : view_area.y + 1, width: view_area.width.clone() - 2,  height: view_area.height.clone() - 2};
             let specific_frame_data = WorldContainerViewFrameData { };
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: specific_frame_data });
+            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
         })?;
         Ok(())
     }
@@ -130,8 +129,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> fo
         if let Some(topmost_view) = self.container_views.last_mut() {
             let mut frame_inventory = topmost_view.container.clone();
             let frame_size = frame.size();
-            let inventory_area = Rect::new(3, 3, frame_size.width - 6, frame_size.height - 3);
-            topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
+            topmost_view.handle_frame(frame, FrameData { frame_size: data.frame_size, data: &mut frame_inventory });
         }
     }
 }

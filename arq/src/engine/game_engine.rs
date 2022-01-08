@@ -463,7 +463,7 @@ impl <B : Backend> GameEngine<B> {
                         self.re_render();
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Position is a door.");
-                        self.ui.console_print("There's a door here.".to_string());
+                        self.ui.console_print("There's a ".to_owned() + &door.tile_details.name + &" here.".to_string());
                         self.re_render();
                     } else {
                         self.ui.console_print("There's nothing here in this room.".to_string());

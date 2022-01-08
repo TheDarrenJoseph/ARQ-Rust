@@ -197,7 +197,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             .select(selection_index as usize);
 
         let frame_size = frame.size();
-        let tab_area = Rect::new(1, 1, frame_size.width - 4, frame_size.height - 4);
+        let tab_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_size.width - 2, frame_size.height - 2);
         frame.render_widget(tabs, tab_area);
 
 
@@ -206,7 +206,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             TabChoice::INVENTORY => {
                 if let Some(topmost_view) = self.container_views.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
-                    let inventory_area = Rect::new(3, 3, frame_size.width - 6, frame_size.height - 3);
+                    let inventory_area = Rect::new(2, 3, frame_size.width - 4, frame_size.height - 5);
                     topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
                 }
             },

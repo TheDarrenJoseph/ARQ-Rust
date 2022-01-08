@@ -101,10 +101,7 @@ fn build_main_block<'a>() -> Block<'a> {
 }
 
 impl UI {
-    pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        let main_block = build_main_block();
-        let frame_size = frame.size();
-
+    pub fn get_view_areas(&self, frame_size: Rect) -> Vec<Rect> {
         let areas: Vec<Rect> = if self.console_visible {
             Layout::default()
                 .direction(Direction::Vertical)
@@ -114,11 +111,18 @@ impl UI {
                         Constraint::Percentage(20)
                     ].as_ref()
                 )
-                .split(frame.size())
+                .split(frame_size)
         } else {
             vec![frame_size.clone()]
         };
+        areas
+    }
 
+    pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
+        let main_block = build_main_block();
+        let frame_size = frame.size();
+
+        let areas: Vec<Rect> = self.get_view_areas(frame_size);
         let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
         let main_area = areas[0];
         self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
