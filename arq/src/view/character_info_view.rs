@@ -11,7 +11,8 @@ use termion::event::Key;
 use std::slice::Iter;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, container_view, InputResult, GenericInputResult};
+use crate::view::{View, resolve_input, InputResult, GenericInputResult};
+use crate::view::framehandler::container_view;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
 use crate::widget::text_widget::build_text_input;
@@ -21,8 +22,8 @@ use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::widget::{Focusable, Widget, WidgetType, Named};
 use crate::character;
-use crate::view::character_view::{CharacterView, ViewMode};
-use crate::view::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
+use crate::view::framehandler::character_view::{CharacterView, ViewMode};
+use crate::view::framehandler::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
 use crate::map::position::Area;
 use crate::view::InputHandler;
 

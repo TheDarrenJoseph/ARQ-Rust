@@ -13,7 +13,7 @@ use crate::terminal::colour_mapper;
 use crate::character::Character;
 use crate::view::{View, InputHandler, InputResult, GenericInputResult};
 use crate::map::position::Area;
-use crate::view::container_view::ContainerViewInputResult;
+use crate::view::framehandler::container_view::ContainerViewInputResult;
 use crate::widget::console_input_widget::{build_console_input, ConsoleInputState};
 use crate::widget::WidgetType;
 

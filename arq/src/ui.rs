@@ -8,7 +8,7 @@ use std::convert::TryInto;
 use crate::menu::{Menu, ToList};
 use crate::widget::{Widget, WidgetType};
 use crate::map::position::{Area, build_rectangular_area, Position};
-use crate::view::console_view::{ConsoleView, ConsoleBuffer};
+use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
 use crate::{menu, ui};
 
 pub struct UI {

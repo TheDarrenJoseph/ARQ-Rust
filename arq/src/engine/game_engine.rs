@@ -14,10 +14,10 @@ use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::{View, InputHandler, InputResult, GenericInputResult, container_view};
+use crate::view::{View, InputHandler, InputResult, GenericInputResult};
 use crate::view::map_view::MapView;
-use crate::view::character_view::{CharacterView, ViewMode, CharacterViewInputResult};
-use crate::view::container_view::{ContainerView, build_container_view};
+use crate::view::framehandler::character_view::{CharacterView, ViewMode, CharacterViewInputResult};
+use crate::view::framehandler::container_view::{ContainerView, build_container_view};
 use crate::map::map_generator::build_generator;
 use crate::map::Map;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -30,7 +30,8 @@ use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-use crate::view::console_view::{ConsoleView, ConsoleBuffer};
+use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+use crate::view::framehandler::container_view;
 
 pub struct GameEngine<B: tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
