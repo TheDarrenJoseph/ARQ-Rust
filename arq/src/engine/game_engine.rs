@@ -14,7 +14,7 @@ use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::{View, InputHandler, InputResult, GenericInputResult};
+use crate::view::{View, InputHandler, InputResult, GenericInputResult, container_view};
 use crate::view::map_view::MapView;
 use crate::view::character_view::{CharacterView, ViewMode, CharacterViewInputResult};
 use crate::view::container_view::{ContainerView, build_container_view};
@@ -384,25 +384,70 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    pub fn look(&mut self) -> Result<(), io::Error> {
-        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
-        self.re_render();
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        let position = match key {
+    fn find_adjacent_player_position(&mut self, key: Key, command_char: Key) -> Option<Position> {
+        return match key {
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = self.key_to_side(key) {
                     self.find_player_side_position(side)
-                } else {
-                    None
+                 } else {
+                  None
                 }
             },
-            Key::Char('k') => {
+            command_char => {
                 Some(self.get_player_mut().get_position().clone())
             }
             _ => {
                 None
             }
         };
+    }
+
+    pub fn open(&mut self, command_key: Key) -> Result<(), io::Error> {
+        self.ui.console_print("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+        self.re_render();
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        if let Some(p) = self.find_adjacent_player_position(key, command_key) {
+            log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
+            self.re_render();
+
+            if let Some(map) = &self.map {
+                if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
+                    if let Some(c) = room.containers.get(&p) {
+                        log::info!("Player opening container.");
+                        let mut inventory_container = c.clone();
+                        let mut frame_container = c.clone();
+                        let mut inventory_view = container_view::build_container_view( inventory_container);
+
+                        let ui = &mut self.ui;
+                        self.terminal_manager.terminal.clear();
+                        self.terminal_manager.terminal.draw(|frame| {
+                            ui.render(frame);
+                            let frame_size = frame.size();
+                            let inventory_area = Rect::new(1, 1, frame_size.width - 6, frame_size.height - 9);
+                            inventory_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_container });
+                        })?;
+
+                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                        log::info!("Player opening door.");
+                        self.ui.console_print("There's a door here.".to_string());
+                        self.re_render();
+                    } else {
+                        self.ui.console_print("There's nothing here to open.".to_string());
+                        self.re_render();
+                    }
+                }
+            }
+
+            let key = io::stdin().keys().next().unwrap().unwrap();
+        }
+        Ok(())
+    }
+
+    pub fn look(&mut self, command_key: Key) -> Result<(), io::Error> {
+        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+        self.re_render();
+        let key = io::stdin().keys().next().unwrap().unwrap();
+        let position = self.find_adjacent_player_position(key, command_key);
 
         if let Some(p) = position {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
@@ -411,7 +456,13 @@ impl <B : Backend> GameEngine<B> {
             if let Some(map) = &self.map {
                 if let Some(room) =  map.get_rooms().iter().find(|r| r.area.contains_position(p)) {
                     log::info!("Position is in a room.");
-                    if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+
+                    if let Some(c) = &room.containers.get(&p) {
+                        log::info!("Position is a container.");
+                        let container_item = c.get_self_item();
+                        self.ui.console_print("There's a ".to_owned() + &container_item.name + &" here.".to_string());
+                        self.re_render();
+                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Position is a door.");
                         self.ui.console_print("There's a door here.".to_string());
                         self.re_render();
@@ -436,7 +487,10 @@ impl <B : Backend> GameEngine<B> {
                 self.inventory_command();
             },
             Key::Char('k') => {
-                self.look();
+                self.look(Key::Char('k'));
+            },
+            Key::Char('o') => {
+                self.open(Key::Char('o'));
             },
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = self.key_to_side(key) {

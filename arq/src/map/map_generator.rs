@@ -7,7 +7,7 @@ use crate::map::position::{Position, Area, build_square_area, Side};
 use crate::map::tile::{Tile, TileDetails, build_library};
 use crate::engine::pathfinding::{Pathfinding};
 use crate::map::objects::container::{Container, ContainerType};
-use crate::map::objects::container;
+use crate::map::objects::{container, items};
 use uuid::Uuid;
 
 pub struct MapGenerator {
@@ -43,7 +43,19 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
             let random_x: u16 = rng.gen_range(1..=size_x) as u16;
             let random_y: u16 = rng.gen_range(1..=size_y) as u16;
             let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
-            let container = container::build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+            let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+
+            let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+            let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+            let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+            bag.add(carton);
+            bag.add_item(bronze_bar);
+
+            for i in 1..=30 {
+                let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+                container.add_item(test_item);
+            }
+            container.add(bag);
             container_map.insert(container_position, container);
         }
     }
