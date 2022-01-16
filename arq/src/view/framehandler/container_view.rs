@@ -362,11 +362,12 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::container_view::{ContainerView, build_container_view};
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
-    use crate::view::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::map::tile::Colour;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -375,7 +376,7 @@ mod tests {
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.name);
         assert_eq!('X', container_self_item.symbol);
-        assert_eq!(0, container_self_item.colour);
+        assert_eq!(Colour::White, container_self_item.colour);
         assert_eq!(1, container_self_item.weight);
         assert_eq!(1, container_self_item.value);
 

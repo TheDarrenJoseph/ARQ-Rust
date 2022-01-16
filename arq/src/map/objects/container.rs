@@ -186,6 +186,7 @@ mod tests {
     use crate::map::objects::container;
     use crate::map::objects::container::{build, ContainerType};
     use crate::map::objects::items;
+    use crate::map::tile::Colour;
 
     #[test]
     fn test_container_build() {
@@ -195,7 +196,7 @@ mod tests {
         assert_eq!(id, container.item.get_id());
         assert_eq!("Test Container", container.item.name);
         assert_eq!('X', container.item.symbol);
-        assert_eq!(0, container.item.colour);
+        assert_eq!(Colour::White, container.item.colour);
         assert_eq!(1, container.item.weight);
         assert_eq!(1, container.item.value);
 

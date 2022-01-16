@@ -104,6 +104,8 @@ impl Map {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::Room;
     use crate::map::tile::Tile;
@@ -119,7 +121,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors };
+        let room = Room { area: room_area, doors, containers: HashMap::new() };
 
         let mut rooms = Vec::new();
         rooms.push(room);
@@ -132,7 +134,9 @@ mod tests {
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-        ], rooms
+        ],
+            rooms,
+            containers: HashMap::new()
         };
 
         assert_eq!(3, map.tiles.len());
@@ -152,7 +156,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors };
+        let room = Room { area: room_area, doors, containers: HashMap::new() };
 
         let mut rooms = Vec::new();
         rooms.push(room);
@@ -163,7 +167,9 @@ mod tests {
             area: map_area,
             tiles : vec![
                 vec![ wall.clone(),  wall.clone(),  wall.clone()],
-            ], rooms
+            ],
+            rooms,
+            containers: HashMap::new()
         };
 
         assert_eq!(1, map.tiles.len());

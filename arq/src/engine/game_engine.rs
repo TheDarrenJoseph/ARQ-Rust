@@ -531,6 +531,7 @@ mod tests {
     use std::io;
     use std::convert::TryInto;
     use uuid::Uuid;
+    use std::collections::HashMap;
 
     use crate::terminal::terminal_manager;
     use crate::ui;
@@ -542,8 +543,8 @@ mod tests {
     use crate::ui::{SettingsMenuChoice, StartMenuChoice};
     use crate::view::View;
     use crate::view::map_view::MapView;
-    use crate::view::character_view::{CharacterView, ViewMode};
-    use crate::view::container_view::{ContainerView, build_container_view};
+    use crate::view::framehandler::character_view::{CharacterView, ViewMode};
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view};
     use crate::map::map_generator::build_generator;
     use crate::map::Map;
     use crate::terminal::terminal_manager::TerminalManager;
@@ -626,7 +627,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map
@@ -650,7 +652,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map
@@ -675,7 +678,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the bottom middle of the map
@@ -699,7 +703,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle end of the map
@@ -724,7 +729,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map
@@ -748,7 +754,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map
@@ -773,7 +780,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map
@@ -797,7 +805,8 @@ mod tests {
         let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms : Vec::new()
+            rooms : Vec::new(),
+            containers: HashMap::new()
         };
 
         // AND the player start position is the middle of the map

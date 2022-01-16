@@ -146,6 +146,8 @@ impl Pathfinding {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    
     use crate::map::tile::{Tile};
     use crate::map::room::Room;
     use crate::map;
@@ -164,7 +166,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors };
+        let room = Room { area: room_area, doors, containers: HashMap::new() };
 
         let mut rooms = Vec::new();
         rooms.push(room);
@@ -178,7 +180,8 @@ mod tests {
                 vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
                 vec![ non.clone(), door.clone(), rom.clone(), wall.clone(), ],
                 vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
-            ], rooms
+            ], rooms,
+            containers: HashMap::new()
         };
         map
     }
