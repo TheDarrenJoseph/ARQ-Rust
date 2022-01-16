@@ -412,7 +412,7 @@ impl <B : Backend> GameEngine<B> {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render();
 
-            if let Some(map) = &self.map {
+            if let Some(map) = &mut self.map {
                 if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
                     if let Some(c) = room.containers.get(&p) {
                         log::info!("Player opening container.");
@@ -426,6 +426,10 @@ impl <B : Backend> GameEngine<B> {
                         let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
                         let mut world_container_view = WorldContainerView { ui, terminal_manager, frame_handler, container:  view_container};
                         world_container_view.begin();
+                        let updated_container = world_container_view.container.clone();
+                        if let Some(original_room) =  map.rooms.iter_mut().find(|r| r.area.contains_position(p)) {
+                            original_room.containers.insert(p, updated_container);
+                        }
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
