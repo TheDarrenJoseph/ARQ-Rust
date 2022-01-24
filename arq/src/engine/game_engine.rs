@@ -36,6 +36,7 @@ use crate::view::framehandler::container_view;
 use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
 use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, OPEN_CONTAINER_VIEW};
 use crate::map::objects::items::Item;
+use crate::view::callback::Callback;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,

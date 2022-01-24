@@ -187,14 +187,6 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
 
         return Ok(false)
     }
-
-    fn set_callback(&mut self, event_name: String, c : impl FnMut(GenericInputResult) + 'static) {
-        todo!()
-    }
-
-    fn trigger_callback(&mut self, event_name: String, data: GenericInputResult) {
-        todo!()
-    }
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoViewFrameHandler {

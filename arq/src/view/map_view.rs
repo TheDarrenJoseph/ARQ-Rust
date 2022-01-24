@@ -146,12 +146,4 @@ impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> 
     fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
         Ok(true)
     }
-
-    fn set_callback(&mut self, event_name: String, c: impl FnMut(GenericInputResult) + 'static) {
-        todo!()
-    }
-
-    fn trigger_callback(&mut self, event_name: String, data: GenericInputResult) {
-        todo!()
-    }
 }

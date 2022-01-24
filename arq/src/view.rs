@@ -2,6 +2,7 @@ use std::io::Error;
 use std::io;
 
 pub mod framehandler;
+pub mod callback;
 pub mod character_info_view;
 pub mod map_view;
 pub mod world_container_view;
@@ -16,8 +17,6 @@ pub trait View<'b, COM: 'b>  {
     fn begin(&mut self) -> Result<bool, Error>;
     fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
-    fn set_callback<'a>(&mut self, event_name: String, c : impl FnMut(COM) + 'static);
-    fn trigger_callback(&mut self, event_name: String, data: COM);
 }
 
 pub struct GenericInputResult {

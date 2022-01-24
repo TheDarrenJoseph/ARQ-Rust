@@ -28,6 +28,7 @@ use crate::map::position::Area;
 use crate::view::InputHandler;
 use crate::map::objects::container::Container;
 use crate::view;
+use crate::view::callback::Callback;
 
 // Combines multiple character info views into one w/ tabbing
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
@@ -131,7 +132,9 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
 
         return Ok(false)
     }
+}
 
+impl <B : tui::backend::Backend> Callback<'_, ContainerViewInputResult> for WorldContainerView<'_, B> {
     fn set_callback<'a>(&mut self, event_name: String, mut c: impl FnMut(ContainerViewInputResult) + 'static) {
         self.callbacks.insert(event_name, Box::new(c));
     }
