@@ -6,7 +6,7 @@ use crate::ui::{UI};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::terminal::colour_mapper;
 use crate::character::Character;
-use crate::view::View;
+use crate::view::{View, GenericInputResult};
 use termion::event::Key;
 use crate::map::position::{Area, Position, build_square_area, build_rectangular_area};
 use tui::layout::Rect;
@@ -85,7 +85,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
     }
 }
 
-impl<B : tui::backend::Backend> View for MapView<'_, B>{
+impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> {
 
     fn begin(&mut self) -> Result<bool, Error> {
         self.draw(None)?;
@@ -145,5 +145,13 @@ impl<B : tui::backend::Backend> View for MapView<'_, B>{
 
     fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
         Ok(true)
+    }
+
+    fn set_callback(&mut self, event_name: String, c: impl FnMut(GenericInputResult) + 'static) {
+        todo!()
+    }
+
+    fn trigger_callback(&mut self, event_name: String, data: GenericInputResult) {
+        todo!()
     }
 }

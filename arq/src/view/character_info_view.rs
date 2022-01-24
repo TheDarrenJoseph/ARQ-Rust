@@ -88,7 +88,11 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 }
 
-impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
+struct CharacterViewInputResult {
+
+}
+
+impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterInfoView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
         let inventory_view = container_view::build_container_view( self.character.get_inventory().clone());
         self.frame_handler.container_views = vec!(inventory_view);
@@ -182,6 +186,14 @@ impl <B : tui::backend::Backend> View for CharacterInfoView<'_, B>  {
         }
 
         return Ok(false)
+    }
+
+    fn set_callback(&mut self, event_name: String, c : impl FnMut(GenericInputResult) + 'static) {
+        todo!()
+    }
+
+    fn trigger_callback(&mut self, event_name: String, data: GenericInputResult) {
+        todo!()
     }
 }
 

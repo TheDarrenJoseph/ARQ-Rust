@@ -9,6 +9,7 @@ use tui::widgets::{Block, Borders};
 use termion::input::TermRead;
 use termion::event::Key;
 use std::slice::Iter;
+use std::collections::HashMap;
 
 use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::{View, resolve_input, InputResult, GenericInputResult};
@@ -26,13 +27,15 @@ use crate::view::framehandler::container_view::{ContainerView, build_container_v
 use crate::map::position::Area;
 use crate::view::InputHandler;
 use crate::map::objects::container::Container;
+use crate::view;
 
 // Combines multiple character info views into one w/ tabbing
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: WorldContainerViewFrameHandler,
-    pub container : Container
+    pub container : Container,
+    pub callbacks : HashMap<String, Box<FnMut(ContainerViewInputResult)>>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -45,7 +48,7 @@ pub struct WorldContainerViewFrameHandler {
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 }
 
-impl <B : tui::backend::Backend> View for WorldContainerView<'_, B>  {
+impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
         let view = container_view::build_container_view( self.container.clone());
         self.frame_handler.container_views = vec!(view);
@@ -96,6 +99,12 @@ impl <B : tui::backend::Backend> View for WorldContainerView<'_, B>  {
                 }
                 return Ok(true)
             },
+            Key::Char('t') => {
+                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+                    let result = ContainerViewInputResult::TAKE_ITEMS(parent_view.get_selected_items());
+                    self.trigger_callback(String::from("t"), result);
+                }
+            },
             // Passthrough anything not handled here into the sub framehandler
             _ => {
                 let mut generic_input_result : Option<GenericInputResult> = None;
@@ -121,6 +130,17 @@ impl <B : tui::backend::Backend> View for WorldContainerView<'_, B>  {
         }
 
         return Ok(false)
+    }
+
+    fn set_callback<'a>(&mut self, event_name: String, mut c: impl FnMut(ContainerViewInputResult) + 'static) {
+        self.callbacks.insert(event_name, Box::new(c));
+    }
+
+    fn trigger_callback(&mut self, event_name: String, data: ContainerViewInputResult) {
+        if self.callbacks.contains_key(&event_name) {
+            let mut cb = self.callbacks.get_mut(&event_name).unwrap();
+            cb(data);
+        }
     }
 }
 

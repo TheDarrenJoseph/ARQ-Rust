@@ -12,10 +12,12 @@ use crate::map::position::{Area, Position, build_rectangular_area};
 use tui::Frame;
 use tui::layout::Rect;
 
-pub trait View {
+pub trait View<'b, COM: 'b>  {
     fn begin(&mut self) -> Result<bool, Error>;
     fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;
     fn handle_input(&mut self, input : Option<Key>) -> Result<bool, Error>;
+    fn set_callback<'a>(&mut self, event_name: String, c : impl FnMut(COM) + 'static);
+    fn trigger_callback(&mut self, event_name: String, data: COM);
 }
 
 pub struct GenericInputResult {

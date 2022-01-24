@@ -28,7 +28,8 @@ pub struct ContainerView {
 
 pub enum ContainerViewInputResult {
     NONE,
-    OPEN_CONTAINER_VIEW(ContainerView)
+    OPEN_CONTAINER_VIEW(ContainerView),
+    TAKE_ITEMS(Vec<Item>)
 }
 
 pub fn build_container_view(container: Container) -> ContainerView {
@@ -79,7 +80,7 @@ impl ContainerView {
         self.item_list_selection = build_list_selection(items, 1);
     }
 
-    fn get_selected_items(&self) -> Vec<Item> {
+    pub fn get_selected_items(&self) -> Vec<Item> {
         Vec::from(self.item_list_selection.get_selected_items().clone())
     }
 

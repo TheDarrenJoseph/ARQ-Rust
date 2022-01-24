@@ -6,6 +6,7 @@ use termion::event::Key;
 use std::io;
 use std::convert::TryInto;
 use uuid::Uuid;
+use std::collections::HashMap;
 
 use crate::ui;
 use crate::ui::{Draw, FrameHandler, FrameData, build_ui};
@@ -17,7 +18,7 @@ use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::view::{View, InputHandler, InputResult, GenericInputResult};
 use crate::view::map_view::MapView;
 use crate::view::framehandler::character_view::{CharacterView, ViewMode, CharacterViewInputResult};
-use crate::view::framehandler::container_view::{ContainerView, build_container_view};
+use crate::view::framehandler::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
 use crate::map::map_generator::build_generator;
 use crate::map::Map;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -33,8 +34,10 @@ use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrame
 use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
 use crate::view::framehandler::container_view;
 use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
+use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, OPEN_CONTAINER_VIEW};
+use crate::map::objects::items::Item;
 
-pub struct GameEngine<B: tui::backend::Backend>  {
+pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
     map : Option<Map>,
     ui : ui::UI,
@@ -366,6 +369,11 @@ impl <B : Backend> GameEngine<B> {
         Ok(())
     }
 
+    pub fn take_command(&mut self, items: Vec<Item>)  -> Result<(), io::Error> {
+        let inventory = self.characters[0].get_inventory();
+        Ok(())
+    }
+
     fn key_to_side(&self, key : Key) -> Option<Side> {
         return match key {
             Key::Down => {
@@ -424,12 +432,24 @@ impl <B : Backend> GameEngine<B> {
                         let ui = &mut self.ui;
                         let terminal_manager = &mut self.terminal_manager;
                         let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
-                        let mut world_container_view = WorldContainerView { ui, terminal_manager, frame_handler, container:  view_container};
+                        let mut world_container_view = WorldContainerView { ui, terminal_manager, frame_handler, container:  view_container, callbacks: HashMap::new()};
+                        //let player_inventory = &mut self.characters[0].get_inventory();
+                        world_container_view.set_callback(String::from("t"), |data| {
+                            let input_result : ContainerViewInputResult = data;
+                            match input_result {
+                                TAKE_ITEMS(items) => {
+                                    log::info!("Received data for TAKE_ITEMS with {} items", items.len());
+                                    // TODO move items to player inv and remove from view container
+                                },
+                                _ => {}
+                            }
+                        });
                         world_container_view.begin();
                         let updated_container = world_container_view.container.clone();
                         if let Some(original_room) =  map.rooms.iter_mut().find(|r| r.area.contains_position(p)) {
                             original_room.containers.insert(p, updated_container);
                         }
+
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
