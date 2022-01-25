@@ -37,14 +37,14 @@ use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldCon
 use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, OPEN_CONTAINER_VIEW};
 use crate::map::objects::items::Item;
 use crate::view::callback::Callback;
+use crate::engine::level::Level;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
-    map : Option<Map>,
+    level : Level,
     ui : ui::UI,
     settings : settings::EnumSettings,
     game_running : bool,
-    characters : Vec<Character>,
 }
 
 impl <B : Backend> GameEngine<B> {
@@ -200,7 +200,7 @@ impl <B : Backend> GameEngine<B> {
         let mut updated_character = character_view.get_character();
 
         // Grab the first room and set the player's position there
-        if let Some(map) = &self.map {
+        if let Some(map) = &self.level.map {
             let room = &map.get_rooms()[0];
             let area = room.get_inside_area();
             let start_position = area.start_position;
@@ -208,7 +208,7 @@ impl <B : Backend> GameEngine<B> {
         }
 
         characters[0] = updated_character;
-        self.characters = characters.clone();
+        self.level.characters = characters.clone();
         self.build_testing_inventory();
     }
 
@@ -221,10 +221,10 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn draw_map_view(&mut self) -> Result<(), io::Error> {
-        match &mut self.map {
+        match &mut self.level.map {
             Some(m) => {
                 if let Some(frame_size) = self.ui.frame_size {
-                    let mut map_view = MapView { map: m, characters: self.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+                    let mut map_view = MapView { map: m, characters: self.level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
 
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
@@ -245,7 +245,7 @@ impl <B : Backend> GameEngine<B> {
         self.ui.start_menu = menu::build_start_menu(true);
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 40, 20);
         let mut map_generator = build_generator(map_area);
-        self.map = Some(map_generator.generate());
+        self.level.map = Some(map_generator.generate());
 
         let mut character_created = false;
         if !&character_created {
@@ -270,7 +270,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn build_testing_inventory(&mut self) {
-        let inventory = self.characters[0].get_inventory();
+        let inventory = self.level.characters[0].get_inventory();
         let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
         inventory.add_item(gold_bar);
 
@@ -292,23 +292,23 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn get_map(&self) -> &Option<Map> {
-        &self.map
+        &self.level.map
     }
 
     fn set_map(&mut self, map : Option<Map>) {
-        self.map = map
+        self.level.map = map
     }
 
     pub fn get_player(&self) -> &Character {
-        &self.characters[0]
+        &self.level.characters[0]
     }
 
     fn get_player_mut(&mut self) -> &mut Character {
-        &mut self.characters[0]
+        &mut self.level.characters[0]
     }
 
     pub fn set_characters(&mut self, characters: Vec<Character>) {
-        self.characters = characters;
+        self.level.characters = characters;
     }
 
     fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
@@ -354,7 +354,7 @@ impl <B : Backend> GameEngine<B> {
     pub fn inventory_command(&mut self) -> Result<(), io::Error>  {
         self.ui.hide_console();
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
-        let player = &mut self.characters[0];
+        let player = &mut self.level.characters[0];
         let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
         character_info_view.begin();
         self.ui.show_console();
@@ -371,7 +371,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     pub fn take_command(&mut self, items: Vec<Item>)  -> Result<(), io::Error> {
-        let inventory = self.characters[0].get_inventory();
+        let inventory = self.level.characters[0].get_inventory();
         Ok(())
     }
 
@@ -421,7 +421,7 @@ impl <B : Backend> GameEngine<B> {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render();
 
-            if let Some(map) = &mut self.map {
+            if let Some(map) = &mut self.level.map {
                 if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
                     if let Some(c) = room.containers.get(&p) {
                         log::info!("Player opening container.");
@@ -477,7 +477,7 @@ impl <B : Backend> GameEngine<B> {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
             self.re_render();
 
-            if let Some(map) = &self.map {
+            if let Some(map) = &self.level.map {
                 if let Some(room) =  map.get_rooms().iter().find(|r| r.area.contains_position(p)) {
                     log::info!("Position is in a room.");
 
@@ -539,7 +539,7 @@ pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : Termin
     let ui = build_ui();
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
-    Ok(GameEngine { terminal_manager, map: None, ui, settings, game_running: false, characters: Vec::new()})
+    Ok(GameEngine { terminal_manager, level: Level { map: None, characters: Vec::new()}, ui, settings, game_running: false})
 }
 
 
