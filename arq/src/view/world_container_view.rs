@@ -102,7 +102,18 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
             },
             Key::Char('t') => {
                 if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                    let result = ContainerViewInputResult::TAKE_ITEMS(parent_view.get_selected_items());
+                    let selected_items = parent_view.get_selected_items();
+
+                    let mut to_remove = Vec::new();
+                    for item in selected_items {
+                        if let Some(found) = parent_view.container.find(&item) {
+                            to_remove.push(found.clone());
+                        }
+                    }
+                    let mut view_container = &mut parent_view.container;
+                    view_container.remove_matching_items(to_remove);
+                    let selected_container_items = parent_view.get_selected_items();
+                    let result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
                     self.trigger_callback(String::from("t"), result);
                 }
             },

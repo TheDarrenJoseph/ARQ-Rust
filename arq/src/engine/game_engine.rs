@@ -55,13 +55,8 @@ fn handle_take_items(level : &mut Level, container: &mut Container, data : Conta
             log::info!("Received data for TAKE_ITEMS with {} items", items.len());
             log::info!("Found player: {}", player.get_name());
             for item in items {
-                let moved_item = false;
                 if let Some(container_item) = container.find_mut(&item) {
                     player.get_inventory().add(container_item.clone());
-                }
-                if moved_item {
-                    let moved_item_copy = container.find_mut(&item).unwrap().clone();
-                    container.remove_item(moved_item_copy);
                 }
             }
         },
@@ -468,14 +463,13 @@ impl <B : Backend> GameEngine<B> {
                                 container: view_container,
                                 callbacks: HashMap::new()
                             };
-                            let open_callback = Box::new(|data| {
-                                handle_take_items(level, &mut callback_container, data);
-                            });
-                            world_container_view.set_callback(String::from("t"), open_callback);
-                            world_container_view.begin();
-
-                            //let updated_world_container =  &mut callback_container.clone();
-                            //world_container_view.container = *updated_world_container;
+                            {
+                                let open_callback = Box::new(|data| {
+                                    handle_take_items(level, &mut callback_container, data);
+                                });
+                                world_container_view.set_callback(String::from("t"), open_callback);
+                                world_container_view.begin();
+                            }
                             updated_container = Some(world_container_view.container.clone());
                         }
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
@@ -489,6 +483,7 @@ impl <B : Backend> GameEngine<B> {
                 }
             }
 
+            // Replace the original container with any changes we've made
             if let Some(container) = updated_container {
                 if let Some(pos) = target_position {
                     if let Some(map) = &mut self.level.map {

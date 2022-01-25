@@ -162,11 +162,11 @@ impl ContainerView {
                         if let Some(focused_container) = self.container.find_mut(focused_item) {
                             // Move items into the container
                             focused_container.push(selected_container_items.clone());
-                            self.container.remove(selected_container_items.to_vec());
+                            self.container.remove_matching_items(selected_container_items.to_vec());
                         }
                     } else {
                         // Move items to this location
-                        self.container.remove(selected_container_items.to_vec());
+                        self.container.remove_matching_items(selected_container_items.to_vec());
                         self.container.insert(true_index as usize - selected_container_items.len(), selected_container_items.clone());
                     }
                     &mut self.item_list_selection.cancel_selection();
