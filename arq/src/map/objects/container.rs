@@ -64,6 +64,12 @@ impl Container {
         }
     }
 
+    pub fn remove_item(&mut self, item : Container) {
+        if let Some(position) = self.position(&item) {
+            self.contents.remove(position);
+        }
+    }
+
     pub fn remove(&mut self, items : Vec<Container>) {
         for item in items.iter() {
             if let Some(position) = self.position(item) {

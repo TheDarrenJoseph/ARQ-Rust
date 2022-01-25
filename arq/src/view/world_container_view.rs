@@ -36,7 +36,7 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: WorldContainerViewFrameHandler,
     pub container : Container,
-    pub callbacks : HashMap<String, Box<FnMut(ContainerViewInputResult)>>
+    pub callbacks : HashMap<String, Box<dyn FnMut(ContainerViewInputResult) + 'a>>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -134,9 +134,9 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
     }
 }
 
-impl <B : tui::backend::Backend> Callback<'_, ContainerViewInputResult> for WorldContainerView<'_, B> {
-    fn set_callback<'a>(&mut self, event_name: String, mut c: impl FnMut(ContainerViewInputResult) + 'static) {
-        self.callbacks.insert(event_name, Box::new(c));
+impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for WorldContainerView<'c, B> {
+    fn set_callback(&mut self, event_name: String, mut callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+        self.callbacks.insert(event_name, callback);
     }
 
     fn trigger_callback(&mut self, event_name: String, data: ContainerViewInputResult) {

@@ -26,7 +26,7 @@ use crate::map::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 use crate::map::objects::container;
-use crate::map::objects::container::ContainerType;
+use crate::map::objects::container::{ContainerType, Container};
 use crate::list_selection::build_list_selection;
 use crate::map::objects::items;
 use crate::map::position::Side;
@@ -45,6 +45,28 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui : ui::UI,
     settings : settings::EnumSettings,
     game_running : bool,
+}
+
+fn handle_take_items(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
+    let input_result : ContainerViewInputResult = data;
+    match input_result {
+        TAKE_ITEMS(items) => {
+            let player = &mut level.characters[0];
+            log::info!("Received data for TAKE_ITEMS with {} items", items.len());
+            log::info!("Found player: {}", player.get_name());
+            for item in items {
+                let moved_item = false;
+                if let Some(container_item) = container.find_mut(&item) {
+                    player.get_inventory().add(container_item.clone());
+                }
+                if moved_item {
+                    let moved_item_copy = container.find_mut(&item).unwrap().clone();
+                    container.remove_item(moved_item_copy);
+                }
+            }
+        },
+        _ => {}
+    }
 }
 
 impl <B : Backend> GameEngine<B> {
@@ -413,7 +435,7 @@ impl <B : Backend> GameEngine<B> {
         };
     }
 
-    pub fn open(&mut self, command_key: Key) -> Result<(), io::Error> {
+    pub fn open<'a>(&'a mut self, command_key: Key) -> Result<(), io::Error> {
         self.ui.console_print("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
         self.re_render();
         let key = io::stdin().keys().next().unwrap().unwrap();
@@ -421,36 +443,41 @@ impl <B : Backend> GameEngine<B> {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render();
 
-            if let Some(map) = &mut self.level.map {
+            let mut updated_container = None;
+            let mut target_position = None;
+            let map = &mut self.level.map;
+            if let Some(map) = map {
                 if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
                     if let Some(c) = room.containers.get(&p) {
                         log::info!("Player opening container.");
+                        target_position = Some(p.clone());
                         let mut inventory_container = c.clone();
-                        let mut frame_container = c.clone();
                         let mut view_container = c.clone();
+                        let mut callback_container : Container = c.clone();
                         let mut container_view = container_view::build_container_view( inventory_container);
 
                         let ui = &mut self.ui;
+                        let level = &mut self.level;
                         let terminal_manager = &mut self.terminal_manager;
                         let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
-                        let mut world_container_view = WorldContainerView { ui, terminal_manager, frame_handler, container:  view_container, callbacks: HashMap::new()};
-                        //let player_inventory = &mut self.characters[0].get_inventory();
-                        world_container_view.set_callback(String::from("t"), |data| {
-                            let input_result : ContainerViewInputResult = data;
-                            match input_result {
-                                TAKE_ITEMS(items) => {
-                                    log::info!("Received data for TAKE_ITEMS with {} items", items.len());
-                                    // TODO move items to player inv and remove from view container
-                                },
-                                _ => {}
-                            }
-                        });
-                        world_container_view.begin();
-                        let updated_container = world_container_view.container.clone();
-                        if let Some(original_room) =  map.rooms.iter_mut().find(|r| r.area.contains_position(p)) {
-                            original_room.containers.insert(p, updated_container);
-                        }
+                        {
+                            let mut world_container_view = WorldContainerView {
+                                ui,
+                                terminal_manager,
+                                frame_handler,
+                                container: view_container,
+                                callbacks: HashMap::new()
+                            };
+                            let open_callback = Box::new(|data| {
+                                handle_take_items(level, &mut callback_container, data);
+                            });
+                            world_container_view.set_callback(String::from("t"), open_callback);
+                            world_container_view.begin();
 
+                            //let updated_world_container =  &mut callback_container.clone();
+                            //world_container_view.container = *updated_world_container;
+                            updated_container = Some(world_container_view.container.clone());
+                        }
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
@@ -458,6 +485,16 @@ impl <B : Backend> GameEngine<B> {
                     } else {
                         self.ui.console_print("There's nothing here to open.".to_string());
                         self.re_render();
+                    }
+                }
+            }
+
+            if let Some(container) = updated_container {
+                if let Some(pos) = target_position {
+                    if let Some(map) = &mut self.level.map {
+                        if let Some(original_room) = map.rooms.iter_mut().find(|r| r.area.contains_position(pos)) {
+                            original_room.containers.insert(p, container);
+                        }
                     }
                 }
             }
@@ -535,7 +572,7 @@ impl <B : Backend> GameEngine<B> {
     }
 }
 
-pub fn build_game_engine<B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
+pub fn build_game_engine<'a, B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
     let settings = settings::EnumSettings { settings: vec![fog_of_war] };
