@@ -3,22 +3,21 @@ use crate::widget::dropdown_widget::DropdownInputState;
 use crate::widget::number_widget::NumberInputState;
 use crate::widget::{WidgetType};
 
-fn assert_for_number_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(NumberInputState) {
-    match widget_type {
-        WidgetType::Number(s ) => {
-            callback(s);
-        }
-        _ => {
-            panic!("Widget state type was not Number!")
-        }
-    }
-}
-
 #[cfg(test)]
 mod text_number_input {
-    use crate::widget::{Focusable};
+    use crate::widget::{Focusable, WidgetType};
     use crate::widget::number_widget::{NumberInputState, build_number_input, build_number_input_with_value};
-    use crate::test::number_widget_tests::assert_for_number_widget;
+
+    fn assert_for_number_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(NumberInputState) {
+        match widget_type {
+            WidgetType::Number(s ) => {
+                callback(s);
+            }
+            _ => {
+                panic!("Widget state type was not Number!")
+            }
+        }
+    }
 
     #[test]
     fn test_build_number_input() {

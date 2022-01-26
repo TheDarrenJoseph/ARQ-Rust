@@ -19,7 +19,7 @@ impl Level {
                     None
                 }
             },
-            command_char => {
+            Key::Char(command_char) => {
                 Some(self.get_player_mut().get_position().clone())
             }
             _ => {

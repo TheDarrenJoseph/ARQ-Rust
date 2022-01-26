@@ -1,23 +1,17 @@
-use std::io;
 use std::io::Error;
 use std::convert::TryInto;
-use std::collections::VecDeque;
 
 use tui::layout::{Alignment, Rect};
 use tui::style::{Style, Color, Modifier};
-use tui::buffer::{Buffer};
-use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
+use tui::widgets::{Block, Borders, Paragraph, Wrap};
 use tui::text::{Spans,Span};
-use termion::input::TermRead;
 use termion::event::Key;
 
-use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, resolve_area, InputHandler, InputResult, GenericInputResult};
-use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::{FrameHandler, FrameData};
+use crate::view::{resolve_input, InputHandler, InputResult, GenericInputResult};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
-use crate::map::position::Area;
 
 pub struct ContainerView {
     pub container : Container,
@@ -196,7 +190,7 @@ pub struct Column {
 
 fn build_padding(length : i8) -> String {
     let mut s = String::new();
-    for i in 1..length {
+    for _i in 1..length {
         s.push(' ');
     }
     s
@@ -220,20 +214,10 @@ fn build_column_text(column: &Column, item: &Item) -> String {
 
 fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
     let spans = vec![Spans::from(Span::raw(text.clone()))];
-    let spans_len = spans.len() as u16;
     let paragraph = Paragraph::new(spans)
         .style(Style::default())
         .alignment(Alignment::Left);
     paragraph
-}
-
-fn get_row_count(frame_height: i32, container_len: i32) -> i32 {
-    let available_frame_rows = frame_height - 2;
-    if container_len < available_frame_rows {
-        container_len
-    } else {
-        available_frame_rows
-    }
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerView {
@@ -241,7 +225,6 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
         let frame_size = data.get_frame_size().clone();
         let container = data.unpack();
-        let container_len = container.get_contents().len() as i32;
 
         let window_block = Block::default()
             .borders(Borders::ALL)
@@ -267,7 +250,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
                 let item_index = start_index.clone() + line_index.clone();
                 let item = &c.get_self_item();
                 let mut x_offset: u16 = frame_size.x.clone() as u16 + 1;
-                let mut y_offset: u16 = frame_size.y.clone() as u16 + 2 + line_index.clone() as u16;
+                let y_offset: u16 = frame_size.y.clone() as u16 + 2 + line_index.clone() as u16;
                 let current_index = self.item_list_selection.is_focused(item_index);
                 let selected = self.item_list_selection.is_selected(item_index);
                 for column in &self.columns {
@@ -290,7 +273,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
             }
 
             let usage_description = "(o)pen, (d)rop, (m)ove";
-            let mut usage_text = build_paragraph(String::from(usage_description));
+            let usage_text = build_paragraph(String::from(usage_description));
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
 
@@ -336,7 +319,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
                 Key::Char('\n') => {
                     self.toggle_select();
                 },
-                Key::Char(c) => {},
+                Key::Char(_c) => {},
                 Key::Backspace => {},
                 Key::Up => {
                     self.move_up();

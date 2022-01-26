@@ -316,7 +316,7 @@ impl ListSelection for ItemListSelection {
         } else if (self.items.len() as i32) < self.page_line_count.clone() {
              1
         } else {
-            let page_count = (self.items.len() as f32 / self.page_line_count.clone() as f32);
+            let page_count = self.items.len() as f32 / self.page_line_count.clone() as f32;
             page_count.ceil() as i32
         }
     }
@@ -445,8 +445,7 @@ impl ListSelection for ItemListSelection {
             if self.selecting_items {
                 self.select_range(new_index, self.current_index.clone());
             }
-            let mut max_selection_index = self.determine_max_selection_index();
-            new_index = max_selection_index;
+            new_index = self.determine_max_selection_index();
             // TODO redraw list flag?
         } else if self.current_index == 0 {
             new_index = 0;
@@ -459,14 +458,14 @@ impl ListSelection for ItemListSelection {
     }
 
     fn page_down(&mut self) {
-        let mut new_index = self.current_index.clone();
+        let new_index;
         if self.should_turn_to_next_page(self.current_index.clone()) {
             // Reset the selection index to 0 and the start index to begin the new page
             new_index = 0;
             self.start_index += self.page_line_count;
         } else {
             // Select the lowest item
-            let mut max_selection_index = self.determine_max_selection_index();
+            let max_selection_index = self.determine_max_selection_index();
             new_index = max_selection_index;
         }
         self.update_selection(new_index);

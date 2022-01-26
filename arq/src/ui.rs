@@ -198,7 +198,7 @@ impl Draw for UI {
         let main_window_width = frame_size.width / 2;
         let widget_count = self.additional_widgets.len();
         if widget_count > 0 {
-            let mut offset = 0;
+            let mut _offset = 0;
             for widget in self.additional_widgets.iter_mut() {
                 match &mut widget.state_type {
                     WidgetType::StatLine(w) => {
@@ -207,7 +207,7 @@ impl Draw for UI {
                     },
                     _ => {}
                 }
-                offset += 1;
+                _offset += 1;
             }
         }
     }

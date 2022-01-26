@@ -1,33 +1,16 @@
-use std::io;
 use std::io::Error;
 use tui::layout::{Rect};
-use tui::text::{Spans, Span};
-use tui::style::{Style, Color, Modifier};
-use tui::symbols::line::VERTICAL;
-use tui::buffer::{Buffer};
-use tui::widgets::{Block, Borders};
-use termion::input::TermRead;
 use termion::event::Key;
-use std::slice::Iter;
 use std::collections::HashMap;
 
 use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, InputResult, GenericInputResult};
+use crate::view::{View, resolve_input, GenericInputResult};
 use crate::view::framehandler::container_view;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
-use crate::widget::text_widget::build_text_input;
-use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
-use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
-use crate::widget::button_widget::build_button;
-use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
-use crate::widget::{Focusable, Widget, WidgetType, Named};
-use crate::view::framehandler::character_view::{CharacterView, ViewMode};
-use crate::view::framehandler::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
+use crate::view::framehandler::container_view::{ContainerView, ContainerViewInputResult};
 use crate::map::position::Area;
 use crate::view::InputHandler;
 use crate::map::objects::container::Container;
-use crate::view;
 use crate::view::callback::Callback;
 
 // Combines multiple character info views into one w/ tabbing
@@ -62,7 +45,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
     }
 
 
-    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let ui = &mut self.ui;
 
@@ -82,7 +65,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
         match key {
             Key::Char('q') => {
                 // Drop the last container view and keep going
-                let mut container_views = &mut self.frame_handler.container_views;
+                let container_views = &self.frame_handler.container_views;
                 if container_views.len() > 1 {
                     if let Some(closing_view) = self.frame_handler.container_views.pop() {
                         let closing_container = closing_view.container;
@@ -110,7 +93,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                             to_remove.push(found.clone());
                         }
                     }
-                    let mut view_container = &mut parent_view.container;
+                    let view_container = &mut parent_view.container;
                     view_container.remove_matching_items(to_remove);
                     let selected_container_items = parent_view.get_selected_items();
                     parent_view.reset_selection();
@@ -121,11 +104,11 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
             // Passthrough anything not handled here into the sub framehandler
             _ => {
                 let mut generic_input_result : Option<GenericInputResult> = None;
-                let mut container_views = &mut self.frame_handler.container_views;
+                let container_views = &mut self.frame_handler.container_views;
                 let have_container_views = !container_views.is_empty();
                 if have_container_views {
                     if let Some(topmost_view) = container_views.last_mut() {
-                        let mut container_view_input_result = topmost_view.handle_input(Some(key));
+                        let container_view_input_result = topmost_view.handle_input(Some(key));
                         let result = container_view_input_result.unwrap();
                         if let Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
                             container_views.push(stacked_view);
@@ -147,23 +130,22 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for WorldContainerView<'c, B> {
-    fn set_callback(&mut self, event_name: String, mut callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+    fn set_callback(&mut self, event_name: String, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
         self.callbacks.insert(event_name, callback);
     }
 
     fn trigger_callback(&mut self, event_name: String, data: ContainerViewInputResult) {
         if self.callbacks.contains_key(&event_name) {
-            let mut cb = self.callbacks.get_mut(&event_name).unwrap();
+            let cb = self.callbacks.get_mut(&event_name).unwrap();
             cb(data);
         }
     }
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> for WorldContainerViewFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<WorldContainerViewFrameData>) {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<WorldContainerViewFrameData>) {
         if let Some(topmost_view) = self.container_views.last_mut() {
             let mut frame_inventory = topmost_view.container.clone();
-            let frame_size = frame.size();
             topmost_view.handle_frame(frame, FrameData { frame_size: data.frame_size, data: &mut frame_inventory });
         }
     }

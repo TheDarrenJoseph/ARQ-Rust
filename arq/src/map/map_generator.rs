@@ -14,7 +14,6 @@ pub struct MapGenerator {
     min_room_size: u16,
     max_room_size: u16,
     room_area_quota_percentage: u16,
-    room_area_percentage: u16,
     max_door_count: u16,
     tile_library :  HashMap<Tile, TileDetails>,
     map_area : Area,
@@ -25,7 +24,7 @@ pub struct MapGenerator {
 
 pub fn build_generator(map_area : Area) -> MapGenerator {
     MapGenerator { min_room_size: 3, max_room_size: 6,
-        room_area_quota_percentage: 30, room_area_percentage: 0, max_door_count: 4,
+        room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new(),
         map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new(), containers: HashMap::new()}}
@@ -39,7 +38,7 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
         let size_y = inside_area.get_size_y();
         let mut rng = thread_rng();
         let container_count = rng.gen_range(0..=2);
-        for i in 0..container_count {
+        for _i in 0..container_count {
             let random_x: u16 = rng.gen_range(1..=size_x) as u16;
             let random_y: u16 = rng.gen_range(1..=size_y) as u16;
             let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
@@ -302,7 +301,6 @@ mod tests {
         assert_eq!(3, generator.min_room_size);
         assert_eq!(6, generator.max_room_size);
         assert_eq!(30, generator.room_area_quota_percentage);
-        assert_eq!(0, generator.room_area_percentage);
         assert_eq!(4, generator.max_door_count);
         assert!(generator.tile_library.len() > 0);
         assert_eq!(map_area, generator.map_area);
