@@ -40,6 +40,7 @@ use crate::engine::level::Level;
 use crate::engine::command::input_mapping;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::command::command::Command;
+use crate::engine::command::look_command::LookCommand;
 
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
@@ -217,6 +218,7 @@ impl <B : Backend> GameEngine<B> {
         self.build_testing_inventory();
     }
 
+    // TODO refactor into a singular component shared with commands
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let mut ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
@@ -336,48 +338,10 @@ impl <B : Backend> GameEngine<B> {
         Ok(())
     }
 
-    pub fn open<'a>(&'a mut self, command_key: Key) -> Result<(), io::Error> {
-        self.ui.console_print("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
-        self.re_render();
-        let mut command = OpenCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
-        command.handle(command_key);
-        Ok(())
-    }
 
     /** TODO refactor into command
     pub fn look(&mut self, command_key: Key) -> Result<(), io::Error> {
-        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
-        self.re_render();
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        let position = self.find_adjacent_player_position(key, command_key);
 
-        if let Some(p) = position {
-            log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
-            self.re_render();
-
-            if let Some(map) = &self.level.map {
-                if let Some(room) =  map.get_rooms().iter().find(|r| r.area.contains_position(p)) {
-                    log::info!("Position is in a room.");
-
-                    if let Some(c) = &room.containers.get(&p) {
-                        log::info!("Position is a container.");
-                        let container_item = c.get_self_item();
-                        self.ui.console_print("There's a ".to_owned() + &container_item.name + &" here.".to_string());
-                        self.re_render();
-                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
-                        log::info!("Position is a door.");
-                        self.ui.console_print("There's a ".to_owned() + &door.tile_details.name + &" here.".to_string());
-                        self.re_render();
-                    } else {
-                        self.ui.console_print("There's nothing here in this room.".to_string());
-                        self.re_render();
-                    }
-                }
-            }
-
-            let key = io::stdin().keys().next().unwrap().unwrap();
-        }
-        Ok(())
     }**/
 
     pub fn handle_input(&mut self, key : Key) -> Result<(), io::Error>  {
@@ -389,10 +353,14 @@ impl <B : Backend> GameEngine<B> {
                 self.inventory_command();
             },
             Key::Char('k') => {
-               // self.look(Key::Char('k'));
+                let mut command = LookCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+                command.handle(key);
             },
             Key::Char('o') => {
-                self.open(Key::Char('o'));
+                self.ui.console_print("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+                self.re_render();
+                let mut command = OpenCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+                command.handle(key);
             },
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = input_mapping::key_to_side(key) {

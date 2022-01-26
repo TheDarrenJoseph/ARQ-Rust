@@ -42,22 +42,13 @@ fn handle_take_items(level : &mut Level, container: &mut Container, data : Conta
 }
 
 impl <B: tui::backend::Backend> OpenCommand<'_, B> {
-    fn find_adjacent_player_position(&mut self, key: Key, command_char: Key) -> Option<Position> {
-        return match key {
-            Key::Down | Key::Up | Key::Left | Key::Right => {
-                if let Some(side) = input_mapping::key_to_side(key) {
-                    self.level.find_player_side_position(side)
-                } else {
-                    None
-                }
-            },
-            command_char => {
-                Some(self.level.get_player_mut().get_position().clone())
-            }
-            _ => {
-                None
-            }
-        };
+    // TODO refactor alongside other commands / engine func
+    fn re_render(&mut self) -> Result<(), io::Error>  {
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(frame);
+        })?;
+        Ok(())
     }
 }
 
@@ -76,9 +67,9 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
 
         let key = io::stdin().keys().next().unwrap().unwrap();
-        if let Some(p) = self.find_adjacent_player_position(key, command_key) {
+        if let Some(p) = self.level.find_adjacent_player_position(key, command_key) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
-            //self.re_render();
+            self.re_render();
 
             let mut updated_container = None;
             let mut target_position = None;
@@ -117,11 +108,11 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
                         // TODO encapsulate view components / refactor
-                        //self.re_render();
+                        self.re_render();
                     } else {
                         self.ui.console_print("There's nothing here to open.".to_string());
                         // TODO encapsulate view components / refactor
-                        //self.re_render();
+                        self.re_render();
                     }
                 }
             }

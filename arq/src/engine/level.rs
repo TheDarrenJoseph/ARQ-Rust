@@ -1,6 +1,8 @@
 use crate::map::Map;
 use crate::character::Character;
 use crate::map::position::{Side, Position};
+use termion::event::Key;
+use crate::engine::command::input_mapping;
 
 pub struct Level {
     pub map : Option<Map>,
@@ -8,6 +10,24 @@ pub struct Level {
 }
 
 impl Level {
+    pub(crate) fn find_adjacent_player_position(&mut self, key: Key, command_char: Key) -> Option<Position> {
+        return match key {
+            Key::Down | Key::Up | Key::Left | Key::Right => {
+                if let Some(side) = input_mapping::key_to_side(key) {
+                    self.find_player_side_position(side)
+                } else {
+                    None
+                }
+            },
+            command_char => {
+                Some(self.get_player_mut().get_position().clone())
+            }
+            _ => {
+                None
+            }
+        };
+    }
+
     pub fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
         let position = self.get_player_mut().get_position().clone();
         let mut side_position = None;
