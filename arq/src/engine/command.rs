@@ -1,3 +1,4 @@
 pub(crate) mod command;
-pub(crate) mod game_commands;
-pub(crate) mod open_container;
+pub(crate) mod open_command;
+pub(crate) mod look_command;
+pub(crate) mod input_mapping;

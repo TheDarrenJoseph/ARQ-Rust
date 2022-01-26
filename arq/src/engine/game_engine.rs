@@ -1,6 +1,5 @@
 use termion::input::TermRead;
-use termion::raw::RawTerminal;
-use tui::backend::{TermionBackend, Backend};
+use tui::backend::{Backend};
 use tui::layout::{Rect};
 use termion::event::Key;
 use std::io;
@@ -38,6 +37,10 @@ use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_I
 use crate::map::objects::items::Item;
 use crate::view::callback::Callback;
 use crate::engine::level::Level;
+use crate::engine::command::input_mapping;
+use crate::engine::command::open_command::OpenCommand;
+use crate::engine::command::command::Command;
+
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -47,22 +50,7 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     game_running : bool,
 }
 
-fn handle_take_items(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
-    let input_result : ContainerViewInputResult = data;
-    match input_result {
-        TAKE_ITEMS(items) => {
-            let player = &mut level.characters[0];
-            log::info!("Received data for TAKE_ITEMS with {} items", items.len());
-            log::info!("Found player: {}", player.get_name());
-            for item in items {
-                if let Some(container_item) = container.find_mut(&item) {
-                    player.get_inventory().add(container_item.clone());
-                }
-            }
-        },
-        _ => {}
-    }
-}
+
 
 impl <B : Backend> GameEngine<B> {
 
@@ -273,7 +261,7 @@ impl <B : Backend> GameEngine<B> {
         self.game_running = true;
         while self.game_running {
             if self.ui.additional_widgets.is_empty() {
-                let player = self.get_player_mut();
+                let player = self.level.get_player_mut();
                 let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory().get_loot_value());
                 self.ui.additional_widgets.push(stat_line);
             }
@@ -308,58 +296,14 @@ impl <B : Backend> GameEngine<B> {
         inventory.add(bag);
     }
 
-    fn get_map(&self) -> &Option<Map> {
-        &self.level.map
-    }
-
-    fn set_map(&mut self, map : Option<Map>) {
-        self.level.map = map
-    }
-
-    pub fn get_player(&self) -> &Character {
-        &self.level.characters[0]
-    }
-
-    fn get_player_mut(&mut self) -> &mut Character {
-        &mut self.level.characters[0]
-    }
-
-    pub fn set_characters(&mut self, characters: Vec<Character>) {
-        self.level.characters = characters;
-    }
-
-    fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
-        let position = self.get_player_mut().get_position().clone();
-        let mut side_position = None;
-        match side {
-            Side::TOP => {
-                if position.y > 0 {
-                    side_position = Some(Position { x: position.x, y: position.y - 1 });
-                }
-            },
-            Side::BOTTOM => {
-                side_position = Some(Position { x: position.x, y: position.y + 1 });
-            },
-            Side::LEFT => {
-                if position.x > 0 {
-                    side_position = Some(Position { x: position.x - 1, y: position.y });
-                }
-            },
-            Side::RIGHT => {
-                side_position = Some(Position { x: position.x + 1, y: position.y });
-            }
-        }
-        side_position
-    }
-
     fn handle_player_movement(&mut self, side: Side) {
-        let mut updated_position = self.find_player_side_position(side);
-        let map = self.get_map();
+        let mut updated_position = self.level.find_player_side_position(side);
+        let map = self.level.get_map();
         match updated_position {
             Some(pos) => {
                 if let Some(m) = map {
                     if m.is_traversable(pos) {
-                        let player = self.get_player_mut();
+                        let player = self.level.get_player_mut();
                         player.set_position(pos);
                     }
                 }
@@ -392,113 +336,15 @@ impl <B : Backend> GameEngine<B> {
         Ok(())
     }
 
-    fn key_to_side(&self, key : Key) -> Option<Side> {
-        return match key {
-            Key::Down => {
-                Some(Side::BOTTOM)
-            },
-            Key::Up => {
-                Some(Side::TOP)
-            },
-            Key::Left => {
-                Some(Side::LEFT)
-            },
-            Key::Right => {
-                Some(Side::RIGHT)
-            },
-            _ => {
-                None
-            }
-        }
-    }
-
-    fn find_adjacent_player_position(&mut self, key: Key, command_char: Key) -> Option<Position> {
-        return match key {
-            Key::Down | Key::Up | Key::Left | Key::Right => {
-                if let Some(side) = self.key_to_side(key) {
-                    self.find_player_side_position(side)
-                 } else {
-                  None
-                }
-            },
-            command_char => {
-                Some(self.get_player_mut().get_position().clone())
-            }
-            _ => {
-                None
-            }
-        };
-    }
-
     pub fn open<'a>(&'a mut self, command_key: Key) -> Result<(), io::Error> {
         self.ui.console_print("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
         self.re_render();
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        if let Some(p) = self.find_adjacent_player_position(key, command_key) {
-            log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
-            self.re_render();
-
-            let mut updated_container = None;
-            let mut target_position = None;
-            let map = &mut self.level.map;
-            if let Some(map) = map {
-                if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
-                    if let Some(c) = room.containers.get(&p) {
-                        log::info!("Player opening container.");
-                        target_position = Some(p.clone());
-                        let mut inventory_container = c.clone();
-                        let mut view_container = c.clone();
-                        let mut callback_container : Container = c.clone();
-                        let mut container_view = container_view::build_container_view( inventory_container);
-
-                        let ui = &mut self.ui;
-                        let level = &mut self.level;
-                        let terminal_manager = &mut self.terminal_manager;
-                        let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
-                        {
-                            let mut world_container_view = WorldContainerView {
-                                ui,
-                                terminal_manager,
-                                frame_handler,
-                                container: view_container,
-                                callbacks: HashMap::new()
-                            };
-                            {
-                                let open_callback = Box::new(|data| {
-                                    handle_take_items(level, &mut callback_container, data);
-                                });
-                                world_container_view.set_callback(String::from("t"), open_callback);
-                                world_container_view.begin();
-                            }
-                            updated_container = Some(world_container_view.container.clone());
-                        }
-                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
-                        log::info!("Player opening door.");
-                        self.ui.console_print("There's a door here.".to_string());
-                        self.re_render();
-                    } else {
-                        self.ui.console_print("There's nothing here to open.".to_string());
-                        self.re_render();
-                    }
-                }
-            }
-
-            // Replace the original container with any changes we've made
-            if let Some(container) = updated_container {
-                if let Some(pos) = target_position {
-                    if let Some(map) = &mut self.level.map {
-                        if let Some(original_room) = map.rooms.iter_mut().find(|r| r.area.contains_position(pos)) {
-                            original_room.containers.insert(p, container);
-                        }
-                    }
-                }
-            }
-
-            let key = io::stdin().keys().next().unwrap().unwrap();
-        }
+        let mut command = OpenCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+        command.handle(command_key);
         Ok(())
     }
 
+    /** TODO refactor into command
     pub fn look(&mut self, command_key: Key) -> Result<(), io::Error> {
         self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
         self.re_render();
@@ -532,7 +378,7 @@ impl <B : Backend> GameEngine<B> {
             let key = io::stdin().keys().next().unwrap().unwrap();
         }
         Ok(())
-    }
+    }**/
 
     pub fn handle_input(&mut self, key : Key) -> Result<(), io::Error>  {
         match key {
@@ -543,13 +389,13 @@ impl <B : Backend> GameEngine<B> {
                 self.inventory_command();
             },
             Key::Char('k') => {
-                self.look(Key::Char('k'));
+               // self.look(Key::Char('k'));
             },
             Key::Char('o') => {
                 self.open(Key::Char('o'));
             },
             Key::Down | Key::Up | Key::Left | Key::Right => {
-                if let Some(side) = self.key_to_side(key) {
+                if let Some(side) = input_mapping::key_to_side(key) {
                     self.handle_player_movement(side);
                 }
             },
