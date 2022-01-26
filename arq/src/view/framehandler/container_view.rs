@@ -53,6 +53,14 @@ pub fn build_container_view(container: Container) -> ContainerView {
 
 impl ContainerView {
 
+    pub fn cancel_selection(&mut self) {
+        self.item_list_selection.cancel_selection();
+    }
+
+    pub fn reset_selection(&mut self) {
+        self.rebuild_selection(&self.container.clone());
+    }
+
     fn build_headings(&self) -> Paragraph {
         let mut heading_spans = Vec::new();
         let mut spans = Vec::new();

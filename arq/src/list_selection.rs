@@ -54,6 +54,18 @@ pub struct ItemListSelection {
 }
 
 impl ItemListSelection {
+    fn reset_selection(&mut self) {
+        self.start_index = 0;
+        self.current_index = 0;
+        self.true_index = 0;
+        self.pivot_index = None;
+        self.previous_container_index = None;
+        self.container_index = None;
+        self.selecting_items = false;
+        self.selected_indices.clear();
+        self.selected_items.clear();
+    }
+
     fn get_current_index(&self) -> i32 {
         self.current_index.clone()
     }
@@ -299,7 +311,14 @@ impl ListSelection for ItemListSelection {
     }
 
     fn get_total_pages(&self) -> i32 {
-        (self.items.len() as i32 / self.page_line_count) + 1
+        if self.items.len() == 0 {
+            0
+        } else if (self.items.len() as i32) < self.page_line_count.clone() {
+             1
+        } else {
+            let page_count = (self.items.len() as f32 / self.page_line_count.clone() as f32);
+            page_count.ceil() as i32
+        }
     }
 
     fn get_start_index(&self) -> i32 {
@@ -515,6 +534,8 @@ mod tests {
 
         // WHEN we call to build a list selection of these items
         let list_selection = build_list_selection(items, 4);
+        assert_eq!(1, list_selection.get_page_number());
+        assert_eq!(1, list_selection.get_total_pages());
 
         // THEN we expect it to wrap the items provided
         let wrapped_items = list_selection.get_items();
@@ -527,6 +548,39 @@ mod tests {
         // AND have no currently selected items
         let selected_items = list_selection.get_selected_items();
         assert_eq!(0, selected_items.len());
+    }
+
+    #[test]
+    fn test_multi_page_count() {
+        // GIVEN a series of items to select from
+        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+
+        // WHEN we call to build a list selection of these items with a line count of 2 items per page
+        let list_selection = build_list_selection(items, 2);
+        // THEN we expect there to be 2 pages
+        assert_eq!(1, list_selection.get_page_number());
+        assert_eq!(2, list_selection.get_total_pages());
+    }
+
+    #[test]
+    fn test_multi_page_count_odd() {
+        // GIVEN a series of 60 items to select from
+        let mut items = Vec::new();
+        for i in 1..=60 {
+            let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+            items.push(item);
+        }
+
+        // WHEN we call to build a list selection of these items
+        // with a line count of 36 items per page (Which would give us an odd page count of 1.69)
+        let list_selection = build_list_selection(items, 36);
+        // THEN we expect there to be 2 pages total
+        assert_eq!(1, list_selection.get_page_number());
+        assert_eq!(2, list_selection.get_total_pages());
     }
 
     #[test]

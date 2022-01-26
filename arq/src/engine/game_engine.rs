@@ -5,37 +5,27 @@ use termion::event::Key;
 use std::io;
 use std::convert::TryInto;
 use uuid::Uuid;
-use std::collections::HashMap;
 
 use crate::ui;
-use crate::ui::{Draw, FrameHandler, FrameData, build_ui};
+use crate::ui::{Draw, build_ui};
 use crate::settings;
 use crate::settings::Toggleable;
 use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::{View, InputHandler, InputResult, GenericInputResult};
+use crate::view::{View};
 use crate::view::map_view::MapView;
-use crate::view::framehandler::character_view::{CharacterView, ViewMode, CharacterViewInputResult};
-use crate::view::framehandler::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
+use crate::view::framehandler::character_view::{CharacterView, ViewMode};
 use crate::map::map_generator::build_generator;
-use crate::map::Map;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::position::{Position, build_rectangular_area};
 use crate::character::{Character, build_player};
-use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
+use crate::widget::character_stat_line::{build_character_stat_line};
 use crate::map::objects::container;
-use crate::map::objects::container::{ContainerType, Container};
-use crate::list_selection::build_list_selection;
+use crate::map::objects::container::{ContainerType};
 use crate::map::objects::items;
 use crate::map::position::Side;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
-use crate::view::framehandler::container_view;
-use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
-use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, OPEN_CONTAINER_VIEW};
-use crate::map::objects::items::Item;
-use crate::view::callback::Callback;
 use crate::engine::level::Level;
 use crate::engine::command::input_mapping;
 use crate::engine::command::open_command::OpenCommand;
@@ -254,11 +244,7 @@ impl <B : Backend> GameEngine<B> {
         let mut map_generator = build_generator(map_area);
         self.level.map = Some(map_generator.generate());
 
-        let mut character_created = false;
-        if !&character_created {
-            self.initialise_characters();
-            character_created = true;
-        }
+        self.initialise_characters();
 
         self.game_running = true;
         while self.game_running {
@@ -332,17 +318,6 @@ impl <B : Backend> GameEngine<B> {
         self.terminal_manager.terminal.clear()?;
         Ok(())
     }
-
-    pub fn take_command(&mut self, items: Vec<Item>)  -> Result<(), io::Error> {
-        let inventory = self.level.characters[0].get_inventory();
-        Ok(())
-    }
-
-
-    /** TODO refactor into command
-    pub fn look(&mut self, command_key: Key) -> Result<(), io::Error> {
-
-    }**/
 
     pub fn handle_input(&mut self, key : Key) -> Result<(), io::Error>  {
         match key {
@@ -455,11 +430,11 @@ mod tests {
         match game_engine {
             Result::Ok(mut engine) => {
                 let characters = build_characters(start_position);
-                engine.set_characters(characters);
-                engine.set_map(Some(map));
+                engine.level.set_characters(characters);
+                engine.level.set_map(Some(map));
 
                 // AND The player is placed in the middle of the map
-                assert_eq!(start_position, engine.get_player().get_position());
+                assert_eq!(start_position, engine.level.get_player().get_position());
 
                 // WHEN we push the down key
                 for key in input {
@@ -467,7 +442,7 @@ mod tests {
                 }
 
                 // THEN we expect the player to be moved into the traversable tile
-                assert_eq!(expected_end_position, engine.get_player().get_position());
+                assert_eq!(expected_end_position, engine.level.get_player().get_position());
             },
             _ => {
                 panic!("Expected a valid Game Engine instance!")

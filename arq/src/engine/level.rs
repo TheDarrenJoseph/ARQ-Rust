@@ -56,7 +56,7 @@ impl Level {
         &self.map
     }
 
-    fn set_map(&mut self, map : Option<Map>) {
+    pub fn set_map(&mut self, map : Option<Map>) {
         self.map = map
     }
 

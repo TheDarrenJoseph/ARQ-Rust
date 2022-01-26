@@ -1,31 +1,29 @@
-use std::io;
-use std::io::Error;
-use tui::layout::{Rect};
-use tui::text::{Spans, Span};
-use tui::style::{Style, Color, Modifier};
-use tui::symbols::line::VERTICAL;
-use tui::buffer::{Buffer};
-use tui::widgets::{Tabs, Block, Borders};
-use termion::input::TermRead;
 use termion::event::Key;
+use tui::layout::Rect;
+use tui::style::{Modifier, Style};
+use tui::symbols::line::VERTICAL;
+use tui::text::Spans;
+use tui::widgets::{Block, Borders, Tabs};
+
+use std::io::Error;
 use std::slice::Iter;
 
-use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, InputResult, GenericInputResult};
-use crate::view::framehandler::container_view;
+use crate::character::{Attribute, Character, Class, determine_class, get_all_attributes, Race};
+use crate::character;
+use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
-use crate::widget::text_widget::build_text_input;
-use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
-use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
+use crate::ui::{FrameData, FrameHandler, UI};
+use crate::view::{GenericInputResult, InputResult, resolve_input, View};
+use crate::view::framehandler::character_view::{CharacterView, ViewMode};
+use crate::view::framehandler::container_view;
+use crate::view::framehandler::container_view::{build_container_view, ContainerView, ContainerViewInputResult};
+use crate::view::InputHandler;
+use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
-use crate::widget::{Focusable, Widget, WidgetType, Named};
-use crate::character;
-use crate::view::framehandler::character_view::{CharacterView, ViewMode};
-use crate::view::framehandler::container_view::{ContainerView, build_container_view, ContainerViewInputResult};
-use crate::map::position::Area;
-use crate::view::InputHandler;
+use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
+use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
+use crate::widget::text_widget::build_text_input;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {

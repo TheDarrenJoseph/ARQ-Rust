@@ -113,6 +113,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                     let mut view_container = &mut parent_view.container;
                     view_container.remove_matching_items(to_remove);
                     let selected_container_items = parent_view.get_selected_items();
+                    parent_view.reset_selection();
                     let result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
                     self.trigger_callback(String::from("t"), result);
                 }
