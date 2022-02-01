@@ -4,6 +4,7 @@ use crate::map::position::{Side, Position};
 use termion::event::Key;
 use crate::engine::command::input_mapping;
 
+#[derive(Default, Clone)]
 pub struct Level {
     pub map : Option<Map>,
     pub characters : Vec<Character>
@@ -52,12 +53,16 @@ impl Level {
         side_position
     }
 
-    pub(crate) fn get_map(&self) -> &Option<Map> {
+    pub fn get_map(&self) -> &Option<Map> {
         &self.map
     }
 
     pub fn set_map(&mut self, map : Option<Map>) {
         self.map = map
+    }
+
+    pub fn get_map_mut(&mut self) -> Option<&mut Map> {
+        self.map.as_mut()
     }
 
     pub fn get_player(&self) -> &Character {

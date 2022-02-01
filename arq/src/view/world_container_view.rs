@@ -19,7 +19,7 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: WorldContainerViewFrameHandler,
     pub container : Container,
-    pub callbacks : HashMap<String, Box<dyn FnMut(ContainerViewInputResult) + 'a>>
+    pub callback : Box<dyn FnMut(ContainerViewInputResult) + 'a>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -30,6 +30,18 @@ pub struct WorldContainerViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
+    fn clone_selected_container_items(&mut self) -> Vec<Container> {
+        let mut items = Vec::new();
+        if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+            let selected_items = parent_view.get_selected_items();
+            for item in selected_items {
+                if let Some(found) = parent_view.container.find(&item) {
+                    items.push(found.clone());
+                }
+            }
+        }
+        items
+    }
 }
 
 impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldContainerView<'_, B>  {
@@ -83,22 +95,26 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                 }
                 return Ok(true)
             },
-            Key::Char('t') => {
+            Key::Char('d') => {
+                let to_drop = self.clone_selected_container_items();
                 if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                    let selected_items = parent_view.get_selected_items();
-
-                    let mut to_remove = Vec::new();
-                    for item in selected_items {
-                        if let Some(found) = parent_view.container.find(&item) {
-                            to_remove.push(found.clone());
-                        }
-                    }
+                    let view_container = &mut parent_view.container;
+                    view_container.remove_matching_items(to_drop);
+                    let selected_container_items = parent_view.get_selected_items();
+                    parent_view.reset_selection();
+                    let result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+                    self.trigger_callback(result);
+                }
+            },
+            Key::Char('t') => {
+                let mut to_remove = self.clone_selected_container_items();
+                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
                     let view_container = &mut parent_view.container;
                     view_container.remove_matching_items(to_remove);
                     let selected_container_items = parent_view.get_selected_items();
                     parent_view.reset_selection();
                     let result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
-                    self.trigger_callback(String::from("t"), result);
+                    self.trigger_callback(result);
                 }
             },
             // Passthrough anything not handled here into the sub framehandler
@@ -130,15 +146,12 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for WorldContainerView<'c, B> {
-    fn set_callback(&mut self, event_name: String, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
-        self.callbacks.insert(event_name, callback);
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+        self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, event_name: String, data: ContainerViewInputResult) {
-        if self.callbacks.contains_key(&event_name) {
-            let cb = self.callbacks.get_mut(&event_name).unwrap();
-            cb(data);
-        }
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+        (self.callback)(data);
     }
 }
 

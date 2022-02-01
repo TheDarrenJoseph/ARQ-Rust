@@ -7,7 +7,7 @@ use crate::view::framehandler::container_view;
 use crate::engine::command::command::Command;
 use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
 use crate::view::framehandler::container_view::ContainerViewInputResult;
-use crate::view::framehandler::container_view::ContainerViewInputResult::TAKE_ITEMS;
+use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, DROP_ITEMS};
 use crate::map::position::Position;
 use crate::view::callback::Callback;
 use crate::view::View;
@@ -24,9 +24,30 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
-fn handle_take_items(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
+fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
     let input_result : ContainerViewInputResult = data;
     match input_result {
+        DROP_ITEMS(items) => {
+            let position = level.get_player_mut().get_position().clone();
+            log::info!("Received data for DROP_ITEMS with {} items", items.len());
+            log::info!("Dropping items at position: {}, {}", position.x, position.y);
+
+            // Find the "container" wrapppers matching the items returned
+            let mut dropping_containers = Vec::new();
+            for item in items {
+                if let Some(container_item) = container.find_mut(&item) {
+                    dropping_containers.push(container_item.clone());
+                }
+            }
+
+            // Find the container on the map and add the "container" wrappers there
+            if let Some(m) = level.get_map_mut() {
+                if let Some(mut pos_container) = m.get_container_mut(position) {
+                    pos_container.push(dropping_containers);
+                }
+            }
+
+        },
         TAKE_ITEMS(items) => {
             let player = &mut level.characters[0];
             log::info!("Received data for TAKE_ITEMS with {} items", items.len());
@@ -36,12 +57,13 @@ fn handle_take_items(level : &mut Level, container: &mut Container, data : Conta
                     player.get_inventory().add(container_item.clone());
                 }
             }
-        },
+        }
         _ => {}
     }
 }
 
 impl <B: tui::backend::Backend> OpenCommand<'_, B> {
+
     // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let mut ui = &mut self.ui;
@@ -49,6 +71,33 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
             ui.render(frame);
         })?;
         Ok(())
+    }
+
+    fn open_container(&mut self, c: &Container) -> Container {
+        log::info!("Player opening container.");
+        let mut inventory_container = c.clone();
+        let mut view_container = c.clone();
+        let mut callback_container : Container = c.clone();
+        let mut container_view = container_view::build_container_view( inventory_container);
+
+        let ui = &mut self.ui;
+        let terminal_manager = &mut self.terminal_manager;
+        let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
+
+        let level = &mut self.level;
+        let mut world_container_view = WorldContainerView {
+            ui,
+            terminal_manager,
+            frame_handler,
+            container: view_container,
+            callback: Box::new(|data| {})
+        };
+
+        world_container_view.set_callback(Box::new(|data| {
+            handle_callback(level, &mut callback_container, data);
+        }));
+        world_container_view.begin();
+        world_container_view.container.clone()
     }
 }
 
@@ -77,33 +126,8 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             if let Some(map) = map {
                 if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
                     if let Some(c) = room.containers.get(&p) {
-                        log::info!("Player opening container.");
                         target_position = Some(p.clone());
-                        let mut inventory_container = c.clone();
-                        let mut view_container = c.clone();
-                        let mut callback_container : Container = c.clone();
-                        let mut container_view = container_view::build_container_view( inventory_container);
-
-                        let ui = &mut self.ui;
-                        let level = &mut self.level;
-                        let terminal_manager = &mut self.terminal_manager;
-                        let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
-                        let mut world_container_view = WorldContainerView {
-                            ui,
-                            terminal_manager,
-                            frame_handler,
-                            container: view_container,
-                            callbacks: HashMap::new()
-                        };
-
-                        let open_callback = Box::new(|data| {
-                            handle_take_items(level, &mut callback_container, data);
-                        });
-                        world_container_view.set_callback(String::from("t"), open_callback);
-                        world_container_view.begin();
-
-                        updated_container = Some(world_container_view.container.clone());
-
+                        updated_container = Some(self.open_container(c));
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());

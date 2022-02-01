@@ -23,7 +23,8 @@ pub struct ContainerView {
 pub enum ContainerViewInputResult {
     NONE,
     OPEN_CONTAINER_VIEW(ContainerView),
-    TAKE_ITEMS(Vec<Item>)
+    TAKE_ITEMS(Vec<Item>),
+    DROP_ITEMS(Vec<Item>)
 }
 
 pub fn build_container_view(container: Container) -> ContainerView {
@@ -303,7 +304,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
                     if self.handle_quit()? {
                         return default_done_result;
                     }
-                },
+                }
                 Key::Char('o') => {
                     if let Some(stacked_view) = self.open_focused() {
                         let new_view_result = Ok(InputResult {

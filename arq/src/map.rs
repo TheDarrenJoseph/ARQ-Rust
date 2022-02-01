@@ -60,6 +60,15 @@ impl Map {
         return self.rooms.clone();
     }
 
+
+    pub fn get_container(&self, position: Position) -> Option<&Container> {
+        self.containers.get(&position)
+    }
+
+    pub fn get_container_mut(&mut self, position: Position) -> Option<&mut Container> {
+        self.containers.get_mut(&position)
+    }
+
     pub fn is_paveable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {
