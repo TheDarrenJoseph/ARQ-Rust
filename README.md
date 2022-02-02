@@ -19,7 +19,7 @@ TODO (Not in any specific order)
 	- [X] Pathfinding
 	- [ ] Level traversal
 - [ ] Items (potions, scrolls, etc)
-	- [ ] Containers / Container spawning
+	- [X] Containers / Container spawning
 	- [ ] Inventory view / handling (drop, move, use) 
 	- [ ] Item encounters (pickup)
 - [ ] Character Stats (For player and NPCs)
