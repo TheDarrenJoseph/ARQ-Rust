@@ -10,7 +10,7 @@ use crate::view::{View, GenericInputResult};
 use termion::event::Key;
 use crate::map::position::{Area, Position, build_square_area, build_rectangular_area};
 use tui::layout::Rect;
-use crate::map::objects::container::Container;
+use crate::map::objects::container::{Container, ContainerType};
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -77,8 +77,20 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
             for (position, container) in &self.map.containers {
                 let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
                 if view_area.contains_position(view_position) {
-                    self.draw_container(view_position, container);
+                    match container.container_type {
+                        ContainerType::OBJECT => {
+                            self.draw_container(view_position.clone(), container);
+                        }
+                        ContainerType::AREA => {
+                            if container.get_item_count() > 0 {
+                                self.draw_container(view_position.clone(), container);
+                            }
+                        },
+                        _ => {}
+                    }
+
                 }
+
             }
         }
         Ok(())

@@ -239,6 +239,19 @@ impl MapGenerator {
         map_tiles
     }
 
+    fn build_area_containers(&self) ->  HashMap<Position, Container> {
+        let mut area_containers = HashMap::new();
+        for y in self.map_area.start_position.y..=self.map_area.end_position.y {
+            for x in self.map_area.start_position.x..=self.map_area.end_position.x {
+                log::info!("New AREA container at: {}, {}", x,y);
+                let position = Position { x, y };
+                let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 100);
+                area_containers.insert(position, area_container);
+            }
+        }
+        area_containers
+    }
+
     fn add_room_to_map(&mut self, room: &Room) {
         let tile_library = crate::map::tile::build_library();
         let room_tile = &tile_library[&Tile::Room].clone();
@@ -278,11 +291,12 @@ impl MapGenerator {
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
+        let area_containers = self.build_area_containers();
         return crate::map::Map {
             area: map_area,
             tiles : map_tiles,
             rooms,
-            containers: HashMap::new()
+            containers: area_containers
         }
     }
 }

@@ -69,6 +69,10 @@ impl Map {
         self.containers.get_mut(&position)
     }
 
+    pub fn get_containers_mut(&mut self) -> &mut HashMap<Position, Container> {
+        &mut self.containers
+    }
+
     pub fn is_paveable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {

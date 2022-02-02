@@ -28,9 +28,18 @@ impl Container {
         &self.item
     }
 
+    pub fn id_equals(&self, other: &Container) -> bool {
+        self.item.get_id() == other.get_self_item().get_id()
+    }
+
     pub fn get_contents(&self) -> &Vec<Container> {
         &self.contents
     }
+
+    pub fn get_item_count(&self) -> usize {
+        self.contents.len()
+    }
+
     pub fn get_weight_limit(&self) -> i32 {
         self.weight_limit.clone()
     }

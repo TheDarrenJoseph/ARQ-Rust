@@ -122,12 +122,20 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 
             let mut updated_container = None;
             let mut target_position = None;
-            let map = &mut self.level.map;
-            if let Some(map) = map {
-                if let Some(room) =  map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
+
+            let mut to_open = None;
+            if let Some(map) = &mut self.level.map {
+                if let Some(room) = map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
                     if let Some(c) = room.containers.get(&p) {
+                        log::info!("Found room container.");
                         target_position = Some(p.clone());
-                        updated_container = Some(self.open_container(c));
+                        to_open = Some(c.clone());
+                    } else if let Some(c) = map.containers.get(&p) {
+                        if c.get_item_count() > 0 {
+                            log::info!("Found map container.");
+                            target_position = Some(p.clone());
+                            to_open = Some(c.clone());
+                        }
                     } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
@@ -141,12 +149,28 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                 }
             }
 
+            if let Some(c) = to_open {
+                log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_item_count());
+                updated_container = Some(self.open_container(&c));
+            }
+
             // Replace the original container with any changes we've made
             if let Some(container) = updated_container {
                 if let Some(pos) = target_position {
                     if let Some(map) = &mut self.level.map {
-                        if let Some(original_room) = map.rooms.iter_mut().find(|r| r.area.contains_position(pos)) {
+                        if let Some(original_room) = map.rooms.iter_mut().find(|r| {
+                            r.area.contains_position(pos) &&
+                                if let Some(room_container) = r.containers.get(&pos) {
+                                    room_container.id_equals(&container) }
+                                else {
+                                    false
+                                }
+                        }) {
+                            log::info!("Updating room container with changes..");
                             original_room.containers.insert(p, container);
+                        } else if let Some(area_container) = map.containers.get(&pos) {
+                            log::info!("Updating area container with changes..");
+                            map.containers.insert(p, container);
                         }
                     }
                 }
