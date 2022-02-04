@@ -52,7 +52,7 @@ pub fn resolve_input(input : Option<Key>) -> Key {
         Some(input_key) => {
             input_key
         },
-        None => {
+        _ => {
             io::stdin().keys().next().unwrap().unwrap()
         }
     }

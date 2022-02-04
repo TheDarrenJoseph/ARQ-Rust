@@ -7,6 +7,7 @@ use tui::widgets::{Block, Borders, Tabs};
 
 use std::io::Error;
 use std::slice::Iter;
+use std::collections::HashSet;
 
 use crate::character::{Attribute, Character, Class, determine_class, get_all_attributes, Race};
 use crate::character;
@@ -16,7 +17,7 @@ use crate::ui::{FrameData, FrameHandler, UI};
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::framehandler::character_view::{CharacterView, ViewMode};
 use crate::view::framehandler::container_view;
-use crate::view::framehandler::container_view::{build_container_view, ContainerView, ContainerViewInputResult};
+use crate::view::framehandler::container_view::{build_container_view, ContainerView, ContainerViewInputResult, ContainerViewCommand};
 use crate::view::InputHandler;
 use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
@@ -24,6 +25,8 @@ use crate::widget::character_stat_line::{build_character_stat_line, CharacterSta
 use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::text_widget::build_text_input;
+use crate::view::framehandler::container_view::ContainerViewCommand::{OPEN, DROP};
+use crate::view::callback::Callback;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -46,7 +49,8 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub character : &'a mut Character,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: CharacterInfoViewFrameHandler
+    pub frame_handler: CharacterInfoViewFrameHandler,
+    pub callback : Box<dyn FnMut(ContainerViewInputResult) + 'a>
 }
 
 pub struct CharacterInfoViewFrameHandler {
@@ -56,6 +60,14 @@ pub struct CharacterInfoViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
+    // TODO refactor alongside other commands / engine func
+    fn re_render(&mut self) -> Result<(), std::io::Error>  {
+        let mut ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(frame);
+        })?;
+        Ok(())
+    }
 
     fn next_tab(&mut self)  {
         let tab_iter = TabChoice::iterator();
@@ -86,13 +98,27 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 }
 
+impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for CharacterInfoView<'c, B> {
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+        self.callback = callback;
+    }
+
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+        (self.callback)(data);
+    }
+}
+
+
 struct CharacterViewInputResult {
 
 }
 
 impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterInfoView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
-        let inventory_view = container_view::build_container_view( self.character.get_inventory().clone());
+        let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
+        commands.insert(OPEN);
+        commands.insert(DROP);
+        let inventory_view = container_view::build_container_view( self.character.get_inventory().clone(), commands);
         self.frame_handler.container_views = vec!(inventory_view);
 
         let mut character_view = CharacterView { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
@@ -162,9 +188,20 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                             if let Some(topmost_view) = container_views.last_mut() {
                                 let mut container_view_input_result = topmost_view.handle_input(Some(key));
                                 let result = container_view_input_result.unwrap();
-                                if let Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
-                                    container_views.push(stacked_view);
+                                if let Some(view_specific_result) = result.view_specific_result {
+                                    match view_specific_result {
+                                        ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view) => {
+                                            container_views.push(stacked_view);
+                                        },
+                                        // TODO decide where to trigger this
+                                        //ContainerViewInputResult::DROP_ITEMS(_) => {
+                                        //    self.trigger_callback(view_specific_result);
+                                        //},
+                                        _ => {}
+                                    }
                                 }
+                               //if let Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
+                                //}
                                 generic_input_result = Some(result.generic_input_result);
                             }
                         }

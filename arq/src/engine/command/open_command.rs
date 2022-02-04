@@ -2,11 +2,12 @@ use std::io;
 use termion::event::Key;
 use std::collections::HashMap;
 use termion::input::TermRead;
+use std::collections::HashSet;
 
 use crate::view::framehandler::container_view;
 use crate::engine::command::command::Command;
 use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
-use crate::view::framehandler::container_view::ContainerViewInputResult;
+use crate::view::framehandler::container_view::{ContainerViewInputResult, ContainerViewCommand};
 use crate::view::framehandler::container_view::ContainerViewInputResult::{TAKE_ITEMS, DROP_ITEMS};
 use crate::map::position::Position;
 use crate::view::callback::Callback;
@@ -17,6 +18,7 @@ use crate::ui;
 use crate::map::objects::container::Container;
 use crate::engine::command::input_mapping;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::view::framehandler::container_view::ContainerViewCommand::{OPEN, TAKE, DROP};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -75,10 +77,14 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
     fn open_container(&mut self, c: &Container) -> Container {
         log::info!("Player opening container.");
-        let mut inventory_container = c.clone();
+        let mut subview_container = c.clone();
         let mut view_container = c.clone();
         let mut callback_container : Container = c.clone();
-        let mut container_view = container_view::build_container_view( inventory_container);
+        let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
+        commands.insert(OPEN);
+        commands.insert(TAKE);
+        commands.insert(DROP);
+        let mut container_view = container_view::build_container_view(subview_container, commands);
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
@@ -114,7 +120,6 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
     }
 
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
-
         let key = io::stdin().keys().next().unwrap().unwrap();
         if let Some(p) = self.level.find_adjacent_player_position(key, command_key) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);

@@ -1,5 +1,6 @@
 use std::io::Error;
 use std::convert::TryInto;
+use std::collections::HashSet;
 
 use tui::layout::{Alignment, Rect};
 use tui::style::{Style, Color, Modifier};
@@ -17,7 +18,17 @@ pub struct ContainerView {
     pub container : Container,
     columns : Vec<Column>,
     row_count: i32,
-    pub item_list_selection : ItemListSelection
+    pub item_list_selection : ItemListSelection,
+    commands : HashSet<ContainerViewCommand>
+}
+
+#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug)]
+#[derive(Copy, Clone)]
+pub enum ContainerViewCommand {
+    OPEN,
+    TAKE,
+    DROP
 }
 
 pub enum ContainerViewInputResult {
@@ -27,7 +38,7 @@ pub enum ContainerViewInputResult {
     DROP_ITEMS(Vec<Item>)
 }
 
-pub fn build_container_view(container: Container) -> ContainerView {
+pub fn build_container_view(container: Container, commands : HashSet<ContainerViewCommand>) -> ContainerView {
     let columns = vec![
         Column {name : "NAME".to_string(), size: 12},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
@@ -39,10 +50,12 @@ pub fn build_container_view(container: Container) -> ContainerView {
     for c in container.get_contents() {
         items.push(c.get_self_item().clone());
     }
-    ContainerView { container: container.clone(),
-            columns,
-            row_count: 1,
-            item_list_selection: build_list_selection(items, 1)
+    ContainerView {
+        container: container.clone(),
+        columns,
+        row_count: 1,
+        item_list_selection: build_list_selection(items, 1),
+        commands
     }
 }
 
@@ -142,7 +155,7 @@ impl ContainerView {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
                     if let Some(focused_container) = self.container.find_mut(focused_item) {
-                        return Some(build_container_view(focused_container.clone()))
+                        return Some(build_container_view(focused_container.clone(), self.commands.clone()))
                     }
                 }
             }
@@ -213,6 +226,30 @@ fn build_column_text(column: &Column, item: &Item) -> String {
     }
 }
 
+fn build_command_usage_descriptions(commands: &HashSet<ContainerViewCommand>) -> String {
+    let mut description = String::from("");
+    let len = commands.len();
+    let mut i = 0;
+    for c in commands.iter() {
+        match c {
+            ContainerViewCommand::OPEN => {
+                description += "o - open";
+            },
+            ContainerViewCommand::TAKE => {
+                description += "t - take";
+            },
+            ContainerViewCommand::DROP => {
+                description += "d - drop";
+            }
+        }
+        if i < len {
+            description += ", ";
+        }
+        i+=1;
+    }
+    description
+}
+
 fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
     let spans = vec![Spans::from(Span::raw(text.clone()))];
     let paragraph = Paragraph::new(spans)
@@ -273,8 +310,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
                 line_index += 1;
             }
 
-            let usage_description = "(o)pen, (d)rop, (m)ove";
-            let usage_text = build_paragraph(String::from(usage_description));
+            let usage_description = build_command_usage_descriptions(&self.commands);
+            let usage_text = build_paragraph(usage_description.clone());
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
 
@@ -522,7 +559,7 @@ mod tests {
         let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
         container.add(bag);
 
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_container_view(container, HashSet::new());
         view.item_list_selection.page_line_count = 5;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();

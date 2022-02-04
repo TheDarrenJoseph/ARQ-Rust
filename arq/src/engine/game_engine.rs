@@ -31,6 +31,7 @@ use crate::engine::command::input_mapping;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::command::command::Command;
 use crate::engine::command::look_command::LookCommand;
+use crate::engine::command::inventory_command::InventoryCommand;
 
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
@@ -300,16 +301,6 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    pub fn inventory_command(&mut self) -> Result<(), io::Error>  {
-        self.ui.hide_console();
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
-        let player = &mut self.level.characters[0];
-        let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler };
-        character_info_view.begin();
-        self.ui.show_console();
-        Ok(())
-    }
-
     pub fn menu_command(&mut self) -> Result<(), io::Error> {
         self.terminal_manager.terminal.clear()?;
         self.ui.hide_console();
@@ -325,7 +316,8 @@ impl <B : Backend> GameEngine<B> {
                 self.menu_command();
             },
             Key::Char('i') => {
-                self.inventory_command();
+                let mut command = InventoryCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };
+                command.handle(key);
             },
             Key::Char('k') => {
                 let mut command = LookCommand { level: &mut self.level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager };

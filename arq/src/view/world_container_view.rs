@@ -46,8 +46,6 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 
 impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
-        let view = container_view::build_container_view( self.container.clone());
-        self.frame_handler.container_views = vec!(view);
         self.terminal_manager.terminal.clear();
         self.draw(None);
         while !self.handle_input(None).unwrap() {
