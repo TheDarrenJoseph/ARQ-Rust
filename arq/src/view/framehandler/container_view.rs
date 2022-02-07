@@ -13,6 +13,7 @@ use crate::view::{resolve_input, InputHandler, InputResult, GenericInputResult};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
+use crate::view::framehandler::container_view::ContainerViewCommand::DROP;
 
 pub struct ContainerView {
     pub container : Container,
@@ -195,6 +196,17 @@ impl ContainerView {
             self.rebuild_selection(&self.container.clone());
         }
     }
+
+    fn clone_selected_container_items(&mut self) -> Vec<Container> {
+        let mut items = Vec::new();
+        let selected_items = self.get_selected_items();
+        for item in selected_items {
+            if let Some(found) = self.container.find(&item) {
+                items.push(found.clone());
+            }
+        }
+        items
+    }
 }
 
 pub struct Column {
@@ -337,6 +349,19 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
         loop {
             let key = resolve_input(input);
             match key {
+                Key::Char('d') => {
+                    if self.commands.contains(&DROP) {
+                        let to_drop = self.clone_selected_container_items();
+                        let view_container = &mut self.container;
+                        view_container.remove_matching_items(to_drop);
+                        let selected_container_items = self.get_selected_items();
+                        self.reset_selection();
+                        return Ok(InputResult {
+                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                            view_specific_result: Some(ContainerViewInputResult::DROP_ITEMS(selected_container_items))
+                        });
+                    }
+                },
                 Key::Char('q') => {
                     if self.handle_quit()? {
                         return default_done_result;

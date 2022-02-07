@@ -193,10 +193,9 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                         ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view) => {
                                             container_views.push(stacked_view);
                                         },
-                                        // TODO decide where to trigger this
-                                        //ContainerViewInputResult::DROP_ITEMS(_) => {
-                                        //    self.trigger_callback(view_specific_result);
-                                        //},
+                                        ContainerViewInputResult::DROP_ITEMS(_) => {
+                                            self.trigger_callback(view_specific_result);
+                                        },
                                         _ => {}
                                     }
                                 }

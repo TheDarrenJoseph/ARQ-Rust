@@ -93,17 +93,6 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                 }
                 return Ok(true)
             },
-            Key::Char('d') => {
-                let to_drop = self.clone_selected_container_items();
-                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                    let view_container = &mut parent_view.container;
-                    view_container.remove_matching_items(to_drop);
-                    let selected_container_items = parent_view.get_selected_items();
-                    parent_view.reset_selection();
-                    let result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
-                    self.trigger_callback(result);
-                }
-            },
             Key::Char('t') => {
                 let mut to_remove = self.clone_selected_container_items();
                 if let Some(parent_view) = self.frame_handler.container_views.last_mut() {

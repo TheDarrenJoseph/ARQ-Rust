@@ -83,7 +83,6 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(TAKE);
-        commands.insert(DROP);
         let mut container_view = container_view::build_container_view(subview_container, commands);
 
         let ui = &mut self.ui;
