@@ -19,7 +19,7 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: WorldContainerViewFrameHandler,
     pub container : Container,
-    pub callback : Box<dyn FnMut(ContainerViewInputResult) + 'a>
+    pub callback : Box<dyn FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'a>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -133,12 +133,12 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for WorldContainerView<'c, B> {
-    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'c>) {
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
-        (self.callback)(data);
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) -> Option<ContainerViewInputResult> {
+        (self.callback)(data)
     }
 }
 

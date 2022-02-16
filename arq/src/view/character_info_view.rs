@@ -50,7 +50,7 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: CharacterInfoViewFrameHandler,
-    pub callback : Box<dyn FnMut(ContainerViewInputResult) + 'a>
+    pub callback : Box<dyn FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'a>
 }
 
 pub struct CharacterInfoViewFrameHandler {
@@ -99,12 +99,12 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for CharacterInfoView<'c, B> {
-    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) + 'c>) {
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'c>) {
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
-        (self.callback)(data);
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) -> Option<ContainerViewInputResult> {
+        (self.callback)(data)
     }
 }
 

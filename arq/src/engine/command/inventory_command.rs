@@ -22,32 +22,37 @@ pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
-fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
+fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) -> Option<ContainerViewInputResult> {
     let input_result : ContainerViewInputResult = data;
     match input_result {
         DROP_ITEMS(items) => {
             let position = level.get_player_mut().get_position().clone();
-            log::info!("Received data for DROP_ITEMS with {} items", items.len());
-            log::info!("Dropping items at position: {}, {}", position.x, position.y);
-
-            // Find the "container" wrapppers matching the items returned
-            let mut dropping_containers = Vec::new();
-            for item in items {
-                if let Some(container_item) = container.find_mut(&item) {
-                    dropping_containers.push(container_item.clone());
-                }
-            }
+            log::info!("InventoryCommand - Dropping {} items at position: {}, {}", items.len(),  position.x, position.y);
 
             // Find the container on the map and add the "container" wrappers there
+            let mut undropped = Vec::new();
             if let Some(m) = level.get_map_mut() {
                 if let Some(mut pos_container) = m.get_container_mut(position) {
-                    pos_container.push(dropping_containers);
+                    for item in items {
+                        // Find the "container" wrappper matching the item returned
+                        if let Some(container_item) = container.find_mut(&item) {
+                            let dropping_container_item = container_item.clone();
+                            if pos_container.can_fit_container_item(&dropping_container_item) {
+                                log::info!("Dropping item here: {}", item.get_name());
+                                pos_container.add(dropping_container_item)
+                            } else {
+                                log::info!("Cannot fit item here: {}", item.get_name());
+                                undropped.push(item);
+                            }
+                        }
+                    }
                 }
             }
-
+            return Some(DROP_ITEMS(undropped));
         }
         _ => {}
     }
+    None
 }
 
 impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
@@ -77,9 +82,9 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let player = &mut level.characters[0].clone();
         let updated_inventory;
         {
-            let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|data| {}) };
+            let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
             character_info_view.set_callback(Box::new(|data| {
-                handle_callback(level, &mut callback_container, data);
+                handle_callback(level, &mut callback_container, data)
             }));
             character_info_view.begin();
             updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();

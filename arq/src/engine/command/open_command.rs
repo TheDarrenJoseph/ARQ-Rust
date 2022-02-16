@@ -26,30 +26,9 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
-fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) {
+fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) -> Option<ContainerViewInputResult> {
     let input_result : ContainerViewInputResult = data;
     match input_result {
-        DROP_ITEMS(items) => {
-            let position = level.get_player_mut().get_position().clone();
-            log::info!("Received data for DROP_ITEMS with {} items", items.len());
-            log::info!("Dropping items at position: {}, {}", position.x, position.y);
-
-            // Find the "container" wrapppers matching the items returned
-            let mut dropping_containers = Vec::new();
-            for item in items {
-                if let Some(container_item) = container.find_mut(&item) {
-                    dropping_containers.push(container_item.clone());
-                }
-            }
-
-            // Find the container on the map and add the "container" wrappers there
-            if let Some(m) = level.get_map_mut() {
-                if let Some(mut pos_container) = m.get_container_mut(position) {
-                    pos_container.push(dropping_containers);
-                }
-            }
-
-        },
         TAKE_ITEMS(items) => {
             let player = &mut level.characters[0];
             log::info!("Received data for TAKE_ITEMS with {} items", items.len());
@@ -62,6 +41,7 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
         }
         _ => {}
     }
+    return None
 }
 
 impl <B: tui::backend::Backend> OpenCommand<'_, B> {
@@ -95,11 +75,11 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
             terminal_manager,
             frame_handler,
             container: view_container,
-            callback: Box::new(|data| {})
+            callback: Box::new(|data| {None})
         };
 
         world_container_view.set_callback(Box::new(|data| {
-            handle_callback(level, &mut callback_container, data);
+            handle_callback(level, &mut callback_container, data)
         }));
         world_container_view.begin();
         world_container_view.container.clone()

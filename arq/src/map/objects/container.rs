@@ -37,12 +37,31 @@ impl Container {
     }
 
     pub fn get_item_count(&self) -> usize {
-        self.contents.len()
+        let mut item_count = 0;
+        match self.container_type {
+            ContainerType::OBJECT | ContainerType::AREA => {
+                for c in self.get_contents() {
+                    item_count += c.get_item_count();
+                }
+            },
+            ContainerType::ITEM => {
+                item_count += 1;
+            }
+        }
+        item_count
     }
 
     pub fn get_weight_limit(&self) -> i32 {
         self.weight_limit.clone()
     }
+
+    pub fn can_fit_container_item(&self, item: &Container) -> bool {
+        let weight_limit = self.weight_limit.clone();
+        let weight_total = self.get_weight_total();
+        let free_weight = weight_limit - weight_total;
+        item.get_weight_total() <= free_weight
+    }
+
     pub fn get(&self, index: i32) -> &Container {
         &self.contents[index as usize]
     }
@@ -119,7 +138,7 @@ impl Container {
         None
     }
 
-    fn get_weight_total(&self) -> i32 {
+    pub(crate) fn get_weight_total(&self) -> i32 {
         let mut weight_total = 0;
         match self.container_type {
             ContainerType::OBJECT | ContainerType::AREA => {

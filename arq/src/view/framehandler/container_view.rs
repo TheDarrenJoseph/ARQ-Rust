@@ -327,16 +327,25 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
 
-
+            // From right hand to left hand side draw the info text
             let page_number = self.item_list_selection.get_page_number();
             let total_pages = self.item_list_selection.get_total_pages();
-
-            let page_count_text = format!("Page {}/{}", page_number, total_pages);
+            let item_count = self.container.get_item_count();
+            let page_count_text = format!("Page {}/{} ({})", page_number, total_pages, item_count);
             let page_count_text_length = page_count_text.len();
             let width = page_count_text.len().try_into().unwrap();
             let page_count_paragraph = build_paragraph(page_count_text);
             let page_count_area = Rect::new( window_area.width.clone() - page_count_text_length as u16 , window_area.y.clone() + window_area.height.clone() - 1, width, 1);
             frame.render_widget(page_count_paragraph, page_count_area);
+
+            let container_item_weight_total = self.container.get_weight_total();
+            let weight_limit = self.container.get_weight_limit();
+            let weight_limit_text = format!("{}/{}Kg", container_item_weight_total, weight_limit);
+            let weight_limit_text_length = weight_limit_text.len();
+            let weight_limit_text_width = weight_limit_text.len().try_into().unwrap();
+            let weight_limit_paragraph = build_paragraph(weight_limit_text);
+            let weight_limit_area = Rect::new( window_area.width.clone() - page_count_text_length as u16 - weight_limit_text_length as u16 - 1, window_area.y.clone() + window_area.height.clone() - 1, weight_limit_text_width, 1);
+            frame.render_widget(weight_limit_paragraph, weight_limit_area);
         }
     }
 }
