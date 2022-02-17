@@ -434,12 +434,17 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view};
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
     use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
     use crate::map::tile::Colour;
+    use termion::input::TermRead;
+    use tui::text::Text;
+    use tui::layout::Rect;
+    use tui::buffer::{Buffer, Cell};
+    use tui::widgets::Widget;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -465,9 +470,30 @@ mod tests {
     }
 
     #[test]
+    fn test_build_headings() {
+        // GIVEN a view with a series of columns configured
+        let mut container = build_test_container();
+        let mut view : ContainerView = build_default_container_view(container);
+        view.columns = vec![
+            Column {name : "NAME".to_string(), size: 12},
+            Column {name : "WEIGHT (Kg)".to_string(), size: 12},
+            Column {name : "VALUE".to_string(), size: 12}
+        ];
+
+        // WHEN we call to build the headings Paragraph
+        let headings = view.build_headings();
+
+        // THEN we expect it to render to the buffer as expected
+        let area = Rect { x: 0, y: 0, height: 2, width: 31 };
+        let cell_buffer : Vec<Cell> = Vec::new();
+        let mut buffer = Buffer::empty(area.clone());
+        headings.render(area, &mut buffer);
+        assert_eq!(Buffer::with_lines(vec!["NAME         WEIGHT (Kg)  VALUE", "    "]), buffer);
+    }
+
+    #[test]
     fn test_view_build() {
         // GIVEN valid components
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
@@ -479,7 +505,6 @@ mod tests {
     #[test]
     fn test_move_focus_down() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
@@ -496,7 +521,6 @@ mod tests {
     #[test]
     fn test_page_down() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
@@ -513,7 +537,6 @@ mod tests {
     #[test]
     fn test_move_focus_up() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
@@ -537,7 +560,6 @@ mod tests {
     #[test]
     fn test_page_up() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
@@ -557,7 +579,6 @@ mod tests {
     #[test]
     fn test_move_items() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
@@ -595,12 +616,10 @@ mod tests {
     #[test]
     fn test_move_items_into_container() {
         // GIVEN a valid view
-        let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
         // With a main container including items and another container
         let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
         container.add(bag);
-
         let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 5;
         assert_eq!(0, view.item_list_selection.get_true_index());
