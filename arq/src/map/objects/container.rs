@@ -211,6 +211,13 @@ impl Container {
         }
     }
 
+    pub fn to_cloned_item_list(&self) -> Vec<Item> {
+        let mut items = Vec::new();
+        for c in self.get_contents() {
+            items.push(c.get_self_item().clone());
+        }
+        items
+    }
 }
 
 pub fn wrap_item(item: Item) -> Container {

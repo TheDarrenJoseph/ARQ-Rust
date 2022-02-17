@@ -1,6 +1,7 @@
 use std::io::Error;
 use std::convert::TryInto;
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 use tui::layout::{Alignment, Rect};
 use tui::style::{Style, Color, Modifier};
@@ -39,18 +40,29 @@ pub enum ContainerViewInputResult {
     DROP_ITEMS(Vec<Item>)
 }
 
-pub fn build_container_view(container: Container, commands : HashSet<ContainerViewCommand>) -> ContainerView {
-    let columns = vec![
+fn build_default_columns() -> Vec<Column> {
+    vec![
         Column {name : "NAME".to_string(), size: 12},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
         Column {name : "VALUE".to_string(), size: 12}
-    ];
+    ]
+}
 
-    let mut items = Vec::new();
-    // Clone the self items for everything in the container
-    for c in container.get_contents() {
-        items.push(c.get_self_item().clone());
+pub fn build_default_container_view(container: Container) -> ContainerView {
+    let columns = build_default_columns();
+    let mut items = container.to_cloned_item_list();
+    ContainerView {
+        container: container.clone(),
+        columns,
+        row_count: 1,
+        item_list_selection: build_list_selection(items, 1),
+        commands : HashSet::new()
     }
+}
+
+pub fn build_container_view(container: Container, commands : HashSet<ContainerViewCommand>) -> ContainerView {
+    let columns = build_default_columns();
+    let mut items = container.to_cloned_item_list();
     ContainerView {
         container: container.clone(),
         columns,
@@ -89,12 +101,7 @@ impl ContainerView {
     }
 
     pub fn rebuild_selection(&mut self, container: &Container) {
-        let mut items = Vec::new();
-        // Clone the self items for everything in the container
-        for c in container.get_contents() {
-            items.push(c.get_self_item().clone());
-        }
-        self.item_list_selection = build_list_selection(items, 1);
+        self.item_list_selection = build_list_selection(container.to_cloned_item_list(), 1);
     }
 
     pub fn get_selected_items(&self) -> Vec<Item> {
@@ -419,6 +426,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
 mod tests {
     use uuid::Uuid;
     use tui::backend::TestBackend;
+    use std::collections::HashSet;
 
     use crate::ui;
     use crate::terminal;
@@ -426,7 +434,7 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view};
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
@@ -464,7 +472,7 @@ mod tests {
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
         // WHEN we call to build a new view
-        let view : ContainerView = build_container_view(container);
+        let view : ContainerView = build_default_container_view(container);
         // THEN we expect to reach this point succesfully
     }
 
@@ -473,7 +481,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -490,7 +498,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -509,7 +517,7 @@ mod tests {
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -531,7 +539,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -551,7 +559,7 @@ mod tests {
         // GIVEN a valid view
         let mut terminal_manager : &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
         let mut container = build_test_container();
-        let mut view : ContainerView = build_container_view(container);
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
@@ -593,7 +601,7 @@ mod tests {
         let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
         container.add(bag);
 
-        let mut view : ContainerView = build_container_view(container, HashSet::new());
+        let mut view : ContainerView = build_default_container_view(container);
         view.item_list_selection.page_line_count = 5;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
