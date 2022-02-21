@@ -33,11 +33,19 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
             let player = &mut level.characters[0];
             log::info!("Received data for TAKE_ITEMS with {} items", items.len());
             log::info!("Found player: {}", player.get_name());
+            let mut untaken = Vec::new();
             for item in items {
                 if let Some(container_item) = container.find_mut(&item) {
-                    player.get_inventory().add(container_item.clone());
+                    let inventory = player.get_inventory();
+                    if inventory.can_fit_container_item(container_item) {
+                        player.get_inventory().add(container_item.clone());
+                    } else {
+                        untaken.push(item);
+                    }
+
                 }
             }
+            return Some(TAKE_ITEMS(untaken));
         }
         _ => {}
     }
@@ -163,5 +171,158 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             let key = io::stdin().keys().next().unwrap().unwrap();
         }
         Ok(())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use std::collections::HashMap;
+    use tui::backend::TestBackend;
+    use std::collections::HashSet;
+    use termion::input::TermRead;
+    use tui::text::Text;
+    use tui::layout::Rect;
+    use tui::buffer::{Buffer, Cell};
+    use tui::widgets::Widget;
+
+    use crate::ui;
+    use crate::terminal;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, ContainerType, Container};
+    use crate::map::objects::items;
+    use crate::menu;
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column, ContainerViewInputResult};
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui::{UI, build_ui};
+    use crate::list_selection::ListSelection;
+    use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::map::tile::{Colour, Tile};
+    use crate::engine::command::open_command::{OpenCommand, handle_callback};
+    use crate::engine::level::Level;
+    use crate::character::{build_player, Character, build_default_character_details, build_character};
+    use crate::map::position::{Position, build_square_area};
+
+    fn build_test_container() -> Container {
+        let id = Uuid::new_v4();
+        let mut container = build(id, "Test Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container_self_item = container.get_self_item();
+        assert_eq!(id, container_self_item.get_id());
+        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!('X', container_self_item.symbol);
+        assert_eq!(Colour::White, container_self_item.colour);
+        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1, container_self_item.value);
+
+        for i in 1..=4 {
+            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            container.add_item(test_item);
+        }
+
+        assert_eq!(ContainerType::OBJECT, container.container_type);
+        assert_eq!(100, container.get_weight_limit());
+        let contents = container.get_contents();
+        assert_eq!(4, contents.len());
+        container
+    }
+
+    fn build_test_level(player: Character) -> Level {
+        let tile_library = crate::map::tile::build_library();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
+        let map_pos = Position { x: 0, y: 0 };
+        let map_area = build_square_area(map_pos, 3);
+
+        let map = crate::map::Map {
+            area: map_area,
+            tiles: vec![
+                vec![wall.clone(), wall.clone(), wall.clone()],
+                vec![wall.clone(), rom.clone(), wall.clone()],
+                vec![wall.clone(), wall.clone(), wall.clone()],
+            ],
+            rooms: Vec::new(),
+            containers: HashMap::new()
+        };
+
+        return Level { map: Some(map), characters: vec![player] };
+    }
+
+    #[test]
+    fn test_take_callback() {
+        // GIVEN a valid level with an player inventory to extract items into
+        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
+        let character_details = build_default_character_details();
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let mut level = build_test_level(player);
+
+        // WHEN we call to handle a take callback with some of the items in a container
+        let mut container = build_test_container();
+        let mut selected_container_items = Vec::new();
+        for i in 0..=1 {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(2, selected_container_items.len());
+        let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
+        let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
+        let mut view_result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
+        let untaken = handle_callback(&mut level, &mut container, view_result).unwrap();
+
+        // THEN we expect a DROP_ITEMS returned with 0 un-taken items
+        match untaken {
+            ContainerViewInputResult::TAKE_ITEMS(u) => {
+                assert_eq!(0, u.len());
+            },
+            _ => {
+                assert!(false);
+            }
+        }
+
+        // AND we expect the inventory to contain the 2 items taken
+        let inventory = level.get_player_mut().get_inventory();
+        let updated_container_contents = inventory.get_contents();
+        assert_eq!(2, updated_container_contents.len());
+        assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
+        assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
+    }
+
+    #[test]
+    fn test_take_callback_too_many_items() {
+        // GIVEN a valid map with an player inventory to extract items into
+        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
+        let character_details = build_default_character_details();
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let mut level = build_test_level(player);
+
+        // WHEN we call to handle a take callback with 3 items (with only space for 2 of them)
+        let mut container = build_test_container();
+        let mut selected_container_items = Vec::new();
+        for i in 0..=2 {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(3, selected_container_items.len());
+        let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
+        let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
+        let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
+        let mut view_result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
+        let untaken = handle_callback(&mut level, &mut container, view_result).unwrap();
+
+        // THEN we expect a DROP_ITEMS returned with 1 un-taken items
+        match untaken {
+            ContainerViewInputResult::TAKE_ITEMS(u) => {
+                assert_eq!(1, u.len());
+                assert_eq!(chosen_item_3, *u.get(0).unwrap());
+            },
+            _ => {
+                assert!(false);
+            }
+        }
+
+        // AND we expect the inventory to contain the 2 items taken
+        let inventory = level.get_player_mut().get_inventory();
+        let updated_container_contents = inventory.get_contents();
+        assert_eq!(2, updated_container_contents.len());
+        assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
+        assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
     }
 }

@@ -57,8 +57,8 @@ impl Container {
 
     pub fn can_fit_container_item(&self, item: &Container) -> bool {
         let weight_limit = self.weight_limit.clone();
-        let weight_total = self.get_weight_total();
-        let free_weight = weight_limit - weight_total;
+        let content_weight_total = self.get_contents_weight_total();
+        let free_weight = weight_limit - content_weight_total;
         item.get_weight_total() <= free_weight
     }
 
@@ -155,6 +155,10 @@ impl Container {
         weight_total
     }
 
+    pub(crate) fn get_contents_weight_total(&self) -> i32 {
+        return  self.get_weight_total() - self.get_self_item().weight.clone();
+    }
+
     pub fn get_loot_value(&self) -> i32 {
         let mut loot_total = 0;
         for c in &self.contents {
@@ -177,7 +181,7 @@ impl Container {
     pub fn add(&mut self, container : Container) {
         match container.container_type {
            ContainerType::ITEM | ContainerType::OBJECT => {
-               let total_weight = self.get_weight_total();
+               let total_weight = self.get_contents_weight_total();
                let adding_weight_limit = container.weight_limit;
                let max_weight_limit = total_weight + adding_weight_limit;
 

@@ -92,6 +92,14 @@ pub fn build_player(name : String, position: Position) -> Character {
     return player;
 }
 
+pub fn build_character(name : String, position: Position, inventory: Container) -> Character {
+    let health = 100;
+    let colour = Colour::Red;
+    let character_details = build_default_character_details();
+    let player = Character { name, character_details, health, colour, position, inventory };
+    return player;
+}
+
 impl Character {
     pub fn get_name(&self) -> String {
         return self.name.clone();
