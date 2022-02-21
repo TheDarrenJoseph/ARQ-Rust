@@ -111,3 +111,204 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use std::collections::HashMap;
+    use tui::backend::TestBackend;
+    use std::collections::HashSet;
+    use termion::input::TermRead;
+    use tui::text::Text;
+    use tui::layout::Rect;
+    use tui::buffer::{Buffer, Cell};
+    use tui::widgets::Widget;
+
+    use crate::ui;
+    use crate::terminal;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, ContainerType, Container};
+    use crate::map::objects::items;
+    use crate::menu;
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column, ContainerViewInputResult};
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui::{UI, build_ui};
+    use crate::list_selection::ListSelection;
+    use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::map::tile::{Colour, Tile};
+    use crate::engine::command::inventory_command::{InventoryCommand, handle_callback};
+    use crate::engine::level::Level;
+    use crate::character::build_player;
+    use crate::map::position::{Position, build_square_area};
+
+    fn build_test_container() -> Container {
+        let id = Uuid::new_v4();
+        let mut container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container_self_item = container.get_self_item();
+        assert_eq!(id, container_self_item.get_id());
+        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!('X', container_self_item.symbol);
+        assert_eq!(Colour::White, container_self_item.colour);
+        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1, container_self_item.value);
+
+        for i in 1..=4 {
+            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            container.add_item(test_item);
+        }
+
+        assert_eq!(ContainerType::OBJECT, container.container_type);
+        assert_eq!(100, container.get_weight_limit());
+        let contents = container.get_contents();
+        assert_eq!(4, contents.len());
+        container
+    }
+
+    fn build_test_level(area_container: Container) -> Level {
+        let tile_library = crate::map::tile::build_library();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
+        let map_pos = Position { x: 0, y: 0 };
+        let map_area = build_square_area(map_pos, 3);
+
+        assert_eq!(0, area_container.get_contents().len());
+        let mut area_containers = HashMap::new();
+        area_containers.insert(map_pos.clone(), area_container);
+        let map = crate::map::Map {
+            area: map_area,
+            tiles : vec![
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+                vec![ wall.clone(), rom.clone(), wall.clone() ],
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+            ],
+            rooms: Vec::new(),
+            containers: area_containers
+        };
+
+        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        return  Level { map: Some(map) , characters: vec![player] };
+    }
+
+    #[test]
+    fn test_drop_callback() {
+        // GIVEN a valid map with an area container to drop items into
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let mut level = build_test_level(area_container);
+        let mut container = build_test_container();
+        let mut ui = ui::build_ui();
+
+        let mut terminal_manager: &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut command = InventoryCommand { level: &mut level, ui: &mut ui, terminal_manager: &mut terminal_manager };
+
+        // WHEN we call to handle a drop callback with some of the items in the container
+        let mut selected_container_items = Vec::new();
+        for i in 0..=1 {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(2, selected_container_items.len());
+        let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
+        let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
+        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+
+        // THEN we expect a DROP_ITEMS returned with 0 un-dropped items
+        match undropped {
+            ContainerViewInputResult::DROP_ITEMS(u) => {
+                assert_eq!(0, u.len());
+            },
+            _ => {
+                assert!(false);
+            }
+        }
+
+        // AND we expect the area container to contain the 2 items dropped
+        let updated_container = level.map.unwrap().get_container(Position { x: 0, y: 0 }).unwrap().clone();
+        let updated_container_contents = updated_container.get_contents();
+        assert_eq!(2,updated_container_contents.len());
+        assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
+        assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
+    }
+
+    #[test]
+    fn test_drop_callback_too_many_items() {
+        // GIVEN a valid map with an area container to drop items into
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let mut level = build_test_level(area_container);
+        let mut container = build_test_container();
+        let mut ui = ui::build_ui();
+
+        let mut terminal_manager: &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut command = InventoryCommand { level: &mut level, ui: &mut ui, terminal_manager: &mut terminal_manager };
+
+        // WHEN we call to handle a drop callback with too many items to fit in the current area container (3 with space for 2)
+        let mut selected_container_items = Vec::new();
+        for i in 0..=2 {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(3, selected_container_items.len());
+        let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
+        let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
+        let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
+        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+
+        // THEN we expect a DROP_ITEMS returned with 1 un-dropped items
+        match undropped {
+            ContainerViewInputResult::DROP_ITEMS(u) => {
+                assert_eq!(1, u.len());
+                assert_eq!(chosen_item_3, *u.get(0).unwrap());
+            },
+            _ => {
+                assert!(false);
+            }
+        }
+
+        // AND we expect the area container to contain the first 2 items dropped
+        let updated_container = level.map.unwrap().get_container(Position { x: 0, y: 0 }).unwrap().clone();
+        let updated_container_contents = updated_container.get_contents();
+        assert_eq!(2,updated_container_contents.len());
+        assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
+        assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
+    }
+
+    #[test]
+    fn test_drop_callback_zero_weightlimit() {
+        // GIVEN a valid map with an area container to drop items into (with a zero weightlimit)
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 0);
+        let mut level = build_test_level(area_container);
+        let mut container = build_test_container();
+        let mut ui = ui::build_ui();
+
+        let mut terminal_manager: &mut TerminalManager<TestBackend> = &mut terminal::terminal_manager::init_test().unwrap();
+        let mut command = InventoryCommand { level: &mut level, ui: &mut ui, terminal_manager: &mut terminal_manager };
+
+        // WHEN we call to handle a drop callback
+        let mut selected_container_items = Vec::new();
+        for i in 0..=1 {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(2, selected_container_items.len());
+        let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
+        let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
+        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+
+        // THEN we expect a DROP_ITEMS returned with 2 un-dropped items
+        match undropped {
+            ContainerViewInputResult::DROP_ITEMS(u) => {
+                assert_eq!(2, u.len());
+                assert_eq!(chosen_item_1, *u.get(0).unwrap());
+                assert_eq!(chosen_item_2, *u.get(1).unwrap());
+            },
+            _ => {
+                assert!(false);
+            }
+        }
+
+        // AND we expect the area container to contain nothing
+        let updated_container = level.map.unwrap().get_container(Position { x: 0, y: 0 }).unwrap().clone();
+        let updated_container_contents = updated_container.get_contents();
+        assert_eq!(0,updated_container_contents.len());
+    }
+
+}
