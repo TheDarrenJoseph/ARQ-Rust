@@ -38,8 +38,10 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
                 if let Some(container_item) = container.find_mut(&item) {
                     let inventory = player.get_inventory();
                     if inventory.can_fit_container_item(container_item) {
+                        log::info!("Taking item: {}", item.get_name());
                         player.get_inventory().add(container_item.clone());
                     } else {
+                        log::info!("Cannot take item: {}", item.get_name());
                         untaken.push(item);
                     }
 

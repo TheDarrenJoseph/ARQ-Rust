@@ -372,7 +372,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
             let page_count_area = Rect::new( window_area.width.clone() - page_count_text_length as u16 , window_area.y.clone() + window_area.height.clone() - 1, width, 1);
             frame.render_widget(page_count_paragraph, page_count_area);
 
-            let container_item_weight_total = self.container.get_weight_total();
+            let container_item_weight_total = self.container.get_contents_weight_total();
             let weight_limit = self.container.get_weight_limit();
             let weight_limit_text = format!("{}/{}Kg", container_item_weight_total, weight_limit);
             let weight_limit_text_length = weight_limit_text.len();

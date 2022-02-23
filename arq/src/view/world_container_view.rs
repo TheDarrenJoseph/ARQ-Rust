@@ -42,6 +42,14 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
         }
         items
     }
+
+    fn handle_callback_result(&mut self, result: Option<ContainerViewInputResult>) {
+        if let Some(r) = result {
+            if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+                topmost_view.handle_callback_result(r);
+            }
+        }
+    }
 }
 
 impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldContainerView<'_, B>  {
@@ -96,10 +104,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
             Key::Char('t') => {
                 let mut to_remove = self.clone_selected_container_items();
                 if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                    let view_container = &mut parent_view.container;
-                    view_container.remove_matching_items(to_remove);
                     let selected_container_items = parent_view.get_selected_items();
-                    parent_view.reset_selection();
                     let result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
                     self.trigger_callback(result);
                 }
@@ -138,7 +143,8 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for 
     }
 
     fn trigger_callback(&mut self, data: ContainerViewInputResult) {
-        (self.callback)(data);
+        let result = (self.callback)(data);
+        self.handle_callback_result(result);
     }
 }
 
