@@ -216,19 +216,28 @@ impl ContainerView {
         items
     }
 
+    fn retain_selected_items(&mut self, to_retain: Vec<Item>) {
+        let mut droppable_containers = self.clone_selected_container_items();
+        if !droppable_containers.is_empty() {
+            let view_container = &mut self.container;
+            for retainable in to_retain {
+                if let Some(pos) = droppable_containers.iter().position(|c| *c.get_self_item() == retainable) {
+                    droppable_containers.remove(pos);
+                }
+            }
+            view_container.remove_matching_items(droppable_containers);
+            self.reset_selection();
+        }
+    }
+
     pub fn handle_callback_result(&mut self, result: ContainerViewInputResult) {
         match result {
             ContainerViewInputResult::DROP_ITEMS(undropped) => {
-                let mut droppable_containers = self.clone_selected_container_items();
-                let view_container = &mut self.container;
-                for undropped_item in undropped {
-                    if let Some(pos) = droppable_containers.iter().position(|c| *c.get_self_item() == undropped_item) {
-                        droppable_containers.remove(pos);
-                    }
-                }
-                view_container.remove_matching_items(droppable_containers);
-                self.reset_selection();
+                self.retain_selected_items(undropped);
             },
+            ContainerViewInputResult::TAKE_ITEMS(untaken) => {
+                self.retain_selected_items(untaken);
+            }
             _ => {}
         }
     }
@@ -448,7 +457,7 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column};
+    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column, ContainerViewInputResult};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
@@ -666,5 +675,65 @@ mod tests {
         assert_eq!(2, bag_contents.len());
         assert_eq!("Test Item 1", bag_contents[0].get_self_item().get_name());
         assert_eq!("Test Item 2", bag_contents[1].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_handle_callback_result_drop() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view: ContainerView = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents_mut();
+        assert_eq!(4, contents.len());
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+        let retained_item = contents[1].get_self_item().clone();
+
+        // AND we've selected the entire first page
+        view.toggle_select();
+        view.page_down();
+        contents = &mut Vec::new();
+
+        // WHEN we call to handle a DROP_ITEMS callback with a retained item
+        let result = ContainerViewInputResult::DROP_ITEMS(vec![retained_item]);
+        view.handle_callback_result(result);
+        // THEN we expect only the retained item to remain in the view container
+        let mut contents = view.container.get_contents();
+        assert_eq!(1, contents.len());
+        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_handle_callback_result_take() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view: ContainerView = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents_mut();
+        assert_eq!(4, contents.len());
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+        let retained_item = contents[1].get_self_item().clone();
+
+        // AND we've selected the entire first page
+        view.toggle_select();
+        view.page_down();
+        contents = &mut Vec::new();
+
+        // WHEN we call to handle a DROP_ITEMS callback with a retained item
+        let result = ContainerViewInputResult::DROP_ITEMS(vec![retained_item]);
+        view.handle_callback_result(result);
+        // THEN we expect only the retained item to remain in the view container
+        let mut contents = view.container.get_contents();
+        assert_eq!(1, contents.len());
+        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
     }
 }

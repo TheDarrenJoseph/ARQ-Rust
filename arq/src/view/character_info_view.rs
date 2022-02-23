@@ -61,6 +61,17 @@ pub struct CharacterInfoViewFrameHandler {
 }
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
+    fn initialise(&mut self) {
+        let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
+        commands.insert(OPEN);
+        commands.insert(DROP);
+        let inventory_view = container_view::build_container_view( self.character.get_inventory().clone(), commands);
+        self.frame_handler.container_views = vec!(inventory_view);
+
+        let mut character_view = CharacterView { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
+        self.frame_handler.character_view = Some(character_view);
+    }
+
     // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), std::io::Error>  {
         let mut ui = &mut self.ui;
@@ -97,7 +108,6 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         }
     }
 
-
     fn handle_callback_result(&mut self, result: Option<ContainerViewInputResult>) {
         if let Some(r) = result {
             let mut container_views = &mut self.frame_handler.container_views;
@@ -126,15 +136,7 @@ struct CharacterViewInputResult {
 
 impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterInfoView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
-        let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
-        commands.insert(OPEN);
-        commands.insert(DROP);
-        let inventory_view = container_view::build_container_view( self.character.get_inventory().clone(), commands);
-        self.frame_handler.container_views = vec!(inventory_view);
-
-        let mut character_view = CharacterView { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
-        self.frame_handler.character_view = Some(character_view);
-
+        self.initialise();
         self.terminal_manager.terminal.clear();
         self.draw(None);
         while !self.handle_input(None).unwrap() {
@@ -249,7 +251,6 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
         let tab_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_size.width - 2, frame_size.height - 2);
         frame.render_widget(tabs, tab_area);
 
-
         let mut character = data.data.character;
         match self.tab_choice {
             TabChoice::INVENTORY => {
@@ -269,5 +270,84 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use std::collections::HashMap;
+
+    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::tile::{Colour, Tile};
+    use crate::map::objects::items;
+    use crate::character::{Character, build_default_character_details, build_character};
+    use crate::engine::level::Level;
+    use crate::map::position::{build_square_area, Position};
+    use crate::terminal::terminal_manager;
+    use crate::ui::build_ui;
+    use crate::view::framehandler::container_view::ContainerViewInputResult;
+
+    fn build_test_container() -> Container {
+        let id = Uuid::new_v4();
+        let mut container = build(id, "Test Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container_self_item = container.get_self_item();
+        assert_eq!(id, container_self_item.get_id());
+        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!('X', container_self_item.symbol);
+        assert_eq!(Colour::White, container_self_item.colour);
+        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1, container_self_item.value);
+
+        for i in 1..=4 {
+            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            container.add_item(test_item);
+        }
+
+        assert_eq!(ContainerType::OBJECT, container.container_type);
+        assert_eq!(100, container.get_weight_limit());
+        let contents = container.get_contents();
+        assert_eq!(4, contents.len());
+        container
+    }
+
+    fn build_test_level(player: Character) -> Level {
+        let tile_library = crate::map::tile::build_library();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
+        let map_pos = Position { x: 0, y: 0 };
+        let map_area = build_square_area(map_pos, 3);
+
+        let map = crate::map::Map {
+            area: map_area,
+            tiles: vec![
+                vec![wall.clone(), wall.clone(), wall.clone()],
+                vec![wall.clone(), rom.clone(), wall.clone()],
+                vec![wall.clone(), wall.clone(), wall.clone()],
+            ],
+            rooms: Vec::new(),
+            containers: HashMap::new()
+        };
+
+        return Level { map: Some(map), characters: vec![player] };
+    }
+
+    #[test]
+    fn test_initialise() {
+        // GIVEN a valid character info view for a player's inventory
+        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
+        let character_details = build_default_character_details();
+        let mut player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let mut level = build_test_level(player);
+
+        let mut ui = build_ui();
+        let mut terminal_manager = terminal_manager::init_test().unwrap();
+        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
+        let mut character_info_view = CharacterInfoView { character: level.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
+
+        // WHEN we call to initialise
+        // THEN we expect it to complete successfully
+        character_info_view.initialise();
     }
 }

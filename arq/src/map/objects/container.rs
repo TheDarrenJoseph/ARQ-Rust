@@ -36,6 +36,10 @@ impl Container {
         &self.contents
     }
 
+    pub fn get_contents_mut(&mut self) -> &mut Vec<Container> {
+        &mut self.contents
+    }
+
     pub fn get_item_count(&self) -> usize {
         let mut item_count = 0;
         match self.container_type {
