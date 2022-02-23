@@ -15,6 +15,7 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
 use crate::view::framehandler::container_view::ContainerViewCommand::DROP;
+use crate::view::framehandler::container_view::ContainerViewInputResult::DROP_ITEMS;
 
 pub struct ContainerView {
     pub container : Container,
@@ -214,6 +215,23 @@ impl ContainerView {
         }
         items
     }
+
+    pub fn handle_callback_result(&mut self, result: ContainerViewInputResult) {
+        match result {
+            ContainerViewInputResult::DROP_ITEMS(undropped) => {
+                let mut droppable_containers = self.clone_selected_container_items();
+                let view_container = &mut self.container;
+                for undropped_item in undropped {
+                    if let Some(pos) = droppable_containers.iter().position(|c| *c.get_self_item() == undropped_item) {
+                        droppable_containers.remove(pos);
+                    }
+                }
+                view_container.remove_matching_items(droppable_containers);
+                self.reset_selection();
+            },
+            _ => {}
+        }
+    }
 }
 
 pub struct Column {
@@ -367,11 +385,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
             match key {
                 Key::Char('d') => {
                     if self.commands.contains(&DROP) {
-                        let to_drop = self.clone_selected_container_items();
-                        let view_container = &mut self.container;
-                        view_container.remove_matching_items(to_drop);
                         let selected_container_items = self.get_selected_items();
-                        self.reset_selection();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
                             view_specific_result: Some(ContainerViewInputResult::DROP_ITEMS(selected_container_items))

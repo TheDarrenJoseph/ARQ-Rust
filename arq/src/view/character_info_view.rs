@@ -27,6 +27,7 @@ use crate::widget::number_widget::{build_number_input, build_number_input_with_v
 use crate::widget::text_widget::build_text_input;
 use crate::view::framehandler::container_view::ContainerViewCommand::{OPEN, DROP};
 use crate::view::callback::Callback;
+use crate::view::framehandler::container_view::ContainerViewInputResult::DROP_ITEMS;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -94,7 +95,16 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                 }
             }
         }
+    }
 
+
+    fn handle_callback_result(&mut self, result: Option<ContainerViewInputResult>) {
+        if let Some(r) = result {
+            let mut container_views = &mut self.frame_handler.container_views;
+            if let Some(topmost_view) = container_views.last_mut() {
+                topmost_view.handle_callback_result(r);
+            }
+        }
     }
 }
 
@@ -103,8 +113,9 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for 
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) -> Option<ContainerViewInputResult> {
-        (self.callback)(data)
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+        let result = (self.callback)(data);
+        self.handle_callback_result(result);
     }
 }
 

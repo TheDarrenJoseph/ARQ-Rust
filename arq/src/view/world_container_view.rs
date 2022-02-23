@@ -137,8 +137,8 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for 
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) -> Option<ContainerViewInputResult> {
-        (self.callback)(data)
+    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+        (self.callback)(data);
     }
 }
 

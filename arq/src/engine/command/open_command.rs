@@ -122,17 +122,23 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                         log::info!("Found room container.");
                         target_position = Some(p.clone());
                         to_open = Some(c.clone());
-                    } else if let Some(c) = map.containers.get(&p) {
+                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                        log::info!("Player opening door.");
+                        self.ui.console_print("There's a door here.".to_string());
+                        // TODO encapsulate view components / refactor
+                    } else {
+                        self.ui.console_print("There's nothing here to open.".to_string());
+                        // TODO encapsulate view components / refactor
+                    }
+                }
+
+                if let None = to_open  {
+                    if let Some(c) = map.containers.get(&p) {
                         if c.get_item_count() > 0 {
                             log::info!("Found map container.");
                             target_position = Some(p.clone());
                             to_open = Some(c.clone());
                         }
-                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
-                        log::info!("Player opening door.");
-                        self.ui.console_print("There's a door here.".to_string());
-                        // TODO encapsulate view components / refactor
-                        self.re_render();
                     } else {
                         self.ui.console_print("There's nothing here to open.".to_string());
                         // TODO encapsulate view components / refactor
@@ -142,6 +148,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             }
 
             if let Some(c) = to_open {
+                self.re_render();
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_item_count());
                 updated_container = Some(self.open_container(&c));
             }
