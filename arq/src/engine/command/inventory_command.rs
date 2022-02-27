@@ -38,10 +38,10 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
                         if let Some(container_item) = container.find_mut(&item) {
                             let dropping_container_item = container_item.clone();
                             if pos_container.can_fit_container_item(&dropping_container_item) {
-                                log::info!("Dropping item here: {}", item.get_name());
+                                log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
                                 pos_container.add(dropping_container_item)
                             } else {
-                                log::info!("Cannot fit item here: {}", item.get_name());
+                                log::info!("Cannot fit item: {}  into: {}", item.get_name(), pos_container.get_self_item().get_name());
                                 undropped.push(item);
                             }
                         }
