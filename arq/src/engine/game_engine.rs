@@ -14,8 +14,8 @@ use crate::menu;
 use crate::menu::{Selection};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
 use crate::view::{View};
-use crate::view::map_view::MapView;
-use crate::view::framehandler::character_view::{CharacterView, ViewMode};
+use crate::view::map::MapView;
+use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::map::map_generator::build_generator;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::map::position::{Position, build_rectangular_area};
@@ -25,7 +25,7 @@ use crate::map::objects::container;
 use crate::map::objects::container::{ContainerType};
 use crate::map::objects::items;
 use crate::map::position::Side;
-use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::engine::level::Level;
 use crate::engine::command::input_mapping;
 use crate::engine::command::open_command::OpenCommand;
@@ -175,7 +175,7 @@ impl <B : Backend> GameEngine<B> {
 
     fn initialise_characters(&mut self) {
         let mut characters = self.build_characters();
-        let mut character_view = CharacterView { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
+        let mut character_view = CharacterFrameHandler { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
         // Being capture of a new character
         /**
         let mut character_creation_result = InputResult { generic_input_result:
@@ -376,9 +376,9 @@ mod tests {
     use crate::menu::{Selection};
     use crate::ui::{SettingsMenuChoice, StartMenuChoice};
     use crate::view::View;
-    use crate::view::map_view::MapView;
-    use crate::view::framehandler::character_view::{CharacterView, ViewMode};
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view};
+    use crate::view::map::MapView;
+    use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
+    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view};
     use crate::map::map_generator::build_generator;
     use crate::map::Map;
     use crate::terminal::terminal_manager::TerminalManager;

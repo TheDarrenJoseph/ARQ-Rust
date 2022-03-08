@@ -2,11 +2,11 @@ use std::io;
 use termion::event::Key;
 use termion::input::TermRead;
 
-use crate::view::framehandler::container_view;
+use crate::view::framehandler::container;
 use crate::engine::command::command::Command;
-use crate::view::world_container_view::{WorldContainerViewFrameHandler, WorldContainerView};
-use crate::view::framehandler::container_view::ContainerViewInputResult;
-use crate::view::framehandler::container_view::ContainerViewInputResult::TAKE_ITEMS;
+use crate::view::world_container::{WorldContainerViewFrameHandler, WorldContainerView};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::TAKE_ITEMS;
 use crate::map::position::Position;
 use crate::view::callback::Callback;
 use crate::view::View;

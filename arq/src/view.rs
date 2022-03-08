@@ -3,9 +3,9 @@ use std::io;
 
 pub mod framehandler;
 pub mod callback;
-pub mod character_info_view;
-pub mod map_view;
-pub mod world_container_view;
+pub mod character_info;
+pub mod map;
+pub mod world_container;
 use termion::event::Key;
 use termion::input::TermRead;
 
@@ -13,6 +13,8 @@ use crate::map::position::{Area, Position, build_rectangular_area};
 use tui::Frame;
 use tui::layout::Rect;
 
+
+// A View begins an I/O loop (upon calling begin()) while rendering
 pub trait View<'b, COM: 'b>  {
     fn begin(&mut self) -> Result<bool, Error>;
     fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;

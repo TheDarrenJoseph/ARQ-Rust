@@ -26,18 +26,18 @@ pub enum ViewMode {
     VIEW
 }
 
-pub struct CharacterView {
+pub struct CharacterFrameHandler {
     pub character : Character,
     pub selected_widget: Option<i8>,
     pub widgets: Vec<Widget>,
     pub view_mode : ViewMode
 }
 
-pub enum CharacterViewInputResult {
+pub enum CharacterFrameHandlerInputResult {
     NONE
 }
 
-impl CharacterView {
+impl CharacterFrameHandler {
 
     fn previous_widget(&mut self) {
         let selected_widget = self.selected_widget.unwrap();
@@ -278,7 +278,7 @@ impl CharacterView {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterView {
+impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterFrameHandler {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
@@ -291,8 +291,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterView {
     }
 }
 
-impl InputHandler<CharacterViewInputResult> for CharacterView {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterViewInputResult>, Error> {
+impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterFrameHandlerInputResult>, Error> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets;
         let mut selected_widget = None;

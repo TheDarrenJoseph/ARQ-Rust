@@ -7,12 +7,12 @@ use std::collections::HashSet;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
 use crate::view::View;
-use crate::view::framehandler::container_view::{ContainerViewInputResult, ContainerViewCommand};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::view::framehandler::container_view::ContainerViewInputResult::{DROP_ITEMS, TAKE_ITEMS};
-use crate::view::framehandler::container_view::ContainerViewCommand::{OPEN, TAKE, DROP};
-use crate::view::character_info_view::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DROP_ITEMS, TAKE_ITEMS};
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
+use crate::view::character_info::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
 use crate::engine::command::command::Command;
 use crate::view::callback::Callback;
 
@@ -22,8 +22,8 @@ pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
-fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerViewInputResult) -> Option<ContainerViewInputResult> {
-    let input_result : ContainerViewInputResult = data;
+fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+    let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         DROP_ITEMS(items) => {
             let position = level.get_player_mut().get_position().clone();
@@ -71,7 +71,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let mut inventory_container = c.clone();
         let mut view_container = c.clone();
         let mut callback_container: Container = c.clone();
-        let mut commands: HashSet<ContainerViewCommand> = HashSet::new();
+        let mut commands: HashSet<ContainerFrameHandlerCommand> = HashSet::new();
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
@@ -130,11 +130,11 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column, ContainerViewInputResult};
+    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
-    use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
     use crate::map::tile::{Colour, Tile};
     use crate::engine::command::inventory_command::{InventoryCommand, handle_callback};
     use crate::engine::level::Level;
@@ -204,12 +204,12 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
         let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 0 un-dropped items
         match undropped {
-            ContainerViewInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
                 assert_eq!(0, u.len());
             },
             _ => {
@@ -241,12 +241,12 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
-        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
         let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 1 un-dropped items
         match undropped {
-            ContainerViewInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
                 assert_eq!(1, u.len());
                 assert_eq!(chosen_item_3, *u.get(0).unwrap());
             },
@@ -278,12 +278,12 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerViewInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
         let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 2 un-dropped items
         match undropped {
-            ContainerViewInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
                 assert_eq!(2, u.len());
                 assert_eq!(chosen_item_1, *u.get(0).unwrap());
                 assert_eq!(chosen_item_2, *u.get(1).unwrap());

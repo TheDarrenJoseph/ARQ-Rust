@@ -13,12 +13,12 @@ use crate::terminal::colour_mapper;
 use crate::character::Character;
 use crate::view::{View, InputHandler, InputResult, GenericInputResult};
 use crate::map::position::Area;
-use crate::view::framehandler::container_view::ContainerViewInputResult;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 use crate::widget::console_input_widget::{build_console_input, ConsoleInputState};
 use crate::widget::WidgetType;
 
 
-pub struct ConsoleView {
+pub struct ConsoleFrameHandler {
     pub buffer: ConsoleBuffer
 }
 
@@ -26,10 +26,10 @@ pub struct ConsoleBuffer {
     pub content : String
 }
 
-impl ConsoleView {
+impl ConsoleFrameHandler {
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleView {
+impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrameHandler {
     fn handle_frame(&mut self, frame: &mut Frame<B>, mut data: FrameData<ConsoleBuffer>) {
         let frame_size : Rect = data.get_frame_size().clone();
         let window_block = Block::default()
@@ -49,7 +49,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleView 
     }
 }
 
-impl InputHandler<String> for ConsoleView {
+impl InputHandler<String> for ConsoleFrameHandler {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<String>, Error> {
         let continue_result = InputResult {
             generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },

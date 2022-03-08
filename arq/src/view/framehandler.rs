@@ -1,3 +1,3 @@
-pub mod character_view;
-pub mod console_view;
-pub mod container_view;
+pub mod character;
+pub mod console;
+pub mod container;

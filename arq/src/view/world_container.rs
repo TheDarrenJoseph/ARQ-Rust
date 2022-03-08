@@ -5,9 +5,9 @@ use std::collections::HashMap;
 
 use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::{View, resolve_input, GenericInputResult};
-use crate::view::framehandler::container_view;
+use crate::view::framehandler::container;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::framehandler::container_view::{ContainerView, ContainerViewInputResult};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
 use crate::map::position::Area;
 use crate::view::InputHandler;
 use crate::map::objects::container::Container;
@@ -19,14 +19,14 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: WorldContainerViewFrameHandler,
     pub container : Container,
-    pub callback : Box<dyn FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'a>
+    pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
 }
 
 pub struct WorldContainerViewFrameData {
 }
 
 pub struct WorldContainerViewFrameHandler {
-    pub container_views : Vec<ContainerView>
+    pub container_views : Vec<ContainerFrameHandler>
 }
 
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
@@ -43,7 +43,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
         items
     }
 
-    fn handle_callback_result(&mut self, result: Option<ContainerViewInputResult>) {
+    fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
             if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                 topmost_view.handle_callback_result(r);
@@ -52,7 +52,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     }
 }
 
-impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldContainerView<'_, B>  {
+impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
         self.terminal_manager.terminal.clear();
         self.draw(None);
@@ -105,7 +105,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                 let mut to_remove = self.clone_selected_container_items();
                 if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
                     let selected_container_items = parent_view.get_selected_items();
-                    let result = ContainerViewInputResult::TAKE_ITEMS(selected_container_items);
+                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
                     self.trigger_callback(result);
                 }
             },
@@ -118,7 +118,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
                     if let Some(topmost_view) = container_views.last_mut() {
                         let container_view_input_result = topmost_view.handle_input(Some(key));
                         let result = container_view_input_result.unwrap();
-                        if let Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
+                        if let Some(ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
                             container_views.push(stacked_view);
                         }
                         generic_input_result = Some(result.generic_input_result);
@@ -137,12 +137,12 @@ impl <B : tui::backend::Backend> View<'_, ContainerViewInputResult> for WorldCon
     }
 }
 
-impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for WorldContainerView<'c, B> {
-    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'c>) {
+impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for WorldContainerView<'c, B> {
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'c>) {
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+    fn trigger_callback(&mut self, data: ContainerFrameHandlerInputResult) {
         let result = (self.callback)(data);
         self.handle_callback_result(result);
     }

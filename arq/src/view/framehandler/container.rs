@@ -14,29 +14,29 @@ use crate::view::{resolve_input, InputHandler, InputResult, GenericInputResult};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
-use crate::view::framehandler::container_view::ContainerViewCommand::DROP;
-use crate::view::framehandler::container_view::ContainerViewInputResult::DROP_ITEMS;
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DROP_ITEMS;
 
-pub struct ContainerView {
+pub struct ContainerFrameHandler {
     pub container : Container,
     columns : Vec<Column>,
     row_count: i32,
     pub item_list_selection : ItemListSelection,
-    commands : HashSet<ContainerViewCommand>
+    commands : HashSet<ContainerFrameHandlerCommand>
 }
 
 #[derive(Eq, Hash, PartialEq)]
 #[derive(Debug)]
 #[derive(Copy, Clone)]
-pub enum ContainerViewCommand {
+pub enum ContainerFrameHandlerCommand {
     OPEN,
     TAKE,
     DROP
 }
 
-pub enum ContainerViewInputResult {
+pub enum ContainerFrameHandlerInputResult {
     NONE,
-    OPEN_CONTAINER_VIEW(ContainerView),
+    OPEN_CONTAINER_VIEW(ContainerFrameHandler),
     TAKE_ITEMS(Vec<Item>),
     DROP_ITEMS(Vec<Item>)
 }
@@ -49,10 +49,10 @@ fn build_default_columns() -> Vec<Column> {
     ]
 }
 
-pub fn build_default_container_view(container: Container) -> ContainerView {
+pub fn build_default_container_view(container: Container) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let mut items = container.to_cloned_item_list();
-    ContainerView {
+    ContainerFrameHandler {
         container: container.clone(),
         columns,
         row_count: 1,
@@ -61,10 +61,10 @@ pub fn build_default_container_view(container: Container) -> ContainerView {
     }
 }
 
-pub fn build_container_view(container: Container, commands : HashSet<ContainerViewCommand>) -> ContainerView {
+pub fn build_container_view(container: Container, commands : HashSet<ContainerFrameHandlerCommand>) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let mut items = container.to_cloned_item_list();
-    ContainerView {
+    ContainerFrameHandler {
         container: container.clone(),
         columns,
         row_count: 1,
@@ -73,7 +73,7 @@ pub fn build_container_view(container: Container, commands : HashSet<ContainerVi
     }
 }
 
-impl ContainerView {
+impl ContainerFrameHandler {
 
     pub fn cancel_selection(&mut self) {
         self.item_list_selection.cancel_selection();
@@ -159,7 +159,7 @@ impl ContainerView {
         self.item_list_selection.page_down();
     }
 
-    fn open_focused(&mut self) -> Option<ContainerView> {
+    fn open_focused(&mut self) -> Option<ContainerFrameHandler> {
         if !self.item_list_selection.is_selecting() {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
@@ -253,12 +253,12 @@ impl ContainerView {
         }
     }
 
-    pub fn handle_callback_result(&mut self, result: ContainerViewInputResult) {
+    pub fn handle_callback_result(&mut self, result: ContainerFrameHandlerInputResult) {
         match result {
-            ContainerViewInputResult::DROP_ITEMS(undropped) => {
+            ContainerFrameHandlerInputResult::DROP_ITEMS(undropped) => {
                 self.retain_selected_items(undropped);
             },
-            ContainerViewInputResult::TAKE_ITEMS(untaken) => {
+            ContainerFrameHandlerInputResult::TAKE_ITEMS(untaken) => {
                 self.retain_selected_items(untaken);
             }
             _ => {}
@@ -295,19 +295,19 @@ fn build_column_text(column: &Column, item: &Item) -> String {
     }
 }
 
-fn build_command_usage_descriptions(commands: &HashSet<ContainerViewCommand>) -> String {
+fn build_command_usage_descriptions(commands: &HashSet<ContainerFrameHandlerCommand>) -> String {
     let mut description = String::from("");
     let len = commands.len();
     let mut i = 0;
     for c in commands.iter() {
         match c {
-            ContainerViewCommand::OPEN => {
+            ContainerFrameHandlerCommand::OPEN => {
                 description += "o - open";
             },
-            ContainerViewCommand::TAKE => {
+            ContainerFrameHandlerCommand::TAKE => {
                 description += "t - take";
             },
-            ContainerViewCommand::DROP => {
+            ContainerFrameHandlerCommand::DROP => {
                 description += "d - drop";
             }
         }
@@ -327,7 +327,7 @@ fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
     paragraph
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerView {
+impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
         let frame_size = data.get_frame_size().clone();
@@ -394,11 +394,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerVi
     }
 }
 
-impl InputHandler<ContainerViewInputResult> for ContainerView {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerViewInputResult>, Error> {
+impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
         let default_done_result = Ok(InputResult {
             generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
-            view_specific_result: Some(ContainerViewInputResult::NONE)});
+            view_specific_result: Some(ContainerFrameHandlerInputResult::NONE)});
         loop {
             let key = resolve_input(input);
             match key {
@@ -407,7 +407,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerViewInputResult::DROP_ITEMS(selected_container_items))
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items))
                         });
                     }
                 },
@@ -420,7 +420,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
                     if let Some(stacked_view) = self.open_focused() {
                         let new_view_result = Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view))
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view))
                         });
                         return new_view_result;
                     }
@@ -449,7 +449,7 @@ impl InputHandler<ContainerViewInputResult> for ContainerView {
             }
             let continue_result = Ok(InputResult {
                 generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
-                view_specific_result: Some(ContainerViewInputResult::NONE)});
+                view_specific_result: Some(ContainerFrameHandlerInputResult::NONE)});
             return continue_result;
         }
     }
@@ -467,11 +467,11 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container_view::{ContainerView, build_container_view, build_default_container_view, Column, ContainerViewInputResult};
+    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
-    use crate::view::framehandler::console_view::{ConsoleView, ConsoleBuffer};
+    use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
     use crate::map::tile::Colour;
     use termion::input::TermRead;
     use tui::text::Text;
@@ -506,7 +506,7 @@ mod tests {
     fn test_build_headings() {
         // GIVEN a view with a series of columns configured
         let mut container = build_test_container();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.columns = vec![
             Column {name : "NAME".to_string(), size: 12},
             Column {name : "WEIGHT (Kg)".to_string(), size: 12},
@@ -531,7 +531,7 @@ mod tests {
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
         // WHEN we call to build a new view
-        let view : ContainerView = build_default_container_view(container);
+        let view : ContainerFrameHandler = build_default_container_view(container);
         // THEN we expect to reach this point succesfully
     }
 
@@ -539,7 +539,7 @@ mod tests {
     fn test_move_focus_down() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -555,7 +555,7 @@ mod tests {
     fn test_page_down() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -573,7 +573,7 @@ mod tests {
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
         let settings_menu = menu::build_settings_menu();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -594,7 +594,7 @@ mod tests {
     fn test_page_up() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -613,7 +613,7 @@ mod tests {
     fn test_move_items() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
@@ -653,7 +653,7 @@ mod tests {
         // With a main container including items and another container
         let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
         container.add(bag);
-        let mut view : ContainerView = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 5;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents();
@@ -691,7 +691,7 @@ mod tests {
     fn test_handle_callback_result_drop() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view: ContainerView = build_default_container_view(container);
+        let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents_mut();
@@ -709,7 +709,7 @@ mod tests {
         contents = &mut Vec::new();
 
         // WHEN we call to handle a DROP_ITEMS callback with a retained item
-        let result = ContainerViewInputResult::DROP_ITEMS(vec![retained_item]);
+        let result = ContainerFrameHandlerInputResult::DROP_ITEMS(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
         let mut contents = view.container.get_contents();
@@ -721,7 +721,7 @@ mod tests {
     fn test_handle_callback_result_take() {
         // GIVEN a valid view
         let mut container = build_test_container();
-        let mut view: ContainerView = build_default_container_view(container);
+        let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let mut contents = view.container.get_contents_mut();
@@ -739,7 +739,7 @@ mod tests {
         contents = &mut Vec::new();
 
         // WHEN we call to handle a DROP_ITEMS callback with a retained item
-        let result = ContainerViewInputResult::DROP_ITEMS(vec![retained_item]);
+        let result = ContainerFrameHandlerInputResult::DROP_ITEMS(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
         let mut contents = view.container.get_contents();

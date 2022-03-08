@@ -15,9 +15,9 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::{FrameData, FrameHandler, UI};
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
-use crate::view::framehandler::character_view::{CharacterView, ViewMode};
-use crate::view::framehandler::container_view;
-use crate::view::framehandler::container_view::{build_container_view, ContainerView, ContainerViewInputResult, ContainerViewCommand};
+use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
+use crate::view::framehandler::container;
+use crate::view::framehandler::container::{build_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::view::InputHandler;
 use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
@@ -25,9 +25,9 @@ use crate::widget::character_stat_line::{build_character_stat_line, CharacterSta
 use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::text_widget::build_text_input;
-use crate::view::framehandler::container_view::ContainerViewCommand::{OPEN, DROP};
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, DROP};
 use crate::view::callback::Callback;
-use crate::view::framehandler::container_view::ContainerViewInputResult::DROP_ITEMS;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DROP_ITEMS;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -51,24 +51,24 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: CharacterInfoViewFrameHandler,
-    pub callback : Box<dyn FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'a>
+    pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
 }
 
 pub struct CharacterInfoViewFrameHandler {
     pub tab_choice : TabChoice,
-    pub container_views : Vec<ContainerView>,
-    pub character_view : Option<CharacterView>
+    pub container_views : Vec<ContainerFrameHandler>,
+    pub character_view : Option<CharacterFrameHandler>
 }
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     fn initialise(&mut self) {
-        let mut commands : HashSet<ContainerViewCommand> = HashSet::new();
+        let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(DROP);
-        let inventory_view = container_view::build_container_view( self.character.get_inventory().clone(), commands);
+        let inventory_view = container::build_container_view(self.character.get_inventory().clone(), commands);
         self.frame_handler.container_views = vec!(inventory_view);
 
-        let mut character_view = CharacterView { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
+        let mut character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
     }
 
@@ -108,7 +108,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         }
     }
 
-    fn handle_callback_result(&mut self, result: Option<ContainerViewInputResult>) {
+    fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
             let mut container_views = &mut self.frame_handler.container_views;
             if let Some(topmost_view) = container_views.last_mut() {
@@ -118,12 +118,12 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 }
 
-impl <'c, B : tui::backend::Backend> Callback<'c, ContainerViewInputResult> for CharacterInfoView<'c, B> {
-    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerViewInputResult) -> Option<ContainerViewInputResult> + 'c>) {
+impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
+    fn set_callback(&mut self, callback: Box<impl FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'c>) {
         self.callback = callback;
     }
 
-    fn trigger_callback(&mut self, data: ContainerViewInputResult) {
+    fn trigger_callback(&mut self, data: ContainerFrameHandlerInputResult) {
         let result = (self.callback)(data);
         self.handle_callback_result(result);
     }
@@ -203,10 +203,10 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                 let result = container_view_input_result.unwrap();
                                 if let Some(view_specific_result) = result.view_specific_result {
                                     match view_specific_result {
-                                        ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view) => {
+                                        ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view) => {
                                             container_views.push(stacked_view);
                                         },
-                                        ContainerViewInputResult::DROP_ITEMS(_) => {
+                                        ContainerFrameHandlerInputResult::DROP_ITEMS(_) => {
                                             self.trigger_callback(view_specific_result);
                                         },
                                         _ => {}
@@ -278,7 +278,7 @@ mod tests {
     use uuid::Uuid;
     use std::collections::HashMap;
 
-    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+    use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::tile::{Colour, Tile};
     use crate::map::objects::items;
@@ -287,7 +287,7 @@ mod tests {
     use crate::map::position::{build_square_area, Position};
     use crate::terminal::terminal_manager;
     use crate::ui::build_ui;
-    use crate::view::framehandler::container_view::ContainerViewInputResult;
+    use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
