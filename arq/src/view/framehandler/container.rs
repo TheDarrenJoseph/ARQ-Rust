@@ -192,7 +192,12 @@ impl ContainerFrameHandler {
                     } else {
                         // Move items to this location
                         self.container.remove_matching_items(selected_container_items.to_vec());
-                        self.container.insert(true_index as usize - selected_container_items.len(), selected_container_items.clone());
+                        let target_index =  if true_index as usize >= (selected_container_items.len() - 1) {
+                            true_index.clone() as usize - (selected_container_items.len() - 1)
+                        } else {
+                            true_index.clone() as usize
+                        };
+                        self.container.insert(target_index, selected_container_items.clone());
                     }
                     &mut self.item_list_selection.cancel_selection();
                     updated = true;
@@ -589,7 +594,6 @@ mod tests {
         assert_eq!(1, view.item_list_selection.get_true_index());
     }
 
-
     #[test]
     fn test_page_up() {
         // GIVEN a valid view
@@ -610,7 +614,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_items() {
+    fn test_move_items_bottom() {
         // GIVEN a valid view
         let mut container = build_test_container();
         let mut view : ContainerFrameHandler = build_default_container_view(container);
@@ -641,9 +645,165 @@ mod tests {
         let contents = view.container.get_contents();
         assert_eq!(4, contents.len());
         assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 1", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[3].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_move_items_top() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
         assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+
+        // AND we've started selecting items at index 2
+        view.move_down();
+        view.move_down();
+        view.toggle_select();
+        // AND we've selected the last 2 items
+        view.move_down();
+        view.toggle_select();
+
+        // WHEN we move to the top of the view and try to move the items
+        view.page_up();
+        view.move_selection();
+
+        // THEN we expect the focused index to remain at the top of the view
+        assert_eq!(0, view.item_list_selection.get_true_index());
+
+        // AND the chosen items will be moved to the top of the view
+        let contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 1", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[3].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_move_item_middle() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name()); // target
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+
+        // AND we've selected the first item
+        view.toggle_select();
+        view.toggle_select();
+
+        // WHEN we move down one place and try to move the item (index 1)
+        view.move_down();
+        view.move_selection();
+
+        // THEN we expect the focused index to remain at the top of the view
+        assert_eq!(0, view.item_list_selection.get_true_index());
+
+        // AND the chosen item will be moved to index 1
+        let contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_move_split_items() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
+
+        // AND we've selected the first and last item
+        view.toggle_select();
+        view.toggle_select();
+        view.page_down();
+        view.toggle_select();
+        view.toggle_select();
+
+        // WHEN we move down up one place and try to move the item (index 2)
+        view.move_up();
+        assert_eq!(2, view.item_list_selection.get_true_index());
+        view.move_selection();
+
+        // THEN we expect the focused index to remain at the top of the view
+        assert_eq!(0, view.item_list_selection.get_true_index());
+
+        // AND the chosen items will be moved to index 1
+        let contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[3].get_self_item().get_name());
+    }
+
+    #[test]
+    fn test_move_3_split_items() {
+        // GIVEN a valid view
+        let mut container = build_test_container();
+        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        view.item_list_selection.page_line_count = 4;
+        assert_eq!(0, view.item_list_selection.get_true_index());
+        let mut contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+
+        // with a series of items
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
+
+        // AND we've selected the first 2 and last item
+        view.toggle_select();
+        view.move_down();
+        view.toggle_select();
+        view.page_down();
+        view.toggle_select();
+        view.toggle_select();
+
+        // WHEN we move down up one place and try to move the item (index 2)
+        view.move_up();
+        assert_eq!(2, view.item_list_selection.get_true_index());
+        view.move_selection();
+
+        // THEN we expect the focused index to remain at the top of the view
+        assert_eq!(0, view.item_list_selection.get_true_index());
+
+        // AND the chosen items will be moved to index 1
+        let contents = view.container.get_contents();
+        assert_eq!(4, contents.len());
+        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
+        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
+        assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
+        assert_eq!("Test Item 3", contents[3].get_self_item().get_name());
     }
 
     #[test]
