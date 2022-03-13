@@ -17,7 +17,7 @@ use crate::view::callback::Callback;
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: WorldContainerViewFrameHandler,
+    pub frame_handlers: WorldContainerViewFrameHandlers,
     pub container : Container,
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
 }
@@ -25,14 +25,14 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
 pub struct WorldContainerViewFrameData {
 }
 
-pub struct WorldContainerViewFrameHandler {
-    pub container_views : Vec<ContainerFrameHandler>
+pub struct WorldContainerViewFrameHandlers {
+    pub frame_handlers: Vec<ContainerFrameHandler>
 }
 
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     fn clone_selected_container_items(&mut self) -> Vec<Container> {
         let mut items = Vec::new();
-        if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+        if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
             let selected_items = parent_view.get_selected_items();
             for item in selected_items {
                 if let Some(found) = parent_view.container.find(&item) {
@@ -45,7 +45,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
-            if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+            if let Some(topmost_view) = self.frame_handlers.frame_handlers.last_mut() {
                 topmost_view.handle_callback_result(r);
             }
         }
@@ -64,7 +64,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
 
 
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
-        let frame_handler = &mut self.frame_handler;
+        let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;
 
         self.terminal_manager.terminal.draw(|frame| {
@@ -81,13 +81,20 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
     fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
         let key = resolve_input(input);
         match key {
+            Key::Char('t') => {
+                if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
+                    let selected_container_items = parent_view.get_selected_items();
+                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
+                    self.trigger_callback(result);
+                }
+            },
             Key::Char('q') => {
                 // Drop the last container view and keep going
-                let container_views = &self.frame_handler.container_views;
+                let container_views = &self.frame_handlers.frame_handlers;
                 if container_views.len() > 1 {
-                    if let Some(closing_view) = self.frame_handler.container_views.pop() {
+                    if let Some(closing_view) = self.frame_handlers.frame_handlers.pop() {
                         let closing_container = closing_view.container;
-                        if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+                        if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
                             let parent_container = &mut parent_view.container;
                             if let Some(position) = parent_container.position(&closing_container) {
                                 parent_container.replace(position, closing_container);
@@ -96,23 +103,15 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                     }
                     return Ok(false)
                 } else if container_views.len() == 1 {
-                    let last_view = &mut self.frame_handler.container_views[0];
+                    let last_view = &mut self.frame_handlers.frame_handlers[0];
                     self.container = last_view.container.clone();
                 }
                 return Ok(true)
             },
-            Key::Char('t') => {
-                let mut to_remove = self.clone_selected_container_items();
-                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                    let selected_container_items = parent_view.get_selected_items();
-                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
-                    self.trigger_callback(result);
-                }
-            },
             // Passthrough anything not handled here into the sub framehandler
             _ => {
                 let mut generic_input_result : Option<GenericInputResult> = None;
-                let container_views = &mut self.frame_handler.container_views;
+                let container_views = &mut self.frame_handlers.frame_handlers;
                 let have_container_views = !container_views.is_empty();
                 if have_container_views {
                     if let Some(topmost_view) = container_views.last_mut() {
@@ -120,6 +119,8 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                         let result = container_view_input_result.unwrap();
                         if let Some(ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
                             container_views.push(stacked_view);
+                        } else if let Some(r) = result.view_specific_result {
+                            self.trigger_callback(r);
                         }
                         generic_input_result = Some(result.generic_input_result);
                     }
@@ -148,9 +149,9 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> for WorldContainerViewFrameHandler {
+impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> for WorldContainerViewFrameHandlers {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<WorldContainerViewFrameData>) {
-        if let Some(topmost_view) = self.container_views.last_mut() {
+        if let Some(topmost_view) = self.frame_handlers.last_mut() {
             let mut frame_inventory = topmost_view.container.clone();
             topmost_view.handle_frame(frame, FrameData { frame_size: data.frame_size, data: &mut frame_inventory });
         }

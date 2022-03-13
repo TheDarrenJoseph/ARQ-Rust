@@ -212,8 +212,6 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                         _ => {}
                                     }
                                 }
-                               //if let Some(ContainerViewInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
-                                //}
                                 generic_input_result = Some(result.generic_input_result);
                             }
                         }

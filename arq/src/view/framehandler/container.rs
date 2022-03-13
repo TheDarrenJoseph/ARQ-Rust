@@ -37,6 +37,13 @@ pub enum ContainerFrameHandlerCommand {
 pub enum ContainerFrameHandlerInputResult {
     NONE,
     OPEN_CONTAINER_VIEW(ContainerFrameHandler),
+    MOVE_ITEMS(
+        //Source container / Updated version
+        Container,
+        // Items to move / unmoved
+        Vec<Item>,
+        // Optional container target
+        Option<Container>),
     TAKE_ITEMS(Vec<Item>),
     DROP_ITEMS(Vec<Item>)
 }
@@ -75,7 +82,34 @@ pub fn build_container_view(container: Container, commands : HashSet<ContainerFr
 
 impl ContainerFrameHandler {
 
-    pub fn cancel_selection(&mut self) {
+    fn find_focused_container(&mut self) -> Option<Container> {
+        let list_selection = &self.item_list_selection;
+        if list_selection.is_selecting() {
+            let focused_item_result = list_selection.get_focused_item();
+            if let Some(focused_item) = focused_item_result {
+                // Make sure we've not focused any of the selected items
+                let selected_container_items = self.get_selected_containers();
+                let focused_items = selected_container_items.iter().find(|ci| ci.get_self_item().get_id() == focused_item.get_id());
+                if let None = focused_items {
+                    if focused_item.is_container() {
+                        if let Some(c) = self.container.find_mut(focused_item) {
+                            return Some(c.clone());
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn replace_focused_container(&mut self, updated: Container) {
+        if let Some(mut focused) = self.find_focused_container()
+        {
+            focused.replace_container(updated);
+        }
+    }
+
+        pub fn cancel_selection(&mut self) {
         self.item_list_selection.cancel_selection();
     }
 
@@ -172,37 +206,13 @@ impl ContainerFrameHandler {
         None
     }
 
-    fn move_selection(&mut self) {
+    fn move_selection_to_container(&mut self) {
+        // TODO trigger custom callback? MOVE_ITEMS(items, None : Option<Container>)
         let list_selection = &self.item_list_selection;
         let selected_container_items = &self.get_selected_containers();
         let mut updated = false;
         if list_selection.is_selecting() {
-            let focused_item_result = list_selection.get_focused_item();
-            let true_index = list_selection.get_true_index();
-            if let Some(focused_item) = focused_item_result {
-                // Make sure we've not focused any of the selected items
-                let focused_items = selected_container_items.iter().find(|ci| ci.get_self_item().get_id() == focused_item.get_id());
-                if let None = focused_items {
-                    if focused_item.is_container() {
-                        if let Some(focused_container) = self.container.find_mut(focused_item) {
-                            // Move items into the container
-                            focused_container.push(selected_container_items.clone());
-                            self.container.remove_matching_items(selected_container_items.to_vec());
-                        }
-                    } else {
-                        // Move items to this location
-                        self.container.remove_matching_items(selected_container_items.to_vec());
-                        let target_index =  if true_index as usize >= (selected_container_items.len() - 1) {
-                            true_index.clone() as usize - (selected_container_items.len() - 1)
-                        } else {
-                            true_index.clone() as usize
-                        };
-                        self.container.insert(target_index, selected_container_items.clone());
-                    }
-                    &mut self.item_list_selection.cancel_selection();
-                    updated = true;
-                }
-            }
+
         }
 
         if updated {
@@ -258,6 +268,7 @@ impl ContainerFrameHandler {
         }
     }
 
+    // Callbacks return info on how to update the handler models
     pub fn handle_callback_result(&mut self, result: ContainerFrameHandlerInputResult) {
         match result {
             ContainerFrameHandlerInputResult::DROP_ITEMS(undropped) => {
@@ -265,7 +276,15 @@ impl ContainerFrameHandler {
             },
             ContainerFrameHandlerInputResult::TAKE_ITEMS(untaken) => {
                 self.retain_selected_items(untaken);
-            }
+            },
+            ContainerFrameHandlerInputResult::MOVE_ITEMS(updated_container, unmoved, updated_target) => {
+                self.container = updated_container.clone();
+                // Remove selected items except for any untaken
+                self.retain_selected_items(unmoved);
+                self.replace_focused_container(updated_target.unwrap());
+                &mut self.item_list_selection.cancel_selection();
+                self.rebuild_selection(&updated_container);
+            },
             _ => {}
         }
     }
@@ -431,7 +450,15 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 },
                 Key::Char('m') => {
-                    self.move_selection();
+                    let from_container = self.container.clone();
+                    let selected_container_items = self.get_selected_items();
+                    let focused_container = self.find_focused_container();
+                    let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
+                    log::info!("Triggering MOVE_ITEMS of {} items into: {}", selected_container_items.len(), container_name);
+                    return Ok(InputResult {
+                        generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                        view_specific_result: Some(ContainerFrameHandlerInputResult::MOVE_ITEMS(from_container,selected_container_items, focused_container))
+                    });
                 },
                 Key::Char('\n') => {
                     self.toggle_select();

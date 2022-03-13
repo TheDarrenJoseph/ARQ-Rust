@@ -4,7 +4,7 @@ use termion::input::TermRead;
 
 use crate::view::framehandler::container;
 use crate::engine::command::command::Command;
-use crate::view::world_container::{WorldContainerViewFrameHandler, WorldContainerView};
+use crate::view::world_container::{WorldContainerViewFrameHandlers, WorldContainerView};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::TAKE_ITEMS;
 use crate::map::position::Position;

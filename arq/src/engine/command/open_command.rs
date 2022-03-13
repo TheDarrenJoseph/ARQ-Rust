@@ -6,9 +6,9 @@ use std::collections::HashSet;
 
 use crate::view::framehandler::container;
 use crate::engine::command::command::Command;
-use crate::view::world_container::{WorldContainerViewFrameHandler, WorldContainerView};
+use crate::view::world_container::{WorldContainerViewFrameHandlers, WorldContainerView};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{TAKE_ITEMS, DROP_ITEMS};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{TAKE_ITEMS, DROP_ITEMS, MOVE_ITEMS};
 use crate::map::position::Position;
 use crate::view::callback::Callback;
 use crate::view::View;
@@ -23,10 +23,10 @@ use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, T
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut ui::UI,
-    pub terminal_manager : &'a mut TerminalManager<B>,
+    pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback(level : &mut Level, position: Option<Position>, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TAKE_ITEMS(items) => {
@@ -41,13 +41,55 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
                         log::info!("Taking item: {}", item.get_name());
                         player.get_inventory().add(container_item.clone());
                     } else {
-                        log::info!("Cannot take item: {}", item.get_name());
                         untaken.push(item);
                     }
 
                 }
             }
+            log::info!("[open] returning MOVE_ITEMS with {} untaken items", untaken.len());
             return Some(TAKE_ITEMS(untaken));
+        },
+        MOVE_ITEMS(from_container, items, mut target_container) => {
+            log::info!("[open] Received data for MOVE_ITEMS with {} items", items.len());
+            if let Some(ref mut target) = target_container {
+                if let Some(pos) = position {
+                    if let Some(map) = &mut level.map {
+                        // Find the true instance of the source container on the map
+                        if let Some(source_container) = map.find_containers_mut(pos).iter_mut().find(|c| {
+                            return c.id_equals(&from_container);
+                        }) {
+                            let from_container_name = source_container.get_self_item().get_name();
+                            let from_container_id = source_container.get_self_item().get_id();
+                            let mut moved = Vec::new();
+                            let mut unmoved = Vec::new();
+                            let mut updated_target = None;
+                            // Find the true instance of the target container
+                            if let Some(target) = source_container.find_mut(target.get_self_item()) {
+                                log::info!("[open] Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
+                                for item in items {
+                                    if let Some(container_item) = container.find_mut(&item) {
+                                        if target.can_fit_container_item(container_item) {
+                                            target.add(container_item.clone());
+                                            moved.push(container_item.clone());
+                                        } else {
+                                            unmoved.push(item);
+                                        }
+                                    }
+                                }
+                                updated_target = Some(target.clone());
+                            }
+                            if !moved.is_empty() || !unmoved.is_empty() {
+                                log::info!("[open] returning MOVE_ITEMS response with {} unmoved items", unmoved.len());
+                                source_container.remove_matching_items(moved);
+                                return Some(MOVE_ITEMS(source_container.clone(), unmoved, updated_target));
+                            }
+                        }
+                    }
+                }
+                log::error!("[open] failed to move items");
+            } else {
+                // Index based move?
+            }
         }
         _ => {}
     }
@@ -65,8 +107,8 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         Ok(())
     }
 
-    fn open_container(&mut self, c: &Container) -> Container {
-        log::info!("Player opening container.");
+    fn open_container(&mut self, p: Position, c: &Container) {
+        log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
         let mut subview_container = c.clone();
         let mut view_container = c.clone();
         let mut callback_container : Container = c.clone();
@@ -77,22 +119,21 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
-        let frame_handler = WorldContainerViewFrameHandler { container_views: vec![container_view] };
+        let frame_handler = WorldContainerViewFrameHandlers { frame_handlers: vec![container_view] };
 
         let level = &mut self.level;
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
-            frame_handler,
+            frame_handlers: frame_handler,
             container: view_container,
             callback: Box::new(|data| {None})
         };
 
         world_container_view.set_callback(Box::new(|data| {
-            handle_callback(level, &mut callback_container, data)
+            handle_callback(level, Some(p.clone()), &mut callback_container, data)
         }));
         world_container_view.begin();
-        world_container_view.container.clone()
     }
 }
 
@@ -152,29 +193,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             if let Some(c) = to_open {
                 self.re_render();
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_item_count());
-                updated_container = Some(self.open_container(&c));
-            }
-
-            // Replace the original container with any changes we've made
-            if let Some(container) = updated_container {
-                if let Some(pos) = target_position {
-                    if let Some(map) = &mut self.level.map {
-                        if let Some(original_room) = map.rooms.iter_mut().find(|r| {
-                            r.area.contains_position(pos) &&
-                                if let Some(room_container) = r.containers.get(&pos) {
-                                    room_container.id_equals(&container) }
-                                else {
-                                    false
-                                }
-                        }) {
-                            log::info!("Updating room container with changes..");
-                            original_room.containers.insert(p, container);
-                        } else if let Some(area_container) = map.containers.get(&pos) {
-                            log::info!("Updating area container with changes..");
-                            map.containers.insert(p, container);
-                        }
-                    }
-                }
+                updated_container = Some(self.open_container(p.clone(), &c));
             }
 
             let key = io::stdin().keys().next().unwrap().unwrap();

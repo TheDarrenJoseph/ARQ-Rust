@@ -90,6 +90,12 @@ impl Container {
         self.contents.splice(index..index, to_move);
     }
 
+    pub fn replace_container(&mut self, new: Container) {
+        if let Some(c) = self.contents.iter_mut().find(|c| c.id_equals(&new)) {
+            *c = new;
+        }
+    }
+
     pub fn replace(&mut self, index: usize, container : Container) {
         if self.contents.len() > 0 && index < self.contents.len() {
             self.contents[index] = container;

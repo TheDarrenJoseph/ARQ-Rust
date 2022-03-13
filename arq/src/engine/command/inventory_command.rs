@@ -32,7 +32,7 @@ fn handle_callback(level : &mut Level, container: &mut Container, data : Contain
             // Find the container on the map and add the "container" wrappers there
             let mut undropped = Vec::new();
             if let Some(m) = level.get_map_mut() {
-                if let Some(mut pos_container) = m.get_container_mut(position) {
+                if let Some(mut pos_container) = m.find_container_mut(position) {
                     for item in items {
                         // Find the "container" wrappper matching the item returned
                         if let Some(container_item) = container.find_mut(&item) {

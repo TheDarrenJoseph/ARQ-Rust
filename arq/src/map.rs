@@ -65,9 +65,35 @@ impl Map {
         self.containers.get(&position)
     }
 
-    pub fn get_container_mut(&mut self, position: Position) -> Option<&mut Container> {
+    pub fn find_container_mut(&mut self, position: Position) -> Option<&mut Container> {
         self.containers.get_mut(&position)
     }
+
+    pub fn replace_container(&mut self, pos: Position, new: Container) {
+        if let Some(old) = self.find_containers_mut(pos).iter_mut().find(|c| {
+            return c.id_equals(&new);
+        }) {
+            log::info!("Replacing old container: {} with new: {}", old.get_self_item().get_name(), new.get_self_item().get_name());
+            **old = new;
+        }
+    }
+
+    pub fn find_containers_mut(&mut self, position: Position) -> Vec<&mut Container> {
+        let mut containers : Vec<&mut Container> = Vec::new();
+        for room in &mut self.rooms {
+            if room.area.contains_position(position.clone()) {
+                if let Some(c) = room.containers.get_mut(&position) {
+                    containers.push(c);
+                }
+            }
+        }
+
+        if let Some(map_c) = self.containers.get_mut(&position) {
+            containers.push(map_c);
+        }
+        containers
+    }
+
 
     pub fn get_containers_mut(&mut self) -> &mut HashMap<Position, Container> {
         &mut self.containers
