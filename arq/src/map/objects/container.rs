@@ -40,6 +40,20 @@ impl Container {
         &mut self.contents
     }
 
+    pub fn get_container_type(&self) -> ContainerType {
+        self.container_type.clone()
+    }
+
+    pub fn find_container_objects(&mut self) -> Vec<&mut Container> {
+        let mut containers = Vec::new();
+        for c in &mut self.contents {
+            if c.container_type == ContainerType::OBJECT {
+                containers.push(c);
+            }
+        }
+        containers
+    }
+
     pub fn get_item_count(&self) -> usize {
         let mut item_count = 0;
         match self.container_type {
@@ -133,11 +147,17 @@ impl Container {
     }
 
     pub fn find_mut(&mut self, item: &Item) -> Option<&mut Container> {
-        self.contents.iter_mut().find(|c| {
-            let expected_id = item.get_id();
-            let self_item = c.get_self_item();
-            self_item.get_id() == expected_id
-        })
+        let expected_id = item.get_id();
+        for c in self.contents.iter_mut() {
+            if c.get_self_item().get_id() == expected_id {
+                return Some(c)
+            } else {
+                if let Some(subcontainer) = c.find_mut(item) {
+                    return Some(subcontainer);
+                }
+            }
+        }
+        None
     }
 
     pub fn get_mut(&mut self, index: i32) -> Option<&mut Container> {

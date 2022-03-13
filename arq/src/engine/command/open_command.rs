@@ -55,9 +55,22 @@ fn handle_callback(level : &mut Level, position: Option<Position>, container: &m
                 if let Some(pos) = position {
                     if let Some(map) = &mut level.map {
                         // Find the true instance of the source container on the map
-                        if let Some(source_container) = map.find_containers_mut(pos).iter_mut().find(|c| {
-                            return c.id_equals(&from_container);
-                        }) {
+
+                        let mut map_container = None;
+                        let mut map_containers = map.find_containers_mut(pos);
+                        for c in map_containers {
+                            if c.id_equals(&from_container) {
+                                map_container = Some(c);
+                            } else {
+                                for subcontainer in  c.find_container_objects() {
+                                    if subcontainer.id_equals(&from_container) {
+                                        map_container = Some(subcontainer);
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some(source_container) = map_container {
                             let from_container_name = source_container.get_self_item().get_name();
                             let from_container_id = source_container.get_self_item().get_id();
                             let mut moved = Vec::new();
