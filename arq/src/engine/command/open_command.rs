@@ -26,22 +26,6 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn find_container<'a>(target: &Container, map: &'a mut Map, pos: Position) -> Option<&'a mut Container> {
-    let mut map_containers = map.find_containers_mut(pos);
-    for c in map_containers {
-        if c.id_equals(&target) {
-            return Some(c);
-        } else {
-            for subcontainer in  c.find_container_objects() {
-                if subcontainer.id_equals(&target) {
-                    return Some(subcontainer);
-                }
-            }
-        }
-    }
-    None
-}
-
 fn handle_callback(level : &mut Level, position: Option<Position>, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
@@ -71,7 +55,7 @@ fn handle_callback(level : &mut Level, position: Option<Position>, container: &m
                 if let Some(pos) = position {
                     if let Some(map) = &mut level.map {
                         // Find the true instance of the source container on the map
-                        let mut map_container = find_container(&from_container, map, pos);
+                        let mut map_container = map.find_container(&from_container, pos);
                         if let Some(source_container) = map_container {
                             let from_container_name = source_container.get_self_item().get_name();
                             let from_container_id = source_container.get_self_item().get_id();

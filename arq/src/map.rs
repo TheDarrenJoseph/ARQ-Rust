@@ -99,6 +99,22 @@ impl Map {
         &mut self.containers
     }
 
+    pub fn find_container(&mut self, target: &Container, pos: Position) -> Option<& mut Container> {
+        let mut map_containers = self.find_containers_mut(pos);
+        for c in map_containers {
+            if c.id_equals(&target) {
+                return Some(c);
+            } else {
+                for subcontainer in  c.find_container_objects() {
+                    if subcontainer.id_equals(&target) {
+                        return Some(subcontainer);
+                    }
+                }
+            }
+        }
+        None
+    }
+
     pub fn is_paveable(&self, position: Position) -> bool {
         match self.get_tile(position) {
             Some(tile) => {
