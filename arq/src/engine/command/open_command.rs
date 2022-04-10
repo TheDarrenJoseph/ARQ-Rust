@@ -26,6 +26,22 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
+fn find_container<'a>(target: &Container, map: &'a mut Map, pos: Position) -> Option<&'a mut Container> {
+    let mut map_containers = map.find_containers_mut(pos);
+    for c in map_containers {
+        if c.id_equals(&target) {
+            return Some(c);
+        } else {
+            for subcontainer in  c.find_container_objects() {
+                if subcontainer.id_equals(&target) {
+                    return Some(subcontainer);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn handle_callback(level : &mut Level, position: Option<Position>, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
@@ -55,21 +71,7 @@ fn handle_callback(level : &mut Level, position: Option<Position>, container: &m
                 if let Some(pos) = position {
                     if let Some(map) = &mut level.map {
                         // Find the true instance of the source container on the map
-
-                        let mut map_container = None;
-                        let mut map_containers = map.find_containers_mut(pos);
-                        for c in map_containers {
-                            if c.id_equals(&from_container) {
-                                map_container = Some(c);
-                            } else {
-                                for subcontainer in  c.find_container_objects() {
-                                    if subcontainer.id_equals(&from_container) {
-                                        map_container = Some(subcontainer);
-                                    }
-                                }
-                            }
-                        }
-
+                        let mut map_container = find_container(&from_container, map, pos);
                         if let Some(source_container) = map_container {
                             let from_container_name = source_container.get_self_item().get_name();
                             let from_container_id = source_container.get_self_item().get_id();
@@ -296,6 +298,7 @@ mod tests {
         let character_details = build_default_character_details();
         let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
         let mut level = build_test_level(player);
+        let container_pos =  Position { x: 0, y: 0};
 
         // WHEN we call to handle a take callback with some of the items in a container
         let mut container = build_test_container();
@@ -307,7 +310,7 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
-        let untaken = handle_callback(&mut level, &mut container, view_result).unwrap();
+        let untaken = handle_callback(&mut level, Some(container_pos), &mut container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 0 un-taken items
         match untaken {
@@ -334,6 +337,7 @@ mod tests {
         let character_details = build_default_character_details();
         let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
         let mut level = build_test_level(player);
+        let container_pos =  Position { x: 0, y: 0};
 
         // WHEN we call to handle a take callback with 3 items (with only space for 2 of them)
         let mut container = build_test_container();
@@ -346,7 +350,7 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
-        let untaken = handle_callback(&mut level, &mut container, view_result).unwrap();
+        let untaken = handle_callback(&mut level, Some(container_pos), &mut container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 1 un-taken items
         match untaken {
