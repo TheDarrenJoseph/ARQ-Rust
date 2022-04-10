@@ -26,7 +26,7 @@ pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
 impl <B: tui::backend::Backend> LookCommand<'_, B> {
     // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), io::Error> {
-        let mut ui = &mut self.ui;
+        let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
         })?;

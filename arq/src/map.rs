@@ -100,7 +100,7 @@ impl Map {
     }
 
     pub fn find_container(&mut self, target: &Container, pos: Position) -> Option<& mut Container> {
-        let mut map_containers = self.find_containers_mut(pos);
+        let map_containers = self.find_containers_mut(pos);
         for c in map_containers {
             if c.id_equals(&target) {
                 return Some(c);

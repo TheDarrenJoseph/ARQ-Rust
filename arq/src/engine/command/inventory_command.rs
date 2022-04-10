@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
+use crate::map::objects::items::Item;
 use crate::view::View;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::terminal::terminal_manager::TerminalManager;
@@ -22,33 +23,43 @@ pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
-fn handle_callback(level : &mut Level, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
-    let input_result : ContainerFrameHandlerInputResult = data;
-    match input_result {
-        DROP_ITEMS(items) => {
-            let position = level.get_player_mut().get_position().clone();
-            log::info!("InventoryCommand - Dropping {} items at position: {}, {}", items.len(),  position.x, position.y);
+struct CallbackState<'a> {
+    pub level : &'a mut Level,
+    pub container: &'a mut Container,
+    pub data : ContainerFrameHandlerInputResult
+}
 
-            // Find the container on the map and add the "container" wrappers there
-            let mut undropped = Vec::new();
-            if let Some(m) = level.get_map_mut() {
-                if let Some(mut pos_container) = m.find_container_mut(position) {
-                    for item in items {
-                        // Find the "container" wrappper matching the item returned
-                        if let Some(container_item) = container.find_mut(&item) {
-                            let dropping_container_item = container_item.clone();
-                            if pos_container.can_fit_container_item(&dropping_container_item) {
-                                log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
-                                pos_container.add(dropping_container_item)
-                            } else {
-                                log::info!("Cannot fit item: {}  into: {}", item.get_name(), pos_container.get_self_item().get_name());
-                                undropped.push(item);
-                            }
-                        }
+fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
+    let position = state.level.get_player_mut().get_position().clone();
+    log::info!("InventoryCommand - Dropping {} items at position: {}, {}", items.len(),  position.x, position.y);
+
+    // Find the container on the map and add the "container" wrappers there
+    let mut undropped = Vec::new();
+    if let Some(m) = state.level.get_map_mut() {
+        if let Some(mut pos_container) = m.find_container_mut(position) {
+            for item in items {
+                // Find the "container" wrappper matching the item returned
+                if let Some(container_item) = state.container.find_mut(&item) {
+                    let dropping_container_item = container_item.clone();
+                    if pos_container.can_fit_container_item(&dropping_container_item) {
+                        log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
+                        pos_container.add(dropping_container_item)
+                    } else {
+                        log::info!("Cannot fit item: {}  into: {}", item.get_name(), pos_container.get_self_item().get_name());
+                        undropped.push(item);
                     }
                 }
             }
-            return Some(DROP_ITEMS(undropped));
+        }
+    }
+    return Some(DROP_ITEMS(undropped));
+}
+
+fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
+    let input_result = &state.data;
+    match input_result {
+        DROP_ITEMS(items) => {
+            return drop_items(items.to_vec(), state);
         }
         _ => {}
     }
@@ -84,7 +95,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         {
             let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
             character_info_view.set_callback(Box::new(|data| {
-                handle_callback(level, &mut callback_container, data)
+                handle_callback(CallbackState { level, container: &mut callback_container, data })
             }));
             character_info_view.begin();
             updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();
