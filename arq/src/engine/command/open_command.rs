@@ -8,7 +8,7 @@ use crate::view::framehandler::container;
 use crate::engine::command::command::Command;
 use crate::view::world_container::{WorldContainerViewFrameHandlers, WorldContainerView};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{TAKE_ITEMS, DROP_ITEMS, MOVE_ITEMS};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{TakeItems, DropItems, MoveItems};
 use crate::map::position::Position;
 use crate::view::callback::Callback;
 use crate::view::View;
@@ -32,13 +32,13 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
 fn handle_callback(level : &mut Level, position: Position, container: Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
-        TAKE_ITEMS(mut data) => {
-            log::info!("Received data for TAKE_ITEMS with {} items", data.to_take.len());
+        TakeItems(mut data) => {
+            log::info!("Received data for TakeItems with {} items", data.to_take.len());
             data.position = Some(position.clone());
             return container_util::take_items(data , level);
         },
-        MOVE_ITEMS(mut data) => {
-            log::info!("[move_items] Received data for MOVE_ITEMS with {} items", data.to_move.len());
+        MoveItems(mut data) => {
+            log::info!("[move_items] Received data for MoveItems with {} items", data.to_move.len());
             data.position = Some(position.clone());
             return container_util::move_items(data, level);
         }
@@ -247,12 +247,12 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
 
         let data = TakeItemsData { source: container.clone(), to_take: selected_container_items, position: Some(container_pos) };
-        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
+        let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
         let untaken = handle_callback(&mut level, container_pos, container, view_result).unwrap();
 
-        // THEN we expect a DROP_ITEMS returned with 0 un-taken items
+        // THEN we expect a DropItems returned with 0 un-taken items
         match untaken {
-            ContainerFrameHandlerInputResult::TAKE_ITEMS(data) => {
+            ContainerFrameHandlerInputResult::TakeItems(data) => {
                 assert_eq!(0, data.to_take.len());
             },
             _ => {
@@ -289,12 +289,12 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let data = TakeItemsData { source: container, to_take: selected_container_items, position: Some(container_pos) };
-        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
+        let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
         let untaken = handle_callback(&mut level, container_pos, callback_container, view_result).unwrap();
 
-        // THEN we expect a DROP_ITEMS returned with 1 un-taken items
+        // THEN we expect a DropItems returned with 1 un-taken items
         match untaken {
-            ContainerFrameHandlerInputResult::TAKE_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::TakeItems(u) => {
                 assert_eq!(1, u.to_take.len());
                 assert_eq!(chosen_item_3, *u.to_take.get(0).unwrap());
             },

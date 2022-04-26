@@ -16,7 +16,7 @@ use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
 use crate::map::position::Position;
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DROP_ITEMS;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DropItems;
 
 pub struct ContainerFrameHandler {
     pub container : Container,
@@ -46,16 +46,17 @@ pub struct TakeItemsData {
 pub struct MoveItemsData {
     pub source: Container,
     pub to_move: Vec<Item>,
-    pub target: Option<Container>,
+    pub target_container: Option<Container>,
+    pub target_item: Option<Item>,
     pub position: Option<Position>
 }
 
 pub enum ContainerFrameHandlerInputResult {
-    NONE,
-    OPEN_CONTAINER_VIEW(ContainerFrameHandler),
-    MOVE_ITEMS(MoveItemsData),
-    TAKE_ITEMS(TakeItemsData),
-    DROP_ITEMS(Vec<Item>)
+    None,
+    OpenContainerView(ContainerFrameHandler),
+    MoveItems(MoveItemsData),
+    TakeItems(TakeItemsData),
+    DropItems(Vec<Item>)
 }
 
 fn build_default_columns() -> Vec<Column> {
@@ -108,6 +109,14 @@ impl ContainerFrameHandler {
                     }
                 }
             }
+        }
+        None
+    }
+
+    fn find_focused_item(&mut self) -> Option<Item> {
+        let list_selection = &self.item_list_selection;
+        if list_selection.is_selecting() {
+            return Some(list_selection.get_focused_item().unwrap().clone());
         }
         None
     }
@@ -267,17 +276,17 @@ impl ContainerFrameHandler {
     // Callbacks return info on how to update the handler models
     pub fn handle_callback_result(&mut self, result: ContainerFrameHandlerInputResult) {
         match result {
-            ContainerFrameHandlerInputResult::DROP_ITEMS(undropped) => {
+            ContainerFrameHandlerInputResult::DropItems(undropped) => {
                 self.retain_selected_items(undropped);
             },
-            ContainerFrameHandlerInputResult::TAKE_ITEMS(data) => {
+            ContainerFrameHandlerInputResult::TakeItems(data) => {
                 self.retain_selected_items(data.to_take);
             },
-            ContainerFrameHandlerInputResult::MOVE_ITEMS(data) => {
+            ContainerFrameHandlerInputResult::MoveItems(data) => {
                 self.container = data.source.clone();
                 // Remove selected items except for any untaken
                 self.retain_selected_items(data.to_move);
-                self.replace_focused_container(data.target.unwrap());
+                self.replace_focused_container(data.target_container.unwrap());
                 &mut self.item_list_selection.cancel_selection();
                 self.rebuild_selection(&data.source);
             },
@@ -418,7 +427,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
         let default_done_result = Ok(InputResult {
             generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
-            view_specific_result: Some(ContainerFrameHandlerInputResult::NONE)});
+            view_specific_result: Some(ContainerFrameHandlerInputResult::None)});
         loop {
             let key = resolve_input(input);
             match key {
@@ -427,7 +436,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items))
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::DropItems(selected_container_items))
                         });
                     }
                 },
@@ -440,7 +449,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     if let Some(stacked_view) = self.open_focused() {
                         let new_view_result = Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view))
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::OpenContainerView(stacked_view))
                         });
                         return new_view_result;
                     }
@@ -449,13 +458,15 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     let from_container = self.container.clone();
                     let selected_container_items = self.get_selected_items();
                     let focused_container = self.find_focused_container();
-                    let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
-                    log::info!("Triggering MOVE_ITEMS of {} items into: {}", selected_container_items.len(), container_name);
+                    let focused_item = if focused_container.is_none() { self.find_focused_item() } else { None };
 
-                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target: focused_container, position: None };
+                    let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
+                    log::info!("Triggering MoveItems of {} items into: {}", selected_container_items.len(), container_name);
+
+                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target_container: focused_container, target_item: focused_item, position: None };
                     return Ok(InputResult {
                         generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                        view_specific_result: Some(ContainerFrameHandlerInputResult::MOVE_ITEMS(data))
+                        view_specific_result: Some(ContainerFrameHandlerInputResult::MoveItems(data))
                     });
                 },
                 Key::Char('\n') => {
@@ -479,7 +490,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             }
             let continue_result = Ok(InputResult {
                 generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
-                view_specific_result: Some(ContainerFrameHandlerInputResult::NONE)});
+                view_specific_result: Some(ContainerFrameHandlerInputResult::None)});
             return continue_result;
         }
     }
@@ -659,8 +670,8 @@ mod tests {
         view.page_down();
         contents = &mut Vec::new();
 
-        // WHEN we call to handle a DROP_ITEMS callback with a retained item
-        let result = ContainerFrameHandlerInputResult::DROP_ITEMS(vec![retained_item]);
+        // WHEN we call to handle a DropItems callback with a retained item
+        let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
         let mut contents = view.container.get_contents();
@@ -689,8 +700,8 @@ mod tests {
         view.page_down();
         contents = &mut Vec::new();
 
-        // WHEN we call to handle a DROP_ITEMS callback with a retained item
-        let result = ContainerFrameHandlerInputResult::DROP_ITEMS(vec![retained_item]);
+        // WHEN we call to handle a DropItems callback with a retained item
+        let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
         let mut contents = view.container.get_contents();

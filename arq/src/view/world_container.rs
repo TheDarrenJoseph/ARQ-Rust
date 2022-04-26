@@ -85,7 +85,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                 if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
                     let selected_container_items = parent_view.get_selected_items();
                     let data = TakeItemsData { source: self.container.clone(), to_take: selected_container_items, position: None };
-                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
+                    let result = ContainerFrameHandlerInputResult::TakeItems(data);
                     self.trigger_callback(result);
                 }
             },
@@ -118,7 +118,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                     if let Some(topmost_view) = container_views.last_mut() {
                         let container_view_input_result = topmost_view.handle_input(Some(key));
                         let result = container_view_input_result.unwrap();
-                        if let Some(ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view)) = result.view_specific_result {
+                        if let Some(ContainerFrameHandlerInputResult::OpenContainerView(stacked_view)) = result.view_specific_result {
                             container_views.push(stacked_view);
                         } else if let Some(r) = result.view_specific_result {
                             self.trigger_callback(r);

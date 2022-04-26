@@ -27,7 +27,7 @@ use crate::widget::number_widget::{build_number_input, build_number_input_with_v
 use crate::widget::text_widget::build_text_input;
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, DROP};
 use crate::view::callback::Callback;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DROP_ITEMS;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DropItems;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -203,10 +203,10 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                 let result = container_view_input_result.unwrap();
                                 if let Some(view_specific_result) = result.view_specific_result {
                                     match view_specific_result {
-                                        ContainerFrameHandlerInputResult::OPEN_CONTAINER_VIEW(stacked_view) => {
+                                        ContainerFrameHandlerInputResult::OpenContainerView(stacked_view) => {
                                             container_views.push(stacked_view);
                                         },
-                                        ContainerFrameHandlerInputResult::DROP_ITEMS(_) => {
+                                        ContainerFrameHandlerInputResult::DropItems(_) => {
                                             self.trigger_callback(view_specific_result);
                                         },
                                         _ => {}

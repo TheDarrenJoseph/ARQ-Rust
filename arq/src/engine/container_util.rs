@@ -3,7 +3,7 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, TakeItemsData};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MOVE_ITEMS, TAKE_ITEMS};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
 
 pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
     // TODO have a find_player function?
@@ -32,9 +32,9 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
                 source_container.remove_matching_items(taken);
             }
         }
-        log::info!("[take_items] returning TAKE_ITEMS with {} un-taken items", untaken.len());
+        log::info!("[take_items] returning TakeItems with {} un-taken items", untaken.len());
         let data = TakeItemsData { source: data.source.clone(), to_take: untaken, position: data.position };
-        return Some(TAKE_ITEMS(data));
+        return Some(TakeItems(data));
     } else {
         log::error!("[take_items] No map position to take items from!");
     }
@@ -45,7 +45,7 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
 
 // Moves items between world containers
 pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
-    return if let Some(ref mut target) = data.target {
+    return if let Some(ref mut target_container) = data.target_container {
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 // Find the true instance of the source container on the map as our 'source_container'
@@ -57,7 +57,7 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
                     let mut unmoved = Vec::new();
                     let mut updated_target = None;
                     // Find the true instance of the target container
-                    if let Some(target) = source_container.find_mut(target.get_self_item()) {
+                    if let Some(target) = source_container.find_mut(target_container.get_self_item()) {
                         log::info!("Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
                         for item in data.to_move {
                             if let Some(container_item) = data.source.find_mut(&item) {
@@ -72,11 +72,11 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
                         updated_target = Some(target.clone());
                     }
                     if !moved.is_empty() || !unmoved.is_empty() {
-                        log::info!("Returning MOVE_ITEMS response with {} unmoved items", unmoved.len());
+                        log::info!("Returning MoveItems response with {} unmoved items", unmoved.len());
                         source_container.remove_matching_items(moved);
 
-                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target: updated_target, position: data.position };
-                        return Some(MOVE_ITEMS(data));
+                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
+                        return Some(MoveItems(data));
                     }
                 }
             } else {
@@ -88,7 +88,7 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
         log::error!("Failed to move items");
         None
     } else {
-        // TODO Index based move for when this is not a container target?
+        log::error!("Cannot move items. No target container provided.");
         None
     }
 }
@@ -104,7 +104,7 @@ mod tests {
     use crate::map::objects::items::build_container_item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
-    use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MOVE_ITEMS;
+    use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MoveItems;
     use crate::view::framehandler::container::MoveItemsData;
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
@@ -150,16 +150,16 @@ mod tests {
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 1 into container 3
-        let data = MoveItemsData { source, to_move, target: Some(target), position: Some(container_pos) };
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: Some(container_pos) };
         let data_expected = data.clone();
         let result = move_items(data, &mut level);
         // THEN we expect a valid result
         if let Some(input_result) = result {
             match input_result {
-                MOVE_ITEMS(result_data) => {
+                MoveItems(result_data) => {
                     // AND the source/targets should be returned with no outstanding to_move data
                     assert!(data_expected.source.id_equals(&result_data.source));
-                    assert!(data_expected.target.unwrap().id_equals(&result_data.target.unwrap()));
+                    assert!(data_expected.target_container.unwrap().id_equals(&result_data.target_container.unwrap()));
                     assert!(result_data.to_move.is_empty());
 
                     // AND The map 'source' container will have the items removed
@@ -410,7 +410,7 @@ mod tests {
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 1 into container 3 without a position for the container
-        let data = MoveItemsData { source, to_move, target: Some(target), position: None };
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
         let data_expected = data.clone();
         let result = move_items(data, &mut level);
         // THEN we expect None to return

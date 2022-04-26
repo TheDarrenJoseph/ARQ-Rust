@@ -11,7 +11,7 @@ use crate::view::View;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DROP_ITEMS, TAKE_ITEMS};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, TakeItems};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
 use crate::view::character_info::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
 use crate::engine::command::command::Command;
@@ -52,13 +52,13 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
             }
         }
     }
-    return Some(DROP_ITEMS(undropped));
+    return Some(DropItems(undropped));
 }
 
 fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
     let input_result = &state.data;
     match input_result {
-        DROP_ITEMS(items) => {
+        DropItems(items) => {
             return drop_items(items.to_vec(), state);
         }
         _ => {}
@@ -215,12 +215,12 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
-        // THEN we expect a DROP_ITEMS returned with 0 un-dropped items
+        // THEN we expect a DropItems returned with 0 un-dropped items
         match undropped {
-            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DropItems(u) => {
                 assert_eq!(0, u.len());
             },
             _ => {
@@ -252,12 +252,12 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
-        // THEN we expect a DROP_ITEMS returned with 1 un-dropped items
+        // THEN we expect a DropItems returned with 1 un-dropped items
         match undropped {
-            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DropItems(u) => {
                 assert_eq!(1, u.len());
                 assert_eq!(chosen_item_3, *u.get(0).unwrap());
             },
@@ -289,12 +289,12 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
+        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
-        // THEN we expect a DROP_ITEMS returned with 2 un-dropped items
+        // THEN we expect a DropItems returned with 2 un-dropped items
         match undropped {
-            ContainerFrameHandlerInputResult::DROP_ITEMS(u) => {
+            ContainerFrameHandlerInputResult::DropItems(u) => {
                 assert_eq!(2, u.len());
                 assert_eq!(chosen_item_1, *u.get(0).unwrap());
                 assert_eq!(chosen_item_2, *u.get(1).unwrap());
