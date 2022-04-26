@@ -46,7 +46,8 @@ pub struct TakeItemsData {
 pub struct MoveItemsData {
     pub source: Container,
     pub to_move: Vec<Item>,
-    pub target: Option<Container>
+    pub target: Option<Container>,
+    pub position: Option<Position>
 }
 
 pub enum ContainerFrameHandlerInputResult {
@@ -451,7 +452,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
                     log::info!("Triggering MOVE_ITEMS of {} items into: {}", selected_container_items.len(), container_name);
 
-                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target: focused_container };
+                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target: focused_container, position: None };
                     return Ok(InputResult {
                         generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
                         view_specific_result: Some(ContainerFrameHandlerInputResult::MOVE_ITEMS(data))

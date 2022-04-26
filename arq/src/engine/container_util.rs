@@ -9,9 +9,9 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
     // TODO have a find_player function?
     let player = &mut level.characters[0];
     log::info!("Found player: {}", player.get_name());
-    let mut taken = Vec::new();
-    let mut untaken = Vec::new();
     if let Some(pos) = data.position {
+        let mut taken = Vec::new();
+        let mut untaken = Vec::new();
         for item in data.to_take {
             if let Some(container_item) = data.source.find(&item) {
                 let inventory = player.get_inventory();
@@ -32,20 +32,21 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
                 source_container.remove_matching_items(taken);
             }
         }
+        log::info!("[take_items] returning TAKE_ITEMS with {} un-taken items", untaken.len());
+        let data = TakeItemsData { source: data.source.clone(), to_take: untaken, position: data.position };
+        return Some(TAKE_ITEMS(data));
     } else {
         log::error!("[take_items] No map position to take items from!");
     }
-    log::info!("[take_items] returning TAKE_ITEMS with {} untaken items", untaken.len());
-    let data = TakeItemsData { source: data.source.clone(), to_take: untaken, position: data.position };
-    return Some(TAKE_ITEMS(data));
+    return None
 }
 
 // TODO Moves items between player inventory containers / into world container
 
 // Moves items between world containers
-pub fn move_items(mut data: MoveItemsData, position: Option<Position>, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
+pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
     return if let Some(ref mut target) = data.target {
-        if let Some(pos) = position {
+        if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 // Find the true instance of the source container on the map as our 'source_container'
                 let mut map_container = map.find_container(&data.source, pos);
@@ -74,7 +75,7 @@ pub fn move_items(mut data: MoveItemsData, position: Option<Position>, level : &
                         log::info!("Returning MOVE_ITEMS response with {} unmoved items", unmoved.len());
                         source_container.remove_matching_items(moved);
 
-                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target: updated_target };
+                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target: updated_target, position: data.position };
                         return Some(MOVE_ITEMS(data));
                     }
                 }
@@ -149,11 +150,10 @@ mod tests {
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 1 into container 3
-        let data = MoveItemsData { source, to_move, target: Some(target) };
+        let data = MoveItemsData { source, to_move, target: Some(target), position: Some(container_pos) };
         let data_expected = data.clone();
-
+        let result = move_items(data, &mut level);
         // THEN we expect a valid result
-        let result = move_items(data, Some(container_pos), &mut level);
         if let Some(input_result) = result {
             match input_result {
                 MOVE_ITEMS(result_data) => {
@@ -166,13 +166,12 @@ mod tests {
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         assert_eq!(2, c.get_item_count());
+                        // AND The 'target' container will contain the new items
                         if let Some(container_item) = c.find(&target_item) {
                             assert_eq!(1, container_item.get_item_count());
                         }
                         return;
                     }
-                    // AND The 'target' container will contain the new items
-
                 },
                 _ => {}
             }
@@ -182,6 +181,7 @@ mod tests {
 
     #[test]
     fn test_move_items_bottom() {
+        assert!(false)
         /*
         // GIVEN a valid map with an player inventory to extract items into
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
@@ -229,6 +229,7 @@ mod tests {
 
     #[test]
     fn test_move_items_top() {
+        assert!(false)
         /*
     // GIVEN a valid view
     let mut container = build_test_container();
@@ -269,6 +270,7 @@ mod tests {
 
     #[test]
     fn test_move_item_middle() {
+        assert!(false)
         /*
     // GIVEN a valid view
     let mut container = build_test_container();
@@ -306,6 +308,7 @@ mod tests {
 
     #[test]
     fn test_move_split_items() {
+        assert!(false)
         /*
     // GIVEN a valid view
     let mut container = build_test_container();
@@ -347,6 +350,7 @@ mod tests {
 
     #[test]
     fn test_move_3_split_items() {
+        assert!(false)
         /*
     // GIVEN a valid view
     let mut container = build_test_container();
@@ -385,5 +389,31 @@ mod tests {
     assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
     assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
     assert_eq!("Test Item 3", contents[3].get_self_item().get_name());*/
+    }
+
+    #[test]
+    fn test_move_items_no_position() {
+        // GIVEN a valid map
+        // that holds a source container containing 3 containers
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let to_move = vec![container1.get_self_item().clone()];
+        source_container.push(vec![container1, container2, container3]);
+        assert_eq!(3, source_container.get_item_count());
+
+        let source = source_container.clone();
+        let container_pos =  Position { x: 1, y: 1};
+        let target = source_container.get(2).clone();
+        let target_item = target.get_self_item().clone();
+        let mut level = build_test_level(container_pos, source_container);
+
+        // WHEN we call to move container 1 into container 3 without a position for the container
+        let data = MoveItemsData { source, to_move, target: Some(target), position: None };
+        let data_expected = data.clone();
+        let result = move_items(data, &mut level);
+        // THEN we expect None to return
+        assert!(result.is_none());
     }
 }

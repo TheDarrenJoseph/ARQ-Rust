@@ -29,17 +29,18 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, position: Option<Position>, container: Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback(level : &mut Level, position: Position, container: Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TAKE_ITEMS(mut data) => {
             log::info!("Received data for TAKE_ITEMS with {} items", data.to_take.len());
-            data.position = position.clone();
+            data.position = Some(position.clone());
             return container_util::take_items(data , level);
         },
-        MOVE_ITEMS(data ) => {
+        MOVE_ITEMS(mut data) => {
             log::info!("[move_items] Received data for MOVE_ITEMS with {} items", data.to_move.len());
-            return container_util::move_items(data, position, level);
+            data.position = Some(position.clone());
+            return container_util::move_items(data, level);
         }
         _ => {}
     }
@@ -59,9 +60,10 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
     fn open_container(&mut self, p: Position, c: &Container) {
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
+        let callback_container : Container = c.clone();
         let mut subview_container = c.clone();
         let mut view_container = c.clone();
-        let callback_container : Container = c.clone();
+
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(TAKE);
@@ -70,7 +72,6 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
         let frame_handler = WorldContainerViewFrameHandlers { frame_handlers: vec![container_view] };
-
         let level = &mut self.level;
         let mut world_container_view = WorldContainerView {
             ui,
@@ -79,11 +80,11 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
             container: view_container,
             callback: Box::new(|data| {None})
         };
-
-        world_container_view.set_callback(Box::new(|data| {
-            handle_callback(level, Some(p.clone()), callback_container.clone(), data)
+        world_container_view.set_callback(Box::new(|input_result| {
+            return handle_callback(level, p.clone(), callback_container.clone(), input_result);
         }));
         world_container_view.begin();
+
     }
 }
 
@@ -171,7 +172,7 @@ mod tests {
     use crate::map::objects::container::{build, ContainerType, Container};
     use crate::map::objects::items;
     use crate::menu;
-    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult, TakeItemsData};
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::{UI, build_ui};
     use crate::list_selection::ListSelection;
@@ -244,13 +245,15 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
-        let untaken = handle_callback(&mut level, Some(container_pos), &mut container, view_result).unwrap();
+
+        let data = TakeItemsData { source: container.clone(), to_take: selected_container_items, position: Some(container_pos) };
+        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
+        let untaken = handle_callback(&mut level, container_pos, container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 0 un-taken items
         match untaken {
-            ContainerFrameHandlerInputResult::TAKE_ITEMS(u) => {
-                assert_eq!(0, u.len());
+            ContainerFrameHandlerInputResult::TAKE_ITEMS(data) => {
+                assert_eq!(0, data.to_take.len());
             },
             _ => {
                 assert!(false);
@@ -276,6 +279,7 @@ mod tests {
 
         // WHEN we call to handle a take callback with 3 items (with only space for 2 of them)
         let mut container = build_test_container();
+        let mut callback_container = container.clone();
         let mut selected_container_items = Vec::new();
         for i in 0..=2 {
             selected_container_items.push(container.get(i).get_self_item().clone());
@@ -284,14 +288,15 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
-        let untaken = handle_callback(&mut level, Some(container_pos), &mut container, view_result).unwrap();
+        let data = TakeItemsData { source: container, to_take: selected_container_items, position: Some(container_pos) };
+        let mut view_result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
+        let untaken = handle_callback(&mut level, container_pos, callback_container, view_result).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 1 un-taken items
         match untaken {
             ContainerFrameHandlerInputResult::TAKE_ITEMS(u) => {
-                assert_eq!(1, u.len());
-                assert_eq!(chosen_item_3, *u.get(0).unwrap());
+                assert_eq!(1, u.to_take.len());
+                assert_eq!(chosen_item_3, *u.to_take.get(0).unwrap());
             },
             _ => {
                 assert!(false);
