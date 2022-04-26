@@ -283,12 +283,20 @@ impl ContainerFrameHandler {
                 self.retain_selected_items(data.to_take);
             },
             ContainerFrameHandlerInputResult::MoveItems(data) => {
-                self.container = data.source.clone();
-                // Remove selected items except for any untaken
-                self.retain_selected_items(data.to_move);
-                self.replace_focused_container(data.target_container.unwrap());
-                &mut self.item_list_selection.cancel_selection();
-                self.rebuild_selection(&data.source);
+                // Moving into a container
+                if let Some(container) = data.target_container {
+                    self.container = data.source.clone();
+                    // Remove selected items except for any untaken
+                    self.retain_selected_items(data.to_move);
+                    self.replace_focused_container(container);
+                    &mut self.item_list_selection.cancel_selection();
+                    self.rebuild_selection(&data.source);
+                } else if let Some(item) = data.target_item {
+                    // Moving to an existing item's location / splicing
+                    // So just rebuild the whole selection
+                    self.container = data.source.clone();
+                    self.rebuild_selection(&data.source);
+                }
             },
             _ => {}
         }

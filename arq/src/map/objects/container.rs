@@ -158,6 +158,14 @@ impl Container {
         })
     }
 
+    pub fn item_position(&self, item: &Item) -> Option<usize> {
+        self.contents.iter().position(|c| {
+            let expected_id = item.get_id();
+            let self_item = c.get_self_item();
+            self_item.get_id() == expected_id
+        })
+    }
+
     pub fn find_mut(&mut self, item: &Item) -> Option<&mut Container> {
         let expected_id = item.get_id();
         for c in self.contents.iter_mut() {
