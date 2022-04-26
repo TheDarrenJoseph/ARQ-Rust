@@ -147,7 +147,7 @@ mod tests {
     use crate::list_selection::ListSelection;
     use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
     use crate::map::tile::{Colour, Tile};
-    use crate::engine::command::inventory_command::{InventoryCommand, handle_callback};
+    use crate::engine::command::inventory_command::{InventoryCommand, handle_callback, CallbackState};
     use crate::engine::level::Level;
     use crate::character::build_player;
     use crate::map::position::{Position, build_square_area};
@@ -216,7 +216,7 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
-        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+        let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 0 un-dropped items
         match undropped {
@@ -253,7 +253,7 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
-        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+        let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 1 un-dropped items
         match undropped {
@@ -290,7 +290,7 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let mut view_result = ContainerFrameHandlerInputResult::DROP_ITEMS(selected_container_items);
-        let undropped = handle_callback(&mut level, &mut container, view_result).unwrap();
+        let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DROP_ITEMS returned with 2 un-dropped items
         match undropped {

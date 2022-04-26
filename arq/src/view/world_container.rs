@@ -7,7 +7,7 @@ use crate::ui::{UI, FrameHandler, FrameData};
 use crate::view::{View, resolve_input, GenericInputResult};
 use crate::view::framehandler::container;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 use crate::map::position::Area;
 use crate::view::InputHandler;
 use crate::map::objects::container::Container;
@@ -84,7 +84,8 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
             Key::Char('t') => {
                 if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
                     let selected_container_items = parent_view.get_selected_items();
-                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(selected_container_items);
+                    let data = TakeItemsData { source: self.container.clone(), to_take: selected_container_items, position: None };
+                    let result = ContainerFrameHandlerInputResult::TAKE_ITEMS(data);
                     self.trigger_callback(result);
                 }
             },

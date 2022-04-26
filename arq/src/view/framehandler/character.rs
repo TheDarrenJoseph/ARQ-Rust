@@ -261,7 +261,7 @@ impl CharacterFrameHandler {
             let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
             match number_state {
                 Some(mut ns) => {
-                    let mut score = scores.iter_mut().find(|score| score.attribute == attribute);
+                    let score = scores.iter_mut().find(|score| score.attribute == attribute);
                     match score {
                         Some(s) => {
                             s.score = ns.get_input() as i8;

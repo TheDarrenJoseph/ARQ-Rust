@@ -54,19 +54,27 @@ impl Container {
         containers
     }
 
-    pub fn get_item_count(&self) -> usize {
+    fn count_contents(&self) -> usize {
         let mut item_count = 0;
+        for c in self.get_contents() {
+            item_count += c.get_item_count();
+        }
+        return item_count;
+    }
+
+    pub fn get_item_count(&self) -> usize {
         match self.container_type {
             ContainerType::OBJECT | ContainerType::AREA => {
+                let mut item_count = 0;
                 for c in self.get_contents() {
-                    item_count += c.get_item_count();
+                    item_count += 1; // +1 for self item
+                    item_count += c.count_contents();
                 }
-            },
-            ContainerType::ITEM => {
-                item_count += 1;
+                return item_count;
+            }, _ => {
+                return 0;
             }
         }
-        item_count
     }
 
     pub fn get_weight_limit(&self) -> i32 {
@@ -82,6 +90,10 @@ impl Container {
 
     pub fn get(&self, index: i32) -> &Container {
         &self.contents[index as usize]
+    }
+
+    pub fn get_optional(&self, index: i32) -> Option<&Container> {
+        self.contents.get(index as usize)
     }
 
     pub fn find(&self, item: &Item) -> Option<&Container> {

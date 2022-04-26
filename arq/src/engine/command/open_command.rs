@@ -17,8 +17,11 @@ use crate::engine::level::Level;
 use crate::ui;
 use crate::map::objects::container::Container;
 use crate::engine::command::input_mapping;
+use crate::engine::container_util;
+use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
+use crate::engine::container_util::*;
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -26,69 +29,17 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, position: Option<Position>, container: &mut Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback(level : &mut Level, position: Option<Position>, container: Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
-        TAKE_ITEMS(items) => {
-            let player = &mut level.characters[0];
-            log::info!("Received data for TAKE_ITEMS with {} items", items.len());
-            log::info!("Found player: {}", player.get_name());
-            let mut untaken = Vec::new();
-            for item in items {
-                if let Some(container_item) = container.find_mut(&item) {
-                    let inventory = player.get_inventory();
-                    if inventory.can_fit_container_item(container_item) {
-                        log::info!("Taking item: {}", item.get_name());
-                        player.get_inventory().add(container_item.clone());
-                    } else {
-                        untaken.push(item);
-                    }
-
-                }
-            }
-            log::info!("[open] returning MOVE_ITEMS with {} untaken items", untaken.len());
-            return Some(TAKE_ITEMS(untaken));
+        TAKE_ITEMS(mut data) => {
+            log::info!("Received data for TAKE_ITEMS with {} items", data.to_take.len());
+            data.position = position.clone();
+            return container_util::take_items(data , level);
         },
-        MOVE_ITEMS(from_container, items, mut target_container) => {
-            log::info!("[open] Received data for MOVE_ITEMS with {} items", items.len());
-            if let Some(ref mut target) = target_container {
-                if let Some(pos) = position {
-                    if let Some(map) = &mut level.map {
-                        // Find the true instance of the source container on the map
-                        let mut map_container = map.find_container(&from_container, pos);
-                        if let Some(source_container) = map_container {
-                            let from_container_name = source_container.get_self_item().get_name();
-                            let from_container_id = source_container.get_self_item().get_id();
-                            let mut moved = Vec::new();
-                            let mut unmoved = Vec::new();
-                            let mut updated_target = None;
-                            // Find the true instance of the target container
-                            if let Some(target) = source_container.find_mut(target.get_self_item()) {
-                                log::info!("[open] Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
-                                for item in items {
-                                    if let Some(container_item) = container.find_mut(&item) {
-                                        if target.can_fit_container_item(container_item) {
-                                            target.add(container_item.clone());
-                                            moved.push(container_item.clone());
-                                        } else {
-                                            unmoved.push(item);
-                                        }
-                                    }
-                                }
-                                updated_target = Some(target.clone());
-                            }
-                            if !moved.is_empty() || !unmoved.is_empty() {
-                                log::info!("[open] returning MOVE_ITEMS response with {} unmoved items", unmoved.len());
-                                source_container.remove_matching_items(moved);
-                                return Some(MOVE_ITEMS(source_container.clone(), unmoved, updated_target));
-                            }
-                        }
-                    }
-                }
-                log::error!("[open] failed to move items");
-            } else {
-                // Index based move?
-            }
+        MOVE_ITEMS(data ) => {
+            log::info!("[move_items] Received data for MOVE_ITEMS with {} items", data.to_move.len());
+            return container_util::move_items(data, position, level);
         }
         _ => {}
     }
@@ -110,7 +61,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
         let mut subview_container = c.clone();
         let mut view_container = c.clone();
-        let mut callback_container : Container = c.clone();
+        let callback_container : Container = c.clone();
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(TAKE);
@@ -130,7 +81,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         };
 
         world_container_view.set_callback(Box::new(|data| {
-            handle_callback(level, Some(p.clone()), &mut callback_container, data)
+            handle_callback(level, Some(p.clone()), callback_container.clone(), data)
         }));
         world_container_view.begin();
     }
@@ -354,4 +305,5 @@ mod tests {
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
         assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
     }
+
 }

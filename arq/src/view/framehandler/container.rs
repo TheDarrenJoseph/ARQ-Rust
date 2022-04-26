@@ -14,6 +14,7 @@ use crate::view::{resolve_input, InputHandler, InputResult, GenericInputResult};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
+use crate::map::position::Position;
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DROP_ITEMS;
 
@@ -34,17 +35,25 @@ pub enum ContainerFrameHandlerCommand {
     DROP
 }
 
+#[derive(Clone)]
+pub struct TakeItemsData {
+    pub source: Container,
+    pub to_take: Vec<Item>,
+    pub position: Option<Position>
+}
+
+#[derive(Clone)]
+pub struct MoveItemsData {
+    pub source: Container,
+    pub to_move: Vec<Item>,
+    pub target: Option<Container>
+}
+
 pub enum ContainerFrameHandlerInputResult {
     NONE,
     OPEN_CONTAINER_VIEW(ContainerFrameHandler),
-    MOVE_ITEMS(
-        //Source container / Updated version
-        Container,
-        // Items to move / unmoved
-        Vec<Item>,
-        // Optional container target
-        Option<Container>),
-    TAKE_ITEMS(Vec<Item>),
+    MOVE_ITEMS(MoveItemsData),
+    TAKE_ITEMS(TakeItemsData),
     DROP_ITEMS(Vec<Item>)
 }
 
@@ -206,20 +215,6 @@ impl ContainerFrameHandler {
         None
     }
 
-    fn move_selection_to_container(&mut self) {
-        // TODO trigger custom callback? MOVE_ITEMS(items, None : Option<Container>)
-        let list_selection = &self.item_list_selection;
-        let selected_container_items = &self.get_selected_containers();
-        let mut updated = false;
-        if list_selection.is_selecting() {
-
-        }
-
-        if updated {
-            self.rebuild_selection(&self.container.clone());
-        }
-    }
-
     fn clone_selected_container_items(&mut self) -> Vec<Container> {
         let mut items = Vec::new();
         let selected_items = self.get_selected_items();
@@ -274,16 +269,16 @@ impl ContainerFrameHandler {
             ContainerFrameHandlerInputResult::DROP_ITEMS(undropped) => {
                 self.retain_selected_items(undropped);
             },
-            ContainerFrameHandlerInputResult::TAKE_ITEMS(untaken) => {
-                self.retain_selected_items(untaken);
+            ContainerFrameHandlerInputResult::TAKE_ITEMS(data) => {
+                self.retain_selected_items(data.to_take);
             },
-            ContainerFrameHandlerInputResult::MOVE_ITEMS(updated_container, unmoved, updated_target) => {
-                self.container = updated_container.clone();
+            ContainerFrameHandlerInputResult::MOVE_ITEMS(data) => {
+                self.container = data.source.clone();
                 // Remove selected items except for any untaken
-                self.retain_selected_items(unmoved);
-                self.replace_focused_container(updated_target.unwrap());
+                self.retain_selected_items(data.to_move);
+                self.replace_focused_container(data.target.unwrap());
                 &mut self.item_list_selection.cancel_selection();
-                self.rebuild_selection(&updated_container);
+                self.rebuild_selection(&data.source);
             },
             _ => {}
         }
@@ -455,9 +450,11 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     let focused_container = self.find_focused_container();
                     let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
                     log::info!("Triggering MOVE_ITEMS of {} items into: {}", selected_container_items.len(), container_name);
+
+                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target: focused_container };
                     return Ok(InputResult {
                         generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                        view_specific_result: Some(ContainerFrameHandlerInputResult::MOVE_ITEMS(from_container,selected_container_items, focused_container))
+                        view_specific_result: Some(ContainerFrameHandlerInputResult::MOVE_ITEMS(data))
                     });
                 },
                 Key::Char('\n') => {
@@ -638,240 +635,6 @@ mod tests {
 
         // THEN we expect the focused index to move to the start of the view
         assert_eq!(0, view.item_list_selection.get_true_index());
-    }
-
-    #[test]
-    fn test_move_items_bottom() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        // with a series of items
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
-
-        // AND we've started selecting items
-        view.toggle_select();
-        // AND we've selected the first 2 items
-        view.move_down();
-        view.toggle_select();
-
-        // WHEN we move to the bottom of the view and try to move the items
-        view.page_down();
-        view.move_selection();
-
-        // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.item_list_selection.get_true_index());
-
-        // AND the chosen items will be moved to the bottom of the view above the last item
-        let contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 1", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[3].get_self_item().get_name());
-    }
-
-    #[test]
-    fn test_move_items_top() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        // with a series of items
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
-
-        // AND we've started selecting items at index 2
-        view.move_down();
-        view.move_down();
-        view.toggle_select();
-        // AND we've selected the last 2 items
-        view.move_down();
-        view.toggle_select();
-
-        // WHEN we move to the top of the view and try to move the items
-        view.page_up();
-        view.move_selection();
-
-        // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.item_list_selection.get_true_index());
-
-        // AND the chosen items will be moved to the top of the view
-        let contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 1", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[3].get_self_item().get_name());
-    }
-
-    #[test]
-    fn test_move_item_middle() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-
-        // with a series of items
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name()); // target
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
-
-        // AND we've selected the first item
-        view.toggle_select();
-        view.toggle_select();
-
-        // WHEN we move down one place and try to move the item (index 1)
-        view.move_down();
-        view.move_selection();
-
-        // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.item_list_selection.get_true_index());
-
-        // AND the chosen item will be moved to index 1
-        let contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
-    }
-
-    #[test]
-    fn test_move_split_items() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-
-        // with a series of items
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
-
-        // AND we've selected the first and last item
-        view.toggle_select();
-        view.toggle_select();
-        view.page_down();
-        view.toggle_select();
-        view.toggle_select();
-
-        // WHEN we move down up one place and try to move the item (index 2)
-        view.move_up();
-        assert_eq!(2, view.item_list_selection.get_true_index());
-        view.move_selection();
-
-        // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.item_list_selection.get_true_index());
-
-        // AND the chosen items will be moved to index 1
-        let contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[3].get_self_item().get_name());
-    }
-
-    #[test]
-    fn test_move_3_split_items() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 4;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-
-        // with a series of items
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
-
-        // AND we've selected the first 2 and last item
-        view.toggle_select();
-        view.move_down();
-        view.toggle_select();
-        view.page_down();
-        view.toggle_select();
-        view.toggle_select();
-
-        // WHEN we move down up one place and try to move the item (index 2)
-        view.move_up();
-        assert_eq!(2, view.item_list_selection.get_true_index());
-        view.move_selection();
-
-        // THEN we expect the focused index to remain at the top of the view
-        assert_eq!(0, view.item_list_selection.get_true_index());
-
-        // AND the chosen items will be moved to index 1
-        let contents = view.container.get_contents();
-        assert_eq!(4, contents.len());
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[3].get_self_item().get_name());
-    }
-
-    #[test]
-    fn test_move_items_into_container() {
-        // GIVEN a valid view
-        let mut container = build_test_container();
-        // With a main container including items and another container
-        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 4);
-        container.add(bag);
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.item_list_selection.page_line_count = 5;
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents();
-        assert_eq!(5, contents.len());
-        assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-        assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
-        assert_eq!("Bag", contents[4].get_self_item().get_name());
-
-        view.toggle_select();
-        // AND we've selected the first 2 items
-        view.move_down();
-        view.toggle_select();
-
-        // WHEN we move to the bottom of the view and try to move the items into the bag
-        view.page_down();
-        view.move_selection();
-
-        // THEN the chosen items will be moved into the bag
-        assert_eq!(0, view.item_list_selection.get_true_index());
-        let contents = view.container.get_contents();
-        assert_eq!(3, contents.len());
-        assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
-        assert_eq!("Bag",         contents[2].get_self_item().get_name());
-
-        let bag_contents = contents[2].get_contents();
-        assert_eq!(2, bag_contents.len());
-        assert_eq!("Test Item 1", bag_contents[0].get_self_item().get_name());
-        assert_eq!("Test Item 2", bag_contents[1].get_self_item().get_name());
     }
 
     #[test]
