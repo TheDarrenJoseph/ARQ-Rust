@@ -8,7 +8,7 @@ use std::convert::TryInto;
 pub enum ContainerType {
     ITEM, // No storage, just a wrapped Item
     OBJECT, // Movable container i.e Bags
-    AREA // Fixed container i.e Floor, Chests, Player's inventory
+    AREA // Fixed container i.e Floor, Player's inventory
 }
 
 /*
@@ -60,6 +60,16 @@ impl Container {
             item_count += c.get_item_count();
         }
         return item_count;
+    }
+
+    pub fn get_content_count(&self) -> usize {
+        match self.container_type {
+            ContainerType::OBJECT | ContainerType::AREA => {
+                return self.contents.len();
+            }, _ => {
+                return 0;
+            }
+        }
     }
 
     pub fn get_item_count(&self) -> usize {
@@ -243,7 +253,6 @@ impl Container {
             },
             _ => {}
         }
-
     }
 
     pub fn can_open(&self) -> bool {

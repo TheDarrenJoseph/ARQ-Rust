@@ -1,4 +1,5 @@
 use std::io;
+use std::io::{Error, ErrorKind};
 use termion::event::Key;
 use termion::input::TermRead;
 
@@ -59,21 +60,36 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
             if let Some(map) = &self.level.map {
                 if let Some(room) =  map.get_rooms().iter().find(|r| r.area.contains_position(p)) {
                     log::info!("Position is in a room.");
-
-                    if let Some(c) = &room.containers.get(&p) {
-                        log::info!("Position is a container.");
-                        let container_item = c.get_self_item();
-                        self.ui.console_print("There's a ".to_owned() + &container_item.name + &" here.".to_string());
-                        self.re_render();
-                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                    if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Position is a door.");
                         self.ui.console_print("There's a ".to_owned() + &door.tile_details.name + &" here.".to_string());
                         self.re_render();
-                    } else {
-                        self.ui.console_print("There's nothing here in this room.".to_string());
-                        self.re_render();
+                        return Ok(());
                     }
                 }
+
+                if let Some(c) = map.containers.get(&p) {
+                    let item_count = c.get_item_count();
+                    if item_count == 1 {
+                        let c_item_name = c.get_self_item().get_name();
+                        let top_item_name = c.get_contents()[0].get_self_item().get_name();
+                        self.ui.console_print(format!("There's a {} on the {} here.", c_item_name, top_item_name));
+                        self.re_render();
+                    } else if item_count > 1 {
+                        self.ui.console_print(format!("There's {} items here.", item_count));
+                        self.re_render();
+                    } else {
+                        let item_name = c.get_self_item().get_name();
+                        self.ui.console_print(format!("The {} is empty here.", item_name));
+                        self.re_render();
+                    }
+                } else {
+                    self.ui.console_print("There's nothing here.".to_string());
+                    self.re_render();
+                }
+            } else {
+                log::error!("Look command failure, no map on level!");
+                return Err(Error::new(ErrorKind::Other, "Look command failure, no map on level!"))
             }
 
             let key = io::stdin().keys().next().unwrap().unwrap();

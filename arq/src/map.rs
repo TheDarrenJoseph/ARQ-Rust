@@ -80,14 +80,6 @@ impl Map {
 
     pub fn find_containers_mut(&mut self, position: Position) -> Vec<&mut Container> {
         let mut containers : Vec<&mut Container> = Vec::new();
-        for room in &mut self.rooms {
-            if room.area.contains_position(position.clone()) {
-                if let Some(c) = room.containers.get_mut(&position) {
-                    containers.push(c);
-                }
-            }
-        }
-
         if let Some(map_c) = self.containers.get_mut(&position) {
             containers.push(map_c);
         }

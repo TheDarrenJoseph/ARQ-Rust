@@ -7,8 +7,7 @@ use crate::map::objects::container::Container;
 #[derive(Clone)]
 pub struct Room {
     pub area: Area,
-    pub doors : Vec<Door>,
-    pub containers : HashMap<Position, Container>
+    pub doors : Vec<Door>
 }
 
 impl Room {

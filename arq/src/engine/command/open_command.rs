@@ -112,11 +112,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             let mut to_open = None;
             if let Some(map) = &mut self.level.map {
                 if let Some(room) = map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
-                    if let Some(c) = room.containers.get(&p) {
-                        log::info!("Found room container.");
-                        target_position = Some(p.clone());
-                        to_open = Some(c.clone());
-                    } else if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                    if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
                         // TODO encapsulate view components / refactor
@@ -128,10 +124,15 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 
                 if let None = to_open  {
                     if let Some(c) = map.containers.get(&p) {
-                        if c.get_item_count() > 0 {
+                        let item_count = c.get_content_count();
+                         if item_count > 0 {
                             log::info!("Found map container.");
                             target_position = Some(p.clone());
-                            to_open = Some(c.clone());
+                             if item_count == 1 {
+                                 to_open = Some(c.get_contents()[0].clone());
+                             } else {
+                                 to_open = Some(c.clone());
+                             }
                         }
                     } else {
                         self.ui.console_print("There's nothing here to open.".to_string());

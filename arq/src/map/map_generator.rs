@@ -9,6 +9,7 @@ use crate::engine::pathfinding::{Pathfinding};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::{container, items};
 use uuid::Uuid;
+use crate::map::tile::Tile::NoTile;
 
 pub struct MapGenerator {
     min_room_size: u16,
@@ -42,7 +43,7 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
             let random_x: u16 = rng.gen_range(1..=size_x) as u16;
             let random_y: u16 = rng.gen_range(1..=size_y) as u16;
             let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
-            let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 1, 1, ContainerType::AREA, 100);
+            let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 50, 1, ContainerType::OBJECT, 100);
 
             let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
             let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
@@ -67,17 +68,33 @@ impl MapGenerator {
         self.map = self.build_map();
         log::info!("Applying rooms...");
         self.add_rooms_to_map();
-
-        let mut container_count = 0;
-        for room in self.map.rooms.iter_mut() {
-            let room_containers = generate_room_containers(room.clone());
-            container_count += room_containers.len();
-            room.containers = room_containers;
-        }
-        log::info!("Added {} containers to rooms.", container_count);
-
         log::info!("Pathfinding...");
         self.path_rooms();
+
+        let mut area_container_count = 0;
+        let mut area_containers = self.build_area_containers();
+        for pos_container in area_containers {
+            let mut pos = pos_container.0.clone();
+            let mut container = pos_container.1.clone();
+            self.map.containers.insert( pos, container);
+            area_container_count += 1;
+        }
+        log::info!("Added {} general area containers to the map.", area_container_count);
+
+        let mut room_container_count = 0;
+        for room in self.map.rooms.iter_mut() {
+            let room_containers = generate_room_containers(room.clone());
+            for pos_container in room_containers {
+                let mut pos = pos_container.0.clone();
+                let mut container = pos_container.1.clone();
+
+                if let Some(c) = self.map.containers.get_mut(&mut pos) {
+                    c.add(container);
+                    room_container_count += 1;
+                }
+            }
+        }
+        log::info!("Added {} containers into room general area containers.", room_container_count);
         log::info!("Map generated!");
         return self.map.clone();
     }
@@ -108,7 +125,7 @@ impl MapGenerator {
 
     fn generate_room(&self, room_pos : Position, size: u16) -> Room {
         let room_area = build_square_area( room_pos, size);
-        let mut room = Room { area: room_area, doors: Vec::new(), containers: HashMap::new() };
+        let mut room = Room { area: room_area, doors: Vec::new() };
 
         let mut chosen_sides = Vec::<Side>::new();
         let room_sides = room.get_sides();
@@ -243,10 +260,17 @@ impl MapGenerator {
         let mut area_containers = HashMap::new();
         for y in self.map_area.start_position.y..=self.map_area.end_position.y {
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
-                log::info!("New AREA container at: {}, {}", x,y);
                 let position = Position { x, y };
-                let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 100);
-                area_containers.insert(position, area_container);
+                match self.map.get_tile(position) {
+                    Some(TD) => {
+                        if TD.tile_type != NoTile {
+                            log::info!("New AREA container at: {}, {}", x,y);
+                            let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 100);
+                            area_containers.insert(position, area_container);
+                        }
+                    },
+                    _ => {}
+                }
             }
         }
         area_containers
@@ -291,13 +315,13 @@ impl MapGenerator {
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
-        let area_containers = self.build_area_containers();
-        return crate::map::Map {
+        let mut map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
             rooms,
-            containers: area_containers
-        }
+            containers: HashMap::new()
+        };
+        return map;
     }
 }
 
