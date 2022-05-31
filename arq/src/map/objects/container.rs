@@ -1,6 +1,7 @@
 use crate::map::objects::items::{build_container_item, Item, ItemType};
 use uuid::Uuid;
 use std::convert::TryInto;
+use std::slice::Iter;
 
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -107,11 +108,21 @@ impl Container {
     }
 
     pub fn find(&self, item: &Item) -> Option<&Container> {
-        self.contents.iter().find(|c| {
+        // Initial pass
+        let found = self.contents.iter().find(|c| {
             let expected_id = item.get_id();
             let self_item = c.get_self_item();
             self_item.get_id() == expected_id
-        })
+        });
+
+        if found.is_some() {
+            found
+        } else {
+            // Recurse
+            return self.contents.iter().flat_map(|c| {
+                return c.find(item);
+            }).next();
+        }
     }
 
     pub fn push(&mut self, containers : Vec<Container>) {
@@ -138,18 +149,28 @@ impl Container {
         }
     }
 
-    pub fn remove_item(&mut self, item : &Container) {
+    pub fn remove_item(&mut self, item : &Container) -> bool {
         if let Some(position) = self.position(item) {
             self.contents.remove(position);
+            return true;
         }
+        return false;
     }
 
-    pub fn remove_matching_items(&mut self, items : Vec<Container>) {
+    pub fn remove_matching_items(&mut self, items : Vec<Container>) -> bool {
+        let mut removed = Vec::new();
         for item in items.iter() {
-            if let Some(position) = self.position(item) {
-                self.contents.remove(position);
+            let mut success = self.remove_item(item);
+            removed.push(item.clone());
+            if !success {
+                for c in self.contents.iter_mut() {
+                    if c.remove_matching_items(items.clone()) {
+                        removed = items.clone();
+                    }
+                }
             }
         }
+        return removed.len() == items.len();
     }
 
     pub fn remove_items(&mut self, items : Vec<&Container>) {
