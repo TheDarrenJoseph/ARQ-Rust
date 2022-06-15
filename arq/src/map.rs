@@ -168,7 +168,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors, containers: HashMap::new() };
+        let room = Room { area: room_area, doors };
 
         let mut rooms = Vec::new();
         rooms.push(room);
@@ -203,7 +203,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors, containers: HashMap::new() };
+        let room = Room { area: room_area, doors };
 
         let mut rooms = Vec::new();
         rooms.push(room);
