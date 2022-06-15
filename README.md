@@ -3,6 +3,9 @@ ASCII Roguelike Quester (Rust Port) [Rust]
 
 A port of https://github.com/TheDarrenJoseph/ARQ to Rust    
 
+
+![Build Status](https://github.com/TheDarrenJoseph/ARQ-Rust/actions/workflows/rust.yml/badge.svg)
+
 INSPIRATION
 =======
 - Nethack
