@@ -1,6 +1,7 @@
 name: Build/Test (PRs into mainline)
 
 on:
+  workflow_dispatch:
   # PRs into master  
   pull_request:
     branches: [ "master" ]
