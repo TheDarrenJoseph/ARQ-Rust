@@ -1,4 +1,4 @@
-name: Rust Build
+name: Build/Test (Merged to mainline)
 
 on:
   push:
