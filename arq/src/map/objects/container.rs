@@ -1,6 +1,7 @@
 use crate::map::objects::items::{build_container_item, Item, ItemType};
 use uuid::Uuid;
 use std::convert::TryInto;
+use std::fmt;
 use std::slice::Iter;
 
 #[derive(Clone)]
@@ -10,6 +11,12 @@ pub enum ContainerType {
     ITEM, // No storage, just a wrapped Item
     OBJECT, // Movable container i.e Bags
     AREA // Fixed container i.e Floor, Player's inventory
+}
+
+impl fmt::Display for ContainerType {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, formatter)
+    }
 }
 
 /*
