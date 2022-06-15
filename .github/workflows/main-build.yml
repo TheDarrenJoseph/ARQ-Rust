@@ -5,11 +5,6 @@ on:
     branches: [ "master" ]
     paths:
       - 'arq/src/*'
-  # PRs into master  
-  pull_request:
-    branches: [ "master" ]
-    paths:
-      - 'arq/src/*'
 
 env:
   CARGO_TERM_COLOR: always
