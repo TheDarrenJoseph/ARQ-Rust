@@ -1,6 +1,7 @@
 name: Build/Test (Merged to mainline)
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "master" ]
     paths:
