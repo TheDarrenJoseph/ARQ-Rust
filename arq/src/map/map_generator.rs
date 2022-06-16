@@ -265,7 +265,7 @@ impl MapGenerator {
                     Some(TD) => {
                         if TD.tile_type != NoTile {
                             log::info!("New AREA container at: {}, {}", x,y);
-                            let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 100);
+                            let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 999999);
                             area_containers.insert(position, area_container);
                         }
                     },

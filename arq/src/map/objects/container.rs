@@ -74,7 +74,8 @@ impl Container {
         match self.container_type {
             ContainerType::OBJECT | ContainerType::AREA => {
                 return self.contents.len();
-            }, _ => {
+            },
+            _ => {
                 return 0;
             }
         }

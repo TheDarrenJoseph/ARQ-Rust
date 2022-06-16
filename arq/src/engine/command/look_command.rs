@@ -35,7 +35,7 @@ fn describe_position_in_room(pos: Position, room: &Room) -> Option<String> {
 }
 
 fn describe_position_container(c: &Container) -> Result<String, io::Error> {
-    let item_count = c.get_item_count();
+    let item_count = c.get_content_count();
     let container_type = c.get_container_type();
 
     if container_type != AREA  {
@@ -59,10 +59,8 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
         if let Some(room) = map.get_rooms().iter().find(|r| r.area.contains_position(pos)) {
             log::info!("Position is in a room.");
             let prompt = describe_position_in_room(pos, room);
-            return if prompt.is_some() {
-                Ok(prompt.unwrap())
-            } else {
-                Ok("There's nothing here.".to_string())
+            if prompt.is_some() {
+                return Ok(prompt.unwrap());
             }
         }
 
@@ -129,6 +127,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::io::{Error, ErrorKind};
     use uuid::Uuid;
     use crate::engine::command::look_command::describe_position;
     use crate::engine::level::Level;
@@ -206,6 +205,31 @@ mod tests {
     }
 
     #[test]
+    fn test_describe_area_chest() {
+        // GIVEN a valid map
+        // that holds a source container (AREA) containing 1 OBJECT container with contents of it's own
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+        let mut chest =  build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 10);
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
+
+        chest.push(vec![bag, item1, item2]);
+        source_container.push(vec![chest]);
+        assert_eq!(1, source_container.get_item_count());
+        let source = source_container.clone();
+        let container_pos =  Position { x: 1, y: 1};
+        let mut level = build_test_level(container_pos, source_container);
+
+        // WHEN we call to describe the container position
+        let prompt = describe_position(container_pos, &mut level);
+
+        // THEN we expect the single item and area to be described
+        assert!(prompt.is_ok());
+        assert_eq!("There's a Chest on the Floor here.", prompt.unwrap());
+    }
+
+    #[test]
     fn test_describe_area_empty() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing nothing
@@ -244,22 +268,19 @@ mod tests {
     }
 
     #[test]
-    fn test_describe_area_invalid_container() {
+    fn test_describe_area_invalid_container_type() {
         // GIVEN a valid map
-        // that holds a source container (AREA) containing 1 OBJECT container
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        source_container.push(vec![bag]);
-        assert_eq!(1, source_container.get_item_count());
-        let source = source_container.clone();
+        // that holds a source container of an unsupported type (OBJECT)
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
-        // WHEN we call to describe a different position
-        let prompt = describe_position( Position { x: 0, y: 0}, &mut level);
+        // WHEN we call to describe the container position
+        let prompt = describe_position( container_pos, &mut level);
 
-        // THEN we expect nothing to be there
-        assert!(prompt.is_ok());
-        assert_eq!("There's nothing here.", prompt.unwrap());
+        // THEN we expect an error to be returned
+        assert!(prompt.is_err());
+        let expected =format!("Unexpected input! Cannot describe position with container of type {}.", ContainerType::OBJECT);
+        assert_eq!(expected, prompt.err().unwrap().to_string());
     }
 }
