@@ -65,15 +65,6 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         log::info!("Drawing containers...");
         if let Some(view_area) = self.view_area {
             let view_start = view_area.start_position;
-            for room in &self.map.rooms {
-                for (position, container) in &room.containers {
-                    let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
-                    if view_area.contains_position(view_position) {
-                        self.draw_container(view_position, container);
-                    }
-                }
-            }
-
             for (position, container) in &self.map.containers {
                 let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
                 if view_area.contains_position(view_position) {

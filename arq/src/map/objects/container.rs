@@ -1,6 +1,8 @@
 use crate::map::objects::items::{build_container_item, Item, ItemType};
 use uuid::Uuid;
 use std::convert::TryInto;
+use std::fmt;
+use std::slice::Iter;
 
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -8,7 +10,13 @@ use std::convert::TryInto;
 pub enum ContainerType {
     ITEM, // No storage, just a wrapped Item
     OBJECT, // Movable container i.e Bags
-    AREA // Fixed container i.e Floor, Chests, Player's inventory
+    AREA // Fixed container i.e Floor, Player's inventory
+}
+
+impl fmt::Display for ContainerType {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, formatter)
+    }
 }
 
 /*
@@ -24,6 +32,12 @@ pub struct Container {
 }
 
 impl Container {
+    pub fn is_true_container(&self) -> bool {
+        let container_type_valid = (self.container_type == ContainerType::OBJECT) | (self.container_type == ContainerType::AREA);
+        let item_type_valid = self.item.item_type == ItemType::CONTAINER;
+        return container_type_valid && item_type_valid;
+    }
+
     pub fn get_self_item(&self) -> &Item {
         &self.item
     }
@@ -44,7 +58,8 @@ impl Container {
         self.container_type.clone()
     }
 
-    pub fn find_container_objects(&mut self) -> Vec<&mut Container> {
+    // Finds all subcontainers (OBJECTs) within this container's topmost level
+    pub fn find_subcontainers(&mut self) -> Vec<&mut Container> {
         let mut containers = Vec::new();
         for c in &mut self.contents {
             if c.container_type == ContainerType::OBJECT {
@@ -62,18 +77,28 @@ impl Container {
         return item_count;
     }
 
+    // Returns the top-level content count if this is a 'true' container, 0 otherwise (i.e a wrapped item)
+    pub fn get_content_count(&self) -> usize {
+        return if self.is_true_container() {
+            self.contents.len()
+        } else {
+            0
+        }
+    }
+
+    // Returns the total count of all contents including itself
     pub fn get_item_count(&self) -> usize {
-        match self.container_type {
-            ContainerType::OBJECT | ContainerType::AREA => {
-                let mut item_count = 0;
-                for c in self.get_contents() {
-                    item_count += 1; // +1 for self item
+        return if self.is_true_container() {
+            let mut item_count = 0;
+            for c in self.get_contents() {
+                item_count += 1; // +1 for self item
+                if c.is_true_container() {
                     item_count += c.count_contents();
                 }
-                return item_count;
-            }, _ => {
-                return 0;
             }
+            item_count
+        } else {
+            return 1;
         }
     }
 
@@ -97,11 +122,21 @@ impl Container {
     }
 
     pub fn find(&self, item: &Item) -> Option<&Container> {
-        self.contents.iter().find(|c| {
+        // Initial pass
+        let found = self.contents.iter().find(|c| {
             let expected_id = item.get_id();
             let self_item = c.get_self_item();
             self_item.get_id() == expected_id
-        })
+        });
+
+        if found.is_some() {
+            found
+        } else {
+            // Recurse
+            return self.contents.iter().flat_map(|c| {
+                return c.find(item);
+            }).next();
+        }
     }
 
     pub fn push(&mut self, containers : Vec<Container>) {
@@ -128,18 +163,28 @@ impl Container {
         }
     }
 
-    pub fn remove_item(&mut self, item : &Container) {
+    pub fn remove_item(&mut self, item : &Container) -> bool {
         if let Some(position) = self.position(item) {
             self.contents.remove(position);
+            return true;
         }
+        return false;
     }
 
-    pub fn remove_matching_items(&mut self, items : Vec<Container>) {
+    pub fn remove_matching_items(&mut self, items : Vec<Container>) -> bool {
+        let mut removed = Vec::new();
         for item in items.iter() {
-            if let Some(position) = self.position(item) {
-                self.contents.remove(position);
+            let mut success = self.remove_item(item);
+            removed.push(item.clone());
+            if !success {
+                for c in self.contents.iter_mut() {
+                    if c.remove_matching_items(items.clone()) {
+                        removed = items.clone();
+                    }
+                }
             }
         }
+        return removed.len() == items.len();
     }
 
     pub fn remove_items(&mut self, items : Vec<&Container>) {
@@ -228,25 +273,28 @@ impl Container {
         loot_total
     }
 
+    // Adds a container to this one only if this is a true container and the adding Container is a storable/movable type (ITEM or OBJECT)
     pub fn add(&mut self, container : Container) {
-        match container.container_type {
-           ContainerType::ITEM | ContainerType::OBJECT => {
-               let total_weight = self.get_contents_weight_total();
-               let adding_weight_limit = container.weight_limit;
-               let max_weight_limit = total_weight + adding_weight_limit;
+        if self.is_true_container() {
+            match container.container_type {
+                ContainerType::ITEM | ContainerType::OBJECT => {
+                    let total_weight = self.get_contents_weight_total();
+                    let adding_weight_limit = container.weight_limit;
+                    let max_weight_limit = total_weight + adding_weight_limit;
 
-               let within_potential_weight_limit = max_weight_limit <= self.weight_limit;
-               let potential_weight = total_weight.clone() + container.get_weight_total();
-               if within_potential_weight_limit && potential_weight <= self.weight_limit {
-                   self.contents.push(container);
-               }
-            },
-            _ => {}
+                    let within_potential_weight_limit = max_weight_limit <= self.weight_limit;
+                    let potential_weight = total_weight.clone() + container.get_weight_total();
+                    if within_potential_weight_limit && potential_weight <= self.weight_limit {
+                        self.contents.push(container);
+                    }
+                },
+                _ => {}
+            }
         }
-
     }
 
     pub fn can_open(&self) -> bool {
+        // TODO use is_true_container?
         self.container_type ==  ContainerType::OBJECT || self.container_type ==  ContainerType::AREA
     }
 
@@ -262,6 +310,12 @@ impl Container {
                     self.contents.push(container);
                 }
             }
+        }
+    }
+
+    pub fn add_items(&mut self, items : Vec<Item>) {
+        for i in items {
+            self.add_item(i);
         }
     }
 
@@ -343,6 +397,21 @@ mod tests {
     }
 
     #[test]
+    fn test_container_add_item_container_item() {
+        // GIVEN we have a valid container
+        let mut container =  build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        // AND it has no items in it's contents
+        assert_eq!(0, container.get_contents().len());
+
+        // WHEN we call to add a new item that's of CONTAINER type
+        let item = items::build_container_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
+        container.add_item(item);
+
+        // THEN we expect nothing to happen as it's an unsupported type
+        assert_eq!(0, container.get_contents().len());
+    }
+
+    #[test]
     fn test_container_add() {
         // GIVEN we have a valid container
         let mut container = build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 0, 1,  ContainerType::OBJECT, 40);
@@ -390,6 +459,21 @@ mod tests {
     }
 
     #[test]
+    fn test_container_add_area_item() {
+        // GIVEN we have a valid container
+        let mut container =  build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        // AND it has no items in it's contents
+        assert_eq!(0, container.get_contents().len());
+
+        // WHEN we try to add an AREA container (immovable)
+        let mut floor =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+        container.add(floor);
+
+        // THEN we expect nothing to happen as it's an unsupported type
+        assert_eq!(0, container.get_contents().len());
+    }
+
+    #[test]
     fn test_get_loot_value_empty() {
         // GIVEN we have a valid container with no items
         let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
@@ -418,5 +502,119 @@ mod tests {
         let total_value = container.get_loot_value();
         // THEN we expect the total of all the item values to be returned
         assert_eq!(150, total_value);
+    }
+
+    #[test]
+    fn test_get_content_count() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+        // AND we've added 2 items with different values
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        container.add_item(gold_bar);
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        container.add_item(silver_bar);
+        assert_eq!(2, container.get_contents().len());
+
+        // WHEN we call to get the content count
+        let count = container.get_content_count();
+        // THEN we expect the total of the top-level contents to return
+        assert_eq!(2, count);
+    }
+
+    #[test]
+    fn test_get_content_count_nested() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+        // AND we've added 2 items with different values
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        container.add_item(gold_bar);
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        container.add_item(silver_bar);
+
+        // AND we've added a container with it's own series of items
+        let mut bag =  container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 20);
+        let coin1 = items::build_item(Uuid::new_v4(), "Gold Coin 1".to_owned(), 'X', 1, 10);
+        let coin2 = items::build_item(Uuid::new_v4(), "Gold Coin 2".to_owned(), 'X', 1, 10);
+        let coin3 = items::build_item(Uuid::new_v4(), "Gold Coin 3".to_owned(), 'X', 1, 10);
+        bag.add_items(vec![coin1, coin2, coin3]);
+        assert_eq!(3, bag.get_contents().len());
+        container.add(bag);
+        assert_eq!(3, container.get_contents().len());
+
+        // WHEN we call to get the content count
+        let count = container.get_content_count();
+        // THEN we expect only the total of the top-level contents to return
+        assert_eq!(3, count);
+    }
+
+    #[test]
+    fn test_get_content_count_empty() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        // AND it contains nothing
+        assert_eq!(0, container.get_contents().len());
+        // WHEN we call to get the content count
+        let count = container.get_content_count();
+        // THEN
+        assert_eq!(0, count);
+    }
+
+    #[test]
+    fn test_get_item_count() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+        // AND we've added 2 items with different values
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        container.add_item(gold_bar);
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        container.add_item(silver_bar);
+        assert_eq!(2, container.get_contents().len());
+
+        // WHEN we call to get the item count
+        let count = container.get_item_count();
+        // THEN we expect the total count of all items to return
+        assert_eq!(2, count);
+    }
+
+    #[test]
+    fn test_get_item_count_nested() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        assert_eq!(0, container.get_contents().len());
+        // AND we've added 2 items with different values
+        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        container.add_item(gold_bar);
+        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        container.add_item(silver_bar);
+
+        // AND we've added a container with it's own series of items
+        let mut bag =  container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 20);
+        let coin1 = items::build_item(Uuid::new_v4(), "Gold Coin 1".to_owned(), 'X', 1, 10);
+        let coin2 = items::build_item(Uuid::new_v4(), "Gold Coin 2".to_owned(), 'X', 1, 10);
+        let coin3 = items::build_item(Uuid::new_v4(), "Gold Coin 3".to_owned(), 'X', 1, 10);
+        bag.add_items(vec![coin1, coin2, coin3]);
+        assert_eq!(3, bag.get_contents().len());
+        container.add(bag);
+        assert_eq!(3, container.get_contents().len());
+
+        // WHEN we call to get the item count
+        let count = container.get_item_count();
+        // THEN we expect the total count of all items to return
+        assert_eq!(6, count);
+    }
+
+    #[test]
+    fn test_get_item_count_empty() {
+        // GIVEN we have a valid container
+        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        // AND it contains nothing
+        assert_eq!(0, container.get_contents().len());
+        // WHEN we call to get the item count
+        let count = container.get_item_count();
+        // THEN
+        assert_eq!(0, count);
     }
 }

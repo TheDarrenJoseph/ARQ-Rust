@@ -105,8 +105,9 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
                                 unmoved.push(item.clone());
                             }
                         }
-                        source_container.insert(pos, moving.clone());
                         source_container.remove_matching_items(moving.clone());
+                        let target_pos = if pos >= moving.len() { pos - moving.len() } else { pos };
+                        source_container.insert(target_pos, moving.clone());
                         let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: None, target_item: Some(target_item.clone()), position: data.position };
                         return Some(MoveItems(data));
                     }
@@ -202,7 +203,7 @@ mod tests {
                         if let Some(container_item) = c.find(&target_item) {
                             assert_eq!(1, container_item.get_item_count());
                         }
-                        return;
+                        return; // pass
                     }
                 },
                 _ => {}
@@ -214,24 +215,28 @@ mod tests {
     #[test]
     fn test_move_items_bottom() {
         // GIVEN a valid map
-        // that holds a source container containing 3 containers
+        // that holds a source container containing 6 containers (Each with a unique name)
         let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
         let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
-        let expected_final_order = vec![container2.clone(), container1.clone(), container3.clone()];
-        let to_move = vec![container1.get_self_item().clone()];
-        source_container.push(vec![container1, container2, container3]);
-        assert_eq!(3, source_container.get_item_count());
+        // Clone everything before moving
+        let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
+        source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
+        let source_copy = source_container.clone();
+        assert_eq!(6, source_container.get_item_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
-        let target_item = source_container.get(2).get_self_item().clone();
+        let target_item = source_container.get(5).get_self_item().clone();
         let expected_target = target_item.clone();
         let mut level = build_test_level(container_pos, source_container);
 
-        // WHEN we call to move container 1 to the bottom of the list (Container 3's location)
+        // WHEN we call to move container 1 and 2 to the bottom of the list (Container 6's location)
         let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
         let data_expected = data.clone();
         let result = move_items(data, &mut level);
@@ -247,12 +252,15 @@ mod tests {
                     // AND The map 'source' container will have it's items reshuffled
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(3, c.get_item_count());
+                        assert_eq!(6, c.get_item_count());
                         let contents = c.get_contents();
-                        assert!(expected_final_order[0].id_equals(&contents[0].clone()));
-                        assert!(expected_final_order[1].id_equals(&contents[1].clone()));
-                        assert!(expected_final_order[2].id_equals(&contents[2].clone()));
-                        return;
+                        assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[0].get_self_item().get_name());
+                        assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[1].get_self_item().get_name());
+                        assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[2].get_self_item().get_name());
+                        assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[3].get_self_item().get_name());
+                        assert_eq!(source_copy.get(1).get_self_item().get_name(), contents[4].get_self_item().get_name());
+                        assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[5].get_self_item().get_name());
+                        return; // pass
                     }
                 },
                 _ => {}
@@ -262,164 +270,172 @@ mod tests {
 
     }
 
+    #[test]
     fn test_move_items_top() {
-        assert!(false)
-        /*
-    // GIVEN a valid view
-    let mut container = build_test_container();
-    let mut view : ContainerFrameHandler = build_default_container_view(container);
-    view.item_list_selection.page_line_count = 4;
-    assert_eq!(0, view.item_list_selection.get_true_index());
-    let mut contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-    // with a series of items
-    assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+        // GIVEN a valid map
+        // that holds a source container containing 6 containers (Each with a unique name)
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
-    // AND we've started selecting items at index 2
-    view.move_down();
-    view.move_down();
-    view.toggle_select();
-    // AND we've selected the last 2 items
-    view.move_down();
-    view.toggle_select();
+        // Clone everything before moving
+        let to_move = vec![container5.get_self_item().clone(), container6.get_self_item().clone()];
+        source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
+        let source_copy = source_container.clone();
+        assert_eq!(6, source_container.get_item_count());
 
-    // WHEN we move to the top of the view and try to move the items
-    view.page_up();
-    view.move_selection();
+        let source = source_container.clone();
+        let container_pos =  Position { x: 1, y: 1};
+        let target_item = source_container.get(0).get_self_item().clone();
+        let expected_target = target_item.clone();
+        let mut level = build_test_level(container_pos, source_container);
 
-    // THEN we expect the focused index to remain at the top of the view
-    assert_eq!(0, view.item_list_selection.get_true_index());
+        // WHEN we call to move container 5 and 6 to the top of the list (Container 1's location)
+        let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
+        let data_expected = data.clone();
+        let result = move_items(data, &mut level);
+        // THEN we expect a valid result
+        if let Some(input_result) = result {
+            match input_result {
+                MoveItems(result_data) => {
+                    // AND the source/targets should be returned with no outstanding to_move data
+                    assert!(data_expected.source.id_equals(&result_data.source));
+                    assert_eq!(data_expected.target_item.unwrap().get_id(), result_data.target_item.unwrap().get_id());
+                    assert_eq!(0, result_data.to_move.len());
 
-    // AND the chosen items will be moved to the top of the view
-    let contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-    assert_eq!("Test Item 3", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 1", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 2", contents[3].get_self_item().get_name());*/
+                    // AND The map 'source' container will have it's items reshuffled
+                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    if let Some(c) = map_container {
+                        assert_eq!(6, c.get_item_count());
+                        let contents = c.get_contents();
+                        assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[0].get_self_item().get_name());
+                        assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[1].get_self_item().get_name());
+                        assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[2].get_self_item().get_name());
+                        assert_eq!(source_copy.get(1).get_self_item().get_name(), contents[3].get_self_item().get_name());
+                        assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[4].get_self_item().get_name());
+                        assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[5].get_self_item().get_name());
+                        return; // pass
+                    }
+                },
+                _ => {}
+            }
+        }
+        assert!(false);
     }
 
+    #[test]
     fn test_move_item_middle() {
-        assert!(false)
-        /*
-    // GIVEN a valid view
-    let mut container = build_test_container();
-    let mut view : ContainerFrameHandler = build_default_container_view(container);
-    view.item_list_selection.page_line_count = 4;
-    assert_eq!(0, view.item_list_selection.get_true_index());
-    let mut contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
+        // GIVEN a valid map
+        // that holds a source container containing 6 containers (Each with a unique name)
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
-    // with a series of items
-    assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 2", contents[1].get_self_item().get_name()); // target
-    assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[3].get_self_item().get_name());
+        // Clone everything before moving
+        let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
+        source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
+        let source_copy = source_container.clone();
+        assert_eq!(6, source_container.get_item_count());
 
-    // AND we've selected the first item
-    view.toggle_select();
-    view.toggle_select();
+        // WHEN we call to move container 1 and 2 to the middle of the list (Container 5's location)
+        let source = source_container.clone();
+        let container_pos =  Position { x: 1, y: 1};
+        let target_item = source_container.get(4).get_self_item().clone();
+        let expected_target = target_item.clone();
+        let mut level = build_test_level(container_pos, source_container);
+        let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
+        let data_expected = data.clone();
+        let result = move_items(data, &mut level);
+        // THEN we expect a valid result
+        if let Some(input_result) = result {
+            match input_result {
+                MoveItems(result_data) => {
+                    // AND the source/targets should be returned with no outstanding to_move data
+                    assert!(data_expected.source.id_equals(&result_data.source));
+                    assert_eq!(data_expected.target_item.unwrap().get_id(), result_data.target_item.unwrap().get_id());
+                    assert_eq!(0, result_data.to_move.len());
 
-    // WHEN we move down one place and try to move the item (index 1)
-    view.move_down();
-    view.move_selection();
-
-    // THEN we expect the focused index to remain at the top of the view
-    assert_eq!(0, view.item_list_selection.get_true_index());
-
-    // AND the chosen item will be moved to index 1
-    let contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-    assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[3].get_self_item().get_name());*/
+                    // AND The map 'source' container will have it's items reshuffled
+                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    if let Some(c) = map_container {
+                        assert_eq!(6, c.get_item_count());
+                        let contents = c.get_contents();
+                        assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[0].get_self_item().get_name());
+                        assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[1].get_self_item().get_name());
+                        assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[2].get_self_item().get_name());
+                        assert_eq!(source_copy.get(1).get_self_item().get_name(), contents[3].get_self_item().get_name());
+                        assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[4].get_self_item().get_name());
+                        assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[5].get_self_item().get_name());
+                        return; // pass
+                    }
+                },
+                _ => {}
+            }
+        }
+        assert!(false);
     }
 
     fn test_move_split_items() {
+        // GIVEN a valid map
+        // that holds a source container containing 6 containers (Each with a unique name)
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+
+        // Clone everything before moving
+        let to_move = vec![container1.get_self_item().clone(), container6.get_self_item().clone()];
+        source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
+        let source_copy = source_container.clone();
+        assert_eq!(6, source_container.get_item_count());
+
+        // WHEN we call to move container 1 and 6 to container 2's location (index 1)
+        let source = source_container.clone();
+        let container_pos =  Position { x: 1, y: 1};
+        let target_item = source_container.get(1).get_self_item().clone();
+        let expected_target = target_item.clone();
+        let mut level = build_test_level(container_pos, source_container);
+        let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
+        let data_expected = data.clone();
+        let result = move_items(data, &mut level);
+        // THEN we expect a valid result
+        if let Some(input_result) = result {
+            match input_result {
+                MoveItems(result_data) => {
+                    // AND the source/targets should be returned with no outstanding to_move data
+                    assert!(data_expected.source.id_equals(&result_data.source));
+                    assert_eq!(data_expected.target_item.unwrap().get_id(), result_data.target_item.unwrap().get_id());
+                    assert_eq!(0, result_data.to_move.len());
+
+                    // AND The map 'source' container will have it's items reshuffled
+                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    if let Some(c) = map_container {
+                        assert_eq!(6, c.get_item_count());
+                        let contents = c.get_contents();
+                        assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[0].get_self_item().get_name());
+                        assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[1].get_self_item().get_name());
+                        assert_eq!(source_copy.get(1).get_self_item().get_name(), contents[2].get_self_item().get_name());
+                        assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[3].get_self_item().get_name());
+                        assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[4].get_self_item().get_name());
+                        assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[5].get_self_item().get_name());
+                        return; // pass
+                    }
+                },
+                _ => {}
+            }
+        }
         assert!(false)
-        /*
-    // GIVEN a valid view
-    let mut container = build_test_container();
-    let mut view : ContainerFrameHandler = build_default_container_view(container);
-    view.item_list_selection.page_line_count = 4;
-    assert_eq!(0, view.item_list_selection.get_true_index());
-    let mut contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-
-    // with a series of items
-    assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
-    assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
-
-    // AND we've selected the first and last item
-    view.toggle_select();
-    view.toggle_select();
-    view.page_down();
-    view.toggle_select();
-    view.toggle_select();
-
-    // WHEN we move down up one place and try to move the item (index 2)
-    view.move_up();
-    assert_eq!(2, view.item_list_selection.get_true_index());
-    view.move_selection();
-
-    // THEN we expect the focused index to remain at the top of the view
-    assert_eq!(0, view.item_list_selection.get_true_index());
-
-    // AND the chosen items will be moved to index 1
-    let contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-    assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 1", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[3].get_self_item().get_name());*/
-    }
-
-    fn test_move_3_split_items() {
-        assert!(false)
-        /*
-    // GIVEN a valid view
-    let mut container = build_test_container();
-    let mut view : ContainerFrameHandler = build_default_container_view(container);
-    view.item_list_selection.page_line_count = 4;
-    assert_eq!(0, view.item_list_selection.get_true_index());
-    let mut contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-
-    // with a series of items
-    assert_eq!("Test Item 1", contents[0].get_self_item().get_name()); // target
-    assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[3].get_self_item().get_name()); // target
-
-    // AND we've selected the first 2 and last item
-    view.toggle_select();
-    view.move_down();
-    view.toggle_select();
-    view.page_down();
-    view.toggle_select();
-    view.toggle_select();
-
-    // WHEN we move down up one place and try to move the item (index 2)
-    view.move_up();
-    assert_eq!(2, view.item_list_selection.get_true_index());
-    view.move_selection();
-
-    // THEN we expect the focused index to remain at the top of the view
-    assert_eq!(0, view.item_list_selection.get_true_index());
-
-    // AND the chosen items will be moved to index 1
-    let contents = view.container.get_contents();
-    assert_eq!(4, contents.len());
-    assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
-    assert_eq!("Test Item 2", contents[1].get_self_item().get_name());
-    assert_eq!("Test Item 4", contents[2].get_self_item().get_name());
-    assert_eq!("Test Item 3", contents[3].get_self_item().get_name());*/
     }
 
     #[test]

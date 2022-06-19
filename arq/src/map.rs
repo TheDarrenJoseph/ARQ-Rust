@@ -80,14 +80,6 @@ impl Map {
 
     pub fn find_containers_mut(&mut self, position: Position) -> Vec<&mut Container> {
         let mut containers : Vec<&mut Container> = Vec::new();
-        for room in &mut self.rooms {
-            if room.area.contains_position(position.clone()) {
-                if let Some(c) = room.containers.get_mut(&position) {
-                    containers.push(c);
-                }
-            }
-        }
-
         if let Some(map_c) = self.containers.get_mut(&position) {
             containers.push(map_c);
         }
@@ -105,7 +97,7 @@ impl Map {
             if c.id_equals(&target) {
                 return Some(c);
             } else {
-                for subcontainer in  c.find_container_objects() {
+                for subcontainer in  c.find_subcontainers() {
                     if subcontainer.id_equals(&target) {
                         return Some(subcontainer);
                     }
@@ -176,7 +168,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors, containers: HashMap::new() };
+        let room = Room { area: room_area, doors };
 
         let mut rooms = Vec::new();
         rooms.push(room);
@@ -211,7 +203,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors, containers: HashMap::new() };
+        let room = Room { area: room_area, doors };
 
         let mut rooms = Vec::new();
         rooms.push(room);
