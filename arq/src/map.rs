@@ -97,7 +97,7 @@ impl Map {
             if c.id_equals(&target) {
                 return Some(c);
             } else {
-                for subcontainer in  c.find_container_objects() {
+                for subcontainer in  c.find_subcontainers() {
                     if subcontainer.id_equals(&target) {
                         return Some(subcontainer);
                     }

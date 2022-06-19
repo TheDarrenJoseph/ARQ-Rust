@@ -126,9 +126,10 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                     if let Some(c) = map.containers.get(&p) {
                         let item_count = c.get_content_count();
                          if item_count > 0 {
-                            log::info!("Found map container.");
-                            target_position = Some(p.clone());
-                             if item_count == 1 {
+                             log::info!("Found map container.");
+                             target_position = Some(p.clone());
+                             let contains_single_container = item_count == 1 && c.get_contents()[0].is_true_container();
+                             if contains_single_container &&  c.get_contents()[0].get_content_count() > 0 {
                                  to_open = Some(c.get_contents()[0].clone());
                              } else {
                                  to_open = Some(c.clone());
