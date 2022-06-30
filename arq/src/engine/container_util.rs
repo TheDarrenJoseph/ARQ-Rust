@@ -75,32 +75,58 @@ fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option
     None
 }
 
+
+// TODO use this for world container calls too?
+fn move_to_item_spot(source_container : &mut Container, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
+    if let Some(target_item) = data.target_item {
+        if let Some(pos) = source_container.item_position(&target_item) {
+            let mut unmoved = Vec::new();
+            let mut moving = Vec::new();
+
+            for item in &data.to_move {
+                if let Some(container_item) = data.source.find_mut(&item) {
+                    moving.push(container_item.clone());
+                } else {
+                    unmoved.push(item.clone());
+                }
+            }
+
+            source_container.remove_matching_items(moving.clone());
+            let target_pos = if pos >= moving.len() { pos - moving.len() } else { pos };
+            source_container.insert(target_pos, moving.clone());
+            let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: None, target_item: Some(target_item.clone()), position: data.position };
+            return Some(MoveItems(data));
+        }
+    }
+    None
+}
+
 // TODO Moves items between player inventory containers / into world container
 pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
     if let Some(pos) = data.position {
         // TODO potentially support this to allow moving into world containers
         None
     } else {
-        return if let Some(ref target_container) = data.target_container {
-            let mut player = level.get_player_mut();
-            let mut inventory = player.get_inventory();
-            let mut source = None;
-
-            if data.source.id_equals(inventory) {
-                source = Some(inventory)
-            } else {
-                source = inventory.find_mut(data.source.get_self_item())
-            }
-
-            if let Some(s) = source {
-                log::info!("Returning MoveItems response");
-                return move_to_container(s, data)
-            }
-            None
-        } else if let Some(target_item) = data.target_item {
-            //TODO
-            None
+        let mut source = None;
+        let mut player = level.get_player_mut();
+        let mut inventory = player.get_inventory();
+        if data.source.id_equals(inventory) {
+            source = Some(inventory)
         } else {
+            source = inventory.find_mut(data.source.get_self_item())
+        }
+
+        if let Some(s) = source {
+            return if let Some(ref target_container) = data.target_container {
+                log::info!("Returning MoveItems response");
+                return move_to_container(s, data);
+            } else if let Some(ref target_item) = data.target_item {
+                return move_to_item_spot(s, data);
+            } else {
+                None
+            }
+        } else {
+            log::info!("[move_player_items] Failed to find source container!");
             None
         }
     }
@@ -130,8 +156,6 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
                 // Find the true instance of the source container on the map as our 'source_container'
                 let mut map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
-                    let from_container_name = source_container.get_self_item().get_name();
-                    let from_container_id = source_container.get_self_item().get_id();
                     if let Some(pos) = source_container.item_position(&target_item) {
                         let mut unmoved = Vec::new();
                         let mut moving = Vec::new();
