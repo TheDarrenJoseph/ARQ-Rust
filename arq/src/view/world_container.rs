@@ -53,7 +53,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
                             fh.handle_callback_result(r.clone())
                         }
 
-                        if fh.container.id_equals(&data.target_container.as_ref().unwrap()) {
+                        if data.target_container.as_ref().filter(|tc|fh.container.id_equals(tc)).is_some() {
                             fh.handle_callback_result(r.clone())
                         }
                     }
