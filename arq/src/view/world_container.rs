@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::io::Error;
 use tui::layout::{Rect};
 use termion::event::Key;
@@ -45,8 +46,22 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
-            if let Some(topmost_view) = self.frame_handlers.frame_handlers.last_mut() {
-                topmost_view.handle_callback_result(r);
+            match r {
+                ContainerFrameHandlerInputResult::MoveItems(ref data) => {
+                    for mut fh in &mut self.frame_handlers.frame_handlers {
+                        if fh.container.id_equals(&data.source) {
+                            fh.handle_callback_result(r.clone())
+                        }
+
+                        if fh.container.id_equals(&data.target_container.as_ref().unwrap()) {
+                            fh.handle_callback_result(r.clone())
+                        }
+                    }
+                },
+                _ => {
+                    self.frame_handlers.frame_handlers.last_mut().map(|fh| fh.handle_callback_result(r));
+
+                }
             }
         }
     }

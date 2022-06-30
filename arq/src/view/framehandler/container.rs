@@ -18,6 +18,7 @@ use crate::map::position::Position;
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DropItems;
 
+#[derive(Clone)]
 pub struct ContainerFrameHandler {
     pub container : Container,
     columns : Vec<Column>,
@@ -51,6 +52,7 @@ pub struct MoveItemsData {
     pub position: Option<Position>
 }
 
+#[derive(Clone)]
 pub enum ContainerFrameHandlerInputResult {
     None,
     OpenContainerView(ContainerFrameHandler),
@@ -132,10 +134,6 @@ impl ContainerFrameHandler {
         self.item_list_selection.cancel_selection();
     }
 
-    pub fn reset_selection(&mut self) {
-        self.rebuild_selection(&self.container.clone());
-    }
-
     fn build_headings(&self) -> Paragraph {
         let mut heading_spans = Vec::new();
         let mut spans = Vec::new();
@@ -154,7 +152,11 @@ impl ContainerFrameHandler {
             .wrap(Wrap { trim: false })
     }
 
-    pub fn rebuild_selection(&mut self, container: &Container) {
+    pub fn rebuild_selection(&mut self) {
+        self.item_list_selection = build_list_selection(self.container.to_cloned_item_list(), 1);
+    }
+
+    pub fn rebuild_selection_from(&mut self, container: &Container) {
         self.item_list_selection = build_list_selection(container.to_cloned_item_list(), 1);
     }
 
@@ -269,7 +271,7 @@ impl ContainerFrameHandler {
                 }
             }
             view_container.remove_matching_items(droppable_containers);
-            self.reset_selection();
+            self.rebuild_selection();
         }
     }
 
@@ -287,15 +289,15 @@ impl ContainerFrameHandler {
                 if let Some(container) = data.target_container {
                     self.container = data.source.clone();
                     // Remove selected items except for any untaken
-                    self.retain_selected_items(data.to_move);
-                    self.replace_focused_container(container);
+                    //self.retain_selected_items(data.to_move);
+                    //self.replace_focused_container(container);
                     &mut self.item_list_selection.cancel_selection();
-                    self.rebuild_selection(&data.source);
+                    self.rebuild_selection();
                 } else if let Some(item) = data.target_item {
                     // Moving to an existing item's location / splicing
                     // So just rebuild the whole selection
                     self.container = data.source.clone();
-                    self.rebuild_selection(&data.source);
+                    self.rebuild_selection_from(&data.source);
                 }
             },
             _ => {}
@@ -303,6 +305,7 @@ impl ContainerFrameHandler {
     }
 }
 
+#[derive(Clone)]
 pub struct Column {
     pub name : String,
     pub size : i8

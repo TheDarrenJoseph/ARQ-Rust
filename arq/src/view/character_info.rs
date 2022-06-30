@@ -110,8 +110,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
-            let mut container_views = &mut self.frame_handler.container_views;
-            if let Some(topmost_view) = container_views.last_mut() {
+            if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                 topmost_view.handle_callback_result(r);
             }
         }
@@ -207,6 +206,9 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                             container_views.push(stacked_view);
                                         },
                                         ContainerFrameHandlerInputResult::DropItems(_) => {
+                                            self.trigger_callback(view_specific_result);
+                                        },
+                                        ContainerFrameHandlerInputResult::MoveItems(_) => {
                                             self.trigger_callback(view_specific_result);
                                         },
                                         _ => {}

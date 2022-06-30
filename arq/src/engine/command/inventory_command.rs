@@ -11,10 +11,11 @@ use crate::view::View;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, TakeItems};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, MoveItems, TakeItems};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
 use crate::view::character_info::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
 use crate::engine::command::command::Command;
+use crate::engine::container_util;
 use crate::ui::Draw;
 use crate::view::callback::Callback;
 
@@ -57,10 +58,14 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
 }
 
 fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
-    let input_result = &state.data;
-    match input_result {
-        DropItems(items) => {
+    match state.data {
+        DropItems(ref items) => {
+            log::info!("[inventory command] Received data for DropItems with {} items", items.len());
             return drop_items(items.to_vec(), state);
+        },
+        MoveItems(mut data) => {
+            log::info!("[inventory command] Received data for MoveItems with {} items", data.to_move.len());
+            return container_util::move_player_items(data, state.level);
         }
         _ => {}
     }

@@ -33,12 +33,12 @@ fn handle_callback(level : &mut Level, position: Position, container: Container,
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TakeItems(mut data) => {
-            log::info!("Received data for TakeItems with {} items", data.to_take.len());
+            log::info!("[open command] Received data for TakeItems with {} items", data.to_take.len());
             data.position = Some(position.clone());
             return container_util::take_items(data , level);
         },
         MoveItems(mut data) => {
-            log::info!("[move_items] Received data for MoveItems with {} items", data.to_move.len());
+            log::info!("[open command] Received data for MoveItems with {} items", data.to_move.len());
             data.position = Some(position.clone());
             return container_util::move_items(data, level);
         }

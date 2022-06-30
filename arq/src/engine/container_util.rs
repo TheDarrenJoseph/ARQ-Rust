@@ -41,7 +41,59 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
     return None
 }
 
+fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
+    let from_container_name = source.get_self_item().get_name();
+    let from_container_id = source.get_self_item().get_id();
+
+    if let Some(target_container) = data.target_container {
+        if let Some(target) = source.find_mut(target_container.get_self_item()) {
+            let mut moved = Vec::new();
+            let mut unmoved = Vec::new();
+            let mut updated_target = None;
+            log::info!("Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
+            for item in data.to_move {
+                if let Some(container_item) = data.source.find_mut(&item) {
+                    if target.can_fit_container_item(container_item) {
+                        target.add(container_item.clone());
+                        moved.push(container_item.clone());
+                    } else {
+                        unmoved.push(item);
+                    }
+                }
+            }
+            updated_target = Some(target.clone());
+
+            if !moved.is_empty() || !unmoved.is_empty() {
+                log::info!("Returning MoveItems response with {} moved, {} unmoved items", moved.len(), unmoved.len());
+                source.remove_matching_items(moved);
+
+                let data = MoveItemsData { source: source.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
+                return Some(MoveItems(data));
+            }
+        }
+    }
+    None
+}
+
 // TODO Moves items between player inventory containers / into world container
+pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
+    if let Some(pos) = data.position {
+        // TODO potentially support this to allow moving into world containers
+        None
+    } else {
+        return if let Some(ref target_container) = data.target_container {
+            let mut player = level.get_player_mut();
+            let inventory = player.get_inventory();
+            log::info!("Returning MoveItems response");
+            return  move_to_container(inventory, data);
+        } else if let Some(target_item) = data.target_item {
+            //TODO
+            None
+        } else {
+            None
+        }
+    }
+}
 
 // Moves items between world containers
 pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
@@ -51,33 +103,7 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
                 // Find the true instance of the source container on the map as our 'source_container'
                 let mut map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
-                    let from_container_name = source_container.get_self_item().get_name();
-                    let from_container_id = source_container.get_self_item().get_id();
-                    let mut moved = Vec::new();
-                    let mut unmoved = Vec::new();
-                    let mut updated_target = None;
-                    // Find the true instance of the target container
-                    if let Some(target) = source_container.find_mut(target_container.get_self_item()) {
-                        log::info!("Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
-                        for item in data.to_move {
-                            if let Some(container_item) = data.source.find_mut(&item) {
-                                if target.can_fit_container_item(container_item) {
-                                    target.add(container_item.clone());
-                                    moved.push(container_item.clone());
-                                } else {
-                                    unmoved.push(item);
-                                }
-                            }
-                        }
-                        updated_target = Some(target.clone());
-                    }
-                    if !moved.is_empty() || !unmoved.is_empty() {
-                        log::info!("Returning MoveItems response with {} unmoved items", unmoved.len());
-                        source_container.remove_matching_items(moved);
-
-                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
-                        return Some(MoveItems(data));
-                    }
+                    return move_to_container(source_container, data);
                 }
             } else {
                 log::error!("Cannot move items. No map provided");
