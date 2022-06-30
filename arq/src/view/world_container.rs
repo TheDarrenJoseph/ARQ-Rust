@@ -62,7 +62,6 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
         Ok(true)
     }
 
-
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;

@@ -18,7 +18,7 @@ pub struct UI {
     pub console_visible: bool,
     pub additional_widgets: Vec<Widget>,
     pub frame_size : Option<Area>,
-    pub console_view : ConsoleFrameHandler
+    pub frame_handler: ConsoleFrameHandler
 }
 
 pub enum StartMenuChoice {
@@ -31,8 +31,8 @@ pub enum StartMenuChoice {
 pub fn build_ui() -> UI {
     let start_menu = menu::build_start_menu(false);
     let settings_menu = menu::build_settings_menu();
-    let console_view = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
-    ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), console_view :console_view }
+    let frame_handler = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
+    ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), frame_handler }
 }
 
 // FrameHandlers are "dumb" views that simply draw themselves to a terminal frame
@@ -102,6 +102,9 @@ fn build_main_block<'a>() -> Block<'a> {
 }
 
 impl UI {
+
+    // If the console if visible, splits a frame vertically into the 'main' and lower console areas
+    // Otherwise returns the original frame size
     pub fn get_view_areas(&self, frame_size: Rect) -> Vec<Rect> {
         let areas: Vec<Rect> = if self.console_visible {
             Layout::default()
@@ -122,12 +125,12 @@ impl UI {
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let main_block = build_main_block();
         let frame_size = frame.size();
-
         let areas: Vec<Rect> = self.get_view_areas(frame_size);
-        let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
         let main_area = areas[0];
+        frame.render_widget(main_block, main_area.clone());
+
+        let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
         self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
-        frame.render_widget(main_block, areas[0]);
 
         if self.render_additional {
             self.draw_additional_widgets(frame);
@@ -147,7 +150,7 @@ impl UI {
     }
 
     pub fn console_print(&mut self, input: String) {
-        self.console_view.buffer.content = input;
+        self.frame_handler.buffer.content = input;
     }
 }
 
@@ -190,8 +193,8 @@ impl Draw for UI {
     }
 
     fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, area: Rect) {
-        let frame_data = FrameData { frame_size: area, data: ConsoleBuffer { content: self.console_view.buffer.content.clone() } };
-        self.console_view.handle_frame(frame, frame_data);
+        let frame_data = FrameData { frame_size: area, data: ConsoleBuffer { content: self.frame_handler.buffer.content.clone() } };
+        self.frame_handler.handle_frame(frame, frame_data);
     }
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {

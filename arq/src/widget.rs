@@ -33,6 +33,7 @@ pub fn build_buffer(length: i8, input: String) -> String {
     return buffer;
 }
 
+// TODO potentially convert to a Widget trait/WidgetBase struct?
 #[derive(Debug)]
 pub enum WidgetType {
     Text(TextInputState),
@@ -51,7 +52,6 @@ pub trait Named {
     fn get_name(&mut self) -> String;
 }
 
-
 impl Named for WidgetType {
     fn get_name(&mut self) -> String {
         match self {
@@ -59,7 +59,7 @@ impl Named for WidgetType {
                 state.get_name()
             },
             WidgetType::Console(state) => {
-                state.get_name()
+                String::from("Console")
             },
             WidgetType::Number(state) => {
                 state.name.clone()
@@ -84,63 +84,33 @@ pub trait Focusable {
 impl Focusable for WidgetType {
     fn focus(&mut self) {
         match self {
-            WidgetType::Text(state) => {
-                state.selected = true;
-            },
-            WidgetType::Console(state) => {
-                state.selected = true;
-            },
-            WidgetType::Number(state) => {
-                state.selected = true;
-            },
-            WidgetType::Dropdown(state) => {
-                state.selected = true;
-            },
-            WidgetType::Button(state) => {
-                state.selected = true;
-            },
+            WidgetType::Text(state) =>  state.selected = true,
+            WidgetType::Console(state) => state.selected = true,
+            WidgetType::Number(state) => state.selected = true,
+            WidgetType::Dropdown(state) => state.selected = true,
+            WidgetType::Button(state) => state.selected = true,
             _ => {}
         }
     }
 
     fn unfocus(&mut self) {
         match self {
-            WidgetType::Text(state) => {
-                state.selected = false;
-            },
-            WidgetType::Console(state) => {
-                state.selected = false;
-            },
-            WidgetType::Number(state) => {
-                state.selected = false;
-            },
-            WidgetType::Dropdown(state) => {
-                state.selected = false;
-            },
-            WidgetType::Button(state) => {
-                state.selected = false;
-            },
+            WidgetType::Text(state) =>  state.selected = false,
+            WidgetType::Console(state) => state.selected = false,
+            WidgetType::Number(state) => state.selected = false,
+            WidgetType::Dropdown(state) => state.selected = false,
+            WidgetType::Button(state) => state.selected = false,
             _ => {}
         }
     }
 
     fn is_focused(&mut self) -> bool {
         match self {
-            WidgetType::Text(state) => {
-                state.selected.clone()
-            },
-            WidgetType::Console(state) => {
-                state.selected.clone()
-            },
-            WidgetType::Number(state) => {
-                state.selected.clone()
-            }
-            WidgetType::Dropdown(state) => {
-                state.selected.clone()
-            },
-            WidgetType::Button(state) => {
-                state.selected.clone()
-            },
+            WidgetType::Text(state) => state.selected.clone(),
+            WidgetType::Console(state) => state.selected.clone(),
+            WidgetType::Number(state) => state.selected.clone(),
+            WidgetType::Dropdown(state) => state.selected.clone(),
+            WidgetType::Button(state) => state.selected.clone(),
             _ => { false }
         }
     }

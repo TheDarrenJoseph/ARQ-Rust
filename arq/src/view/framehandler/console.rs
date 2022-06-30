@@ -38,13 +38,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrame
 
         let adjusted_text_width = frame_size.width - 2;
         let length : i8 = if adjusted_text_width >= i8::MAX as u16 { i8::MAX } else { adjusted_text_width.try_into().unwrap() };
-        let mut console_input = build_console_input(length, String::from(""), self.buffer.content.clone(), 0);
+        let mut console_input = build_console_input(length, self.buffer.content.clone(), 0);
         let text_area = Rect::new(frame_size.x +  1, frame_size.y + 1, frame_size.width - 2 , frame_size.height - 2 );
-        match &mut console_input.state_type {
-            WidgetType::Console(w) => {
-                frame.render_stateful_widget(w.clone(), text_area, &mut w.clone());
-            },
-            _ => {}
+
+        if let WidgetType::Console(w) = console_input.state_type {
+            frame.render_stateful_widget(w.clone(), text_area, &mut w.clone());
         }
     }
 }

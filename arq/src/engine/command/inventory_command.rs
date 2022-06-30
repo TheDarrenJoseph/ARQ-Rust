@@ -15,6 +15,7 @@ use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{Dro
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
 use crate::view::character_info::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
 use crate::engine::command::command::Command;
+use crate::ui::Draw;
 use crate::view::callback::Callback;
 
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
@@ -88,7 +89,8 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let terminal_manager = &mut self.terminal_manager;
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
 
-        self.ui.hide_console();
+        self.ui.console_print("Up/Down - Move\nEnter - Toggle selection".to_string());
+
         let level = &mut self.level;
         let player = &mut level.characters[0].clone();
         let updated_inventory;
@@ -101,7 +103,6 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
             updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();
         }
         level.characters[0].set_inventory(updated_inventory);
-        self.ui.show_console();
     }
 }
 

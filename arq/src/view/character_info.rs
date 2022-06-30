@@ -151,14 +151,14 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
         let character = self.character.clone();
         let ui = &mut self.ui;
 
-        let mut frame_area = Rect::default();
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
-            let size = frame.size();
-            frame_area = Rect { x : size.x.clone() + 1, y : size.y.clone() + 2, width: size.width.clone() -2,  height: size.height.clone() - 2};
-
+            let areas = ui.get_view_areas(frame.size());
+            let view_area = areas[0];
+            // Sizes for the entire 'Character Info' frame area
+            let frame_area = Rect { x : view_area.x, y : view_area.y +1 , width: view_area.width.clone(),  height: view_area.height.clone() - 1};
             let specific_frame_data = CharacterInfoViewFrameData { character };
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame.size(), data: specific_frame_data });
+            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
         })?;
         Ok(())
     }
@@ -239,29 +239,30 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
         let titles =  ["Inventory", "Character"].iter().cloned().map(Spans::from).collect();
         let selection_index = self.tab_choice.clone() as i32;
         let mut tabs = Tabs::new(titles)
-            .block(Block::default().title("Character Info").borders(Borders::ALL))
+            .block(Block::default().title("Character Info").borders(Borders::NONE))
             .style(Style::default())
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .divider(VERTICAL)
             .select(selection_index as usize);
 
-        let frame_size = frame.size();
-        let tab_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_size.width - 2, frame_size.height - 2);
-        frame.render_widget(tabs, tab_area);
+        let frame_size = data.frame_size;
+        let heading_area = Rect::new(frame_size.x + 1, frame_size.y, frame_size.width - 2, 3);
+        frame.render_widget(tabs, heading_area);
 
         let mut character = data.data.character;
         match self.tab_choice {
             TabChoice::INVENTORY => {
                 if let Some(topmost_view) = self.container_views.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
-                    let inventory_area = Rect::new(2, 3, frame_size.width - 4, frame_size.height - 5);
+                    let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
                     topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
                 }
             },
             TabChoice::CHARACTER => {
                 match &mut self.character_view {
                     Some(char_view) => {
-                        char_view.handle_frame(frame,  FrameData { frame_size: frame.size(), data: character.clone() } );
+                        let character_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
+                        char_view.handle_frame(frame,  FrameData { frame_size: character_area, data: character.clone() } );
                     },
                     _ => {}
                 }

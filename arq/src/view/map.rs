@@ -86,6 +86,40 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         }
         Ok(())
     }
+
+    fn draw_cell(&mut self, x: u16, y: u16, cell_x: u16, cell_y: u16) -> Result<(), Error> {
+        let view_area = self.view_area.unwrap();
+        let backend = self.terminal_manager.terminal.backend_mut();
+        let tiles = &self.map.tiles;
+        if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
+            let tile_details = &tiles[y as usize][x as usize];
+
+            let symbol = tile_details.symbol.to_string();
+            let fg = colour_mapper::map_colour(tile_details.colour);
+            let bg = tui::style::Color::Black;
+            let modifier = tui::style::Modifier::empty();
+            let cell = Cell { symbol, fg, bg, modifier };
+            let cell_tup: (u16, u16, &Cell) = (cell_x, cell_y, &cell);
+
+            let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+            backend.draw(updates.into_iter())?;
+            backend.flush()?;
+        }
+        Ok(())
+    }
+
+    fn draw_map_cells(&mut self) -> Result<(), Error> {
+        let view_area = self.view_area.unwrap();
+        let view_start_position = view_area.start_position;
+        for x in 0..view_area.get_size_x() {
+            for y in 0..view_area.get_size_y() {
+                let cell_x = x + view_start_position.x as u16;
+                let cell_y = y + view_start_position.y as u16;
+                self.draw_cell(x, y, cell_x, cell_y);
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> {
@@ -112,37 +146,7 @@ impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> 
             build_rectangular_area(start_position, frame_size.width, frame_size.height)
         };
         self.view_area = Some(view_area);
-
-        let backend = self.terminal_manager.terminal.backend_mut();
-
-        let start_position = self.map.area.start_position;
-        let end_position =  self.map.area.end_position;
-        let view_start_position = view_area.start_position;
-        let view_end_position =  view_area.end_position;
-
-        let tiles = &self.map.tiles;
-        let x_offset = view_start_position.x;
-        let y_offset = view_start_position.y;
-        for x in 0..view_area.get_size_x() {
-            for y in 0..view_area.get_size_y() {
-                let cell_x = x + view_start_position.x as u16;
-                let cell_y = y + view_start_position.y as u16;
-                if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
-                    let tile_details = &tiles[y as usize][x as usize];
-
-                    let symbol = tile_details.symbol.to_string();
-                    let fg = colour_mapper::map_colour(tile_details.colour);
-                    let bg = tui::style::Color::Black;
-                    let modifier = tui::style::Modifier::empty();
-                    let cell = Cell { symbol, fg, bg, modifier };
-                    let cell_tup: (u16, u16, &Cell) = (cell_x, cell_y, &cell);
-
-                    let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                    backend.draw(updates.into_iter())?;
-                    backend.flush()?;
-                }
-            }
-        }
+        self.draw_map_cells();
         Ok(())
     }
 

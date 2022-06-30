@@ -11,13 +11,12 @@ pub struct ConsoleInputState {
     pub selected: bool,
     length: i8,
     input : String,
-    name: String,
     input_padding: i8,
     selected_index: i8,
 }
 
-pub fn build_console_input(length: i8, name: String, input: String, input_padding: i8) -> Widget {
-    let name_input_state = WidgetType::Console( ConsoleInputState { selected: false, length, input, name, input_padding,  selected_index: 0 });
+pub fn build_console_input(length: i8, input: String, input_padding: i8) -> Widget {
+    let name_input_state = WidgetType::Console( ConsoleInputState { selected: false, length, input, input_padding,  selected_index: 0 });
     Widget{ state_type: name_input_state}
 }
 
@@ -46,24 +45,27 @@ impl ConsoleInputState {
         self.input = input
     }
 
-    pub fn get_name(&mut self) -> String {
-        self.name.clone()
-    }
-
 }
 
 impl StatefulWidget for ConsoleInputState {
     type State = ConsoleInputState;
 
     fn render(self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
-        let input_start_index = area.left() + self.name.len() as u16 + self.input_padding as u16;
+        let input_start_index = area.left() + self.input_padding as u16;
         let input = self.input;
         let current_cursor_index = input_start_index + input.len() as u16;
         let max_index = input_start_index + self.length as u16;
-
-        buf.set_string(area.left(), area.top(), self.name.clone(), Style::default());
         let input_buffer = build_buffer(self.length.clone(), input.clone());
-        buf.set_string(input_start_index, area.top(), input_buffer, Style::default());
+        let mut line_no = 0;
+        for line in input_buffer.lines() {
+            if line_no < area.height {
+                buf.set_string(input_start_index, area.top() + line_no, line, Style::default());
+                line_no += 1;
+            } else {
+                break;
+            }
+        }
+
         if self.selected && current_cursor_index < max_index {
             let selected_cell = buf.get_mut(current_cursor_index as u16, area.top());
             selected_cell.set_style(Style::default().add_modifier(Modifier::UNDERLINED));

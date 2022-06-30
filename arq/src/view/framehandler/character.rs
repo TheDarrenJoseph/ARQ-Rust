@@ -159,18 +159,19 @@ impl CharacterFrameHandler {
         }
     }
 
-    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character, title: String) {
-        let frame_size = frame.size();
-        let main_window_width = frame_size.width / 2;
-
-        let main_window_height = frame_size.height / 2;
-        let window_area = Rect::new(4, 4, main_window_width.clone(), main_window_height);
+    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>, title: String) {
+        //let frame_size = frame.size();
+        let frame_size = data.get_frame_size();
+        let frame_width = frame_size.width;
+        let frame_height = frame_size.height;
+        let window_area = Rect::new(frame_size.x, frame_size.y, frame_width, frame_height);
 
         let window_block = Block::default()
             .borders(Borders::ALL)
             .title(title);
         frame.render_widget(window_block, window_area);
 
+        let character = data.unpack();
         if self.widgets.is_empty() {
             log::info!("Building input widgets...");
             self.build_widgets(character);
@@ -185,22 +186,22 @@ impl CharacterFrameHandler {
         if (self.view_mode == ViewMode::CREATION) {
             attribute_start -= 1;
         }
-        let attributes_area = Rect::new(5, 4 + attribute_start, main_window_width.clone() - 2, main_window_height.clone() - 4);
+        let attributes_area = Rect::new(2, 4 + attribute_start, frame_width - 2, frame_height - 4);
         frame.render_widget(attributes_block, attributes_area);
 
         self.draw_main_inputs(frame);
         self.draw_attribute_inputs(frame);
     }
 
-    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character) {
+    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, data:  FrameData<Character>) {
         log::info!("Drawing character creation...");
-        self.draw_character_details(frame, character, "Character Creation".to_string());
+        self.draw_character_details(frame, data, "Character Creation".to_string());
     }
 
-    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, character: &mut Character) {
+    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data:  FrameData<Character>) {
         log::info!("Drawing character details...");
-        let name = character.get_name().clone();
-        self.draw_character_details(frame, character,name);
+        let name = data.unpack().get_name().clone();
+        self.draw_character_details(frame, data,name);
     }
 
     pub fn update_free_points(&mut self, free_points: i32) {
@@ -282,10 +283,10 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterFrameHa
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
-                self.draw_character_creation(frame, data.unpack());
+                self.draw_character_creation(frame, data);
             },
             ViewMode::VIEW => {
-                self.draw_character_info(frame, data.unpack())
+                self.draw_character_info(frame, data)
             }
         }
     }
