@@ -92,18 +92,14 @@ impl Map {
     }
 
     pub fn find_container(&mut self, target: &Container, pos: Position) -> Option<& mut Container> {
-        let map_containers = self.find_containers_mut(pos);
-        for c in map_containers {
+        for c in self.find_containers_mut(pos) {
             if c.id_equals(&target) {
                 return Some(c);
-            } else {
-                for subcontainer in  c.find_subcontainers() {
-                    if subcontainer.id_equals(&target) {
-                        return Some(subcontainer);
-                    }
-                }
+            } else if let Some(subcontainer) = c.find_mut(target.get_self_item()) {
+               return Some(subcontainer);
             }
         }
+
         None
     }
 

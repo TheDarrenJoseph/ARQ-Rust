@@ -83,9 +83,20 @@ pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<
     } else {
         return if let Some(ref target_container) = data.target_container {
             let mut player = level.get_player_mut();
-            let inventory = player.get_inventory();
-            log::info!("Returning MoveItems response");
-            return  move_to_container(inventory, data);
+            let mut inventory = player.get_inventory();
+            let mut source = None;
+
+            if data.source.id_equals(inventory) {
+                source = Some(inventory)
+            } else {
+                source = inventory.find_mut(data.source.get_self_item())
+            }
+
+            if let Some(s) = source {
+                log::info!("Returning MoveItems response");
+                return move_to_container(s, data)
+            }
+            None
         } else if let Some(target_item) = data.target_item {
             //TODO
             None
