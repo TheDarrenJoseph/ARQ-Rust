@@ -150,27 +150,14 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
         }
         log::error!("Failed to move items");
         None
-    } else if let Some(target_item) = data.target_item {
+    } else if let Some(ref target_item) = data.target_item {
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 // Find the true instance of the source container on the map as our 'source_container'
                 let mut map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
                     if let Some(pos) = source_container.item_position(&target_item) {
-                        let mut unmoved = Vec::new();
-                        let mut moving = Vec::new();
-                        for item in &data.to_move {
-                            if let Some(container_item) = data.source.find_mut(&item) {
-                                moving.push(container_item.clone());
-                            } else {
-                                unmoved.push(item.clone());
-                            }
-                        }
-                        source_container.remove_matching_items(moving.clone());
-                        let target_pos = if pos >= moving.len() { pos - moving.len() } else { pos };
-                        source_container.insert(target_pos, moving.clone());
-                        let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: None, target_item: Some(target_item.clone()), position: data.position };
-                        return Some(MoveItems(data));
+                        return move_to_item_spot(source_container, data);
                     }
                 }
             } else {
