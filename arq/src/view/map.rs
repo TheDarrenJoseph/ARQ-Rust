@@ -71,16 +71,17 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 if view_area.contains_position(view_position) {
                     match container.container_type {
                         ContainerType::OBJECT => {
-                            return self.draw_container(view_position.clone(), container)
+                            self.draw_container(view_position.clone(), container)?;
                         }
                         ContainerType::AREA => {
-                            if container.get_item_count() > 0 {
-                                return self.draw_container(view_position.clone(), container);
+                            let item_count = container.get_item_count();
+                            log::debug!("[map view] {} has {} items.", container.get_self_item().name, item_count);
+                            if item_count > 0 {
+                                self.draw_container(view_position.clone(), container)?;
                             }
                         },
                         _ => {}
                     }
-
                 }
 
             }

@@ -94,9 +94,10 @@ impl Container {
                 item_count += 1; // +1 for self item
                 if c.is_true_container() {
                     item_count += c.count_contents();
+                    log::debug!("Child container {} has {} items.", c.get_self_item().name, item_count);
                 }
             }
-            log::info!("Container: {} has {} items.", self.get_self_item().name, item_count);
+            log::debug!("{} has {} items.", self.get_self_item().name, item_count);
             item_count
         } else {
             return 1;
