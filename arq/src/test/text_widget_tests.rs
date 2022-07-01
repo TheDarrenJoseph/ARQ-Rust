@@ -1,23 +1,18 @@
-use crate::widget::text_widget::TextInputState;
-use crate::widget::dropdown_widget::DropdownInputState;
-use crate::widget::number_widget::NumberInputState;
-use crate::widget::{WidgetType};
-
-fn assert_for_text_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(TextInputState) {
-    match widget_type {
-        WidgetType::Text(s ) => {
-           callback(s);
-        }
-        _ => {
-            panic!("Widget state type was not Text!")
-        }
-    }
-}
-
 #[cfg(test)]
 mod test_text_input {
-    use crate::widget::text_widget::{TextInputState, build_text_input};
-    use crate::test::text_widget_tests::assert_for_text_widget;
+    use crate::widget::text_widget::{build_text_input, TextInputState};
+    use crate::widget::WidgetType;
+
+    fn assert_for_text_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(TextInputState) {
+        match widget_type {
+            WidgetType::Text(s ) => {
+                callback(s);
+            }
+            _ => {
+                panic!("Widget state type was not Text!")
+            }
+        }
+    }
 
     #[test]
     fn test_text_input_add_char() {

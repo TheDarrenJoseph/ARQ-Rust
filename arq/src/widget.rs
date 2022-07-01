@@ -1,21 +1,16 @@
+use crate::widget::button_widget::ButtonState;
+use crate::widget::character_stat_line::CharacterStatLineState;
+use crate::widget::console_input_widget::ConsoleInputState;
+use crate::widget::dropdown_widget::DropdownInputState;
+use crate::widget::number_widget::NumberInputState;
+use crate::widget::text_widget::TextInputState;
+
 pub mod text_widget;
 pub mod dropdown_widget;
 pub mod number_widget;
 pub mod button_widget;
 pub mod character_stat_line;
 pub mod console_input_widget;
-
-use tui::widgets::StatefulWidget;
-use tui::layout::Rect;
-use tui::buffer::Buffer;
-use tui::style::{Style, Modifier};
-
-use crate::widget::text_widget::TextInputState;
-use crate::widget::dropdown_widget::DropdownInputState;
-use crate::widget::number_widget::NumberInputState;
-use crate::widget::button_widget::ButtonState;
-use crate::widget::character_stat_line::CharacterStatLineState;
-use crate::widget::console_input_widget::ConsoleInputState;
 
 pub fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");
@@ -58,7 +53,7 @@ impl Named for WidgetType {
             WidgetType::Text(state) => {
                 state.get_name()
             },
-            WidgetType::Console(state) => {
+            WidgetType::Console(_state) => {
                 String::from("Console")
             },
             WidgetType::Number(state) => {

@@ -1,7 +1,5 @@
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
-use crate::map::objects::items::Item;
-use crate::map::position::Position;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, TakeItemsData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
 
@@ -27,7 +25,7 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
             }
         }
         if !taken.is_empty() || !untaken.is_empty() {
-            let mut map_container = level.get_map_mut().unwrap().find_container(&data.source, pos);
+            let map_container = level.get_map_mut().unwrap().find_container(&data.source, pos);
             if let Some(source_container) = map_container {
                 source_container.remove_matching_items(taken);
             }
@@ -49,7 +47,7 @@ fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option
         if let Some(target) = source.find_mut(target_container.get_self_item()) {
             let mut moved = Vec::new();
             let mut unmoved = Vec::new();
-            let mut updated_target = None;
+            let updated_target;
             log::info!("Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
             for item in data.to_move {
                 if let Some(container_item) = data.source.find_mut(&item) {
@@ -75,8 +73,6 @@ fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option
     None
 }
 
-
-// TODO use this for world container calls too?
 fn move_to_item_spot(source_container : &mut Container, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
     if let Some(target_item) = data.target_item {
         if let Some(pos) = source_container.item_position(&target_item) {
@@ -101,15 +97,16 @@ fn move_to_item_spot(source_container : &mut Container, mut data: MoveItemsData)
     None
 }
 
-// TODO Moves items between player inventory containers / into world container
-pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
-    if let Some(pos) = data.position {
+// Moves items between player inventory containers / into world container
+pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
+    if let Some(_) = data.position {
         // TODO potentially support this to allow moving into world containers
         None
     } else {
-        let mut source = None;
-        let mut player = level.get_player_mut();
-        let mut inventory = player.get_inventory();
+        let player = level.get_player_mut();
+        let inventory = player.get_inventory();
+
+        let source;
         if data.source.id_equals(inventory) {
             source = Some(inventory)
         } else {
@@ -117,10 +114,10 @@ pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<
         }
 
         if let Some(s) = source {
-            return if let Some(ref target_container) = data.target_container {
+            return if let Some(_) = data.target_container {
                 log::info!("Returning MoveItems response");
                 return move_to_container(s, data);
-            } else if let Some(ref target_item) = data.target_item {
+            } else if let Some(_) = data.target_item {
                 return move_to_item_spot(s, data);
             } else {
                 None
@@ -133,12 +130,12 @@ pub fn move_player_items(mut data: MoveItemsData, level : &mut Level) -> Option<
 }
 
 // Moves items between world containers
-pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
-    return if let Some(ref mut target_container) = data.target_container {
+pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
+    return if let Some(_) = data.target_container {
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 // Find the true instance of the source container on the map as our 'source_container'
-                let mut map_container = map.find_container(&data.source, pos);
+                let map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
                     return move_to_container(source_container, data);
                 }
@@ -154,9 +151,9 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 // Find the true instance of the source container on the map as our 'source_container'
-                let mut map_container = map.find_container(&data.source, pos);
+                let map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
-                    if let Some(pos) = source_container.item_position(&target_item) {
+                    if let Some(_) = source_container.item_position(&target_item) {
                         return move_to_item_spot(source_container, data);
                     }
                 }
@@ -177,7 +174,9 @@ pub fn move_items(mut data: MoveItemsData, level : &mut Level) -> Option<Contain
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use uuid::Uuid;
+
     use crate::character::{build_character, build_default_character_details, build_player};
     use crate::engine::container_util::move_items;
     use crate::engine::level::Level;

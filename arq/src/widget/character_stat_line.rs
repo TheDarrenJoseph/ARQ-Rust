@@ -1,11 +1,10 @@
-use tui::widgets::StatefulWidget;
-use tui::layout::Rect;
 use tui::buffer::Buffer;
-use tui::style::{Style, Modifier, Color};
+use tui::layout::Rect;
+use tui::style::{Color, Style};
+use tui::widgets::StatefulWidget;
 
-
-use crate::widget::{Widget, WidgetType, build_buffer};
-use crate::character::{get_all_attributes, CharacterDetails, Race, Class, determine_class, Attribute};
+use crate::character::CharacterDetails;
+use crate::widget::{Widget, WidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -24,7 +23,7 @@ pub fn build_character_stat_line(health: i8, character_details: CharacterDetails
 impl StatefulWidget for CharacterStatLineState {
     type State = CharacterStatLineState;
 
-    fn render(self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
+    fn render(self, _area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
         let health_header = String::from("Health: ");
         let health_value = self.health.to_string();
         buf.set_string(1, 0, health_header.as_str(), Style::default().fg(Color::Green));

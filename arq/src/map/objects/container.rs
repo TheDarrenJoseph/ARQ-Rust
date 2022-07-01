@@ -1,8 +1,8 @@
-use crate::map::objects::items::{build_container_item, Item, ItemType};
-use uuid::Uuid;
 use std::convert::TryInto;
 use std::fmt;
-use std::slice::Iter;
+use uuid::Uuid;
+
+use crate::map::objects::items::{build_container_item, Item, ItemType};
 
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -96,6 +96,7 @@ impl Container {
                     item_count += c.count_contents();
                 }
             }
+            log::info!("Container: {} has {} items.", self.get_self_item().name, item_count);
             item_count
         } else {
             return 1;
@@ -174,9 +175,8 @@ impl Container {
     pub fn remove_matching_items(&mut self, items : Vec<Container>) -> bool {
         let mut removed = Vec::new();
         for item in items.iter() {
-            let mut success = self.remove_item(item);
             removed.push(item.clone());
-            if !success {
+            if !self.remove_item(item) {
                 for c in self.contents.iter_mut() {
                     if c.remove_matching_items(items.clone()) {
                         removed = items.clone();
@@ -340,6 +340,7 @@ pub fn build(id: Uuid, name: String, symbol: char, weight : i32, value : i32, co
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
+
     use crate::map::objects::container;
     use crate::map::objects::container::{build, ContainerType};
     use crate::map::objects::items;

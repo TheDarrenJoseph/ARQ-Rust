@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+use std::io::Error;
+use std::slice::Iter;
+
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Modifier, Style};
@@ -5,29 +9,17 @@ use tui::symbols::line::VERTICAL;
 use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
-use std::io::Error;
-use std::slice::Iter;
-use std::collections::HashSet;
-
-use crate::character::{Attribute, Character, Class, determine_class, get_all_attributes, Race};
-use crate::character;
+use crate::character::{Character};
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::{FrameData, FrameHandler, UI};
-use crate::view::{GenericInputResult, InputResult, resolve_input, View};
+use crate::view::{GenericInputResult, resolve_input, View};
+use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{build_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
 use crate::view::InputHandler;
-use crate::widget::{Focusable, Named, Widget, WidgetType};
-use crate::widget::button_widget::build_button;
-use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
-use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
-use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
-use crate::widget::text_widget::build_text_input;
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, DROP};
-use crate::view::callback::Callback;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DropItems;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -68,13 +60,13 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_view(self.character.get_inventory().clone(), commands);
         self.frame_handler.container_views = vec!(inventory_view);
 
-        let mut character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
+        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
     }
 
     // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), std::io::Error>  {
-        let mut ui = &mut self.ui;
+        let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
         })?;
@@ -128,24 +120,18 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     }
 }
 
-
-struct CharacterViewInputResult {
-
-}
-
 impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterInfoView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
         self.initialise();
-        self.terminal_manager.terminal.clear();
-        self.draw(None);
+        self.terminal_manager.terminal.clear()?;
+        self.draw(None)?;
         while !self.handle_input(None).unwrap() {
-            self.draw(None);
+            self.draw(None)?;
         }
         Ok(true)
     }
 
-
-    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
@@ -167,7 +153,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
         match key {
             Key::Char('q') => {
                 // Drop the last container view and keep going
-                let mut container_views = &mut self.frame_handler.container_views;
+                let container_views = &mut self.frame_handler.container_views;
                 if container_views.len() > 1 {
                     if let Some(closing_view) = self.frame_handler.container_views.pop() {
                         let closing_container = closing_view.container;
@@ -194,11 +180,11 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                 let mut generic_input_result : Option<GenericInputResult> = None;
                 match self.frame_handler.tab_choice {
                     TabChoice::INVENTORY => {
-                        let mut container_views = &mut self.frame_handler.container_views;
+                        let container_views = &mut self.frame_handler.container_views;
                         let have_container_views = !container_views.is_empty();
                         if have_container_views {
                             if let Some(topmost_view) = container_views.last_mut() {
-                                let mut container_view_input_result = topmost_view.handle_input(Some(key));
+                                let container_view_input_result = topmost_view.handle_input(Some(key));
                                 let result = container_view_input_result.unwrap();
                                 if let Some(view_specific_result) = result.view_specific_result {
                                     match view_specific_result {
@@ -225,7 +211,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
 
                 if let Some(r) = generic_input_result {
                     if r.requires_view_refresh {
-                        self.terminal_manager.terminal.clear();
+                        self.terminal_manager.terminal.clear()?;
                     }
                 }
 
@@ -237,10 +223,10 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoViewFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<CharacterInfoViewFrameData>) {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<CharacterInfoViewFrameData>) {
         let titles =  ["Inventory", "Character"].iter().cloned().map(Spans::from).collect();
         let selection_index = self.tab_choice.clone() as i32;
-        let mut tabs = Tabs::new(titles)
+        let tabs = Tabs::new(titles)
             .block(Block::default().title("Character Info").borders(Borders::NONE))
             .style(Style::default())
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
@@ -251,7 +237,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
         let heading_area = Rect::new(frame_size.x + 1, frame_size.y, frame_size.width - 2, 3);
         frame.render_widget(tabs, heading_area);
 
-        let mut character = data.data.character;
+        let character = data.data.character;
         match self.tab_choice {
             TabChoice::INVENTORY => {
                 if let Some(topmost_view) = self.container_views.last_mut() {
@@ -269,25 +255,25 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
                     _ => {}
                 }
             }
-            _ => {}
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
     use std::collections::HashMap;
 
-    use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-    use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::tile::{Colour, Tile};
-    use crate::map::objects::items;
-    use crate::character::{Character, build_default_character_details, build_character};
+    use uuid::Uuid;
+
+    use crate::character::{build_character, build_default_character_details, Character};
     use crate::engine::level::Level;
+    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
+    use crate::map::tile::{Colour, Tile};
     use crate::terminal::terminal_manager;
     use crate::ui::build_ui;
+    use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 
     fn build_test_container() -> Container {

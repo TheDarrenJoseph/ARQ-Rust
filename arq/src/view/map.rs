@@ -1,16 +1,17 @@
-use tui::buffer::Cell;
-
 use std::io::Error;
-use crate::map::Map;
-use crate::ui::{UI};
-use crate::terminal::terminal_manager::TerminalManager;
-use crate::terminal::colour_mapper;
-use crate::character::Character;
-use crate::view::{View, GenericInputResult};
+
 use termion::event::Key;
-use crate::map::position::{Area, Position, build_square_area, build_rectangular_area};
+use tui::buffer::Cell;
 use tui::layout::Rect;
+
+use crate::character::Character;
+use crate::map::Map;
 use crate::map::objects::container::{Container, ContainerType};
+use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::terminal::colour_mapper;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::UI;
+use crate::view::{GenericInputResult, View};
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -70,11 +71,11 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                 if view_area.contains_position(view_position) {
                     match container.container_type {
                         ContainerType::OBJECT => {
-                            self.draw_container(view_position.clone(), container);
+                            return self.draw_container(view_position.clone(), container)
                         }
                         ContainerType::AREA => {
                             if container.get_item_count() > 0 {
-                                self.draw_container(view_position.clone(), container);
+                                return self.draw_container(view_position.clone(), container);
                             }
                         },
                         _ => {}
@@ -115,7 +116,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
             for y in 0..view_area.get_size_y() {
                 let cell_x = x + view_start_position.x as u16;
                 let cell_y = y + view_start_position.y as u16;
-                self.draw_cell(x, y, cell_x, cell_y);
+                self.draw_cell(x, y, cell_x, cell_y)?
             }
         }
         Ok(())
@@ -132,7 +133,7 @@ impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> 
     fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
         log::info!("Drawing map tiles...");
 
-        let mut ui = &mut self.ui;
+        let ui = &mut self.ui;
         let mut frame_size = Rect::new(0,0, 20, 20);
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
@@ -146,11 +147,11 @@ impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> 
             build_rectangular_area(start_position, frame_size.width, frame_size.height)
         };
         self.view_area = Some(view_area);
-        self.draw_map_cells();
+        self.draw_map_cells()?;
         Ok(())
     }
 
-    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
+    fn handle_input(&mut self, _input: Option<Key>) -> Result<bool, Error> {
         Ok(true)
     }
 }

@@ -1,12 +1,7 @@
-use crate::widget::text_widget::TextInputState;
-use crate::widget::dropdown_widget::DropdownInputState;
-use crate::widget::number_widget::NumberInputState;
-use crate::widget::{WidgetType};
-
 #[cfg(test)]
 mod text_number_input {
     use crate::widget::{Focusable, WidgetType};
-    use crate::widget::number_widget::{NumberInputState, build_number_input, build_number_input_with_value};
+    use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 
     fn assert_for_number_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(NumberInputState) {
         match widget_type {

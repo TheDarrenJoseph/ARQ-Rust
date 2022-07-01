@@ -1,4 +1,5 @@
 use uuid::Uuid;
+
 use crate::map::tile::Colour;
 
 #[derive(Clone)]
@@ -52,6 +53,7 @@ pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, 
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
+
     use crate::map::objects::items;
     use crate::map::tile::Colour;
 

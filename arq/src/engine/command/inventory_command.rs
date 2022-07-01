@@ -1,23 +1,19 @@
 use std::io;
-use termion::event::Key;
-use std::collections::HashMap;
-use termion::input::TermRead;
-use std::collections::HashSet;
 
+use termion::event::Key;
+
+use crate::engine::command::command::Command;
+use crate::engine::container_util;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
-use crate::view::View;
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, MoveItems, TakeItems};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
-use crate::view::character_info::{CharacterInfoViewFrameHandler, CharacterInfoView, TabChoice};
-use crate::engine::command::command::Command;
-use crate::engine::container_util;
-use crate::ui::Draw;
 use crate::view::callback::Callback;
+use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, MoveItems};
+use crate::view::View;
 
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -38,7 +34,7 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
     // Find the container on the map and add the "container" wrappers there
     let mut undropped = Vec::new();
     if let Some(m) = state.level.get_map_mut() {
-        if let Some(mut pos_container) = m.find_container_mut(position) {
+        if let Some(pos_container) = m.find_container_mut(position) {
             for item in items {
                 // Find the "container" wrappper matching the item returned
                 if let Some(container_item) = state.container.find_mut(&item) {
@@ -63,7 +59,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
             log::info!("[inventory command] Received data for DropItems with {} items", items.len());
             return drop_items(items.to_vec(), state);
         },
-        MoveItems(mut data) => {
+        MoveItems(data) => {
             log::info!("[inventory command] Received data for MoveItems with {} items", data.to_move.len());
             return container_util::move_player_items(data, state.level);
         }
@@ -74,24 +70,11 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
 
 impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
-    fn re_render(&mut self) -> Result<(), io::Error>  {
-        let mut ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
-        })?;
-        Ok(())
-    }
-
-    fn open_inventory(&mut self) {
+    fn open_inventory(&mut self) -> Result<(), io::Error> {
         log::info!("Player opening inventory.");
         let c = self.level.get_player_mut().get_inventory();
-        let mut inventory_container = c.clone();
-        let mut view_container = c.clone();
         let mut callback_container: Container = c.clone();
-        let mut commands: HashSet<ContainerFrameHandlerCommand> = HashSet::new();
 
-        let ui = &mut self.ui;
-        let terminal_manager = &mut self.terminal_manager;
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
 
         self.ui.console_print("Up/Down - Move\nEnter - Toggle selection".to_string());
@@ -100,14 +83,21 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let player = &mut level.characters[0].clone();
         let updated_inventory;
         {
-            let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
+            let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|_| {None}) };
             character_info_view.set_callback(Box::new(|data| {
                 handle_callback(CallbackState { level, container: &mut callback_container, data })
             }));
-            character_info_view.begin();
-            updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();
+            match character_info_view.begin() {
+                Ok(_) => {
+                    updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();
+                },
+                Err(e) => {
+                    return Err(e)
+                }
+            }
         }
         level.characters[0].set_inventory(updated_inventory);
+        return Ok(())
     }
 }
 
@@ -123,40 +113,40 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
-        self.open_inventory();
-        Ok(())
+    fn handle(&mut self, _: Key) -> Result<(), io::Error> {
+        return self.open_inventory();
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
     use std::collections::HashMap;
-    use tui::backend::TestBackend;
     use std::collections::HashSet;
-    use termion::input::TermRead;
-    use tui::text::Text;
-    use tui::layout::Rect;
-    use tui::buffer::{Buffer, Cell};
-    use tui::widgets::Widget;
 
-    use crate::ui;
-    use crate::terminal;
-    use crate::map::objects::container;
-    use crate::map::objects::container::{build, ContainerType, Container};
-    use crate::map::objects::items;
-    use crate::menu;
-    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult};
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui::{UI, build_ui};
-    use crate::list_selection::ListSelection;
-    use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
-    use crate::map::tile::{Colour, Tile};
-    use crate::engine::command::inventory_command::{InventoryCommand, handle_callback, CallbackState};
-    use crate::engine::level::Level;
+    use termion::input::TermRead;
+    use tui::backend::TestBackend;
+    use tui::buffer::{Buffer, Cell};
+    use tui::layout::Rect;
+    use tui::text::Text;
+    use tui::widgets::Widget;
+    use uuid::Uuid;
+
     use crate::character::build_player;
-    use crate::map::position::{Position, build_square_area};
+    use crate::engine::command::inventory_command::{CallbackState, handle_callback, InventoryCommand};
+    use crate::engine::level::Level;
+    use crate::list_selection::ListSelection;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::items;
+    use crate::map::position::{build_square_area, Position};
+    use crate::map::tile::{Colour, Tile};
+    use crate::menu;
+    use crate::terminal;
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui;
+    use crate::ui::{build_ui, UI};
+    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+    use crate::view::framehandler::container::{build_container_view, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();

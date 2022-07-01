@@ -1,22 +1,18 @@
-use crate::widget::dropdown_widget::DropdownInputState;
-use crate::widget::number_widget::NumberInputState;
-use crate::widget::{WidgetType};
-
-fn assert_for_dropdown_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(DropdownInputState) {
-    match widget_type {
-        WidgetType::Dropdown(s ) => {
-            callback(s);
-        }
-        _ => {
-            panic!("Widget state type was not text!")
-        }
-    }
-}
-
 #[cfg(test)]
 mod text_dropdown {
-    use crate::widget::dropdown_widget::{DropdownInputState, build_dropdown};
-    use crate::test::dropdown_widget_tests::assert_for_dropdown_widget;
+    use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
+    use crate::widget::WidgetType;
+
+    fn assert_for_dropdown_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(DropdownInputState) {
+        match widget_type {
+            WidgetType::Dropdown(s ) => {
+                callback(s);
+            }
+            _ => {
+                panic!("Widget state type was not text!")
+            }
+        }
+    }
 
     #[test]
     fn test_dropdown_get_selection() {

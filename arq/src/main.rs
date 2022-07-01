@@ -1,8 +1,9 @@
 use std::io;
 
-use crate::engine::game_engine::{build_game_engine, GameEngine};
-use tui::backend::TermionBackend;
 use termion::raw::RawTerminal;
+use tui::backend::TermionBackend;
+
+use crate::engine::game_engine::{build_game_engine, GameEngine};
 
 mod engine;
 mod terminal;

@@ -1,8 +1,9 @@
-use crate::map::Map;
-use crate::character::Character;
-use crate::map::position::{Side, Position};
 use termion::event::Key;
+
+use crate::character::Character;
 use crate::engine::command::input_mapping;
+use crate::map::Map;
+use crate::map::position::{Position, Side};
 
 #[derive(Default, Clone)]
 pub struct Level {
@@ -11,7 +12,7 @@ pub struct Level {
 }
 
 impl Level {
-    pub(crate) fn find_adjacent_player_position(&mut self, key: Key, command_char: Key) -> Option<Position> {
+    pub(crate) fn find_adjacent_player_position(&mut self, key: Key, _command_char: Key) -> Option<Position> {
         return match key {
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = input_mapping::key_to_side(key) {
@@ -20,7 +21,7 @@ impl Level {
                     None
                 }
             },
-            Key::Char(command_char) => {
+            Key::Char(_) => {
                 Some(self.get_player_mut().get_position().clone())
             }
             _ => {

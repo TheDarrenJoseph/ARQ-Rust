@@ -1,38 +1,37 @@
-use termion::input::TermRead;
-use tui::backend::{Backend};
-use tui::layout::{Rect};
-use termion::event::Key;
-use std::io;
 use std::convert::TryInto;
+use std::io;
+
+use termion::event::Key;
+use termion::input::TermRead;
+use tui::backend::Backend;
+use tui::layout::Rect;
 use uuid::Uuid;
 
-use crate::ui;
-use crate::ui::{Draw, build_ui};
+use crate::character::{build_player, Character};
+use crate::engine::command::command::Command;
+use crate::engine::command::input_mapping;
+use crate::engine::command::inventory_command::InventoryCommand;
+use crate::engine::command::look_command::LookCommand;
+use crate::engine::command::open_command::OpenCommand;
+use crate::engine::level::Level;
+use crate::map::map_generator::build_generator;
+use crate::map::objects::container;
+use crate::map::objects::container::ContainerType;
+use crate::map::objects::items;
+use crate::map::position::{build_rectangular_area, Position};
+use crate::map::position::Side;
+use crate::menu;
+use crate::menu::Selection;
 use crate::settings;
 use crate::settings::Toggleable;
-use crate::menu;
-use crate::menu::{Selection};
-use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::{View};
-use crate::view::map::MapView;
-use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
-use crate::map::map_generator::build_generator;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::map::position::{Position, build_rectangular_area};
-use crate::character::{Character, build_player};
-use crate::widget::character_stat_line::{build_character_stat_line};
-use crate::map::objects::container;
-use crate::map::objects::container::{ContainerType};
-use crate::map::objects::items;
-use crate::map::position::Side;
-use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-use crate::engine::level::Level;
-use crate::engine::command::input_mapping;
-use crate::engine::command::open_command::OpenCommand;
-use crate::engine::command::command::Command;
-use crate::engine::command::look_command::LookCommand;
-use crate::engine::command::inventory_command::InventoryCommand;
-
+use crate::ui;
+use crate::ui::{build_ui, Draw};
+use crate::ui::{SettingsMenuChoice, StartMenuChoice};
+use crate::view::View;
+use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
+use crate::view::map::MapView;
+use crate::widget::character_stat_line::build_character_stat_line;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     terminal_manager : TerminalManager<B>,
@@ -256,7 +255,15 @@ impl <B : Backend> GameEngine<B> {
             }
 
             self.ui.show_console();
-            self.draw_map_view();
+
+            match self.draw_map_view() {
+                Err(e) => {
+                    log::error!("Error when attempting to draw map: {}", e);
+                    return Err(e);
+                }
+                _ => {
+                }
+            }
             self.game_loop()?;
         }
         //self.terminal_manager.terminal.clear()?;
@@ -358,41 +365,42 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(mut terminal_manager : Te
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::convert::TryInto;
+    use std::io;
+
+    use termion::event::Key;
     use termion::input::TermRead;
     use termion::raw::RawTerminal;
     use tui::backend::TermionBackend;
-    use termion::event::Key;
-    use std::io;
-    use std::convert::TryInto;
     use uuid::Uuid;
-    use std::collections::HashMap;
 
-    use crate::terminal::terminal_manager;
-    use crate::ui;
-    use crate::ui::Draw;
-    use crate::settings;
-    use crate::settings::Toggleable;
-    use crate::menu;
-    use crate::menu::{Selection};
-    use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-    use crate::view::View;
-    use crate::view::map::MapView;
-    use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
-    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view};
-    use crate::map::map_generator::build_generator;
+    use crate::character::{build_player, Character};
+    use crate::engine::game_engine::*;
+    use crate::list_selection::build_list_selection;
     use crate::map::Map;
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::map::position::{Position, build_rectangular_area};
-    use crate::character::{Character, build_player};
-    use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
+    use crate::map::map_generator::build_generator;
     use crate::map::objects::container;
     use crate::map::objects::container::ContainerType;
-    use crate::list_selection::build_list_selection;
     use crate::map::objects::items;
-    use crate::map::position::Side;
+    use crate::map::position::{build_rectangular_area, Position};
     use crate::map::position::{Area, build_square_area};
-    use crate::map::tile::{Tile, TileDetails, build_library};
-    use crate::engine::game_engine::*;
+    use crate::map::position::Side;
+    use crate::map::tile::{build_library, Tile, TileDetails};
+    use crate::menu;
+    use crate::menu::Selection;
+    use crate::settings;
+    use crate::settings::Toggleable;
+    use crate::terminal::terminal_manager;
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui;
+    use crate::ui::{SettingsMenuChoice, StartMenuChoice};
+    use crate::ui::Draw;
+    use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
+    use crate::view::framehandler::container::{build_container_view, ContainerFrameHandler};
+    use crate::view::map::MapView;
+    use crate::view::View;
+    use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
 
     fn build_tiles(map_area: Area, tile : Tile) -> Vec<Vec<TileDetails>> {
         let tile_library = build_library();

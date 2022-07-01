@@ -1,4 +1,5 @@
 use std::io;
+
 use termion::event::Key;
 
 pub trait Command {

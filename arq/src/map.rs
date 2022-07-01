@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use room::Room;
 
+use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
 use crate::map::tile::{Tile, TileDetails};
-use crate::map::objects::container::Container;
 
 pub mod objects;
 pub mod map_generator;

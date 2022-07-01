@@ -1,8 +1,8 @@
-use termion::raw::{IntoRawMode, RawTerminal};
-use tui::backend::{TestBackend, TermionBackend};
-use tui::Terminal;
-
 use std::io;
+
+use termion::raw::{IntoRawMode, RawTerminal};
+use tui::backend::{TermionBackend, TestBackend};
+use tui::Terminal;
 
 pub struct TerminalManager<B : tui::backend::Backend> {
     pub terminal : tui::Terminal<B>,

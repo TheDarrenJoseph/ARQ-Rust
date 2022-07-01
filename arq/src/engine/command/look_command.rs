@@ -1,24 +1,17 @@
 use std::io;
 use std::io::{Error, ErrorKind};
+
 use termion::event::Key;
 use termion::input::TermRead;
 
-use crate::view::framehandler::container;
 use crate::engine::command::command::Command;
-use crate::view::world_container::{WorldContainerViewFrameHandlers, WorldContainerView};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::TakeItems;
-use crate::map::position::Position;
-use crate::view::callback::Callback;
-use crate::view::View;
-use crate::map::Map;
 use crate::engine::level::Level;
-use crate::ui;
 use crate::map::objects::container::Container;
-use crate::engine::command::input_mapping;
-use crate::map::objects::container::ContainerType::{AREA, ITEM, OBJECT};
+use crate::map::objects::container::ContainerType::AREA;
+use crate::map::position::Position;
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui;
 
 pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -87,8 +80,7 @@ impl <B: tui::backend::Backend> LookCommand<'_, B> {
 
     fn print(&mut self, prompt: String) -> Result<(), io::Error> {
         self.ui.console_print(prompt);
-        self.re_render();
-        Ok(())
+        return self.re_render();
     }
 }
 
@@ -106,19 +98,15 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
 
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
         self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
-        self.re_render();
+        self.re_render().unwrap();
         let key = io::stdin().keys().next().unwrap().unwrap();
         let position = self.level.find_adjacent_player_position(key, command_key);
         if let Some(p) = position {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
-            self.re_render();
-            let prompt = describe_position(p, &mut self.level);
-            if prompt.is_ok() {
-                self.print(prompt.unwrap());
-                let key = io::stdin().keys().next().unwrap().unwrap();
-            } else {
-                return Err(prompt.unwrap_err())
-            }
+            self.re_render()?;
+            let prompt =  describe_position(p, &mut self.level)?;
+            self.print(prompt)?;
+            io::stdin().keys().next().unwrap().unwrap();
         }
         Ok(())
     }
@@ -128,16 +116,18 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
 mod tests {
     use std::collections::HashMap;
     use std::io::{Error, ErrorKind};
+
     use uuid::Uuid;
+
+    use crate::character::build_player;
     use crate::engine::command::look_command::{describe_position, describe_position_container, describe_position_in_room};
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
+    use crate::map::room::Room;
     use crate::map::tile::Tile;
     use crate::view::framehandler::character;
-    use crate::character::build_player;
-    use crate::map::objects::door::build_door;
-    use crate::map::room::Room;
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();

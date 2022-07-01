@@ -1,18 +1,18 @@
-use std::io::Error;
 use std::io;
+use std::io::Error;
+
+use termion::event::Key;
+use termion::input::TermRead;
+use tui::Frame;
+use tui::layout::Rect;
+
+use crate::map::position::{Area, build_rectangular_area, Position};
 
 pub mod framehandler;
 pub mod callback;
 pub mod character_info;
 pub mod map;
 pub mod world_container;
-use termion::event::Key;
-use termion::input::TermRead;
-
-use crate::map::position::{Area, Position, build_rectangular_area};
-use tui::Frame;
-use tui::layout::Rect;
-
 
 // A View begins an I/O loop (upon calling begin()) while rendering
 pub trait View<'b, COM: 'b>  {
@@ -41,12 +41,10 @@ fn map_rect_to_area(rect: Rect) -> Area {
 }
 
 pub fn resolve_area<B : tui::backend::Backend>(area: Option<Rect>, frame: &Frame<B>) -> Rect {
-    let mut frame_area;
-    match area {
-        Some(a) => { frame_area = a },
-        _ => { frame_area = frame.size() }
+    return match area {
+        Some(a) => { a },
+        _ => { frame.size() }
     }
-    frame_area
 }
 
 pub fn resolve_input(input : Option<Key>) -> Key {

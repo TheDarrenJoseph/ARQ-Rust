@@ -1,24 +1,17 @@
-use std::io;
 use std::io::Error;
-use tui::layout::{Rect};
-use tui::style::{Style, Color};
-use tui::buffer::{Buffer};
-use tui::widgets::{Block, Borders};
-use termion::input::TermRead;
-use termion::event::Key;
 
-use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, InputHandler, InputResult, GenericInputResult};
-use crate::terminal::terminal_manager::TerminalManager;
-use crate::character::{get_all_attributes, Character, Race, Class, determine_class, Attribute};
-use crate::widget::text_widget::build_text_input;
-use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
-use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
+use termion::event::Key;
+use tui::layout::Rect;
+use tui::widgets::{Block, Borders};
+
+use crate::character::{Character, determine_class, get_all_attributes};
+use crate::ui::{FrameData, FrameHandler};
+use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
+use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
-use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
-use crate::widget::{Focusable, Widget, WidgetType, Named};
-use crate::character;
-use crate::map::position::Area;
+use crate::widget::dropdown_widget::{build_dropdown};
+use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
+use crate::widget::text_widget::build_text_input;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ViewMode {
@@ -66,7 +59,7 @@ impl CharacterFrameHandler {
         }
     }
 
-    fn build_attribute_inputs(&mut self, mut character: &mut Character) {
+    fn build_attribute_inputs(&mut self, character: &mut Character) {
         let mut scores = character.get_attribute_scores();
         for attribute in get_all_attributes() {
             let score = scores.iter_mut().find(|score| score.attribute == attribute);
@@ -90,7 +83,7 @@ impl CharacterFrameHandler {
         self.widgets.push(free_points);
     }
 
-    fn build_widgets(&mut self, mut character: &mut Character) {
+    fn build_widgets(&mut self, character: &mut Character) {
         let creation_mode = self.view_mode == ViewMode::CREATION;
 
         if creation_mode {
@@ -114,7 +107,7 @@ impl CharacterFrameHandler {
         }
 
         self.selected_widget = Some(0);
-        &mut self.widgets[0].state_type.focus();
+        self.widgets[0].state_type.focus();
     }
 
     pub fn draw_main_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
@@ -183,7 +176,7 @@ impl CharacterFrameHandler {
         let all_attributes = get_all_attributes();
         let mut attribute_start = (self.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
         // To account for the enter button
-        if (self.view_mode == ViewMode::CREATION) {
+        if self.view_mode == ViewMode::CREATION {
             attribute_start -= 1;
         }
         let attributes_area = Rect::new(2, 4 + attribute_start, frame_width - 2, frame_height - 4);
@@ -221,7 +214,7 @@ impl CharacterFrameHandler {
         let mut character = self.character.clone();
         let mut scores  = character.get_attribute_scores();
         for widget in self.widgets.iter_mut() {
-            let mut state_type = &mut widget.state_type;
+            let state_type = &mut widget.state_type;
             if String::from("Name") == state_type.get_name() {
                 match state_type {
                     WidgetType::Text(state) => {
@@ -261,7 +254,7 @@ impl CharacterFrameHandler {
         for attribute in get_all_attributes() {
             let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
             match number_state {
-                Some(mut ns) => {
+                Some(ns) => {
                     let score = scores.iter_mut().find(|score| score.attribute == attribute);
                     match score {
                         Some(s) => {
@@ -280,7 +273,7 @@ impl CharacterFrameHandler {
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>) {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
                 self.draw_character_creation(frame, data);

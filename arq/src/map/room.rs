@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-
-use crate::map::position::{Area, Position, AreaSide, build_rectangular_area};
 use crate::map::objects::door::Door;
-use crate::map::objects::container::Container;
+use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
 
 #[derive(Clone)]
 pub struct Room {
@@ -27,8 +24,8 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::map::objects::door::build_door;
+    use crate::map::position::{build_square_area, Position, Side};
     use crate::map::room::Room;
-    use crate::map::position::{Position, Side, build_square_area};
 
     #[test]
     fn test_get_sides() {

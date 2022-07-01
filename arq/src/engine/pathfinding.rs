@@ -1,5 +1,5 @@
-use std::collections::{BinaryHeap,HashMap};
-use std::cmp::{Reverse,Ordering};
+use std::cmp::{Ordering, Reverse};
+use std::collections::{BinaryHeap, HashMap};
 
 use crate::map::Map;
 use crate::map::position::Position;
@@ -147,12 +147,12 @@ impl Pathfinding {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    
-    use crate::map::tile::{Tile};
-    use crate::map::room::Room;
+
+    use crate::engine::pathfinding::{ManhattanPathCosting, Node, Pathfinding};
     use crate::map;
-    use crate::map::position::{Position, build_square_area};
-    use crate::engine::pathfinding::{ManhattanPathCosting, Pathfinding, Node};
+    use crate::map::position::{build_square_area, Position};
+    use crate::map::room::Room;
+    use crate::map::tile::Tile;
 
     fn build_test_map() -> map::Map {
         let tile_library = crate::map::tile::build_library();

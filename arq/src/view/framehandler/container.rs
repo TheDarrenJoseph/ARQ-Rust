@@ -1,22 +1,20 @@
-use std::io::Error;
-use std::convert::TryInto;
 use std::collections::HashSet;
-use std::collections::HashMap;
+use std::convert::TryInto;
+use std::io::Error;
 
-use tui::layout::{Alignment, Rect};
-use tui::style::{Style, Color, Modifier};
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
-use tui::text::{Spans,Span};
 use termion::event::Key;
+use tui::layout::{Alignment, Rect};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Paragraph, Wrap};
 
-use crate::ui::{FrameHandler, FrameData};
-use crate::view::{resolve_input, InputHandler, InputResult, GenericInputResult};
+use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
-use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
 use crate::map::position::Position;
+use crate::ui::{FrameData, FrameHandler};
+use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::DropItems;
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {
@@ -69,21 +67,9 @@ fn build_default_columns() -> Vec<Column> {
     ]
 }
 
-pub fn build_default_container_view(container: Container) -> ContainerFrameHandler {
-    let columns = build_default_columns();
-    let mut items = container.to_cloned_item_list();
-    ContainerFrameHandler {
-        container: container.clone(),
-        columns,
-        row_count: 1,
-        item_list_selection: build_list_selection(items, 1),
-        commands : HashSet::new()
-    }
-}
-
 pub fn build_container_view(container: Container, commands : HashSet<ContainerFrameHandlerCommand>) -> ContainerFrameHandler {
     let columns = build_default_columns();
-    let mut items = container.to_cloned_item_list();
+    let items = container.to_cloned_item_list();
     ContainerFrameHandler {
         container: container.clone(),
         columns,
@@ -286,14 +272,14 @@ impl ContainerFrameHandler {
             },
             ContainerFrameHandlerInputResult::MoveItems(data) => {
                 // Moving into a container
-                if let Some(container) = data.target_container {
+                if let Some(_) = data.target_container {
                     self.container = data.source.clone();
                     // Remove selected items except for any untaken
                     //self.retain_selected_items(data.to_move);
                     //self.replace_focused_container(container);
-                    &mut self.item_list_selection.cancel_selection();
+                    self.item_list_selection.cancel_selection();
                     self.rebuild_selection();
-                } else if let Some(item) = data.target_item {
+                } else if let Some(_) = data.target_item {
                     // Moving to an existing item's location / splicing
                     // So just rebuild the whole selection
                     self.container = data.source.clone();
@@ -507,29 +493,43 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
     }
 }
 
+pub fn build_default_container_view(container: Container) -> ContainerFrameHandler {
+    let columns = build_default_columns();
+    let items = container.to_cloned_item_list();
+    ContainerFrameHandler {
+        container: container.clone(),
+        columns,
+        row_count: 1,
+        item_list_selection: build_list_selection(items, 1),
+        commands : HashSet::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
-    use tui::backend::TestBackend;
     use std::collections::HashSet;
 
-    use crate::ui;
-    use crate::terminal;
-    use crate::map::objects::container;
-    use crate::map::objects::container::{build, ContainerType, Container};
-    use crate::map::objects::items;
-    use crate::menu;
-    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult};
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui::{UI, build_ui};
-    use crate::list_selection::ListSelection;
-    use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
-    use crate::map::tile::Colour;
     use termion::input::TermRead;
-    use tui::text::Text;
-    use tui::layout::Rect;
+    use tui::backend::TestBackend;
     use tui::buffer::{Buffer, Cell};
+    use tui::layout::Rect;
+    use tui::text::Text;
     use tui::widgets::Widget;
+    use uuid::Uuid;
+
+    use crate::list_selection::{build_list_selection, ListSelection};
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::items;
+    use crate::map::tile::Colour;
+    use crate::menu;
+    use crate::terminal;
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui;
+    use crate::ui::{build_ui, UI};
+    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+    use crate::view::framehandler::container::{build_container_view, build_default_columns, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();

@@ -1,9 +1,9 @@
-use tui::widgets::StatefulWidget;
-use tui::layout::Rect;
 use tui::buffer::Buffer;
-use tui::style::{Style, Modifier};
+use tui::layout::Rect;
+use tui::style::{Modifier, Style};
+use tui::widgets::StatefulWidget;
 
-use crate::widget::{Widget, WidgetType, build_buffer};
+use crate::widget::{Widget, WidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]

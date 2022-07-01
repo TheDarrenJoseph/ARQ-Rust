@@ -1,4 +1,5 @@
-use std::fmt::{Formatter, Display, Result, Debug};
+use std::fmt::{Debug, Display, Formatter, Result};
+
 use uuid::Uuid;
 
 use crate::map::objects::container::{build, Container, ContainerType};
@@ -182,10 +183,10 @@ impl Character {
 mod tests {
     use uuid::Uuid;
 
-    use crate::character::{Character, build_player, build_default_character_details};
-    use crate::map::objects::container::{ContainerType};
-    use crate::map::tile::Colour;
+    use crate::character::{build_default_character_details, build_player, Character};
+    use crate::map::objects::container::ContainerType;
     use crate::map::position::Position;
+    use crate::map::tile::Colour;
 
     #[test]
     fn test_character_build() {

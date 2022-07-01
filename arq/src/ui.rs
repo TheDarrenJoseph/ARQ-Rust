@@ -1,15 +1,15 @@
-use tui::layout::{Alignment, Rect, Direction, Constraint, Layout};
-use tui::style::{Color, Style};
-use tui::text::{Spans,Span};
-use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
-
 use std::convert::TryInto;
 
-use crate::menu::{Menu, ToList};
-use crate::widget::{Widget, WidgetType};
-use crate::map::position::{Area, build_rectangular_area, Position};
-use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::{Color, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
+
 use crate::{menu, ui};
+use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::menu::{Menu, ToList};
+use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+use crate::widget::{Widget, WidgetType};
 
 pub struct UI {
     pub start_menu : Menu,

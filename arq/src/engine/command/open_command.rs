@@ -1,27 +1,24 @@
-use std::io;
-use termion::event::Key;
-use std::collections::HashMap;
-use termion::input::TermRead;
 use std::collections::HashSet;
+use std::io;
+use std::io::Error;
 
-use crate::view::framehandler::container;
+use termion::event::Key;
+use termion::input::TermRead;
+
 use crate::engine::command::command::Command;
-use crate::view::world_container::{WorldContainerViewFrameHandlers, WorldContainerView};
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, ContainerFrameHandlerCommand};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{TakeItems, DropItems, MoveItems};
-use crate::map::position::Position;
-use crate::view::callback::Callback;
-use crate::view::View;
-use crate::map::Map;
-use crate::engine::level::Level;
-use crate::ui;
-use crate::map::objects::container::Container;
-use crate::engine::command::input_mapping;
 use crate::engine::container_util;
-use crate::map::objects::items::Item;
+use crate::engine::level::Level;
+use crate::map::objects::container::Container;
+use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE, DROP};
-use crate::engine::container_util::*;
+use crate::ui;
+use crate::view::callback::Callback;
+use crate::view::framehandler::container;
+use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
+use crate::view::View;
+use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -29,7 +26,7 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, position: Position, container: Container, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback(level : &mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TakeItems(mut data) => {
@@ -51,23 +48,22 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
     // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), io::Error>  {
-        let mut ui = &mut self.ui;
+        let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
         })?;
         Ok(())
     }
 
-    fn open_container(&mut self, p: Position, c: &Container) {
+    fn open_container(&mut self, p: Position, c: &Container) -> Result<bool, Error> {
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
-        let callback_container : Container = c.clone();
-        let mut subview_container = c.clone();
-        let mut view_container = c.clone();
+        let subview_container = c.clone();
+        let view_container = c.clone();
 
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(TAKE);
-        let mut container_view = container::build_container_view(subview_container, commands);
+        let container_view = container::build_container_view(subview_container, commands);
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
@@ -78,13 +74,12 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
             terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
-            callback: Box::new(|data| {None})
+            callback: Box::new(|_data| {None})
         };
         world_container_view.set_callback(Box::new(|input_result| {
-            return handle_callback(level, p.clone(), callback_container.clone(), input_result);
+            return handle_callback(level, p.clone(), input_result);
         }));
-        world_container_view.begin();
-
+        world_container_view.begin()
     }
 }
 
@@ -104,15 +99,12 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         if let Some(p) = self.level.find_adjacent_player_position(key, command_key) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
-            self.re_render();
-
-            let mut updated_container = None;
-            let mut target_position = None;
+            self.re_render()?;
 
             let mut to_open = None;
             if let Some(map) = &mut self.level.map {
                 if let Some(room) = map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
-                    if let Some(door) = &room.doors.iter().find(|d| d.position == p) {
+                    if let Some(_door) = &room.doors.iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
                         // TODO encapsulate view components / refactor
@@ -127,7 +119,6 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                         let item_count = c.get_content_count();
                          if item_count > 0 {
                              log::info!("Found map container.");
-                             target_position = Some(p.clone());
                              let contains_single_container = item_count == 1 && c.get_contents()[0].is_true_container();
                              if contains_single_container &&  c.get_contents()[0].get_content_count() > 0 {
                                  to_open = Some(c.get_contents()[0].clone());
@@ -138,18 +129,18 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                     } else {
                         self.ui.console_print("There's nothing here to open.".to_string());
                         // TODO encapsulate view components / refactor
-                        self.re_render();
+                        self.re_render()?;
                     }
                 }
             }
 
             if let Some(c) = to_open {
-                self.re_render();
+                self.re_render()?;
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_item_count());
-                updated_container = Some(self.open_container(p.clone(), &c));
+                self.open_container(p.clone(), &c)?;
             }
 
-            let key = io::stdin().keys().next().unwrap().unwrap();
+             io::stdin().keys().next().unwrap()?;
         }
         Ok(())
     }
@@ -158,32 +149,33 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
     use std::collections::HashMap;
-    use tui::backend::TestBackend;
     use std::collections::HashSet;
-    use termion::input::TermRead;
-    use tui::text::Text;
-    use tui::layout::Rect;
-    use tui::buffer::{Buffer, Cell};
-    use tui::widgets::Widget;
 
-    use crate::ui;
-    use crate::terminal;
-    use crate::map::objects::container;
-    use crate::map::objects::container::{build, ContainerType, Container};
-    use crate::map::objects::items;
-    use crate::menu;
-    use crate::view::framehandler::container::{ContainerFrameHandler, build_container_view, build_default_container_view, Column, ContainerFrameHandlerInputResult, TakeItemsData};
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui::{UI, build_ui};
-    use crate::list_selection::ListSelection;
-    use crate::view::framehandler::console::{ConsoleFrameHandler, ConsoleBuffer};
-    use crate::map::tile::{Colour, Tile};
-    use crate::engine::command::open_command::{OpenCommand, handle_callback};
+    use termion::input::TermRead;
+    use tui::backend::TestBackend;
+    use tui::buffer::{Buffer, Cell};
+    use tui::layout::Rect;
+    use tui::text::Text;
+    use tui::widgets::Widget;
+    use uuid::Uuid;
+
+    use crate::character::{build_character, build_default_character_details, build_player, Character};
+    use crate::engine::command::open_command::{handle_callback, OpenCommand};
     use crate::engine::level::Level;
-    use crate::character::{build_player, Character, build_default_character_details, build_character};
-    use crate::map::position::{Position, build_square_area};
+    use crate::list_selection::ListSelection;
+    use crate::map::objects::container;
+    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::items;
+    use crate::map::position::{build_square_area, Position};
+    use crate::map::tile::{Colour, Tile};
+    use crate::menu;
+    use crate::terminal;
+    use crate::terminal::terminal_manager::TerminalManager;
+    use crate::ui;
+    use crate::ui::{build_ui, UI};
+    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+    use crate::view::framehandler::container::{build_container_view, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -250,7 +242,7 @@ mod tests {
 
         let data = TakeItemsData { source: container.clone(), to_take: selected_container_items, position: Some(container_pos) };
         let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
-        let untaken = handle_callback(&mut level, container_pos, container, view_result).unwrap();
+        let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 0 un-taken items
         match untaken {
@@ -292,7 +284,7 @@ mod tests {
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let data = TakeItemsData { source: container, to_take: selected_container_items, position: Some(container_pos) };
         let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
-        let untaken = handle_callback(&mut level, container_pos, callback_container, view_result).unwrap();
+        let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 1 un-taken items
         match untaken {

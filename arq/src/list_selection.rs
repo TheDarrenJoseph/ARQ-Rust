@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::convert::TryInto;
 
-use crate::map::objects::items::{Item, ItemType};
+use crate::map::objects::items::{Item};
 
 #[derive(Clone)]
 pub enum SelectionMode {
@@ -521,7 +521,7 @@ pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> Ite
 mod tests {
     use uuid::Uuid;
 
-    use crate::list_selection::{ListSelection, ItemListSelection, build_list_selection};
+    use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
     use crate::map::objects::items;
 
     #[test]

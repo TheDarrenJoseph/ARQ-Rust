@@ -1,4 +1,5 @@
 use termion::event::Key;
+
 use crate::map::position::Side;
 
 pub(crate) fn key_to_side(key : Key) -> Option<Side> {

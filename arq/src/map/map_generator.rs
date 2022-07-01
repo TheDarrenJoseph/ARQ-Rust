@@ -1,14 +1,16 @@
-use rand::{Rng, thread_rng};
 use std::collections::HashMap;
-use crate::map::Map;
-use crate::map::room::Room;
-use crate::map::objects::door::{build_door};
-use crate::map::position::{Position, Area, build_square_area, Side};
-use crate::map::tile::{Tile, TileDetails, build_library};
-use crate::engine::pathfinding::{Pathfinding};
-use crate::map::objects::container::{Container, ContainerType};
-use crate::map::objects::{container, items};
+
+use rand::{Rng, thread_rng};
 use uuid::Uuid;
+
+use crate::engine::pathfinding::Pathfinding;
+use crate::map::Map;
+use crate::map::objects::{container, items};
+use crate::map::objects::container::{Container, ContainerType};
+use crate::map::objects::door::build_door;
+use crate::map::position::{Area, build_square_area, Position, Side};
+use crate::map::room::Room;
+use crate::map::tile::{build_library, Tile, TileDetails};
 use crate::map::tile::Tile::NoTile;
 
 pub struct MapGenerator {
@@ -72,9 +74,9 @@ impl MapGenerator {
         self.path_rooms();
 
         let mut area_container_count = 0;
-        let mut area_containers = self.build_area_containers();
+        let area_containers = self.build_area_containers();
         for pos_container in area_containers {
-            let mut pos = pos_container.0.clone();
+            let pos = pos_container.0.clone();
             let mut container = pos_container.1.clone();
             self.map.containers.insert( pos, container);
             area_container_count += 1;
@@ -84,17 +86,18 @@ impl MapGenerator {
         let mut room_container_count = 0;
         for room in self.map.rooms.iter_mut() {
             let room_containers = generate_room_containers(room.clone());
+            log::info!("Added {} containers into room general area containers.", room_container_count);
+
             for pos_container in room_containers {
                 let mut pos = pos_container.0.clone();
-                let mut container = pos_container.1.clone();
-
+                let container = pos_container.1.clone();
                 if let Some(c) = self.map.containers.get_mut(&mut pos) {
                     c.add(container);
                     room_container_count += 1;
                 }
             }
         }
-        log::info!("Added {} containers into room general area containers.", room_container_count);
+        log::info!("Added {} containers to rooms.", room_container_count);
         log::info!("Map generated!");
         return self.map.clone();
     }
@@ -248,7 +251,7 @@ impl MapGenerator {
         for y in self.map_area.start_position.y..=self.map_area.end_position.y {
             row = Vec::new();
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
-                log::info!("New tile at: {}, {}", x,y);
+                log::debug!("New tile at: {}, {}", x,y);
                 row.push( self.tile_library[&Tile::NoTile].clone());
             }
             map_tiles.push(row);
@@ -262,9 +265,9 @@ impl MapGenerator {
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
                 let position = Position { x, y };
                 match self.map.get_tile(position) {
-                    Some(TD) => {
-                        if TD.tile_type != NoTile {
-                            log::info!("New AREA container at: {}, {}", x,y);
+                    Some(td) => {
+                        if td.tile_type != NoTile {
+                            log::debug!("New AREA container at: {}, {}", x,y);
                             let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 999999);
                             area_containers.insert(position, area_container);
                         }
@@ -315,7 +318,7 @@ impl MapGenerator {
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
-        let mut map = crate::map::Map {
+        let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
             rooms,
@@ -327,8 +330,8 @@ impl MapGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::position::{Position, build_square_area};
-    use crate::map::map_generator::{build_generator};
+    use crate::map::map_generator::build_generator;
+    use crate::map::position::{build_square_area, Position};
 
     #[test]
     fn test_build_generator() {

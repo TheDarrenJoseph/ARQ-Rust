@@ -1,20 +1,17 @@
-use std::borrow::Borrow;
 use std::io::Error;
-use tui::layout::{Rect};
+
 use termion::event::Key;
-use std::collections::HashMap;
-
-use crate::ui::{UI, FrameHandler, FrameData};
-use crate::view::{View, resolve_input, GenericInputResult};
-use crate::view::framehandler::container;
-use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
-use crate::map::position::Area;
-use crate::view::InputHandler;
+use tui::layout::Rect;
 use crate::map::objects::container::Container;
-use crate::view::callback::Callback;
 
-// Combines multiple character info views into one w/ tabbing
+use crate::map::position::Area;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::{FrameData, FrameHandler, UI};
+use crate::view::{GenericInputResult, resolve_input, View};
+use crate::view::callback::Callback;
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
+use crate::view::InputHandler;
+
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -48,7 +45,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
         if let Some(r) = result {
             match r {
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {
-                    for mut fh in &mut self.frame_handlers.frame_handlers {
+                    for fh in &mut self.frame_handlers.frame_handlers {
                         if fh.container.id_equals(&data.source) {
                             fh.handle_callback_result(r.clone())
                         }
@@ -69,10 +66,10 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 
 impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<bool, Error> {
-        self.terminal_manager.terminal.clear();
-        self.draw(None);
+        self.terminal_manager.terminal.clear()?;
+        self.draw(None)?;
         while !self.handle_input(None).unwrap() {
-            self.draw(None);
+            self.draw(None)?;
         }
         Ok(true)
     }
@@ -143,7 +140,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
 
                 if let Some(r) = generic_input_result {
                     if r.requires_view_refresh {
-                        self.terminal_manager.terminal.clear();
+                        self.terminal_manager.terminal.clear()?;
                     }
                 }
             }
