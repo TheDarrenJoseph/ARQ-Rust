@@ -15,6 +15,9 @@ use crate::map::position::Position;
 use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
+use crate::view::framehandler::container_choice::build;
+use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
+use crate::view::framehandler::util::tabling::{build_headings, build_padding, build_paragraph, Column};
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {
@@ -42,6 +45,15 @@ pub struct TakeItemsData {
 }
 
 #[derive(Clone)]
+pub struct MoveToContainerChoiceData {
+    pub source: Container,
+    pub to_move: Vec<Item>,
+    pub position: Option<Position>,
+    pub choices: Vec<Container>,
+    pub target_container: Option<Container>
+}
+
+#[derive(Clone)]
 pub struct MoveItemsData {
     pub source: Container,
     pub to_move: Vec<Item>,
@@ -54,6 +66,7 @@ pub struct MoveItemsData {
 pub enum ContainerFrameHandlerInputResult {
     None,
     OpenContainerView(ContainerFrameHandler),
+    MoveToContainerChoice(MoveToContainerChoiceData),
     MoveItems(MoveItemsData),
     TakeItems(TakeItemsData),
     DropItems(Vec<Item>)
@@ -67,7 +80,24 @@ fn build_default_columns() -> Vec<Column> {
     ]
 }
 
-pub fn build_container_view(container: Container, commands : HashSet<ContainerFrameHandlerCommand>) -> ContainerFrameHandler {
+fn build_column_text(column: &Column, item: &Item) -> String {
+    match column.name.as_str() {
+        "NAME" => {
+            item.get_name()
+        },
+        "WEIGHT (Kg)" => {
+            item.get_weight().to_string()
+        },
+        "VALUE" => {
+            item.get_value().to_string()
+        },
+        _ => { "".to_string() }
+    }
+}
+
+
+
+pub fn build_container_frame_handler(container: Container, commands : HashSet<ContainerFrameHandlerCommand>) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -116,26 +146,8 @@ impl ContainerFrameHandler {
         }
     }
 
-        pub fn cancel_selection(&mut self) {
+    pub fn cancel_selection(&mut self) {
         self.item_list_selection.cancel_selection();
-    }
-
-    fn build_headings(&self) -> Paragraph {
-        let mut heading_spans = Vec::new();
-        let mut spans = Vec::new();
-        for column in &self.columns {
-            let name = column.name.clone();
-            let padding = build_padding(column.size - name.len() as i8 + 2);
-            spans.push(Span::raw(column.name.clone()));
-            spans.push(Span::raw(padding));
-        }
-        heading_spans.push(Spans::from(spans));
-        Paragraph::new(heading_spans)
-            .block(Block::default()
-                .borders(Borders::NONE))
-            .style(Style::default())
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: false })
     }
 
     pub fn rebuild_selection(&mut self) {
@@ -184,6 +196,22 @@ impl ContainerFrameHandler {
         self.item_list_selection.toggle_select();
     }
 
+    fn move_selected(&mut self) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
+        let from_container = self.container.clone();
+        let selected_container_items = self.get_selected_items();
+        let focused_container = self.find_focused_container();
+        let focused_item = if focused_container.is_none() { self.find_focused_item() } else { None };
+
+        let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
+        log::info!("Triggering MoveItems of {} items into: {}", selected_container_items.len(), container_name);
+
+        let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target_container: focused_container, target_item: focused_item, position: None };
+        return Ok(InputResult {
+            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+            view_specific_result: Some(ContainerFrameHandlerInputResult::MoveItems(data))
+        });
+    }
+
     fn move_up(&mut self) {
         self.item_list_selection.move_up();
     }
@@ -200,12 +228,12 @@ impl ContainerFrameHandler {
         self.item_list_selection.page_down();
     }
 
-    fn open_focused(&mut self) -> Option<ContainerFrameHandler> {
+    fn build_view_for_focused_container(&mut self) -> Option<ContainerFrameHandler> {
         if !self.item_list_selection.is_selecting() {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
                     if let Some(focused_container) = self.container.find_mut(focused_item) {
-                        return Some(build_container_view(focused_container.clone(), self.commands.clone()))
+                        return Some(build_container_frame_handler(focused_container.clone(), self.commands.clone()))
                     }
                 }
             }
@@ -222,29 +250,6 @@ impl ContainerFrameHandler {
             }
         }
         items
-    }
-
-    fn build_page_count(&mut self, area: Rect) -> (Paragraph, Rect, usize) {
-        let page_number = self.item_list_selection.get_page_number();
-        let total_pages = self.item_list_selection.get_total_pages();
-        let item_count = self.container.get_item_count();
-        let page_count_text = format!("Page {}/{} ({})", page_number, total_pages, item_count);
-        let page_count_text_length = page_count_text.len();
-        let width = page_count_text.len().try_into().unwrap();
-        let page_count_paragraph = build_paragraph(page_count_text);
-        let page_count_area = Rect::new( area.width.clone() - page_count_text_length as u16 , area.y.clone() + area.height.clone() - 1, width, 1);
-        (page_count_paragraph, page_count_area, page_count_text_length)
-    }
-
-    fn build_weight_limit(&mut self, area: Rect, x_offset: usize) -> (Paragraph, Rect) {
-        let weight_limit = self.container.get_weight_limit();
-        let container_item_weight_total = self.container.get_contents_weight_total();
-        let weight_limit_text = format!("{}/{}Kg", container_item_weight_total, weight_limit);
-        let weight_limit_text_length = weight_limit_text.len();
-        let weight_limit_text_width = weight_limit_text.len().try_into().unwrap();
-        let weight_limit_paragraph = build_paragraph(weight_limit_text);
-        let weight_limit_area = Rect::new( area.width.clone() - x_offset as u16 - weight_limit_text_length as u16 - 1, area.y.clone() + area.height.clone() - 1, weight_limit_text_width, 1);
-        (weight_limit_paragraph, weight_limit_area)
     }
 
     fn retain_selected_items(&mut self, to_retain: Vec<Item>) {
@@ -274,9 +279,6 @@ impl ContainerFrameHandler {
                 // Moving into a container
                 if let Some(_) = data.target_container {
                     self.container = data.source.clone();
-                    // Remove selected items except for any untaken
-                    //self.retain_selected_items(data.to_move);
-                    //self.replace_focused_container(container);
                     self.item_list_selection.cancel_selection();
                     self.rebuild_selection();
                 } else if let Some(_) = data.target_item {
@@ -286,38 +288,16 @@ impl ContainerFrameHandler {
                     self.rebuild_selection_from(&data.source);
                 }
             },
+            ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
+                // Moving into a container
+                if let Some(_) = data.target_container {
+                    self.container = data.source.clone();
+                    self.item_list_selection.cancel_selection();
+                    self.rebuild_selection();
+                }
+            }
             _ => {}
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct Column {
-    pub name : String,
-    pub size : i8
-}
-
-fn build_padding(length : i8) -> String {
-    let mut s = String::new();
-    for _i in 1..length {
-        s.push(' ');
-    }
-    s
-}
-
-
-fn build_column_text(column: &Column, item: &Item) -> String {
-    match column.name.as_str() {
-        "NAME" => {
-            item.get_name()
-        },
-        "WEIGHT (Kg)" => {
-            item.get_weight().to_string()
-        },
-        "VALUE" => {
-            item.get_value().to_string()
-        },
-        _ => { "".to_string() }
     }
 }
 
@@ -345,14 +325,6 @@ fn build_command_usage_descriptions(commands: &HashSet<ContainerFrameHandlerComm
     description
 }
 
-fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
-    let spans = vec![Spans::from(Span::raw(text.clone()))];
-    let paragraph = Paragraph::new(spans)
-        .style(Style::default())
-        .alignment(Alignment::Left);
-    paragraph
-}
-
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
@@ -368,7 +340,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
         self.item_list_selection.page_line_count = inventory_item_lines as i32;
         frame.render_widget(window_block, window_area);
 
-        let headings = self.build_headings();
+        let headings = build_headings(self.columns.clone());
         let headings_area = Rect::new(frame_size.x.clone() + 1, frame_size.y.clone() + 1, frame_size.width.clone() - 4, 2);
         frame.render_widget(headings, headings_area);
 
@@ -411,10 +383,10 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
             frame.render_widget(usage_text.clone(), text_area);
 
             // From right hand to left hand side draw the info text
-            let page_count = self.build_page_count(window_area.clone());
+            let page_count = build_page_count(&self.item_list_selection, window_area.clone());
             frame.render_widget(page_count.0, page_count.1);
             let page_count_text_length = page_count.2;
-            let weight_limit = self.build_weight_limit(window_area.clone(), page_count_text_length);
+            let weight_limit = build_weight_limit(&self.container, window_area.clone(), page_count_text_length);
             frame.render_widget(weight_limit.0, weight_limit.1);
         }
     }
@@ -443,28 +415,27 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 }
                 Key::Char('o') => {
-                    if let Some(stacked_view) = self.open_focused() {
-                        let new_view_result = Ok(InputResult {
+                    if let Some(stacked_view) = self.build_view_for_focused_container() {
+                        return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
                             view_specific_result: Some(ContainerFrameHandlerInputResult::OpenContainerView(stacked_view))
                         });
-                        return new_view_result;
                     }
                 },
                 Key::Char('m') => {
+                    return self.move_selected();
+                },
+                Key::Char('c') => {
                     let from_container = self.container.clone();
                     let selected_container_items = self.get_selected_items();
-                    let focused_container = self.find_focused_container();
-                    let focused_item = if focused_container.is_none() { self.find_focused_item() } else { None };
-
-                    let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
-                    log::info!("Triggering MoveItems of {} items into: {}", selected_container_items.len(), container_name);
-
-                    let data = MoveItemsData { source: from_container.clone(), to_move: selected_container_items, target_container: focused_container, target_item: focused_item, position: None };
-                    return Ok(InputResult {
-                        generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                        view_specific_result: Some(ContainerFrameHandlerInputResult::MoveItems(data))
-                    });
+                    if !selected_container_items.is_empty() {
+                        log::info!("Triggering MoveToContainerChoice of {} items.", selected_container_items.len());
+                        let data = MoveToContainerChoiceData { source: from_container.clone(), to_move: selected_container_items, position: None, choices: Vec::new(), target_container: None };
+                        return Ok(InputResult {
+                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::MoveToContainerChoice(data))
+                        });
+                    }
                 },
                 Key::Char('\n') => {
                     self.toggle_select();
@@ -528,7 +499,7 @@ mod tests {
     use crate::ui;
     use crate::ui::{build_ui, UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_view, build_default_columns, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::container::{build_container_frame_handler, build_default_columns, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
 
 
     fn build_test_container() -> Container {

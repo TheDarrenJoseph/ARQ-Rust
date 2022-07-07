@@ -59,11 +59,28 @@ impl Container {
     }
 
     // Finds all subcontainers (OBJECTs) within this container's topmost level
-    pub fn find_subcontainers(&mut self) -> Vec<&mut Container> {
+    pub fn find_topmost_subcontainers(&mut self) -> Vec<&mut Container> {
         let mut containers = Vec::new();
         for c in &mut self.contents {
             if c.container_type == ContainerType::OBJECT {
                 containers.push(c);
+            }
+        }
+        containers
+    }
+
+    /*
+    * Returns a copy of each subcontainer
+    */
+    pub fn find_and_clone_subcontainers(&mut self) -> Vec<Container> {
+        let mut containers = Vec::new();
+        for c in &mut self.contents {
+            if c.container_type == ContainerType::OBJECT {
+                let sc = c.find_and_clone_subcontainers();
+                for s in sc {
+                    containers.push(s.clone());
+                }
+                containers.push(c.clone());
             }
         }
         containers

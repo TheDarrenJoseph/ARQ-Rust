@@ -1,8 +1,11 @@
 use std::collections::HashSet;
+use std::convert::TryInto;
+use std::io;
 use std::io::Error;
 use std::slice::Iter;
 
 use termion::event::Key;
+use termion::input::TermRead;
 use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::symbols::line::VERTICAL;
@@ -17,8 +20,9 @@ use crate::view::{GenericInputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
+use crate::view::framehandler::container_choice::build;
 use crate::view::InputHandler;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -57,7 +61,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(DROP);
-        let inventory_view = container::build_container_view(self.character.get_inventory().clone(), commands);
+        let inventory_view = container::build_container_frame_handler(self.character.get_inventory().clone(), commands);
         self.frame_handler.container_views = vec!(inventory_view);
 
         let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
@@ -102,6 +106,28 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
+            match r {
+                ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
+                    if !data.choices.is_empty() {
+                        let choices = data.choices.clone();
+                        let mut items = Vec::new();
+                        for c in &choices {
+                            items.push(c.get_self_item().clone());
+                        }
+                        let frame_size = self.ui.frame_size.unwrap();
+                        let frame_size_rect = Rect::new(frame_size.start_position.x, frame_size.start_position.y, frame_size.size_x, frame_size.size_y);
+                        let frame_data = FrameData { data: choices, frame_size: frame_size_rect};
+                        let mut fh = build(items);
+
+                        self.terminal_manager.terminal.draw(|frame| {
+                            fh.handle_frame(frame, frame_data);
+                        });
+                        let key = io::stdin().keys().next().unwrap().unwrap();
+                    }
+                },
+                _ => {}
+            }
+
             if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                 topmost_view.handle_callback_result(r);
             }
@@ -195,6 +221,9 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                                             self.trigger_callback(view_specific_result);
                                         },
                                         ContainerFrameHandlerInputResult::MoveItems(_) => {
+                                            self.trigger_callback(view_specific_result);
+                                        },
+                                        ContainerFrameHandlerInputResult::MoveToContainerChoice(_) => {
                                             self.trigger_callback(view_specific_result);
                                         },
                                         _ => {}

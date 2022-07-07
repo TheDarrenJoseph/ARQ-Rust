@@ -63,7 +63,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(TAKE);
-        let container_view = container::build_container_view(subview_container, commands);
+        let container_view = container::build_container_frame_handler(subview_container, commands);
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
@@ -175,7 +175,7 @@ mod tests {
     use crate::ui;
     use crate::ui::{build_ui, UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_view, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
+    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();

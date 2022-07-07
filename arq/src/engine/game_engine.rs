@@ -397,7 +397,7 @@ mod tests {
     use crate::ui::{SettingsMenuChoice, StartMenuChoice};
     use crate::ui::Draw;
     use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
-    use crate::view::framehandler::container::{build_container_view, ContainerFrameHandler};
+    use crate::view::framehandler::container::{build_container_frame_handler, ContainerFrameHandler};
     use crate::view::map::MapView;
     use crate::view::View;
     use crate::widget::character_stat_line::{build_character_stat_line, CharacterStatLineState};
