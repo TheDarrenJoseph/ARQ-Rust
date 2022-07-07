@@ -22,7 +22,7 @@ use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
-use crate::view::framehandler::container_choice::build;
+use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler};
 use crate::view::InputHandler;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -53,6 +53,7 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
 pub struct CharacterInfoViewFrameHandler {
     pub tab_choice : TabChoice,
     pub container_views : Vec<ContainerFrameHandler>,
+    pub choice_frame_handler: Option<ContainerChoiceFrameHandler>,
     pub character_view : Option<CharacterFrameHandler>
 }
 
@@ -114,15 +115,8 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                         for c in &choices {
                             items.push(c.get_self_item().clone());
                         }
-                        let frame_size = self.ui.frame_size.unwrap();
-                        let frame_size_rect = Rect::new(frame_size.start_position.x, frame_size.start_position.y, frame_size.size_x, frame_size.size_y);
-                        let frame_data = FrameData { data: choices, frame_size: frame_size_rect};
-                        let mut fh = build(items);
-
-                        self.terminal_manager.terminal.draw(|frame| {
-                            fh.handle_frame(frame, frame_data);
-                        });
-                        let key = io::stdin().keys().next().unwrap().unwrap();
+                        let mut cfh = build(choices);
+                        self.frame_handler.choice_frame_handler = Some(cfh);
                     }
                 },
                 _ => {}
@@ -206,12 +200,21 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                 let mut generic_input_result : Option<GenericInputResult> = None;
                 match self.frame_handler.tab_choice {
                     TabChoice::INVENTORY => {
+                        if let Some(cfh) = &mut self.frame_handler.choice_frame_handler {
+                            let result = cfh.handle_input(Some(key))?;
+                            if let Some(view_specific_result) = result.view_specific_result {
+                                match view_specific_result {
+                                    _ => {}
+                                }
+                            }
+                            generic_input_result = Some(result.generic_input_result);
+                        }
+
                         let container_views = &mut self.frame_handler.container_views;
                         let have_container_views = !container_views.is_empty();
                         if have_container_views {
                             if let Some(topmost_view) = container_views.last_mut() {
-                                let container_view_input_result = topmost_view.handle_input(Some(key));
-                                let result = container_view_input_result.unwrap();
+                                let result = topmost_view.handle_input(Some(key))?;
                                 if let Some(view_specific_result) = result.view_specific_result {
                                     match view_specific_result {
                                         ContainerFrameHandlerInputResult::OpenContainerView(stacked_view) => {
@@ -269,7 +272,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
         let character = data.data.character;
         match self.tab_choice {
             TabChoice::INVENTORY => {
-                if let Some(topmost_view) = self.container_views.last_mut() {
+                if let Some(cfh) = &mut self.choice_frame_handler {
+                    let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
+                    let frame_data = FrameData { data: Vec::new(), frame_size: inventory_area};
+                    cfh.handle_frame(frame, frame_data);
+                } else if let Some(topmost_view) = self.container_views.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
                     let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
                     topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
@@ -359,7 +366,7 @@ mod tests {
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test().unwrap();
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), character_view: None };
+        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), choice_frame_handler: None, character_view: None };
         let mut character_info_view = CharacterInfoView { character: level.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
 
         // WHEN we call to initialise

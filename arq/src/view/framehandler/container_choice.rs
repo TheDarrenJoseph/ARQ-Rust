@@ -1,4 +1,6 @@
 use std::convert::TryInto;
+use std::io::Error;
+use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, Paragraph};
@@ -8,15 +10,23 @@ use crate::map::objects::items::Item;
 use crate::ui::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
+use crate::view::{GenericInputResult, InputHandler, InputResult};
 
 #[derive(Clone)]
 pub struct ContainerChoiceFrameHandler {
+    choices: Vec<Container>,
     columns : Vec<Column>,
     pub item_list_selection : ItemListSelection,
 }
 
-pub fn build(items: Vec<Item>) -> ContainerChoiceFrameHandler {
+pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
+    let mut items = Vec::new();
+    for c in &choices {
+        items.push(c.get_self_item().clone());
+    }
+
     ContainerChoiceFrameHandler {
+        choices: choices.clone(),
         columns: build_default_columns(),
         item_list_selection: build_list_selection(items, 1)
     }
@@ -28,12 +38,6 @@ pub fn build(items: Vec<Item>) -> ContainerChoiceFrameHandler {
 #[derive(Copy, Clone)]
 pub enum ContainerFrameHandlerCommand {
     SELECT
-}
-
-#[derive(Clone)]
-pub enum ContainerChoiceFrameHandlerInputResult {
-    None,
-    Select(Container)
 }
 
 fn build_default_columns() -> Vec<Column> {
@@ -67,7 +71,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerCh
     // TODO tidy this up / reduce duplication
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Vec<Container>>) {
         let frame_size = data.get_frame_size().clone();
-        let containers = data.unpack();
+        let containers = &self.choices;
 
         let window_block = Block::default()
             .borders(Borders::ALL);
@@ -123,6 +127,32 @@ impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerCh
             let page_count = build_page_count(&self.item_list_selection, window_area.clone());
             frame.render_widget(page_count.0, page_count.1);
         }
+    }
+}
+
+#[derive(Clone)]
+pub enum ContainerChoiceFrameHandlerInputResult {
+    None,
+    Select(Container)
+}
+
+impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFrameHandler {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerChoiceFrameHandlerInputResult>, Error> {
+        if let Some(key) = input {
+            match key {
+                Key::Up => {
+                    self.item_list_selection.move_up();
+                },
+                Key::Down => {
+                    self.item_list_selection.move_down();
+                },
+                _ => {}
+            }
+        }
+
+        return  Ok(InputResult {
+            generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
+            view_specific_result: Some(ContainerChoiceFrameHandlerInputResult::None)});
     }
 }
 
