@@ -11,6 +11,7 @@ use crate::ui::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
+use crate::view::framehandler::container::MoveItemsData;
 
 #[derive(Clone)]
 pub struct ContainerChoiceFrameHandler {
@@ -145,6 +146,18 @@ impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFra
                 },
                 Key::Down => {
                     self.item_list_selection.move_down();
+                },
+                Key::Char('\n') => {
+                    let chosen_index = self.item_list_selection.get_true_index();
+                    log::info!("Chosen index: {}", chosen_index);
+                    if let Some(c) = self.choices.get(chosen_index as usize) {
+                        let container_name = c.get_self_item().get_name();
+                        log::info!("Returning input result for Select of: {}", container_name);
+                        return Ok(InputResult {
+                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                            view_specific_result: Some(ContainerChoiceFrameHandlerInputResult::Select(c.clone()))
+                        });
+                    }
                 },
                 _ => {}
             }

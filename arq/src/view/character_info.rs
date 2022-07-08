@@ -13,6 +13,7 @@ use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
 use crate::character::{Character};
+use crate::list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::{FrameData, FrameHandler, UI};
@@ -22,7 +23,7 @@ use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
-use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler};
+use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -200,10 +201,29 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                 let mut generic_input_result : Option<GenericInputResult> = None;
                 match self.frame_handler.tab_choice {
                     TabChoice::INVENTORY => {
+
+                        // Container choice handlers take priority as they're essentially a dialog
                         if let Some(cfh) = &mut self.frame_handler.choice_frame_handler {
                             let result = cfh.handle_input(Some(key))?;
                             if let Some(view_specific_result) = result.view_specific_result {
                                 match view_specific_result {
+                                    ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
+                                        let container_views = &mut self.frame_handler.container_views;
+                                        if let Some(topmost_view) = container_views.last_mut() {
+                                            let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
+                                            match view_specific_result {
+                                                ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
+                                                    // Add the target selected to the callback data
+                                                    data.target_container = Some(selected_container.clone());
+                                                    self.trigger_callback(ContainerFrameHandlerInputResult::MoveToContainerChoice(data));
+                                                    // Clear the frame handler now we're done
+                                                    self.frame_handler.choice_frame_handler = None;
+                                                    return Ok(false)
+                                                },
+                                                _ => {}
+                                            }
+                                        }
+                                    },
                                     _ => {}
                                 }
                             }

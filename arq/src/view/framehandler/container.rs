@@ -299,6 +299,16 @@ impl ContainerFrameHandler {
             _ => {}
         }
     }
+
+    pub fn build_move_items_result(&self) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
+        let from_container = self.container.clone();
+        let selected_container_items = self.get_selected_items();
+        let data = MoveToContainerChoiceData { source: from_container.clone(), to_move: selected_container_items, position: None, choices: Vec::new(), target_container: None };
+        return Ok(InputResult {
+            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+            view_specific_result: Some(ContainerFrameHandlerInputResult::MoveToContainerChoice(data))
+        });
+    }
 }
 
 fn build_command_usage_descriptions(commands: &HashSet<ContainerFrameHandlerCommand>) -> String {
@@ -426,16 +436,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     return self.move_selected();
                 },
                 Key::Char('c') => {
-                    let from_container = self.container.clone();
-                    let selected_container_items = self.get_selected_items();
-                    if !selected_container_items.is_empty() {
-                        log::info!("Triggering MoveToContainerChoice of {} items.", selected_container_items.len());
-                        let data = MoveToContainerChoiceData { source: from_container.clone(), to_move: selected_container_items, position: None, choices: Vec::new(), target_container: None };
-                        return Ok(InputResult {
-                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerFrameHandlerInputResult::MoveToContainerChoice(data))
-                        });
-                    }
+                    return self.build_move_items_result();
                 },
                 Key::Char('\n') => {
                     self.toggle_select();

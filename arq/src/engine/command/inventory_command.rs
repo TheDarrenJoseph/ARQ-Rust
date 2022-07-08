@@ -80,7 +80,21 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
             return container_util::move_player_items(data, state.level);
         },
         MoveToContainerChoice(ref data) => {
-            return build_container_choices(data, state.level).ok();
+            if let Some(target) = &data.target_container {
+                // Translate to the typical moving data
+                let move_data = MoveItemsData {
+                    source: data.source.clone(),
+                    to_move: data.to_move.clone(),
+                    target_container: data.target_container.clone(),
+                    target_item: None,
+                    position: None
+                };
+                log::info!("[inventory command] Moving player items for MoveToContainerChoice...");
+                return container_util::move_player_items(move_data, state.level);
+            } else {
+                // Build container choices and pass the result back down to the view/handlers
+                return build_container_choices(data, state.level).ok();
+            }
         }
         _ => {
             return None

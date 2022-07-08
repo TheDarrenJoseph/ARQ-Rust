@@ -67,8 +67,14 @@ fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option
 
                 let data = MoveItemsData { source: source.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
                 return Some(MoveItems(data));
+            } else {
+                log::error!("Failed to move items. {} moved, {} unmoved items", moved.len(), unmoved.len());
             }
+        } else {
+            log::error!("Failed to move items. Couldn't find target container in source container.");
         }
+    } else {
+        log::error!("Failed to move items. No target container.");
     }
     None
 }
@@ -115,9 +121,10 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
 
         if let Some(s) = source {
             return if let Some(_) = data.target_container {
-                log::info!("Returning MoveItems response");
+                log::info!("Attempting move to container..");
                 return move_to_container(s, data);
             } else if let Some(_) = data.target_item {
+                log::info!("Attempting move to item spot..");
                 return move_to_item_spot(s, data);
             } else {
                 None
