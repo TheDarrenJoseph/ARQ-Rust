@@ -1,7 +1,8 @@
-use tui::layout::Alignment;
+use tui::buffer::{Buffer, Cell};
+use tui::layout::{Alignment, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use tui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
 
 #[derive(Clone)]
 pub struct Column {
@@ -41,4 +42,24 @@ pub fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
         .style(Style::default())
         .alignment(Alignment::Left);
     paragraph
+}
+
+#[test]
+fn test_build_headings() {
+    // GIVEN a view with a series of columns configured
+    let columns = vec![
+        Column {name : "NAME".to_string(), size: 12},
+        Column {name : "WEIGHT (Kg)".to_string(), size: 12},
+        Column {name : "VALUE".to_string(), size: 12}
+    ];
+
+    // WHEN we call to build the headings Paragraph
+    let headings = build_headings(columns);
+
+    // THEN we expect it to render to the buffer as expected
+    let area = Rect { x: 0, y: 0, height: 2, width: 31 };
+    let cell_buffer : Vec<Cell> = Vec::new();
+    let mut buffer = Buffer::empty(area.clone());
+    headings.render(area, &mut buffer);
+    assert_eq!(Buffer::with_lines(vec!["NAME         WEIGHT (Kg)  VALUE", "    "]), buffer);
 }

@@ -57,7 +57,8 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
 }
 
 fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
-    let subcontainers = level.get_player_mut().get_inventory().find_and_clone_subcontainers();
+    let inventory = level.get_player_mut().get_inventory_mut();
+    let mut subcontainers = inventory.find_and_clone_subcontainers();
     let mut idx = 0;
     for c in &subcontainers {
         log::info!("{} - Available container: {}", idx, c.get_self_item().get_name());
@@ -65,6 +66,9 @@ fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) 
     }
 
     let mut result_data = data.clone();
+    if !data.source.id_equals(inventory) {
+        subcontainers.push(inventory.clone())
+    }
     result_data.choices = subcontainers;
     return Ok(MoveToContainerChoice(result_data));
 }
@@ -80,7 +84,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
             return container_util::move_player_items(data, state.level);
         },
         MoveToContainerChoice(ref data) => {
-            if let Some(target) = &data.target_container {
+            return if let Some(target) = &data.target_container {
                 // Translate to the typical moving data
                 let move_data = MoveItemsData {
                     source: data.source.clone(),
@@ -90,10 +94,10 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
                     position: None
                 };
                 log::info!("[inventory command] Moving player items for MoveToContainerChoice...");
-                return container_util::move_player_items(move_data, state.level);
+                container_util::move_player_items(move_data, state.level)
             } else {
                 // Build container choices and pass the result back down to the view/handlers
-                return build_container_choices(data, state.level).ok();
+                build_container_choices(data, state.level).ok()
             }
         }
         _ => {
@@ -106,7 +110,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
     fn open_inventory(&mut self) -> Result<(), io::Error> {
         log::info!("Player opening inventory.");
-        let c = self.level.get_player_mut().get_inventory();
+        let c = self.level.get_player_mut().get_inventory_mut();
         let mut callback_container: Container = c.clone();
 
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), choice_frame_handler: None, character_view: None };
@@ -180,7 +184,7 @@ mod tests {
     use crate::ui;
     use crate::ui::{build_ui, UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();

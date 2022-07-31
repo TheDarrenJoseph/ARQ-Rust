@@ -175,7 +175,7 @@ mod tests {
     use crate::ui;
     use crate::ui::{build_ui, UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
+    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -255,7 +255,7 @@ mod tests {
         }
 
         // AND we expect the inventory to contain the 2 items taken
-        let inventory = level.get_player_mut().get_inventory();
+        let inventory = level.get_player_mut().get_inventory_mut();
         let updated_container_contents = inventory.get_contents();
         assert_eq!(2, updated_container_contents.len());
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
@@ -298,7 +298,7 @@ mod tests {
         }
 
         // AND we expect the inventory to contain the 2 items taken
-        let inventory = level.get_player_mut().get_inventory();
+        let inventory = level.get_player_mut().get_inventory_mut();
         let updated_container_contents = inventory.get_contents();
         assert_eq!(2, updated_container_contents.len());
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());

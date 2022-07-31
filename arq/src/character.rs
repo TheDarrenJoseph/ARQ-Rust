@@ -134,7 +134,7 @@ impl Character {
         self.position = position;
     }
 
-    pub fn get_inventory(&mut self) -> &mut Container {
+    pub fn get_inventory_mut(&mut self) -> &mut Container {
         return &mut self.inventory;
     }
 
@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(100, character.get_health());
         assert_eq!(Colour::Green, character.get_colour());
         assert_eq!(position, character.get_position());
-        assert_eq!(0, character.get_inventory().get_contents().len());
+        assert_eq!(0, character.get_inventory_mut().get_contents().len());
     }
 
 
@@ -219,6 +219,6 @@ mod tests {
         assert_eq!(100, character.get_health());
         assert_eq!(Colour::Green, character.get_colour());
         assert_eq!(position, character.get_position());
-        assert_eq!(0, character.get_inventory().get_contents().len());
+        assert_eq!(0, character.get_inventory_mut().get_contents().len());
     }
 }

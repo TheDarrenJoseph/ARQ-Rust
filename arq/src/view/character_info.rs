@@ -63,7 +63,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(DROP);
-        let inventory_view = container::build_container_frame_handler(self.character.get_inventory().clone(), commands);
+        let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), commands);
         self.frame_handler.container_views = vec!(inventory_view);
 
         let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };

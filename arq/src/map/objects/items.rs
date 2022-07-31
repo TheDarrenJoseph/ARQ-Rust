@@ -40,6 +40,10 @@ impl Item {
     pub fn is_container(&self) -> bool {
         self.item_type == ItemType::CONTAINER
     }
+    pub fn id_equals(&self, other: &Item) -> bool {
+        self.id == other.id
+    }
+
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {

@@ -250,7 +250,7 @@ impl <B : Backend> GameEngine<B> {
         while self.game_running {
             if self.ui.additional_widgets.is_empty() {
                 let player = self.level.get_player_mut();
-                let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory().get_loot_value());
+                let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
                 self.ui.additional_widgets.push(stat_line);
             }
 
@@ -271,7 +271,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn build_testing_inventory(&mut self) {
-        let inventory = self.level.characters[0].get_inventory();
+        let inventory = self.level.characters[0].get_inventory_mut();
         let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
         inventory.add_item(gold_bar);
 

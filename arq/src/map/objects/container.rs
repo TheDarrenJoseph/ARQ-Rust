@@ -103,12 +103,12 @@ impl Container {
         }
     }
 
-    // Returns the total count of all contents including itself
+    // Returns the total count of all contents
     pub fn get_item_count(&self) -> usize {
         return if self.is_true_container() {
             let mut item_count = 0;
             for c in self.get_contents() {
-                item_count += 1; // +1 for self item
+                item_count += 1;
                 if c.is_true_container() {
                     item_count += c.count_contents();
                     log::debug!("Child container {} has {} items.", c.get_self_item().name, item_count);

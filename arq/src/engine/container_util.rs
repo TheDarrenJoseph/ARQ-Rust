@@ -1,5 +1,7 @@
+use crate::character::Character;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
+use crate::map::objects::items::Item;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, TakeItemsData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
 
@@ -12,10 +14,10 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
         let mut untaken = Vec::new();
         for item in data.to_take {
             if let Some(container_item) = data.source.find(&item) {
-                let inventory = player.get_inventory();
+                let inventory = player.get_inventory_mut();
                 if inventory.can_fit_container_item(container_item) {
                     log::info!("Taking item: {}", item.get_name());
-                    player.get_inventory().add(container_item.clone());
+                    player.get_inventory_mut().add(container_item.clone());
                     taken.push(container_item.clone());
                 } else {
                     untaken.push(item);
@@ -39,15 +41,26 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
     return None
 }
 
-fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
-    let from_container_name = source.get_self_item().get_name();
-    let from_container_id = source.get_self_item().get_id();
+fn find_container_mut(root : &mut Container, target: Item) -> Option<&mut Container> {
+    let mut target_result: Option<&mut Container> = None;
+    let root_name = root.get_self_item().get_name().clone();
+    if root.get_self_item().id_equals(&target) {
+        return Some(root);
+    } else if let Some(found) = root.find_mut(&target) {
+        return Some(found);
+    } else {
+        log::error!("Couldn't find target container {} inside root {}.", target.get_name(), root_name);
+        return None;
+    }
+}
 
-    if let Some(target_container) = data.target_container {
-        if let Some(target) = source.find_mut(target_container.get_self_item()) {
+fn move_to_container(root : &mut Container, source : Item, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
+    let from_container_name = source.get_name();
+    let from_container_id = source.get_id();
+    let target_result =  data.target_container.map_or_else(|| { None }, |t| { find_container_mut(root, t.get_self_item().clone()) });
+        if let Some(target) = target_result {
             let mut moved = Vec::new();
             let mut unmoved = Vec::new();
-            let updated_target;
             log::info!("Moving items from: {} ({}) into: {} ({})", from_container_name, from_container_id, target.get_self_item().get_name(), target.get_self_item().get_id());
             for item in data.to_move {
                 if let Some(container_item) = data.source.find_mut(&item) {
@@ -59,23 +72,25 @@ fn move_to_container(source : &mut Container, mut data: MoveItemsData) -> Option
                     }
                 }
             }
-            updated_target = Some(target.clone());
+            let updated_target = Some(target.clone());
 
             if !moved.is_empty() || !unmoved.is_empty() {
                 log::info!("Returning MoveItems response with {} moved, {} unmoved items", moved.len(), unmoved.len());
-                source.remove_matching_items(moved);
-
-                let data = MoveItemsData { source: source.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
-                return Some(MoveItems(data));
+                if let Some(ref mut source_container) = find_container_mut(root, source) {
+                    source_container.remove_matching_items(moved);
+                    let data = MoveItemsData { source: source_container.clone(), to_move: unmoved, target_container: updated_target, position: data.position, target_item: None };
+                    return Some(MoveItems(data));
+                } else {
+                    log::error!("Failed to move items. Failed to find source container.");
+                }
             } else {
                 log::error!("Failed to move items. {} moved, {} unmoved items", moved.len(), unmoved.len());
             }
         } else {
             log::error!("Failed to move items. Couldn't find target container in source container.");
+            return None;
         }
-    } else {
-        log::error!("Failed to move items. No target container.");
-    }
+
     None
 }
 
@@ -109,20 +124,20 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
         // TODO potentially support this to allow moving into world containers
         None
     } else {
-        let player = level.get_player_mut();
-        let inventory = player.get_inventory();
-
+        let player : &mut Character = level.get_player_mut();
+        let inventory : &mut Container = player.get_inventory_mut();
         let source;
-        if data.source.id_equals(inventory) {
-            source = Some(inventory)
+        if inventory.id_equals(&data.source) {
+            source = Some(inventory);
         } else {
             source = inventory.find_mut(data.source.get_self_item())
         }
 
         if let Some(s) = source {
             return if let Some(_) = data.target_container {
+                let source_item = s.get_self_item().clone();
                 log::info!("Attempting move to container..");
-                return move_to_container(s, data);
+                return move_to_container(s, source_item, data);
             } else if let Some(_) = data.target_item {
                 log::info!("Attempting move to item spot..");
                 return move_to_item_spot(s, data);
@@ -144,7 +159,7 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
                 // Find the true instance of the source container on the map as our 'source_container'
                 let map_container = map.find_container(&data.source, pos);
                 if let Some(source_container) = map_container {
-                    return move_to_container(source_container, data);
+                    return move_to_container(source_container,data.source.get_self_item().clone(), data);
                 }
             } else {
                 log::error!("Cannot move items. No map provided");
@@ -185,7 +200,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::{build_character, build_default_character_details, build_player};
-    use crate::engine::container_util::move_items;
+    use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items::build_container_item;
@@ -214,6 +229,26 @@ mod tests {
             containers: area_containers
         };
 
+        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        return  Level { map: Some(map) , characters: vec![player] };
+    }
+
+    fn build_player_test_level() -> Level {
+        let tile_library = crate::map::tile::build_library();
+        let rom = tile_library[&Tile::Room].clone();
+        let wall = tile_library[&Tile::Wall].clone();
+        let map_pos = Position { x: 0, y: 0 };
+        let map_area = build_square_area(map_pos, 3);
+        let map = crate::map::Map {
+            area: map_area,
+            tiles : vec![
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+                vec![ wall.clone(), rom.clone(), wall.clone() ],
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+            ],
+            rooms: Vec::new(),
+            containers: HashMap::new()
+        };
         let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
         return  Level { map: Some(map) , characters: vec![player] };
     }
@@ -516,5 +551,63 @@ mod tests {
         let result = move_items(data, &mut level);
         // THEN we expect None to return
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_move_player_items_from_lower_to_root() {
+        // GIVEN a player inventory containing a nested container (Bag)
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+
+        // AND both the parent container and bag contains some other items
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let to_move = vec![item6.get_self_item().clone()];
+
+        // AND we're moving items from the underlying bag into the main inventory (root)
+        let target = inventory.clone();
+
+        let source = bag.clone();
+        let bag_item = bag.get_self_item().clone();
+
+        bag.push(vec![item4, item5, item6]);
+        inventory.push(vec![item1, item2, item3, bag]);
+        // 7 total contents (including the Bag contents)
+        assert_eq!(7, inventory.get_item_count());
+        // Root container has items 1-3 and the bag at the top level
+        assert_eq!(4, inventory.get_content_count());
+
+        let mut level = build_player_test_level();
+        level.get_player_mut().set_inventory(inventory.clone());
+
+        // WHEN we try to move an item from the bag into the root container
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
+        let result = move_player_items(data, &mut level);
+
+        // THEN we expect a result to return
+        assert!(result.is_some());
+
+        if let Some(MoveItems(d)) = result {
+            // with 0 unmoved items
+            assert_eq!(0, d.to_move.len());
+        } else {
+            assert!(false, "Unexpected data type returned");
+        }
+
+        let updated_inventory = level.get_player_mut().get_inventory_mut();
+        // AND the player's inventory should not have 5 items in it's content count
+        assert_eq!(5, updated_inventory.get_content_count());
+        // AND The bag should have only 2 items now
+        if let Some(b) = updated_inventory.find(&bag_item) {
+            assert_eq!(3, b.get_content_count());
+        } else {
+            assert!(false, "Couldn't find Bag in the updated inventory!");
+        }
+
     }
 }

@@ -134,7 +134,9 @@ impl ContainerFrameHandler {
     fn find_focused_item(&mut self) -> Option<Item> {
         let list_selection = &self.item_list_selection;
         if list_selection.is_selecting() {
-            return Some(list_selection.get_focused_item().unwrap().clone());
+            if let Some(focused_item) =list_selection.get_focused_item() {
+                return Some(focused_item.clone());
+            }
         }
         None
     }
@@ -500,7 +502,8 @@ mod tests {
     use crate::ui;
     use crate::ui::{build_ui, UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_columns, build_default_container_view, Column, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::container::{build_container_frame_handler, build_default_columns, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::util::tabling::{build_headings, Column};
 
 
     fn build_test_container() -> Container {
@@ -524,28 +527,6 @@ mod tests {
         let contents = container.get_contents();
         assert_eq!(4, contents.len());
         container
-    }
-
-    #[test]
-    fn test_build_headings() {
-        // GIVEN a view with a series of columns configured
-        let mut container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
-        view.columns = vec![
-            Column {name : "NAME".to_string(), size: 12},
-            Column {name : "WEIGHT (Kg)".to_string(), size: 12},
-            Column {name : "VALUE".to_string(), size: 12}
-        ];
-
-        // WHEN we call to build the headings Paragraph
-        let headings = view.build_headings();
-
-        // THEN we expect it to render to the buffer as expected
-        let area = Rect { x: 0, y: 0, height: 2, width: 31 };
-        let cell_buffer : Vec<Cell> = Vec::new();
-        let mut buffer = Buffer::empty(area.clone());
-        headings.render(area, &mut buffer);
-        assert_eq!(Buffer::with_lines(vec!["NAME         WEIGHT (Kg)  VALUE", "    "]), buffer);
     }
 
     #[test]
