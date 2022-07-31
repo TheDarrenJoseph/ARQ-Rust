@@ -21,7 +21,7 @@ use crate::view::{GenericInputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveToContainerChoiceData};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
@@ -120,11 +120,27 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                         self.frame_handler.choice_frame_handler = Some(cfh);
                     }
                 },
-                _ => {}
-            }
-
-            if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
-                topmost_view.handle_callback_result(r);
+                ContainerFrameHandlerInputResult::MoveItems(ref data) => {
+                    // if target_container is the root view container
+                    let root_container = self.frame_handler.container_views.first().map(|top_cv| top_cv.container.clone()).unwrap();
+                    if data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container)) {
+                        self.frame_handler.container_views = self.frame_handler.container_views.drain(1..).collect();
+                        if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+                            topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                        }
+                    } else {
+                        // Find source view and update it
+                        if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+                            topmost_view.handle_callback_result(r);
+                        }
+                    }
+                }
+                _ => {
+                    // Find source view and update it
+                    if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+                        topmost_view.handle_callback_result(r);
+                    }
+                }
             }
         }
     }

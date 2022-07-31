@@ -268,6 +268,12 @@ impl ContainerFrameHandler {
         }
     }
 
+    pub fn rebuild_to_container(&mut self, container: Container) {
+        self.container = container;
+        self.item_list_selection.cancel_selection();
+        self.rebuild_selection();
+    }
+
     // Callbacks return info on how to update the handler models
     pub fn handle_callback_result(&mut self, result: ContainerFrameHandlerInputResult) {
         match result {
