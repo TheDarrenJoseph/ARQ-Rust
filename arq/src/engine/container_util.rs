@@ -150,7 +150,8 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
         let source;
         let source_item ;
         let target_inventory = data.target_container.as_ref().map_or_else(|| false, |c| inventory.id_equals(&c));
-        if inventory.id_equals(&data.source) || target_inventory {
+        let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
+        if inventory.id_equals(&data.source) || target_inventory || !target_in_source {
             source = Some(inventory);
             source_item = Some(data.source.get_self_item().clone());
         } else {

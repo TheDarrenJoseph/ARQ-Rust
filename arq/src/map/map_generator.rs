@@ -33,6 +33,42 @@ pub fn build_generator(map_area : Area) -> MapGenerator {
         map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new(), containers: HashMap::new()}}
 }
 
+pub fn build_dev_inventory() -> Container {
+    let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50, 1, ContainerType::AREA, 100);
+    let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+    let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+    let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+    let tin_bar = items::build_item(Uuid::new_v4(), "Tin Bar".to_owned(), 'X', 1, 50);
+    carton.add_item(tin_bar);
+    bag.add(carton);
+    bag.add_item(bronze_bar);
+    container.add(bag);
+    for i in 1..=60 {
+        let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
+        container.add_item(test_item);
+    }
+    return container;
+}
+
+
+pub fn build_dev_chest() -> Container {
+    let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 50, 1, ContainerType::OBJECT, 100);
+
+    let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+    let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
+    let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
+    let tin_bar = items::build_item(Uuid::new_v4(), "Tin Bar".to_owned(), 'X', 1, 50);
+    carton.add_item(tin_bar);
+    bag.add(carton);
+    bag.add_item(bronze_bar);
+    container.add(bag);
+    for i in 1..=60 {
+        let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
+        container.add_item(test_item);
+    }
+    return container;
+}
+
 fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
     let mut container_map = HashMap::new();
     let inside_area = room.get_inside_area();
@@ -45,19 +81,7 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
             let random_x: u16 = rng.gen_range(1..=size_x) as u16;
             let random_y: u16 = rng.gen_range(1..=size_y) as u16;
             let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
-            let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 50, 1, ContainerType::OBJECT, 100);
-
-            let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
-            let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
-            let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-            bag.add(carton);
-            bag.add_item(bronze_bar);
-            container.add(bag);
-            for i in 1..=60 {
-                let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
-                container.add_item(test_item);
-            }
-            container_map.insert(container_position, container);
+            container_map.insert(container_position, build_dev_chest());
         }
     }
 

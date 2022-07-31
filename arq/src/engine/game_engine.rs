@@ -14,7 +14,7 @@ use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::Level;
-use crate::map::map_generator::build_generator;
+use crate::map::map_generator::{build_dev_chest, build_dev_inventory, build_generator};
 use crate::map::objects::container;
 use crate::map::objects::container::ContainerType;
 use crate::map::objects::items;
@@ -271,25 +271,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn build_testing_inventory(&mut self) {
-        let inventory = self.level.characters[0].get_inventory_mut();
-        let gold_bar = items::build_item(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
-        inventory.add_item(gold_bar);
-
-        let silver_bar = items::build_item(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
-        inventory.add_item(silver_bar);
-
-        let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
-        let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
-        let carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-        bag.add(carton);
-        bag.add_item(bronze_bar);
-
-        for i in 1..=30 {
-            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
-            inventory.add_item(test_item);
-        }
-
-        inventory.add(bag);
+        self.level.characters[0].set_inventory(build_dev_inventory());
     }
 
     fn handle_player_movement(&mut self, side: Side) {
