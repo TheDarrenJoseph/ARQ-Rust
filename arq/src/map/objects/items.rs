@@ -47,11 +47,11 @@ impl Item {
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id: id, item_type: ItemType::ITEM, name : name, symbol : symbol, colour: Colour::White, weight: weight, value: value}
+    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value }
 }
 
 pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id: id, item_type: ItemType::CONTAINER, name : name, symbol : symbol, colour: Colour::White, weight: weight, value: value}
+    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value }
 }
 
 #[cfg(test)]

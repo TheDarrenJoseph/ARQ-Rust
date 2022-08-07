@@ -74,7 +74,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                             self.draw_container(view_position.clone(), container)?;
                         }
                         ContainerType::AREA => {
-                            let item_count = container.get_item_count();
+                            let item_count = container.get_total_count();
                             log::debug!("[map view] {} has {} items.", container.get_self_item().name, item_count);
                             if item_count > 0 {
                                 self.draw_container(view_position.clone(), container)?;

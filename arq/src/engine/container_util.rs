@@ -293,7 +293,7 @@ mod tests {
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let to_move = vec![container1.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3]);
-        assert_eq!(3, source_container.get_item_count());
+        assert_eq!(3, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -317,10 +317,11 @@ mod tests {
                     // AND The map 'source' container will have the items removed
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(2, c.get_item_count());
+                        // There should be 2 items in to root container's top level
+                        assert_eq!(2, c.get_top_level_count());
                         // AND The 'target' container will contain the new items
                         if let Some(container_item) = c.find(&target_item) {
-                            assert_eq!(1, container_item.get_item_count());
+                            assert_eq!(1, container_item.get_total_count());
                         }
                         return; // pass
                     }
@@ -347,7 +348,7 @@ mod tests {
         let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
         let source_copy = source_container.clone();
-        assert_eq!(6, source_container.get_item_count());
+        assert_eq!(6, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -371,7 +372,7 @@ mod tests {
                     // AND The map 'source' container will have it's items reshuffled
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(6, c.get_item_count());
+                        assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
                         assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[0].get_self_item().get_name());
                         assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[1].get_self_item().get_name());
@@ -405,7 +406,7 @@ mod tests {
         let to_move = vec![container5.get_self_item().clone(), container6.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
         let source_copy = source_container.clone();
-        assert_eq!(6, source_container.get_item_count());
+        assert_eq!(6, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -429,7 +430,7 @@ mod tests {
                     // AND The map 'source' container will have it's items reshuffled
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(6, c.get_item_count());
+                        assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
                         assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[0].get_self_item().get_name());
                         assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[1].get_self_item().get_name());
@@ -462,7 +463,7 @@ mod tests {
         let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
         let source_copy = source_container.clone();
-        assert_eq!(6, source_container.get_item_count());
+        assert_eq!(6, source_container.get_total_count());
 
         // WHEN we call to move container 1 and 2 to the middle of the list (Container 5's location)
         let source = source_container.clone();
@@ -485,7 +486,7 @@ mod tests {
                     // AND The map 'source' container will have it's items reshuffled
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(6, c.get_item_count());
+                        assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
                         assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[0].get_self_item().get_name());
                         assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[1].get_self_item().get_name());
@@ -517,7 +518,7 @@ mod tests {
         let to_move = vec![container1.get_self_item().clone(), container6.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
         let source_copy = source_container.clone();
-        assert_eq!(6, source_container.get_item_count());
+        assert_eq!(6, source_container.get_total_count());
 
         // WHEN we call to move container 1 and 6 to container 2's location (index 1)
         let source = source_container.clone();
@@ -540,7 +541,7 @@ mod tests {
                     // AND The map 'source' container will have it's items reshuffled
                     let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
-                        assert_eq!(6, c.get_item_count());
+                        assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
                         assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[0].get_self_item().get_name());
                         assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[1].get_self_item().get_name());
@@ -567,7 +568,7 @@ mod tests {
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let to_move = vec![container1.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3]);
-        assert_eq!(3, source_container.get_item_count());
+        assert_eq!(3, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -581,6 +582,83 @@ mod tests {
         let result = move_items(data, &mut level);
         // THEN we expect None to return
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_move_player_items_from_lower_to_parent() {
+        // GIVEN a player inventory containing a nested container (Bag)
+        // AND the Bag contains a Carton
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+
+        // AND all of them contain some other items
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let to_move = vec![item8.get_self_item().clone()];
+
+        // AND we're moving items from the underlying Carton into the parent (Bag)
+        let carton_item = carton.get_self_item().clone();
+        let bag_item = bag.get_self_item().clone();
+
+        carton.push(vec![item7, item8, item9]);
+        bag.push(vec![item4, item5, item6, carton.clone()]);
+
+        let source = carton.clone();
+        inventory.push(vec![item1, item2, item3, bag.clone()]);
+
+        let target = bag.clone();
+
+        // 11 total contents (including the Bag contents)
+        assert_eq!(11, inventory.get_total_count());
+        // Root container has items 1-3 and the bag at the top level
+        assert_eq!(4, inventory.get_top_level_count());
+
+        let mut level = build_player_test_level();
+        level.get_player_mut().set_inventory(inventory);
+
+        // WHEN we try to move an item from the bag into the root container
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
+        let result = move_player_items(data, &mut level);
+
+        // THEN we expect a result to return
+        assert!(result.is_some());
+
+        if let Some(MoveItems(d)) = result {
+            // with 0 unmoved items
+            assert_eq!(0, d.to_move.len());
+        } else {
+            assert!(false, "Unexpected data type returned");
+        }
+
+        let updated_inventory = level.get_player_mut().get_inventory_mut();
+        // AND the player's inventory should not have 4 items in it's content count
+        assert_eq!(4, updated_inventory.get_top_level_count());
+
+        // AND The Bag should have 5 items now
+        if let Some(c) = updated_inventory.find(&bag_item) {
+            assert_eq!(5, c.get_top_level_count());
+        } else {
+            assert!(false, "Couldn't find Bag in the updated inventory!");
+        }
+
+        // AND The Carton should have only 2 items now
+        if let Some(b) = updated_inventory.find(&carton_item) {
+            assert_eq!(2, b.get_top_level_count());
+        } else {
+            assert!(false, "Couldn't find Carton in the updated inventory!");
+        }
+
     }
 
     #[test]
@@ -604,16 +682,14 @@ mod tests {
 
         bag.push(vec![item4, item5, item6]);
         let source = bag.clone();
-
-        let source = bag.clone();
         inventory.push(vec![item1, item2, item3, bag]);
 
         let target = inventory.clone();
 
         // 7 total contents (including the Bag contents)
-        assert_eq!(7, inventory.get_item_count());
+        assert_eq!(7, inventory.get_total_count());
         // Root container has items 1-3 and the bag at the top level
-        assert_eq!(4, inventory.get_content_count());
+        assert_eq!(4, inventory.get_top_level_count());
 
         let mut level = build_player_test_level();
         level.get_player_mut().set_inventory(inventory);
@@ -634,10 +710,10 @@ mod tests {
 
         let updated_inventory = level.get_player_mut().get_inventory_mut();
         // AND the player's inventory should not have 5 items in it's content count
-        assert_eq!(5, updated_inventory.get_content_count());
+        assert_eq!(5, updated_inventory.get_top_level_count());
         // AND The bag should have only 2 items now
         if let Some(b) = updated_inventory.find(&bag_item) {
-            assert_eq!(2, b.get_content_count());
+            assert_eq!(2, b.get_top_level_count());
         } else {
             assert!(false, "Couldn't find Bag in the updated inventory!");
         }

@@ -126,7 +126,8 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                     let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
                     let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
                     if target_is_root {
-                        self.frame_handler.container_views = self.frame_handler.container_views.drain(1..).collect();
+                        // Drain all after the first
+                        self.frame_handler.container_views.drain(1..);
                         if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                             topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
                         }

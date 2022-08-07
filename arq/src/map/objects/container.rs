@@ -88,14 +88,18 @@ impl Container {
 
     fn count_contents(&self) -> usize {
         let mut item_count = 0;
-        for c in self.get_contents() {
-            item_count += c.get_item_count();
+        if self.is_true_container() {
+            for c in self.get_contents() {
+                item_count += 1;
+                let count = c.get_total_count();
+                item_count += count;
+            }
         }
         return item_count;
     }
 
     // Returns the top-level content count if this is a 'true' container, 0 otherwise (i.e a wrapped item)
-    pub fn get_content_count(&self) -> usize {
+    pub fn get_top_level_count(&self) -> usize {
         return if self.is_true_container() {
             self.contents.len()
         } else {
@@ -103,22 +107,21 @@ impl Container {
         }
     }
 
-    // Returns the total count of all contents
-    pub fn get_item_count(&self) -> usize {
-        return if self.is_true_container() {
-            let mut item_count = 0;
+    // Returns the total count of all contents (recursively)
+    pub fn get_total_count(&self) -> usize {
+        let mut item_count = 0;
+        if self.is_true_container() {
             for c in self.get_contents() {
                 item_count += 1;
-                if c.is_true_container() {
-                    item_count += c.count_contents();
-                    log::debug!("Child container {} has {} items.", c.get_self_item().name, item_count);
-                }
+                let content_count = c.count_contents();
+                item_count += content_count;
+                log::debug!("Child container {} has {} items.", c.get_self_item().name, item_count);
             }
             log::debug!("{} has {} items.", self.get_self_item().name, item_count);
-            item_count
         } else {
-            return 1;
+            return 0;
         }
+        return item_count;
     }
 
     pub fn get_weight_limit(&self) -> i32 {
@@ -536,7 +539,7 @@ mod tests {
         assert_eq!(2, container.get_contents().len());
 
         // WHEN we call to get the content count
-        let count = container.get_content_count();
+        let count = container.get_top_level_count();
         // THEN we expect the total of the top-level contents to return
         assert_eq!(2, count);
     }
@@ -563,7 +566,7 @@ mod tests {
         assert_eq!(3, container.get_contents().len());
 
         // WHEN we call to get the content count
-        let count = container.get_content_count();
+        let count = container.get_top_level_count();
         // THEN we expect only the total of the top-level contents to return
         assert_eq!(3, count);
     }
@@ -575,7 +578,7 @@ mod tests {
         // AND it contains nothing
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the content count
-        let count = container.get_content_count();
+        let count = container.get_top_level_count();
         // THEN
         assert_eq!(0, count);
     }
@@ -593,7 +596,7 @@ mod tests {
         assert_eq!(2, container.get_contents().len());
 
         // WHEN we call to get the item count
-        let count = container.get_item_count();
+        let count = container.get_total_count();
         // THEN we expect the total count of all items to return
         assert_eq!(2, count);
     }
@@ -620,7 +623,7 @@ mod tests {
         assert_eq!(3, container.get_contents().len());
 
         // WHEN we call to get the item count
-        let count = container.get_item_count();
+        let count = container.get_total_count();
         // THEN we expect the total count of all items to return
         assert_eq!(6, count);
     }
@@ -632,7 +635,7 @@ mod tests {
         // AND it contains nothing
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the item count
-        let count = container.get_item_count();
+        let count = container.get_total_count();
         // THEN
         assert_eq!(0, count);
     }

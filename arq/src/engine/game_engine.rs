@@ -5,7 +5,6 @@ use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
 use tui::layout::Rect;
-use uuid::Uuid;
 
 use crate::character::{build_player, Character};
 use crate::engine::command::command::Command;

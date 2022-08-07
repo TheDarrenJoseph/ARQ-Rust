@@ -28,7 +28,7 @@ fn describe_position_in_room(pos: Position, room: &Room) -> Option<String> {
 }
 
 fn describe_position_container(c: &Container) -> Result<String, io::Error> {
-    let item_count = c.get_content_count();
+    let item_count = c.get_top_level_count();
     let container_type = c.get_container_type();
 
     if container_type != AREA  {
@@ -181,7 +181,7 @@ mod tests {
         let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         container.push(vec![container1, container2, container3]);
-        assert_eq!(3, container.get_item_count());
+        assert_eq!(3, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -197,7 +197,7 @@ mod tests {
         let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         let item =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 100);
         container.push(vec![item]);
-        assert_eq!(1, container.get_item_count());
+        assert_eq!(1, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -215,7 +215,7 @@ mod tests {
         let item2 =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
         let item3 =  build(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
         container.push(vec![item1, item2, item3]);
-        assert_eq!(3, container.get_item_count());
+        assert_eq!(3, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -231,7 +231,7 @@ mod tests {
         let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
         container.push(vec![bag]);
-        assert_eq!(1, container.get_item_count());
+        assert_eq!(1, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -248,7 +248,7 @@ mod tests {
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
         let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
         container.push(vec![bag, box1]);
-        assert_eq!(2, container.get_item_count());
+        assert_eq!(2, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -268,7 +268,7 @@ mod tests {
         let silver_bar =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);;
 
         container.push(vec![bag, gold_bar, box1, silver_bar]);
-        assert_eq!(4, container.get_item_count());
+        assert_eq!(4, container.get_total_count());
 
         // WHEN we call to describe this
         let prompt = describe_position_container(&container);
@@ -287,7 +287,7 @@ mod tests {
         let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![container1, container2, container3]);
-        assert_eq!(3, source_container.get_item_count());
+        assert_eq!(3, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -310,7 +310,7 @@ mod tests {
         let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![container1, container2, container3]);
-        assert_eq!(3, source_container.get_item_count());
+        assert_eq!(3, source_container.get_total_count());
 
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -331,7 +331,7 @@ mod tests {
         let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
-        assert_eq!(1, source_container.get_item_count());
+        assert_eq!(1, source_container.get_total_count());
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
@@ -356,7 +356,7 @@ mod tests {
 
         chest.push(vec![bag, item1, item2]);
         source_container.push(vec![chest]);
-        assert_eq!(1, source_container.get_item_count());
+        assert_eq!(4, source_container.get_total_count());
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
@@ -374,7 +374,7 @@ mod tests {
         // GIVEN a valid map
         // that holds a source container (AREA) containing nothing
         let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        assert_eq!(0, source_container.get_item_count());
+        assert_eq!(0, source_container.get_total_count());
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
@@ -394,7 +394,7 @@ mod tests {
         let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
-        assert_eq!(1, source_container.get_item_count());
+        assert_eq!(1, source_container.get_total_count());
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
