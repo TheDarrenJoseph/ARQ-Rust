@@ -221,6 +221,26 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         }
         Ok((None, false))
     }
+
+    fn quit_container_view(&mut self) -> Result<bool, Error> {
+        let container_views = &mut self.frame_handler.container_views;
+        if container_views.len() > 1 {
+            if let Some(closing_view) = self.frame_handler.container_views.pop() {
+                let closing_container = closing_view.container;
+                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+                    let parent_container = &mut parent_view.container;
+                    if let Some(position) = parent_container.position(&closing_container) {
+                        parent_container.replace(position, closing_container);
+                    }
+                }
+            }
+            return Ok(false)
+        } else if container_views.len() == 1 {
+            let last_view = &mut self.frame_handler.container_views[0];
+            self.character.set_inventory(last_view.container.clone());
+        }
+        return Ok(true)
+    }
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
@@ -266,24 +286,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                // Drop the last container view and keep going
-                let container_views = &mut self.frame_handler.container_views;
-                if container_views.len() > 1 {
-                    if let Some(closing_view) = self.frame_handler.container_views.pop() {
-                        let closing_container = closing_view.container;
-                        if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
-                            let parent_container = &mut parent_view.container;
-                            if let Some(position) = parent_container.position(&closing_container) {
-                                parent_container.replace(position, closing_container);
-                            }
-                        }
-                    }
-                    return Ok(false)
-                } else if container_views.len() == 1 {
-                    let last_view = &mut self.frame_handler.container_views[0];
-                    self.character.set_inventory(last_view.container.clone());
-                }
-                return Ok(true)
+                return self.quit_container_view();
             },
             // Horizontal tab
             Key::Char('\t') => {
