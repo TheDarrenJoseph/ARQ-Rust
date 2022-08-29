@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::io;
 use crate::character::Character;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
@@ -221,6 +223,19 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
         log::error!("Cannot move items. No target provided.");
         None
     }
+}
+
+pub fn build_container_choices(source: &Container, parent: &mut Container) -> Result<Vec<Container>, io::Error> {
+    let mut sub_containers = parent.find_and_clone_subcontainers();
+    let mut idx = 0;
+    for c in &sub_containers {
+        log::info!("{} - Available container: {}", idx, c.get_self_item().get_name());
+        idx +=1;
+    }
+    if !source.id_equals(parent) {
+        sub_containers.push(parent.clone())
+    }
+    return Ok(sub_containers);
 }
 
 #[cfg(test)]

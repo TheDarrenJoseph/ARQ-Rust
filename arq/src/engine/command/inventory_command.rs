@@ -1,5 +1,5 @@
 use std::io;
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 
@@ -58,18 +58,11 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
 
 fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
     let inventory = level.get_player_mut().get_inventory_mut();
-    let mut subcontainers = inventory.find_and_clone_subcontainers();
-    let mut idx = 0;
-    for c in &subcontainers {
-        log::info!("{} - Available container: {}", idx, c.get_self_item().get_name());
-        idx +=1;
-    }
+    let sub_containers_result = container_util::build_container_choices(&data.source, inventory);
 
+    let sub_containers = sub_containers_result.unwrap();
     let mut result_data = data.clone();
-    if !data.source.id_equals(inventory) {
-        subcontainers.push(inventory.clone())
-    }
-    result_data.choices = subcontainers;
+    result_data.choices = sub_containers;
     return Ok(MoveToContainerChoice(result_data));
 }
 
@@ -97,6 +90,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
                 container_util::move_player_items(move_data, state.level)
             } else {
                 // Build container choices and pass the result back down to the view/handlers
+                log::info!("[inventory command] Building choices for MoveToContainerChoice...");
                 build_container_choices(data, state.level).ok()
             }
         }

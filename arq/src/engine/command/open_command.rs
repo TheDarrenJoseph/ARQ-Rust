@@ -14,9 +14,9 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
 use crate::view::callback::Callback;
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::View;
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 
@@ -38,6 +38,24 @@ fn handle_callback(level : &mut Level, position: Position, data : ContainerFrame
             log::info!("[open command] Received data for MoveItems with {} items", data.to_move.len());
             data.position = Some(position.clone());
             return container_util::move_items(data, level);
+        },
+        MoveToContainerChoice(ref data) => {
+            if let Some(target) = &data.target_container {
+                // Translate to the typical moving data
+                let move_data = MoveItemsData {
+                    source: data.source.clone(),
+                    to_move: data.to_move.clone(),
+                    target_container: data.target_container.clone(),
+                    target_item: None,
+                    position: None
+                };
+                log::info!("[open command] Moving items for MoveToContainerChoice...");
+                //container_util::move_player_items(move_data, state.level)
+            } else {
+                log::info!("[open command] Building choices for MoveToContainerChoice...");
+                // Build container choices and pass the result back down to the view/handlers
+                //build_container_choices(data, state.level).ok()
+            }
         }
         _ => {}
     }
@@ -67,7 +85,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
-        let frame_handler = WorldContainerViewFrameHandlers { frame_handlers: vec![container_view] };
+        let frame_handler = WorldContainerViewFrameHandlers { container_handlers: vec![container_view], container_choice_handler: None };
         let level = &mut self.level;
         let mut world_container_view = WorldContainerView {
             ui,

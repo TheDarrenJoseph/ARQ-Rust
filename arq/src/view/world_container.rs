@@ -9,7 +9,8 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::{FrameData, FrameHandler, UI};
 use crate::view::{GenericInputResult, resolve_input, View};
 use crate::view::callback::Callback;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
+use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler};
 use crate::view::InputHandler;
 
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
@@ -24,13 +25,14 @@ pub struct WorldContainerViewFrameData {
 }
 
 pub struct WorldContainerViewFrameHandlers {
-    pub frame_handlers: Vec<ContainerFrameHandler>
+    pub container_handlers: Vec<ContainerFrameHandler>,
+    pub container_choice_handler: Option<ContainerChoiceFrameHandler>
 }
 
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     fn clone_selected_container_items(&mut self) -> Vec<Container> {
         let mut items = Vec::new();
-        if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
+        if let Some(parent_view) = self.frame_handlers.container_handlers.last_mut() {
             let selected_items = parent_view.get_selected_items();
             for item in selected_items {
                 if let Some(found) = parent_view.container.find(&item) {
@@ -44,8 +46,11 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
             match r {
+                ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
+                    self.frame_handlers.build_container_choice_view(data);
+                },
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {
-                    for fh in &mut self.frame_handlers.frame_handlers {
+                    for fh in &mut self.frame_handlers.container_handlers {
                         if fh.container.id_equals(&data.source) {
                             fh.handle_callback_result(r.clone())
                         }
@@ -56,12 +61,13 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
                     }
                 },
                 _ => {
-                    self.frame_handlers.frame_handlers.last_mut().map(|fh| fh.handle_callback_result(r));
+                    self.frame_handlers.container_handlers.last_mut().map(|fh| fh.handle_callback_result(r));
 
                 }
             }
         }
     }
+
 }
 
 impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for WorldContainerView<'_, B>  {
@@ -93,7 +99,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
         let key = resolve_input(input);
         match key {
             Key::Char('t') => {
-                if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
+                if let Some(parent_view) = self.frame_handlers.container_handlers.last_mut() {
                     let selected_container_items = parent_view.get_selected_items();
                     let data = TakeItemsData { source: self.container.clone(), to_take: selected_container_items, position: None };
                     let result = ContainerFrameHandlerInputResult::TakeItems(data);
@@ -102,11 +108,11 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
             },
             Key::Char('q') => {
                 // Drop the last container view and keep going
-                let container_views = &self.frame_handlers.frame_handlers;
+                let container_views = &self.frame_handlers.container_handlers;
                 if container_views.len() > 1 {
-                    if let Some(closing_view) = self.frame_handlers.frame_handlers.pop() {
+                    if let Some(closing_view) = self.frame_handlers.container_handlers.pop() {
                         let closing_container = closing_view.container;
-                        if let Some(parent_view) = self.frame_handlers.frame_handlers.last_mut() {
+                        if let Some(parent_view) = self.frame_handlers.container_handlers.last_mut() {
                             let parent_container = &mut parent_view.container;
                             if let Some(position) = parent_container.position(&closing_container) {
                                 parent_container.replace(position, closing_container);
@@ -115,7 +121,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                     }
                     return Ok(false)
                 } else if container_views.len() == 1 {
-                    let last_view = &mut self.frame_handlers.frame_handlers[0];
+                    let last_view = &mut self.frame_handlers.container_handlers[0];
                     self.container = last_view.container.clone();
                 }
                 return Ok(true)
@@ -123,7 +129,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
             // Passthrough anything not handled here into the sub framehandler
             _ => {
                 let mut generic_input_result : Option<GenericInputResult> = None;
-                let container_views = &mut self.frame_handlers.frame_handlers;
+                let container_views = &mut self.frame_handlers.container_handlers;
                 let have_container_views = !container_views.is_empty();
                 if have_container_views {
                     if let Some(topmost_view) = container_views.last_mut() {
@@ -163,9 +169,30 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
 
 impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> for WorldContainerViewFrameHandlers {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<WorldContainerViewFrameData>) {
-        if let Some(topmost_view) = self.frame_handlers.last_mut() {
+        let frame_size = data.frame_size;
+        if let Some(cfh) = &mut self.container_choice_handler {
+            let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
+            let frame_data = FrameData { data: Vec::new(), frame_size: inventory_area };
+            cfh.handle_frame(frame, frame_data);
+        } else if let Some(topmost_view) = self.container_handlers.last_mut() {
             let mut frame_inventory = topmost_view.container.clone();
             topmost_view.handle_frame(frame, FrameData { frame_size: data.frame_size, data: &mut frame_inventory });
+        }
+    }
+}
+
+impl WorldContainerViewFrameHandlers {
+
+    fn build_container_choice_view(&mut self, data : &MoveToContainerChoiceData) {
+        if !data.choices.is_empty() {
+            let choices = data.choices.clone();
+            let mut items = Vec::new();
+            for c in &choices {
+                items.push(c.get_self_item().clone());
+            }
+            let mut cfh = build(choices);
+
+            self.container_choice_handler = Some(cfh);
         }
     }
 }
