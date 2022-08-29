@@ -152,6 +152,75 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
             }
         }
     }
+
+    /*
+      * Handles passthrough to the relevant container choice view (if one is present)
+      * Triggering callbacks if needed
+      * Returns the optional input result of the container choice view, and a boolean to indicate success
+      */
+    fn handle_container_choice_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
+        if let Some(cfh) = &mut self.frame_handler.choice_frame_handler {
+            let result = cfh.handle_input(Some(key))?;
+            if let Some(view_specific_result) = result.view_specific_result {
+                match view_specific_result {
+                    ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
+                        let container_views = &mut self.frame_handler.container_views;
+                        if let Some(topmost_view) = container_views.last_mut() {
+                            let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
+                            match view_specific_result {
+                                ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
+                                    // Add the target selected to the callback data
+                                    data.target_container = Some(selected_container.clone());
+                                    self.trigger_callback(ContainerFrameHandlerInputResult::MoveToContainerChoice(data));
+                                    // Clear the frame handler now we're done
+                                    self.frame_handler.choice_frame_handler = None;
+                                    return Ok((None, true));
+                                },
+                                _ => {}
+                            }
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            return Ok((Some(result.generic_input_result), true))
+        }
+        Ok((None, false))
+    }
+
+    /*
+     * Handles passthrough to the relevant container view (the latest opened)
+     * Triggering callbacks if needed
+     * Returns the optional input result of the container view, and a boolean to indicate success
+     */
+    fn handle_container_view_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
+        let container_views = &mut self.frame_handler.container_views;
+        let have_container_views = !container_views.is_empty();
+        if have_container_views {
+            if let Some(topmost_view) = container_views.last_mut() {
+                let result = topmost_view.handle_input(Some(key))?;
+                if let Some(view_specific_result) = result.view_specific_result {
+                    match view_specific_result {
+                        ContainerFrameHandlerInputResult::OpenContainerView(stacked_view) => {
+                            container_views.push(stacked_view);
+                        },
+                        ContainerFrameHandlerInputResult::DropItems(_) => {
+                            self.trigger_callback(view_specific_result);
+                        },
+                        ContainerFrameHandlerInputResult::MoveItems(_) => {
+                            self.trigger_callback(view_specific_result);
+                        },
+                        ContainerFrameHandlerInputResult::MoveToContainerChoice(_) => {
+                            self.trigger_callback(view_specific_result);
+                        },
+                        _ => {}
+                    }
+                }
+                return Ok((Some(result.generic_input_result), true));
+            }
+        }
+        Ok((None, false))
+    }
 }
 
 impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
@@ -225,58 +294,23 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                 let mut generic_input_result : Option<GenericInputResult> = None;
                 match self.frame_handler.tab_choice {
                     TabChoice::INVENTORY => {
-
                         // Container choice handlers take priority as they're essentially a dialog
-                        if let Some(cfh) = &mut self.frame_handler.choice_frame_handler {
-                            let result = cfh.handle_input(Some(key))?;
-                            if let Some(view_specific_result) = result.view_specific_result {
-                                match view_specific_result {
-                                    ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
-                                        let container_views = &mut self.frame_handler.container_views;
-                                        if let Some(topmost_view) = container_views.last_mut() {
-                                            let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
-                                            match view_specific_result {
-                                                ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
-                                                    // Add the target selected to the callback data
-                                                    data.target_container = Some(selected_container.clone());
-                                                    self.trigger_callback(ContainerFrameHandlerInputResult::MoveToContainerChoice(data));
-                                                    // Clear the frame handler now we're done
-                                                    self.frame_handler.choice_frame_handler = None;
-                                                    return Ok(false)
-                                                },
-                                                _ => {}
-                                            }
-                                        }
-                                    },
-                                    _ => {}
-                                }
+                        if let Ok((gir_result, success)) = self.handle_container_choice_input(key) {
+                            // Rewrap this only if something was returned
+                            if let Some(gir) = gir_result {
+                                generic_input_result = Some(gir);
                             }
-                            generic_input_result = Some(result.generic_input_result);
+                            // Force a redraw
+                            if success {
+                                return Ok(false);
+                            }
                         }
 
-                        let container_views = &mut self.frame_handler.container_views;
-                        let have_container_views = !container_views.is_empty();
-                        if have_container_views {
-                            if let Some(topmost_view) = container_views.last_mut() {
-                                let result = topmost_view.handle_input(Some(key))?;
-                                if let Some(view_specific_result) = result.view_specific_result {
-                                    match view_specific_result {
-                                        ContainerFrameHandlerInputResult::OpenContainerView(stacked_view) => {
-                                            container_views.push(stacked_view);
-                                        },
-                                        ContainerFrameHandlerInputResult::DropItems(_) => {
-                                            self.trigger_callback(view_specific_result);
-                                        },
-                                        ContainerFrameHandlerInputResult::MoveItems(_) => {
-                                            self.trigger_callback(view_specific_result);
-                                        },
-                                        ContainerFrameHandlerInputResult::MoveToContainerChoice(_) => {
-                                            self.trigger_callback(view_specific_result);
-                                        },
-                                        _ => {}
-                                    }
-                                }
-                                generic_input_result = Some(result.generic_input_result);
+                        // Finally trigger passthrough to standard container views
+                        if let Ok((gir_result, success)) = self.handle_container_view_input(key) {
+                            // Rewrap this only if something was returned
+                            if let Some(gir) = gir_result {
+                                generic_input_result = Some(gir);
                             }
                         }
                     }
