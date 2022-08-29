@@ -125,19 +125,25 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                     let root_container = self.frame_handler.container_views.first().map(|top_cv| top_cv.container.clone()).unwrap();
                     let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
                     let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
+                    // Target is the topmost container, so we're forced to rebuild everything
                     if target_is_root {
                         // Drain all after the first
                         self.frame_handler.container_views.drain(1..);
+                        // Then rebuild the remaining (root container) view
                         if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                             topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
                         }
-                    } else if !target_in_source {
-                        if let Some(cv) = self.frame_handler.container_views.iter_mut()
-                            .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
-                            cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                    } else {
+                        // i.e moving to a parent container that isn't the root
+                        if !target_in_source {
+                            // Rebuild that specific container view
+                            if let Some(cv) = self.frame_handler.container_views.iter_mut()
+                                .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
+                                cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                            }
                         }
 
-                        // Find source view and update it
+                        // Ensure the current view updates
                         if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
                             topmost_view.handle_callback_result(r);
                         }
