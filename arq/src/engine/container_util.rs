@@ -28,6 +28,8 @@ fn add_to_target(source : Container, target: &mut Container, to_add: Vec<Item>) 
                 log::info!("Cannot add item {}. Could not find it.", item.get_name());
                 unmoved.push(item);
             }
+        } else {
+            log::info!("Cannot add item {}. Failed to find source item: {}", item.get_name(), source.get_self_item().get_name());
         }
     }
     return AddToTargetResult { moved, unmoved, updated_target: Some(target.clone()) };
@@ -600,6 +602,84 @@ mod tests {
     }
 
     #[test]
+    fn test_move_player_items_from_parent_to_lower() {
+        // GIVEN a player inventory containing a nested container (Bag)
+        // AND the Bag contains a Carton
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+
+        // AND all of them contain some other items
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+
+        // AND we're moving items 2 and 3 from the parent into the Bag (first child)
+        let to_move = vec![item2.get_self_item().clone(), item3.get_self_item().clone()];
+        carton.push(vec![item7, item8, item9]);
+        bag.push(vec![item4, item5, item6, carton.clone()]);
+
+        inventory.push(vec![item1, item2, item3, bag.clone()]);
+        let source = inventory.clone();
+
+        let target = bag.clone();
+
+        // 11 total contents (including the Bag contents)
+        assert_eq!(11, inventory.get_total_count());
+        // Root container has items 1-3 and the bag at the top level
+        assert_eq!(4, inventory.get_top_level_count());
+        assert_eq!(4, bag.get_top_level_count());
+        assert_eq!(3, carton.get_top_level_count());
+
+        // AND the level has been setup with the player inventory
+        let mut level = build_player_test_level();
+        level.get_player_mut().set_inventory(inventory);
+
+        // WHEN we try to move these
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
+        let result = move_player_items(data, &mut level);
+
+        // THEN we expect a result to return
+        assert!(result.is_some());
+
+        if let Some(MoveItems(d)) = result {
+            // with 0 unmoved items
+            assert_eq!(0, d.to_move.len());
+
+            let updated_inventory = level.get_player_mut().get_inventory_mut();
+            // AND the player's inventory should now have 2 items in it's top level count
+            assert_eq!(2, updated_inventory.get_top_level_count());
+
+            // AND The Bag should have 5 items now
+            let bag_item = bag.get_self_item().clone();
+            if let Some(c) = updated_inventory.find(&bag_item) {
+                assert_eq!(6, c.get_top_level_count());
+            } else {
+                assert!(false, "Couldn't find Bag in the updated inventory!");
+            }
+
+            // AND The Carton should have 3 items still
+            let carton_item = carton.get_self_item().clone();
+            if let Some(b) = updated_inventory.find(&carton_item) {
+                assert_eq!(3, b.get_top_level_count());
+            } else {
+                assert!(false, "Couldn't find Carton in the updated inventory!");
+            }
+
+        } else {
+            assert!(false, "Unexpected data type returned");
+        }
+    }
+
+    #[test]
     fn test_move_player_items_from_lower_to_parent() {
         // GIVEN a player inventory containing a nested container (Bag)
         // AND the Bag contains a Carton
@@ -620,9 +700,8 @@ mod tests {
         let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
         let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
 
-        let to_move = vec![item8.get_self_item().clone()];
-
         // AND we're moving items from the underlying Carton into the parent (Bag)
+        let to_move = vec![item8.get_self_item().clone()];
         let carton_item = carton.get_self_item().clone();
         let bag_item = bag.get_self_item().clone();
 
@@ -639,6 +718,7 @@ mod tests {
         // Root container has items 1-3 and the bag at the top level
         assert_eq!(4, inventory.get_top_level_count());
 
+        // AND the level has been setup with the player inventory
         let mut level = build_player_test_level();
         level.get_player_mut().set_inventory(inventory);
 
@@ -652,26 +732,26 @@ mod tests {
         if let Some(MoveItems(d)) = result {
             // with 0 unmoved items
             assert_eq!(0, d.to_move.len());
+
+            let updated_inventory = level.get_player_mut().get_inventory_mut();
+            // AND the player's inventory should not have 4 items in it's content count
+            assert_eq!(4, updated_inventory.get_top_level_count());
+
+            // AND The Bag should have 5 items now
+            if let Some(c) = updated_inventory.find(&bag_item) {
+                assert_eq!(5, c.get_top_level_count());
+            } else {
+                assert!(false, "Couldn't find Bag in the updated inventory!");
+            }
+
+            // AND The Carton should have only 2 items now
+            if let Some(b) = updated_inventory.find(&carton_item) {
+                assert_eq!(2, b.get_top_level_count());
+            } else {
+                assert!(false, "Couldn't find Carton in the updated inventory!");
+            }
         } else {
             assert!(false, "Unexpected data type returned");
-        }
-
-        let updated_inventory = level.get_player_mut().get_inventory_mut();
-        // AND the player's inventory should not have 4 items in it's content count
-        assert_eq!(4, updated_inventory.get_top_level_count());
-
-        // AND The Bag should have 5 items now
-        if let Some(c) = updated_inventory.find(&bag_item) {
-            assert_eq!(5, c.get_top_level_count());
-        } else {
-            assert!(false, "Couldn't find Bag in the updated inventory!");
-        }
-
-        // AND The Carton should have only 2 items now
-        if let Some(b) = updated_inventory.find(&carton_item) {
-            assert_eq!(2, b.get_top_level_count());
-        } else {
-            assert!(false, "Couldn't find Carton in the updated inventory!");
         }
 
     }
@@ -706,6 +786,7 @@ mod tests {
         // Root container has items 1-3 and the bag at the top level
         assert_eq!(4, inventory.get_top_level_count());
 
+        // AND the level has been setup with the player inventory
         let mut level = build_player_test_level();
         level.get_player_mut().set_inventory(inventory);
 
