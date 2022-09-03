@@ -87,7 +87,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
                     position: None
                 };
                 log::info!("[inventory command] Moving player items for MoveToContainerChoice...");
-                container_util::move_player_items(move_data, state.level)
+                return container_util::move_player_items(move_data, state.level);
             } else {
                 // Build container choices and pass the result back down to the view/handlers
                 log::info!("[inventory command] Building choices for MoveToContainerChoice...");

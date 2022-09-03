@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::io;
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -14,7 +14,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
 use crate::view::callback::Callback;
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData};
+use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::View;
@@ -26,8 +26,8 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
-    let input_result : ContainerFrameHandlerInputResult = data;
+fn handle_callback(level : &mut Level, position: Position, mut data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+    let mut input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TakeItems(mut data) => {
             log::info!("[open command] Received data for TakeItems with {} items", data.to_take.len());
@@ -39,7 +39,7 @@ fn handle_callback(level : &mut Level, position: Position, data : ContainerFrame
             data.position = Some(position.clone());
             return container_util::move_items(data, level);
         },
-        MoveToContainerChoice(ref data) => {
+        MoveToContainerChoice(ref mut data) => {
             if let Some(target) = &data.target_container {
                 // Translate to the typical moving data
                 let move_data = MoveItemsData {
@@ -47,19 +47,51 @@ fn handle_callback(level : &mut Level, position: Position, data : ContainerFrame
                     to_move: data.to_move.clone(),
                     target_container: data.target_container.clone(),
                     target_item: None,
-                    position: None
+                    // Both position and a target needed to move to a world container
+                    position: Some(position)
                 };
                 log::info!("[open command] Moving items for MoveToContainerChoice...");
-                //container_util::move_player_items(move_data, state.level)
+                return container_util::move_items(move_data, level);
             } else {
                 log::info!("[open command] Building choices for MoveToContainerChoice...");
+                // Add the position of the currently opened container
+                data.position = Some(position);
                 // Build container choices and pass the result back down to the view/handlers
-                //build_container_choices(data, state.level).ok()
+                let choices_result = build_container_choices(data, level);
+                if choices_result.is_ok() {
+                    return choices_result.ok();
+                } else {
+                    log::error!("{}", choices_result.err().unwrap());
+                }
             }
         }
         _ => {}
     }
     return None
+}
+
+fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
+    if let Some(pos) = data.position {
+        let map = level.get_map_mut().unwrap();
+        let container_result = map.find_container_mut(pos);
+        if let Some(container) = container_result {
+            let sub_containers_result = container_util::build_container_choices(&data.source, container);
+            if sub_containers_result.is_ok() {
+                let choices = sub_containers_result.unwrap();
+                log::error!("Built {} sub-container choices for position: {:?}", choices.len(), pos);
+                let mut result_data = data.clone();
+                result_data.choices = choices;
+                result_data.position = Some(pos);
+                return Ok(MoveToContainerChoice(result_data));
+            } else {
+                return Err(Error::new(ErrorKind::Other, format!("Failed build container choices: {}", sub_containers_result.err().unwrap())));
+            }
+        } else {
+            return Err(Error::new(ErrorKind::Other, format!("Cannot build container choices. Cannot find container at position: {:?}", pos)));
+        }
+    } else {
+        return Err(Error::new(ErrorKind::Other, "Cannot build container choices. No position provided."));
+    }
 }
 
 impl <B: tui::backend::Backend> OpenCommand<'_, B> {

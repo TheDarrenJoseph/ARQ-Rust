@@ -146,9 +146,10 @@ fn move_to_item_spot(source_container : &mut Container, mut data: MoveItemsData)
 // Moves items between player inventory containers / into world container
 pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
     if let Some(_) = data.position {
-        // TODO potentially support this to allow moving into world containers
+        log::error!("[move_player_items] Cannot move player items to a specific position / world container combo (Not implemented).");
         None
     } else {
+        log::info!("[move_player_items] Attempting to move player items to a target container (inside inventory)...");
         let player : &mut Character = level.get_player_mut();
         let inventory : &mut Container = player.get_inventory_mut();
         let source;
@@ -169,7 +170,7 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
                     log::info!("Attempting move to container..");
                     return move_to_container(s, si, data);
                 } else {
-                    log::info!("[move_player_items] Failed to find source item!");
+                    log::error!("[move_player_items] Failed to find source item!");
                     return None;
                 }
             } else if let Some(_) = data.target_item {
@@ -179,7 +180,7 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
                 None
             }
         } else {
-            log::info!("[move_player_items] Failed to find source container!");
+            log::error!("[move_player_items] Failed to find source container!");
             None
         }
     }
