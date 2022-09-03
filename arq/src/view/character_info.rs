@@ -53,7 +53,7 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
 
 pub struct CharacterInfoViewFrameHandler {
     pub tab_choice : TabChoice,
-    pub container_views : Vec<ContainerFrameHandler>,
+    pub container_frame_handlers: Vec<ContainerFrameHandler>,
     pub choice_frame_handler: Option<ContainerChoiceFrameHandler>,
     pub character_view : Option<CharacterFrameHandler>
 }
@@ -64,7 +64,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         commands.insert(OPEN);
         commands.insert(DROP);
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), commands);
-        self.frame_handler.container_views = vec!(inventory_view);
+        self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
         let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
@@ -121,37 +121,46 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                     }
                 },
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {
-                    // if target_container is the root view container
-                    let root_container = self.frame_handler.container_views.first().map(|top_cv| top_cv.container.clone()).unwrap();
-                    let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
-                    let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
-                    // Target is the topmost container, so we're forced to rebuild everything
-                    if target_is_root {
-                        // Drain all after the first
-                        self.frame_handler.container_views.drain(1..);
-                        // Then rebuild the remaining (root container) view
-                        if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
-                            topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
-                        }
-                    } else {
-                        // i.e moving to a parent container that isn't the root
-                        if !target_in_source {
-                            // Rebuild that specific container view
-                            if let Some(cv) = self.frame_handler.container_views.iter_mut()
-                                .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
-                                cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+
+                    if data.target_container.is_some() {
+                        // if target_container is the root view container
+                        let root_container = self.frame_handler.container_frame_handlers.first().map(|top_cv| top_cv.container.clone()).unwrap();
+                        let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
+                        let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
+                        // Target is the topmost container, so we're forced to rebuild everything
+                        if target_is_root {
+                            // Drain all after the first
+                            self.frame_handler.container_frame_handlers.drain(1..);
+                            // Then rebuild the remaining (root container) view
+                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+                                topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                            }
+                        } else {
+                            // i.e moving to a parent container that isn't the root
+                            if !target_in_source {
+                                // Rebuild that specific container view
+                                if let Some(cv) = self.frame_handler.container_frame_handlers.iter_mut()
+                                    .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
+                                    cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                                }
+                            }
+
+                            // Ensure the current view updates
+                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+                                topmost_view.handle_callback_result(r);
                             }
                         }
-
-                        // Ensure the current view updates
-                        if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
-                            topmost_view.handle_callback_result(r);
+                    } else {
+                        for fh in &mut self.frame_handler.container_frame_handlers {
+                            if fh.container.id_equals(&data.source) {
+                                fh.handle_callback_result(r.clone())
+                            }
                         }
                     }
                 }
                 _ => {
                     // Find source view and update it
-                    if let Some(topmost_view) = self.frame_handler.container_views.last_mut() {
+                    if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
                         topmost_view.handle_callback_result(r);
                     }
                 }
@@ -170,7 +179,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
             if let Some(view_specific_result) = result.view_specific_result {
                 match view_specific_result {
                     ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
-                        let container_views = &mut self.frame_handler.container_views;
+                        let container_views = &mut self.frame_handler.container_frame_handlers;
                         if let Some(topmost_view) = container_views.last_mut() {
                             let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
                             match view_specific_result {
@@ -200,7 +209,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
      * Returns the optional input result of the container view, and a boolean to indicate success
      */
     fn handle_container_view_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
-        let container_views = &mut self.frame_handler.container_views;
+        let container_views = &mut self.frame_handler.container_frame_handlers;
         let have_container_views = !container_views.is_empty();
         if have_container_views {
             if let Some(topmost_view) = container_views.last_mut() {
@@ -229,11 +238,11 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 
     fn quit_container_view(&mut self) -> Result<bool, Error> {
-        let container_views = &mut self.frame_handler.container_views;
+        let container_views = &mut self.frame_handler.container_frame_handlers;
         if container_views.len() > 1 {
-            if let Some(closing_view) = self.frame_handler.container_views.pop() {
+            if let Some(closing_view) = self.frame_handler.container_frame_handlers.pop() {
                 let closing_container = closing_view.container;
-                if let Some(parent_view) = self.frame_handler.container_views.last_mut() {
+                if let Some(parent_view) = self.frame_handler.container_frame_handlers.last_mut() {
                     let parent_container = &mut parent_view.container;
                     if let Some(position) = parent_container.position(&closing_container) {
                         parent_container.replace(position, closing_container);
@@ -242,7 +251,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
             }
             return Ok(false)
         } else if container_views.len() == 1 {
-            let last_view = &mut self.frame_handler.container_views[0];
+            let last_view = &mut self.frame_handler.container_frame_handlers[0];
             self.character.set_inventory(last_view.container.clone());
         }
         return Ok(true)
@@ -363,7 +372,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
                     let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
                     let frame_data = FrameData { data: Vec::new(), frame_size: inventory_area};
                     cfh.handle_frame(frame, frame_data);
-                } else if let Some(topmost_view) = self.container_views.last_mut() {
+                } else if let Some(topmost_view) = self.container_frame_handlers.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
                     let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
                     topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
@@ -453,7 +462,7 @@ mod tests {
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test().unwrap();
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), choice_frame_handler: None, character_view: None };
+        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
         let mut character_info_view = CharacterInfoView { character: level.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
 
         // WHEN we call to initialise

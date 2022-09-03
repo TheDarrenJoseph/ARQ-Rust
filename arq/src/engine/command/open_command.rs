@@ -117,7 +117,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
-        let frame_handler = WorldContainerViewFrameHandlers { container_handlers: vec![container_view], container_choice_handler: None };
+        let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         let level = &mut self.level;
         let mut world_container_view = WorldContainerView {
             ui,

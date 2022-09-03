@@ -107,7 +107,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let c = self.level.get_player_mut().get_inventory_mut();
         let mut callback_container: Container = c.clone();
 
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_views: Vec::new(), choice_frame_handler: None, character_view: None };
+        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
 
         self.ui.console_print("Up/Down - Move\nEnter - Toggle selection".to_string());
 
@@ -121,7 +121,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
             }));
             match character_info_view.begin() {
                 Ok(_) => {
-                    updated_inventory = character_info_view.frame_handler.container_views.get(0).unwrap().container.clone();
+                    updated_inventory = character_info_view.frame_handler.container_frame_handlers.get(0).unwrap().container.clone();
                 },
                 Err(e) => {
                     return Err(e)

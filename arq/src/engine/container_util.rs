@@ -191,10 +191,28 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
     return if let Some(_) = data.target_container {
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
-                // Find the true instance of the source container on the map as our 'source_container'
-                let map_container = map.find_container(&data.source, pos);
-                if let Some(source_container) = map_container {
-                    return move_to_container(source_container,data.source.get_self_item().clone(), data);
+                let source : Option<&mut Container>;
+                let source_item ;
+                let mut pos_containers = map.find_containers_mut(pos);
+
+                if (pos_containers.len() > 0) {
+                    let mut root_container = pos_containers.get(0).unwrap();
+                    // Is it the first / root container at this position?
+                    let source_is_root = root_container.id_equals(&data.source);
+                    let target_root = data.target_container.as_ref().map_or_else(|| false, |c| root_container.id_equals(&c));
+                    let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
+                    if source_is_root || target_root || !target_in_source {
+                        source = Some(pos_containers.get_mut(0).unwrap());
+                        source_item = Some(data.source.get_self_item().clone());
+                    } else {
+                        source = map.find_container(&data.source, pos);
+                        source_item = source.as_ref().map(|s| s.get_self_item().clone());
+                    }
+
+                    return move_to_container(source.unwrap(),data.source.get_self_item().clone(), data);
+                } else {
+                    log::error!("Failed to move items. No containers at position: {:?}", pos);
+                    return None;
                 }
             } else {
                 log::error!("Cannot move items. No map provided");
@@ -343,6 +361,92 @@ mod tests {
                         }
                         return; // pass
                     }
+                },
+                _ => {}
+            }
+        }
+        assert!(false);
+    }
+
+    #[test]
+    fn test_move_items_into_container_from_lower_to_parent() {
+        // GIVEN a valid map
+
+        // AND a chest that contains a nested bag and carton
+        let mut chest = build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let mut bag = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut carton = build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let carton_id = carton.get_self_item().get_id();
+
+        // AND each of them contain some other items
+        let item1 = build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item2 = build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item3 = build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        chest.push(vec![item1, item2, item3]);
+
+        let item4 = build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item5 = build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item6 = build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+
+        let item4_id = item4.get_self_item().get_id();
+        let item5_id = item5.get_self_item().get_id();
+        let item6_id = item6.get_self_item().get_id();
+
+        bag.push(vec![item4, item5, item6]);
+
+        let item7 = build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item8 = build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item9 = build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+
+        let item7_id = item7.get_self_item().get_id();
+        let item8_id = item8.get_self_item().get_id();
+
+        let to_move = vec![item7.get_self_item().clone(), item8.get_self_item().clone()];
+        carton.push(vec![item7, item8, item9]);
+        assert_eq!(3, carton.get_top_level_count());
+
+        let source = carton.clone();
+        let source_clone = source.clone();
+        let expected_source = source.clone();
+        let target = bag.clone();
+        let expected_target = target.clone();
+        bag.push(vec![carton]);
+        assert_eq!(4, bag.get_top_level_count());
+
+        chest.push(vec![bag]);
+        assert_eq!(4, chest.get_top_level_count());
+
+        let container_pos = Position { x: 1, y: 1 };
+        let mut level = build_test_level(container_pos, chest);
+
+        // WHEN we call to move items from the lowest container (Carton / item 7 and 8) into the parent (Bag)
+        let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: Some(container_pos) };
+        let move_result = move_items(data, &mut level);
+
+        // THEN we expect a result that confirms this
+        if let Some(input_result) = move_result {
+            match input_result {
+                MoveItems(result_data) => {
+                    assert_eq!(0, result_data.to_move.len());
+                    assert_eq!(expected_target.get_self_item(), result_data.target_container.unwrap().get_self_item());
+                    assert_eq!(expected_source.get_self_item(), result_data.source.get_self_item());
+
+                    // AND the map will be updated to reflect this
+                    // Carton
+                    let mut source_updated = level.get_map_mut().unwrap().find_container(&expected_source, container_pos);
+                    assert_eq!(1, source_updated.unwrap().get_top_level_count());
+
+                    let mut target_updated = level.get_map_mut().unwrap().find_container(&expected_target, container_pos);
+                    assert_eq!(6, target_updated.as_ref().unwrap().get_top_level_count());
+
+                    let mut target_contents = target_updated.as_mut().unwrap().get_contents();
+                    assert_eq!(item4_id, target_contents.get(0).unwrap().get_self_item().get_id());
+                    assert_eq!(item5_id, target_contents.get(1).unwrap().get_self_item().get_id());
+                    assert_eq!(item6_id, target_contents.get(2).unwrap().get_self_item().get_id());
+                    assert_eq!(carton_id, target_contents.get(3).unwrap().get_self_item().get_id());
+                    assert_eq!(item7_id, target_contents.get(4).unwrap().get_self_item().get_id());
+                    assert_eq!(item8_id, target_contents.get(5).unwrap().get_self_item().get_id());
+                    return;
                 },
                 _ => {}
             }
