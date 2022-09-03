@@ -20,17 +20,25 @@ TODO (Not in any specific order)
 - [X] Procedural levels
 	- [X] Room generation
 	- [X] Pathfinding
-	- [ ] Level traversal
+	- [ ] Level traversal (Exit/Entry, next level/previous level)
 - [ ] Items (potions, scrolls, etc)
 	- [X] Containers / Container spawning
-	- [ ] Inventory view / handling (drop, move, use) 
-	- [ ] Item encounters (pickup)
+	- [X] World container view / handling (i.e Floor, Chests) 
+		- [X] Dropping items / multiple items in one spot
+		- [X] Taking items
+                - [X] Moving items in-place
+                - [X] Moving between containers
+	- [] Inventory view / handling 
+		- [X] Dropping items
+                - [X] Moving items in-place
+                - [X] Moving between containers
+                - [] 'Use' for items (Nothing usable yet)
 - [ ] Character Stats (For player and NPCs)
 	- [X] Character creation
 	- [ ] Stats view 
-    - [ ] Leveling / Stat edit
-    - [ ] Health System
-    - [ ] Combat system
+ - [ ] Leveling / Stat edit
+ - [ ] Health System
+  - [ ] Combat system
 - [ ] NPCs
 	- [ ] Spawning
 	- [ ] Basic pathfinding / player seeking
