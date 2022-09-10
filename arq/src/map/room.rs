@@ -4,7 +4,9 @@ use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
 #[derive(Clone)]
 pub struct Room {
     pub area: Area,
-    pub doors : Vec<Door>
+    pub doors : Vec<Door>,
+    pub entry: Option<Position>,
+    pub exit : Option<Position>
 }
 
 impl Room {
@@ -36,7 +38,7 @@ mod tests {
         let door = build_door(door_position);
         let mut doors = Vec::new();
         doors.push(door);
-        let room = Room { area, doors };
+        let room = Room { area, doors, entry: None, exit: None };
 
         let sides = room.get_sides();
 
@@ -77,7 +79,7 @@ mod tests {
         let start_position = Position { x: 0, y: 0};
         let area = build_square_area(start_position, 4);
         let doors = Vec::new();
-        let room = Room { area, doors };
+        let room = Room { area, doors, entry: None, exit: None };
         assert_eq!(Position { x: 0, y: 0}, room.area.start_position);
         assert_eq!(Position { x: 3, y: 3}, room.area.end_position);
 

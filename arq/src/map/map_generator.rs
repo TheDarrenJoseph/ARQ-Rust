@@ -91,9 +91,7 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
 impl MapGenerator {
     pub fn generate(&mut self) -> Map {
         log::info!("Generating map...");
-        self.map = self.build_map();
-        log::info!("Applying rooms...");
-        self.add_rooms_to_map();
+        self.build_map();
         log::info!("Pathfinding...");
         self.path_rooms();
 
@@ -121,9 +119,45 @@ impl MapGenerator {
                 }
             }
         }
+        self.add_entry_and_exit();
+
+        log::info!("Applying rooms...");
+        self.add_rooms_to_map();
+
         log::info!("Added {} containers to rooms.", room_container_count);
         log::info!("Map generated!");
         return self.map.clone();
+    }
+
+    fn add_entry_and_exit(&mut self) {
+        let mut rng = rand::thread_rng();
+        let rooms = self.map.rooms.clone();
+        let rooms_len = rooms.len();
+
+        let mut updated_entry_room = None;
+        let mut entry_idx : usize = 0;
+        while updated_entry_room.is_none() {
+            entry_idx = rng.gen_range(0..rooms_len) as usize;
+            let mut entry_room = rooms.get(entry_idx).unwrap().clone();
+            log::info!("Adding entry..");
+            updated_entry_room = self.add_entry(entry_room);
+        }
+        log::info!("Entry at pos: {:?}..", updated_entry_room.as_ref().unwrap().entry.unwrap());
+
+
+        let mut updated_exit_room = None;
+        let mut exit_idx : usize = 0;
+        while updated_exit_room.is_none() {
+            exit_idx = rng.gen_range(0..rooms_len) as usize;
+            let mut exit_room = rooms.get(exit_idx).unwrap().clone();
+            log::info!("Adding exit..");
+            updated_exit_room = self.add_exit(exit_room);
+        }
+        log::info!("Exit at pos: {:?}..", updated_exit_room.as_ref().unwrap().exit.unwrap());
+
+        let mut_rooms = &mut self.map.rooms;
+        *mut_rooms.get_mut(entry_idx).unwrap() = updated_entry_room.unwrap();
+        *mut_rooms.get_mut(exit_idx).unwrap() = updated_exit_room.unwrap();
     }
 
     fn path_rooms(&mut self){
@@ -150,9 +184,83 @@ impl MapGenerator {
         }
     }
 
+    fn add_entry(&self, room: Room) -> Option<Room> {
+        let mut updated_room = room.clone();
+        let inside_area = updated_room.get_inside_area();
+
+        let mut target = None;
+        for x in inside_area.start_position.x ..= inside_area.end_position.x {
+            for y in inside_area.start_position.y ..= inside_area.end_position.y {
+                let possible_target = Position { x, y };
+                if let Some(ex) = room.exit {
+                    if possible_target != ex {
+                        log::info!("Potential Entry point is already an Exit..");
+                        continue;
+                    }
+                }
+
+                let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
+                match container_type {
+                    // Area containers (Floor) should be fine
+                    AREA => {},
+                    _ => {
+                        log::info!("Potential Exit point has a container in the way..");
+                        continue;
+                    }
+                }
+
+                target = Some(possible_target);
+            }
+        }
+
+        if let Some(t) = target {
+            updated_room.entry = Some(t);
+            return Some(updated_room);
+        } else {
+            return None;
+        }
+    }
+
+    fn add_exit(&self, room: Room) -> Option<Room> {
+        let mut updated_room = room.clone();
+        let inside_area = updated_room.get_inside_area();
+
+        let mut target = None;
+        for x in inside_area.start_position.x .. inside_area.end_position.x {
+            for y in inside_area.start_position.y .. inside_area.end_position.y {
+                let possible_target = Position { x, y };
+                if let Some(ex) = room.exit {
+                    if possible_target != ex {
+                        log::info!("Potential Exit point is already an Entry..");
+                        continue;
+                    }
+                }
+
+                let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
+                match container_type {
+                    // Area containers (Floor) should be fine
+                    AREA => {},
+                    _ => {
+                        log::info!("Potential Exit point has a container in the way..");
+                        continue;
+                    }
+                }
+
+                target = Some(possible_target);
+            }
+        }
+
+        if let Some(t) = target {
+            updated_room.exit = Some(t);
+            return Some(updated_room);
+        } else {
+            return None;
+        }
+    }
+
     fn generate_room(&self, room_pos : Position, size: u16) -> Room {
         let room_area = build_square_area( room_pos, size);
-        let mut room = Room { area: room_area, doors: Vec::new() };
+        let mut room = Room { area: room_area, doors: Vec::new(), entry: None, exit: None };
 
         let mut chosen_sides = Vec::<Side>::new();
         let room_sides = room.get_sides();
@@ -307,9 +415,23 @@ impl MapGenerator {
         let tile_library = crate::map::tile::build_library();
         let room_tile = &tile_library[&Tile::Room].clone();
         let wall_tile = &tile_library[&Tile::Wall].clone();
+        let entry_tile = &tile_library[&Tile::Entry].clone();
+        let exit_tile = &tile_library[&Tile::Exit].clone();
 
         let inside_area = room.get_inside_area();
-        let inside_positions = inside_area.get_positions();
+        let mut inside_positions = inside_area.get_positions().clone();
+        if let Some(entry_pos) = room.entry {
+            self.map.set_tile(entry_pos, entry_tile.clone());
+            if let Some(idx) = inside_positions.iter().position(|p| p == &entry_pos) {
+                inside_positions.remove(idx);
+            }
+        }
+        if let Some(exit_pos) = room.exit {
+            self.map.set_tile(exit_pos, exit_tile.clone());
+            if let Some(idx) = inside_positions.iter().position(|p| p == &exit_pos) {
+                inside_positions.remove(idx);
+            }
+        }
         for position in inside_positions {
             self.map.set_tile(position, room_tile.clone());
         }
@@ -338,17 +460,19 @@ impl MapGenerator {
 
     fn build_map(&mut self) -> Map {
         log::info!("Generating rooms..");
-        let rooms = self.generate_rooms();
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
-        let map = crate::map::Map {
+        let mut map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
-            rooms,
+            rooms: Vec::new(),
             containers: HashMap::new()
         };
-        return map;
+        self.map = map;
+        let rooms = self.generate_rooms();
+        self.map.rooms = rooms;
+        return self.map.clone();
     }
 }
 

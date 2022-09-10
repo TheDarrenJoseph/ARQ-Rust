@@ -213,15 +213,16 @@ impl <B : Backend> GameEngine<B> {
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
         let mut characters = self.build_characters();
-        let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
+        let mut player = characters.get_mut(0).unwrap();
+        // Uncomment to use character creation
+        //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         // Grab the first room and set the player's position there
         if let Some(map) = &self.level.map {
             let room = &map.get_rooms()[0];
             let area = room.get_inside_area();
             let start_position = area.start_position;
-            updated_character.set_position(start_position);
+            player.set_position(start_position);
         }
-        characters[0] = updated_character;
         self.level.characters = characters.clone();
         self.build_testing_inventory();
         return Ok(());

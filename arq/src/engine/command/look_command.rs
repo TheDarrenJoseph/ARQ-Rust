@@ -163,7 +163,7 @@ mod tests {
         let door = build_door(door_position);
         let mut doors = Vec::new();
         doors.push(door);
-        let room = Room { area, doors };
+        let room = Room { area, doors, entry: None, exit: None };
 
         // WHEN we call to describe a door position
         let prompt = describe_position_in_room(door_position, &room);
