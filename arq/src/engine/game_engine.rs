@@ -25,10 +25,11 @@ use crate::settings;
 use crate::settings::Toggleable;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::ui::{build_ui, Draw};
+use crate::ui::{build_ui, Draw, FrameData, FrameHandler};
 use crate::ui::{SettingsMenuChoice, StartMenuChoice};
-use crate::view::View;
+use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
+use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map::MapView;
 use crate::widget::character_stat_line::build_character_stat_line;
 
@@ -171,29 +172,48 @@ impl <B : Backend> GameEngine<B> {
         return characters;
     }
 
-    fn initialise_characters(&mut self) {
-        let mut characters = self.build_characters();
-        let mut character_view = CharacterFrameHandler { character: characters.get(0).unwrap().clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
-        // Being capture of a new character
-        /**
+    // TODO this should live in it's own view likely
+    // Shows character creation screen
+    // Returns the finished character once input is confirmed
+    fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
+        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
+        // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
-            GenericInputResult { done: false, requires_view_refresh: false },
+        GenericInputResult { done: false, requires_view_refresh: false },
             view_specific_result: None
-        };**/
-        //while !character_creation_result.generic_input_result.done {
+        };
+        while !character_creation_result.generic_input_result.done {
             let ui = &mut self.ui;
-            let mut frame_area = Rect::default();
-
+            ui.show_console();
             self.terminal_manager.terminal.draw(|frame| {
-                //ui.render(frame);
-                //character_view.handle_frame(frame, FrameData { data: characters.get(0).unwrap().clone(), frame_size: frame_area });
+                let areas: Vec<Rect> = ui.get_view_areas(frame.size());
+                let mut main_area = areas[0];
+                main_area.height -= 2;
+                ui.render(frame);
+                character_view.handle_frame(frame, FrameData { data: base_character.clone(), frame_size: main_area });
             });
+            ui.hide_console();
 
-            //let key = io::stdin().keys().next().unwrap().unwrap();
-            //character_creation_result = character_view.handle_input(Some(key)).unwrap();
-        //}
-        let mut updated_character = character_view.get_character();
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            character_creation_result = character_view.handle_input(Some(key))?;
 
+            match character_creation_result.view_specific_result {
+                Some(VALIDATION(message)) => {
+                    ui.console_print(message);
+                    self.re_render();
+                },
+                Some(NONE) => {
+                    return Ok(character_view.get_character())
+                },
+                _ => {}
+            }
+        }
+        return Ok(character_view.get_character());
+    }
+
+    fn initialise_characters(&mut self) -> Result<(), io::Error> {
+        let mut characters = self.build_characters();
+        let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         // Grab the first room and set the player's position there
         if let Some(map) = &self.level.map {
             let room = &map.get_rooms()[0];
@@ -201,10 +221,10 @@ impl <B : Backend> GameEngine<B> {
             let start_position = area.start_position;
             updated_character.set_position(start_position);
         }
-
         characters[0] = updated_character;
         self.level.characters = characters.clone();
         self.build_testing_inventory();
+        return Ok(());
     }
 
     // TODO refactor into a singular component shared with commands
@@ -243,7 +263,7 @@ impl <B : Backend> GameEngine<B> {
         let mut map_generator = build_generator(map_area);
         self.level.map = Some(map_generator.generate());
 
-        self.initialise_characters();
+        self.initialise_characters()?;
 
         self.game_running = true;
         while self.game_running {

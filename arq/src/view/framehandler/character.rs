@@ -1,12 +1,13 @@
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
 
-use crate::character::{Character, determine_class, get_all_attributes};
+use crate::character::{Character, Class, determine_class, get_all_attributes};
 use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
+use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
 use crate::widget::dropdown_widget::{build_dropdown};
@@ -27,7 +28,8 @@ pub struct CharacterFrameHandler {
 }
 
 pub enum CharacterFrameHandlerInputResult {
-    NONE
+    NONE,
+    VALIDATION(String)
 }
 
 impl CharacterFrameHandler {
@@ -153,8 +155,7 @@ impl CharacterFrameHandler {
     }
 
     fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>, title: String) {
-        //let frame_size = frame.size();
-        let frame_size = data.get_frame_size();
+        let frame_size = data.get_frame_size().clone();
         let frame_width = frame_size.width;
         let frame_height = frame_size.height;
         let window_area = Rect::new(frame_size.x, frame_size.y, frame_width, frame_height);
@@ -179,7 +180,7 @@ impl CharacterFrameHandler {
         if self.view_mode == ViewMode::CREATION {
             attribute_start -= 1;
         }
-        let attributes_area = Rect::new(2, 4 + attribute_start, frame_width - 2, frame_height - 4);
+        let attributes_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
         frame.render_widget(attributes_block, attributes_area);
 
         self.draw_main_inputs(frame);
@@ -208,6 +209,20 @@ impl CharacterFrameHandler {
                 _ => {}
             }
         }
+    }
+
+    fn validate_character(&mut self) -> CharacterFrameHandlerInputResult {
+        let mut character = self.get_character();
+        if character.get_free_attribute_points() > 0 {
+            return VALIDATION(format!("You need to spend the {} remaining point(s).", character.get_free_attribute_points()));
+        }
+        match character.get_class() {
+            Class::None => {
+                return VALIDATION(format!("You must choose a class!"));
+            }
+            _ => {}
+        }
+        return NONE;
     }
 
     pub fn get_character(&mut self) -> Character {
@@ -299,13 +314,15 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
             None => {}
         }
 
+        let mut done = false;
         let default_done_result = Ok(InputResult {
-            generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
-            view_specific_result: None});
+            generic_input_result: GenericInputResult { done, requires_view_refresh: true },
+            view_specific_result: None
+        });
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                return default_done_result;
+                return Err(Error::new(ErrorKind::Other, "Quit interrupt.".to_string()));
             },
             Key::Char('\n') => {
                 match selected_widget {
@@ -317,7 +334,21 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                             WidgetType::Button(state) => {
                                 match state.get_name().as_str() {
                                     "[Enter]" => {
-                                        return default_done_result;
+                                        match self.validate_character() {
+                                            NONE => {
+                                                done = true;
+                                                return Ok(InputResult {
+                                                    generic_input_result: GenericInputResult { done, requires_view_refresh: true },
+                                                    view_specific_result: Some(NONE)
+                                                });;
+                                            },
+                                            other => {
+                                                return Ok(InputResult {
+                                                    generic_input_result: GenericInputResult { done, requires_view_refresh: true },
+                                                    view_specific_result: Some(other)
+                                                });;
+                                            }
+                                        }
                                     },
                                     _ => {}
                                 }
