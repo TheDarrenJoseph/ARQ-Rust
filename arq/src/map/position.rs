@@ -28,6 +28,19 @@ impl Position {
         }
         positions
     }
+
+
+    pub fn equals(&self, position: Position) -> bool {
+        return self.x == position.x && self.y == position.y;
+    }
+
+    pub fn equals_option(&self, position: Option<Position>) -> bool {
+        return if let Some(pos) = position {
+            self.x == pos.x && self.y == pos.y
+        } else {
+            false
+        }
+    }
 }
 
 impl Eq for Position {}

@@ -212,7 +212,7 @@ mod tests {
 
     use crate::character::{build_character, build_default_character_details, build_player, Character};
     use crate::engine::command::open_command::{handle_callback, OpenCommand};
-    use crate::engine::level::Level;
+    use crate::engine::level::{Characters, Level};
     use crate::list_selection::ListSelection;
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
@@ -268,7 +268,7 @@ mod tests {
             containers: HashMap::new()
         };
 
-        return Level { map: Some(map), characters: vec![player] };
+        return Level { map: Some(map), characters: Characters { characters: vec![player] } };
     }
 
     #[test]
@@ -305,7 +305,7 @@ mod tests {
         }
 
         // AND we expect the inventory to contain the 2 items taken
-        let inventory = level.get_player_mut().get_inventory_mut();
+        let inventory = level.characters.get_player_mut().get_inventory_mut();
         let updated_container_contents = inventory.get_contents();
         assert_eq!(2, updated_container_contents.len());
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
@@ -348,7 +348,7 @@ mod tests {
         }
 
         // AND we expect the inventory to contain the 2 items taken
-        let inventory = level.get_player_mut().get_inventory_mut();
+        let inventory = level.characters.get_player_mut().get_inventory_mut();
         let updated_container_contents = inventory.get_contents();
         assert_eq!(2, updated_container_contents.len());
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());

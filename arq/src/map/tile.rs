@@ -32,8 +32,8 @@ pub fn build_library() -> HashMap<Tile, TileDetails> {
         TileDetails {id: 3,     tile_type:  Tile::Wall,     traversable: false, symbol: '#', colour: Colour::Brown, name:  "Wall".to_string()},
         TileDetails {id: 4,     tile_type:  Tile::Window,   traversable: false, symbol: '%', colour: Colour::Cyan, name:  "Window".to_string()},
         TileDetails {id: 5,     tile_type:  Tile::Door,     traversable: true, symbol: '=', colour: Colour::White, name:  "Door".to_string()},
-        TileDetails {id: 6,     tile_type:  Tile::Entry,    traversable: true, symbol: '^', colour: Colour::Green, name:  "Entry".to_string()},
-        TileDetails {id: 7,     tile_type:  Tile::Exit,     traversable: true, symbol: '^', colour: Colour::Red, name:  "Exit".to_string()},
+        TileDetails {id: 6,     tile_type:  Tile::Entry,    traversable: true, symbol: '^', colour: Colour::Red, name:  "Entry".to_string()},
+        TileDetails {id: 7,     tile_type:  Tile::Exit,     traversable: true, symbol: '^', colour: Colour::Green, name:  "Exit".to_string()},
         TileDetails {id: 8,     tile_type:  Tile::Deadly,   traversable: false, symbol: '!', colour: Colour::Red, name:  "Deadly".to_string()}
     ];
 
