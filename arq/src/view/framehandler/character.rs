@@ -13,6 +13,7 @@ use crate::widget::button_widget::build_button;
 use crate::widget::dropdown_widget::{build_dropdown};
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::text_widget::build_text_input;
+use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ViewMode {
@@ -22,8 +23,7 @@ pub enum ViewMode {
 
 pub struct CharacterFrameHandler {
     pub character : Character,
-    pub selected_widget: Option<i8>,
-    pub widgets: Vec<Widget>,
+    pub widgets : WidgetList,
     pub view_mode : ViewMode
 }
 
@@ -33,33 +33,6 @@ pub enum CharacterFrameHandlerInputResult {
 }
 
 impl CharacterFrameHandler {
-
-    fn previous_widget(&mut self) {
-        let selected_widget = self.selected_widget.unwrap();
-        if selected_widget > 0 && selected_widget < self.widgets.len() as i8 {
-            self.select_widget(selected_widget - 1);
-        }
-    }
-
-    fn next_widget(&mut self) {
-        let selected_widget = self.selected_widget.unwrap();
-        if selected_widget >= 0 && selected_widget < self.widgets.len() as i8 - 1 {
-            self.select_widget(selected_widget + 1);
-        }
-    }
-
-    fn select_widget(&mut self, index: i8) {
-        let mut offset = 0;
-        for widget in self.widgets.iter_mut() {
-            if offset == index {
-                self.selected_widget =  Some(offset.clone());
-                widget.state_type.focus();
-            } else {
-                widget.state_type.unfocus();
-            }
-            offset += 1;
-        }
-    }
 
     fn build_attribute_inputs(&mut self, character: &mut Character) {
         let mut scores = character.get_attribute_scores();
@@ -79,10 +52,10 @@ impl CharacterFrameHandler {
                 },
                 _ => {}
             }
-            self.widgets.push(attribute_input);
+            self.widgets.widgets.push(attribute_input);
         }
         let free_points = build_number_input_with_value(false, character.get_free_attribute_points() as i32, 1, "Free points".to_string(), 1);
-        self.widgets.push(free_points);
+        self.widgets.widgets.push(free_points);
     }
 
     fn build_widgets(&mut self, character: &mut Character) {
@@ -90,7 +63,7 @@ impl CharacterFrameHandler {
 
         if creation_mode {
             let name_input = build_text_input(12, String::from("Name"), character.get_name(), 2);
-            self.widgets.push(name_input);
+            self.widgets.widgets.push(name_input);
         }
 
         let mut class_input = build_dropdown("Class".to_string(), creation_mode,vec!["None".to_string(), "Warrior".to_string()]);
@@ -99,25 +72,25 @@ impl CharacterFrameHandler {
                 state.select(character.get_class().to_string())
             }, _ => {}
         }
-        self.widgets.push(class_input);
+        self.widgets.widgets.push(class_input);
 
         self.build_attribute_inputs(character);
 
         if creation_mode {
             let button = build_button("[Enter]".to_string().len() as i8, "[Enter]".to_string());
-            self.widgets.push(button);
+            self.widgets.widgets.push(button);
         }
 
-        self.selected_widget = Some(0);
-        self.widgets[0].state_type.focus();
+        self.widgets.selected_widget = Some(0);
+        self.widgets.widgets[0].state_type.focus();
     }
 
     pub fn draw_main_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
-        let widget_count = self.widgets.len();
+        let widget_count = self.widgets.widgets.len();
         if widget_count > 0 {
             let mut offset = 0;
-            for widget in self.widgets.iter_mut() {
+            for widget in self.widgets.widgets.iter_mut() {
                 let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &mut widget.state_type {
                     WidgetType::Text(w) => {
@@ -139,9 +112,9 @@ impl CharacterFrameHandler {
 
     pub fn draw_attribute_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
-        if self.widgets.len() > 0 {
+        if self.widgets.widgets.len() > 0 {
             let mut offset = 0;
-            for widget in self.widgets.iter_mut() {
+            for widget in self.widgets.widgets.iter_mut() {
                 let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &mut widget.state_type {
                     WidgetType::Number(w) => {
@@ -166,7 +139,7 @@ impl CharacterFrameHandler {
         frame.render_widget(window_block, window_area);
 
         let character = data.unpack();
-        if self.widgets.is_empty() {
+        if self.widgets.widgets.is_empty() {
             log::info!("Building input widgets...");
             self.build_widgets(character);
         }
@@ -175,7 +148,7 @@ impl CharacterFrameHandler {
             .borders(Borders::ALL)
             .title("Attributes");
         let all_attributes = get_all_attributes();
-        let mut attribute_start = (self.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
+        let mut attribute_start = (self.widgets.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
         // To account for the enter button
         if self.view_mode == ViewMode::CREATION {
             attribute_start -= 1;
@@ -199,7 +172,7 @@ impl CharacterFrameHandler {
     }
 
     pub fn update_free_points(&mut self, free_points: i32) {
-        for widget in self.widgets.iter_mut() {
+        for widget in self.widgets.widgets.iter_mut() {
             match &mut widget.state_type {
                 WidgetType::Number(state) => {
                     if state.name == "Free points" {
@@ -228,7 +201,7 @@ impl CharacterFrameHandler {
     pub fn get_character(&mut self) -> Character {
         let mut character = self.character.clone();
         let mut scores  = character.get_attribute_scores();
-        for widget in self.widgets.iter_mut() {
+        for widget in self.widgets.widgets.iter_mut() {
             let state_type = &mut widget.state_type;
             if String::from("Name") == state_type.get_name() {
                 match state_type {
@@ -256,7 +229,7 @@ impl CharacterFrameHandler {
         }
 
         let mut number_states : Vec<NumberInputState> = Vec::new();
-        let ns_options : Vec<Option<NumberInputState>> = self.widgets.iter_mut().map(|w| map_state(  w)).collect();
+        let ns_options : Vec<Option<NumberInputState>> = self.widgets.widgets.iter_mut().map(|w| map_state(  w)).collect();
         for ns_option in ns_options {
             match ns_option {
                 Some(ns) => {
@@ -303,9 +276,9 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterFrameHa
 impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
     fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterFrameHandlerInputResult>, Error> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
-        let widgets = &mut self.widgets;
+        let widgets = &mut self.widgets.widgets;
         let mut selected_widget = None;
-        match self.selected_widget {
+        match self.widgets.selected_widget {
             Some(idx) => {
                 let widget = &mut widgets[idx as usize];
                 widget.state_type.focus();
@@ -404,12 +377,12 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                                     if state.is_showing_options() {
                                         state.select_next();
                                     } else {
-                                        self.next_widget();
+                                        self.widgets.next_widget();
                                     }
                                 }
                             },
                             _ => {
-                                self.next_widget();
+                                self.widgets.next_widget();
                             }
                         }
                     }
@@ -425,12 +398,12 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                                     if state.is_showing_options() {
                                         state.select_previous();
                                     } else {
-                                        self.previous_widget();
+                                        self.widgets.previous_widget();
                                     }
                                 }
                             },
                             _ => {
-                                self.previous_widget();
+                                self.widgets.previous_widget();
                             }
                         }
                     },

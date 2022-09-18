@@ -1,5 +1,8 @@
 use std::convert::TryInto;
 use std::io;
+use log::log;
+use rand::distributions::Alphanumeric;
+use rand::{Rng, thread_rng};
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -24,7 +27,7 @@ use crate::map::position::Side;
 use crate::menu;
 use crate::menu::Selection;
 use crate::settings;
-use crate::settings::Toggleable;
+use crate::settings::{Setting, Settings, Toggleable};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
 use crate::ui::{build_ui, Draw, FrameData, FrameHandler};
@@ -33,9 +36,16 @@ use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map::MapView;
+use crate::view::settings_menu::SettingsMenu;
+use crate::widget::button_widget::build_button;
 use crate::widget::character_stat_line::build_character_stat_line;
+use crate::widget::boolean_widget::build_boolean_widget;
+use crate::widget::text_widget::build_text_input;
+use crate::widget::widgets::WidgetList;
+use crate::widget::{Widget, WidgetType};
 
 pub struct Levels {
+    map_seed: String,
     // Implied to always reflect updates to levels
     _current_level: usize,
     levels : Vec<Level>
@@ -68,11 +78,6 @@ impl <B : Backend> UIWrapper<B> {
         self.re_render();
     }
 
-    fn draw_settings_menu(&mut self) -> Result<(), io::Error>  {
-        let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_settings_menu(frame) })
-    }
-
     fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
@@ -87,7 +92,7 @@ impl <B : Backend> UIWrapper<B> {
     // Shows character creation screen
     // Returns the finished character once input is confirmed
     fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
-        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::CREATION};
+        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), selected_widget: None }, view_mode: ViewMode::CREATION};
         // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
         GenericInputResult { done: false, requires_view_refresh: false },
@@ -161,7 +166,7 @@ impl Levels {
 
     fn generate_level(&mut self) {
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
-        let mut map_generator = build_generator(map_area);
+        let mut map_generator = build_generator(self.map_seed.to_string(),map_area);
 
         let mut new_level;
         if !self.levels.is_empty() {
@@ -211,49 +216,40 @@ impl Levels {
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
+    settings: Settings,
     levels: Levels,
-    settings : settings::EnumSettings,
     game_running : bool,
 }
 
 impl <B : Backend> GameEngine<B> {
 
-    fn handle_settings_menu_selection(&mut self) -> Result<(), io::Error> {
-        loop {
-            let last_selection = self.ui_wrapper.ui.settings_menu.selection;
-            let key = io::stdin().keys().next().unwrap().unwrap();
-            self.ui_wrapper.ui.settings_menu.handle_input(key);
-            let selection = self.ui_wrapper.ui.settings_menu.selection;
-            log::info!("Selection is: {}", selection);
-            if last_selection != selection {
-                log::info!("Selection changed to: {}", selection);
-                self.ui_wrapper.draw_settings_menu()?;
-            }
+    fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), io::Error> {
 
-            if self.ui_wrapper.ui.settings_menu.exit {
-                log::info!("Menu exited.");
-                break;
-            }
-
-            if self.ui_wrapper.ui.settings_menu.selected {
-                match self.ui_wrapper.ui.settings_menu.selection.try_into() {
-                    Ok(SettingsMenuChoice::FogOfWar) => {
-                        match self.settings.settings.iter_mut().find(|x| x.name == "Fog of war") {
-                            Some(s) => {
-                                s.toggle();
-                                log::info!("Fog of war: {}", s.value);
-                            },
-                            None => {}
-                        }
-                    },
-                    Ok(SettingsMenuChoice::Quit) => {
-                        log::info!("Closing settings..");
-                        break;
-                    },
-                    Err(_) => {}
-                }
+        for widget in widgets.widgets {
+            match widget.state_type {
+                WidgetType::Boolean(mut b) => {
+                    let setting = self.settings.bool_settings.iter_mut().find(|x| x.name == b.get_name());
+                    if let Some(s) = setting {
+                        s.value = b.value;
+                    }
+                },
+                WidgetType::Text(mut t) => {
+                    let setting = self.settings.string_settings.iter_mut().find(|x| x.name == t.get_name());
+                    if let Some(s) = setting {
+                        s.value = t.get_input();
+                    }
+                },
+                _ => {}
             }
         }
+
+        // TODO pass this through
+        //let fog_of_war = self.settings.find_bool_setting_value(|x| x.name == "Fog of War");
+
+        let map_seed = self.settings.find_string_setting_value( "Map RNG Seed".to_string()).unwrap();
+        log::info!("Map seed updated to: {}", map_seed);
+        self.levels.map_seed = map_seed;
+
         Ok(())
     }
 
@@ -305,9 +301,19 @@ impl <B : Backend> GameEngine<B> {
                 },
                 StartMenuChoice::Settings => {
                     log::info!("Showing settings..");
-                    let ui = &mut self.ui_wrapper.ui;
-                    self.ui_wrapper.draw_settings_menu();
-                    self.handle_settings_menu_selection()?;
+
+                    let widgets = build_settings_widgets(&self.settings);
+                    let mut settings_menu = SettingsMenu {
+                        ui: &mut self.ui_wrapper.ui,
+                        terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                        selected_widget: Some(0),
+                        widgets: WidgetList { widgets, selected_widget: Some(0) }
+                    };
+
+                    settings_menu.begin();
+                    let widgets = settings_menu.widgets;
+
+                    self.handle_settings_menu_selection(widgets)?;
                 },
                 StartMenuChoice::Info => {
                     log::info!("Showing info..");
@@ -490,15 +496,40 @@ impl <B : Backend> GameEngine<B> {
     }
 }
 
-pub fn init_level_manager() -> Levels {
-    Levels { levels: vec![], _current_level: 0}
+pub fn init_level_manager(map_seed: String) -> Levels {
+    Levels { map_seed, levels: vec![], _current_level: 0}
+}
+
+pub fn build_settings() -> Settings {
+    let fog_of_war : Setting<bool> = Setting { name: "Fog of War".to_string(), value: false };
+
+    let random_seed: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(12)
+        .map(char::from)
+        .collect();
+    let map_seed : Setting<String> = Setting { name: "Map RNG Seed".to_string(), value: random_seed };
+    Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed]}
+}
+
+pub fn build_settings_widgets(settings : &Settings) -> Vec<Widget> {
+    let mut widgets = Vec::new();
+    for setting in &settings.bool_settings {
+        widgets.push(build_boolean_widget(15, setting.name.clone(), setting.value))
+    }
+    for setting in &settings.string_settings {
+        widgets.push(build_text_input(15, setting.name.clone(), setting.value.clone(), 1))
+    }
+    widgets
 }
 
 pub fn build_game_engine<'a, B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
-    let fog_of_war = settings::Setting { name : "Fog of war".to_string(), value : false };
-    let settings = settings::EnumSettings { settings: vec![fog_of_war] };
-    Ok(GameEngine { levels: init_level_manager(), ui_wrapper : UIWrapper { ui, terminal_manager }, settings, game_running: false})
+    let settings = build_settings();
+    // Grab the randomised seed
+    let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
+
+    Ok(GameEngine { levels: init_level_manager(map_seed), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
 }
 
 

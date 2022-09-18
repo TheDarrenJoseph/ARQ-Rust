@@ -87,12 +87,6 @@ pub fn build_start_menu(game_started: bool) -> Menu {
     menu
 }
 
-pub fn build_settings_menu() -> Menu {
-    let titles = vec!["Fog of war".to_owned(), "Close settings".to_owned()];
-    let menu = Menu { menu_titles : titles,  highlight_text : None, selection : 0, selected: false, exit: false};
-    menu
-}
-
 #[cfg(test)]
 mod tests {
     use crate::menu::{Menu, Selection};

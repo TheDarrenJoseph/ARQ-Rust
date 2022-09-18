@@ -1,6 +1,8 @@
 use std::collections::HashMap;
+use rand::Rng;
 
-use rand::{Rng, thread_rng};
+use rand_seeder::{Seeder};
+use rand_pcg::Pcg64;
 use uuid::Uuid;
 
 use crate::engine::pathfinding::Pathfinding;
@@ -22,14 +24,16 @@ pub struct MapGenerator {
     map_area : Area,
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>,
+    rng: Pcg64,
     map: Map
 }
 
-pub fn build_generator(map_area : Area) -> MapGenerator {
+pub fn build_generator(seed: String, map_area : Area) -> MapGenerator {
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new(),
+        rng: Seeder::from(seed).make_rng(),
         map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new(), containers: HashMap::new()}}
 }
 
@@ -69,13 +73,12 @@ pub fn build_dev_chest() -> Container {
     return container;
 }
 
-fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
+fn generate_room_containers(mut rng: &mut Pcg64, room: Room) -> HashMap<Position, Container> {
     let mut container_map = HashMap::new();
     let inside_area = room.get_inside_area();
     if inside_area.get_total_area() > 1 {
         let size_x = inside_area.get_size_x();
         let size_y = inside_area.get_size_y();
-        let mut rng = thread_rng();
         let container_count = rng.gen_range(0..=2);
         for _i in 0..container_count {
             let random_x: u16 = rng.gen_range(1..=size_x) as u16;
@@ -89,6 +92,7 @@ fn generate_room_containers(room: Room) -> HashMap<Position, Container> {
 }
 
 impl MapGenerator {
+
     pub fn generate(&mut self) -> Map {
         log::info!("Generating map...");
         self.build_map();
@@ -106,8 +110,9 @@ impl MapGenerator {
         log::info!("Added {} general area containers to the map.", area_container_count);
 
         let mut room_container_count = 0;
-        for room in self.map.rooms.iter_mut() {
-            let room_containers = generate_room_containers(room.clone());
+        let rooms =  &mut self.map.rooms;
+        for room in rooms.iter_mut() {
+            let room_containers = generate_room_containers(&mut self.rng, room.clone());
             log::info!("Added {} containers into room general area containers.", room_container_count);
 
             for pos_container in room_containers {
@@ -130,14 +135,13 @@ impl MapGenerator {
     }
 
     fn add_entry_and_exit(&mut self) {
-        let mut rng = rand::thread_rng();
         let rooms = self.map.rooms.clone();
         let rooms_len = rooms.len();
 
         let mut updated_entry_room = None;
         let mut entry_idx : usize = 0;
         while updated_entry_room.is_none() {
-            entry_idx = rng.gen_range(0..rooms_len) as usize;
+            entry_idx = self.rng.gen_range(0..rooms_len) as usize;
             let mut entry_room = rooms.get(entry_idx).unwrap().clone();
             log::info!("Adding entry..");
             updated_entry_room = self.add_entry(entry_room);
@@ -148,7 +152,7 @@ impl MapGenerator {
         let mut updated_exit_room = None;
         let mut exit_idx : usize = 0;
         while updated_exit_room.is_none() {
-            exit_idx = rng.gen_range(0..rooms_len) as usize;
+            exit_idx = self.rng.gen_range(0..rooms_len) as usize;
             let mut exit_room = rooms.get(exit_idx).unwrap().clone();
             log::info!("Adding exit..");
             updated_exit_room = self.add_exit(exit_room);
@@ -172,12 +176,17 @@ impl MapGenerator {
             for door1 in room1.doors {
                 let door1_position = door1.position;
                 let door2_position = room2.doors[0].position;
+                log::info!("Pathing from door at: {:?} to door at: {:?}", door1_position, door2_position);
+
                 let mut pathfinding = Pathfinding::build(door1_position);
                 let path = pathfinding.a_star_search(&self.map, door2_position);
                 for position in path {
                     let tile_type = self.map.get_tile(position).unwrap().tile_type;
                     if tile_type != Tile::Door {
+                        log::info!("Adding corridor tile at: {:?}", position);
                         self.map.set_tile(position, corridor_tile.clone());
+                    } else {
+                        log::info!("Can't add corridor here. Tile is a door.");
                     }
                 }
             }
@@ -258,7 +267,7 @@ impl MapGenerator {
         }
     }
 
-    fn generate_room(&self, room_pos : Position, size: u16) -> Room {
+    fn generate_room(&mut self, room_pos : Position, size: u16) -> Room {
         let room_area = build_square_area( room_pos, size);
         let mut room = Room { area: room_area, doors: Vec::new(), entry: None, exit: None };
 
@@ -266,8 +275,7 @@ impl MapGenerator {
         let room_sides = room.get_sides();
 
         let mut doors = Vec::new();
-        let mut rng = rand::thread_rng();
-        let door_count = rng.gen_range(1..=self.max_door_count);
+        let door_count = self.rng.gen_range(1..=self.max_door_count);
         let map_area = self.map_area.clone();
         let map_sides = map_area.get_sides();
 
@@ -316,15 +324,14 @@ impl MapGenerator {
         let mut total_area_usage_percentage : u16 = 0;
 
         let mut rooms : Vec<Room> = Vec::new();
-        let mut rng = rand::thread_rng();
         self.find_possible_room_positions();
         while total_area_usage_percentage < self.room_area_quota_percentage && self.possible_room_positions.len() > 0 {
-            let random_pos = rng.gen_range(0..self.possible_room_positions.len());
+            let random_pos = self.rng.gen_range(0..self.possible_room_positions.len());
             let position = *self.possible_room_positions.get(random_pos).unwrap();
 
             // Try each position 2 times with a different size
             for _x in 0..=1 {
-                let size = rng.gen_range(self.min_room_size..=self.max_room_size);
+                let size = self.rng.gen_range(self.min_room_size..=self.max_room_size);
                 let potential_area = build_square_area(position, size);
                 let mut position_taken = false;
                 for r in &rooms {
@@ -485,7 +492,7 @@ mod tests {
     fn test_build_generator() {
         // GIVEN a 12x12 map board
         let map_area = build_square_area(Position {x: 0, y: 0}, 12);
-        let generator = build_generator(map_area);
+        let generator = build_generator("test".to_string(), map_area);
 
         assert_eq!(3, generator.min_room_size);
         assert_eq!(6, generator.max_room_size);
@@ -500,7 +507,7 @@ mod tests {
     #[test]
     fn test_generate_room() {
         let map_area = build_square_area(Position {x: 0, y: 0}, 12);
-        let generator = build_generator(map_area);
+        let mut generator = build_generator("test".to_string(), map_area);
 
         let room = generator.generate_room(Position {x: 0, y: 0}, 3);
         let expected_area = build_square_area(Position {x: 0, y: 0}, 3);
@@ -512,7 +519,7 @@ mod tests {
     fn test_generate_rooms() {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let mut generator = build_generator(map_area);
+        let mut generator = build_generator("test".to_string(),map_area);
         let rooms = generator.generate_rooms();
         assert_ne!(0, rooms.len());
 
@@ -529,7 +536,7 @@ mod tests {
     fn test_generate() {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let mut generator = build_generator(map_area);
+        let mut generator = build_generator("test".to_string(), map_area);
         let map = generator.generate();
 
         let area = map.area;

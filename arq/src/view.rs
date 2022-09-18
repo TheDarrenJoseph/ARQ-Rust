@@ -15,6 +15,7 @@ pub mod callback;
 pub mod character_info;
 pub mod map;
 pub mod world_container;
+pub mod settings_menu;
 
 // A View begins an I/O loop (upon calling begin()) while rendering
 pub trait View<'b, COM: 'b>  {

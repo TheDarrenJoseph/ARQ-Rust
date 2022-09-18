@@ -9,11 +9,11 @@ use crate::{menu, ui};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::menu::{Menu, ToList};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+use crate::view::settings_menu::SettingsMenu;
 use crate::widget::{Widget, WidgetType};
 
 pub struct UI {
     pub start_menu : Menu,
-    pub settings_menu : Menu,
     pub render_additional: bool,
     pub console_visible: bool,
     pub additional_widgets: Vec<Widget>,
@@ -30,9 +30,8 @@ pub enum StartMenuChoice {
 
 pub fn build_ui() -> UI {
     let start_menu = menu::build_start_menu(false);
-    let settings_menu = menu::build_settings_menu();
     let frame_handler = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
-    ui::UI { start_menu, settings_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), frame_handler }
+    ui::UI { start_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), frame_handler }
 }
 
 // FrameHandlers are "dumb" views that simply draw themselves to a terminal frame
@@ -88,7 +87,6 @@ impl std::convert::TryFrom<usize> for SettingsMenuChoice {
 
 pub trait Draw {
     fn draw_start_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
-    fn draw_settings_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>, area: Rect);
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>);
@@ -170,11 +168,6 @@ impl Draw for UI {
     fn draw_start_menu<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         self.render(frame);
         draw_menu(frame, &mut self.start_menu);
-    }
-
-    fn draw_settings_menu<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        self.render(frame);
-        draw_menu(frame, &mut self.settings_menu);
     }
 
     fn draw_info<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {

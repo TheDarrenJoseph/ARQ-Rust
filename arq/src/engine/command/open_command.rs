@@ -223,7 +223,7 @@ mod tests {
     use crate::terminal;
     use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui;
-    use crate::ui::{build_ui, UI};
+    use crate::ui::{UI};
     use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
     use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 

@@ -540,7 +540,6 @@ mod tests {
         // GIVEN valid components
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
         // WHEN we call to build a new view
         let view : ContainerFrameHandler = build_default_container_view(container);
         // THEN we expect to reach this point succesfully
@@ -583,7 +582,6 @@ mod tests {
         // GIVEN a valid view
         let mut container = build_test_container();
         let start_menu = menu::build_start_menu(false);
-        let settings_menu = menu::build_settings_menu();
         let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 

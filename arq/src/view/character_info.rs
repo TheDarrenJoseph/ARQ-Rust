@@ -25,6 +25,7 @@ use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrame
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
+use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
@@ -66,7 +67,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), commands);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
-        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: Vec::new(), selected_widget: None, view_mode: ViewMode::VIEW };
+        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), selected_widget: None }, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
     }
 

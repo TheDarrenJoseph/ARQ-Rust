@@ -1,3 +1,4 @@
+use crate::widget::boolean_widget::BooleanState;
 use crate::widget::button_widget::ButtonState;
 use crate::widget::character_stat_line::CharacterStatLineState;
 use crate::widget::console_input_widget::ConsoleInputState;
@@ -8,9 +9,11 @@ use crate::widget::text_widget::TextInputState;
 pub mod text_widget;
 pub mod dropdown_widget;
 pub mod number_widget;
+pub mod boolean_widget;
 pub mod button_widget;
 pub mod character_stat_line;
 pub mod console_input_widget;
+pub mod widgets;
 
 pub fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");
@@ -36,6 +39,7 @@ pub enum WidgetType {
     Number(NumberInputState),
     Dropdown(DropdownInputState),
     Button(ButtonState),
+    Boolean(BooleanState),
     StatLine(CharacterStatLineState)
 }
 
@@ -51,6 +55,9 @@ impl Named for WidgetType {
     fn get_name(&mut self) -> String {
         match self {
             WidgetType::Text(state) => {
+                state.get_name()
+            },
+            WidgetType::Boolean(state) => {
                 state.get_name()
             },
             WidgetType::Console(_state) => {
@@ -84,6 +91,7 @@ impl Focusable for WidgetType {
             WidgetType::Number(state) => state.selected = true,
             WidgetType::Dropdown(state) => state.selected = true,
             WidgetType::Button(state) => state.selected = true,
+            WidgetType::Boolean(state) => state.selected = true,
             _ => {}
         }
     }
@@ -95,6 +103,7 @@ impl Focusable for WidgetType {
             WidgetType::Number(state) => state.selected = false,
             WidgetType::Dropdown(state) => state.selected = false,
             WidgetType::Button(state) => state.selected = false,
+            WidgetType::Boolean(state) => state.selected = false,
             _ => {}
         }
     }
@@ -106,6 +115,7 @@ impl Focusable for WidgetType {
             WidgetType::Number(state) => state.selected.clone(),
             WidgetType::Dropdown(state) => state.selected.clone(),
             WidgetType::Button(state) => state.selected.clone(),
+            WidgetType::Boolean(state) => state.selected.clone(),
             _ => { false }
         }
     }
