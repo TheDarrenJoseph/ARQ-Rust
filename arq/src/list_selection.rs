@@ -521,7 +521,7 @@ pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> Ite
 mod tests {
     use uuid::Uuid;
 
-    use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
+    use crate::list_selection::{build_list_selection, ListSelection};
     use crate::map::objects::items;
 
     #[test]
@@ -571,7 +571,7 @@ mod tests {
     fn test_multi_page_count_odd() {
         // GIVEN a series of 60 items to select from
         let mut items = Vec::new();
-        for i in 1..=60 {
+        for _i in 1..=60 {
             let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
             items.push(item);
         }
@@ -887,7 +887,7 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(1));
         assert_eq!(true, list_selection.is_selected(2));
         assert_eq!(true, list_selection.is_selected(3));
-        let mut selected_items = list_selection.get_selected_items();
+        let selected_items = list_selection.get_selected_items();
         assert_eq!(4, selected_items.len());
 
         // WHEN we call to select up
@@ -927,7 +927,7 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(1));
         assert_eq!(true, list_selection.is_selected(2));
         assert_eq!(true, list_selection.is_selected(3));
-        let mut selected_items = list_selection.get_selected_items();
+        let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
 
         // WHEN we call to select up

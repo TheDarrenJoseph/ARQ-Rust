@@ -487,29 +487,29 @@ pub fn build_default_container_view(container: Container) -> ContainerFrameHandl
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    
 
-    use termion::input::TermRead;
-    use tui::backend::TestBackend;
-    use tui::buffer::{Buffer, Cell};
-    use tui::layout::Rect;
-    use tui::text::Text;
-    use tui::widgets::Widget;
+    
+    
+    
+    
+    
+    
     use uuid::Uuid;
 
-    use crate::list_selection::{build_list_selection, ListSelection};
-    use crate::map::objects::container;
+    use crate::list_selection::{ListSelection};
+    
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::tile::Colour;
     use crate::menu;
-    use crate::terminal;
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui;
-    use crate::ui::{build_ui, UI};
-    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_columns, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
-    use crate::view::framehandler::util::tabling::{build_headings, Column};
+    
+    
+    
+    
+    
+    use crate::view::framehandler::container::{build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    
 
 
     fn build_test_container() -> Container {
@@ -538,17 +538,17 @@ mod tests {
     #[test]
     fn test_view_build() {
         // GIVEN valid components
-        let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
+        let container = build_test_container();
+        let _start_menu = menu::build_start_menu(false);
         // WHEN we call to build a new view
-        let view : ContainerFrameHandler = build_default_container_view(container);
+        let _view : ContainerFrameHandler = build_default_container_view(container);
         // THEN we expect to reach this point succesfully
     }
 
     #[test]
     fn test_move_focus_down() {
         // GIVEN a valid view
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
@@ -564,7 +564,7 @@ mod tests {
     #[test]
     fn test_page_down() {
         // GIVEN a valid view
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
@@ -580,8 +580,8 @@ mod tests {
     #[test]
     fn test_move_focus_up() {
         // GIVEN a valid view
-        let mut container = build_test_container();
-        let start_menu = menu::build_start_menu(false);
+        let container = build_test_container();
+        let _start_menu = menu::build_start_menu(false);
         let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
@@ -601,7 +601,7 @@ mod tests {
     #[test]
     fn test_page_up() {
         // GIVEN a valid view
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut view : ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
 
@@ -620,7 +620,7 @@ mod tests {
     #[test]
     fn test_handle_callback_result_drop() {
         // GIVEN a valid view
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -642,7 +642,7 @@ mod tests {
         let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
-        let mut contents = view.container.get_contents();
+        let contents = view.container.get_contents();
         assert_eq!(1, contents.len());
         assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
     }
@@ -650,7 +650,7 @@ mod tests {
     #[test]
     fn test_handle_callback_result_take() {
         // GIVEN a valid view
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -672,7 +672,7 @@ mod tests {
         let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);
         view.handle_callback_result(result);
         // THEN we expect only the retained item to remain in the view container
-        let mut contents = view.container.get_contents();
+        let contents = view.container.get_contents();
         assert_eq!(1, contents.len());
         assert_eq!("Test Item 2", contents[0].get_self_item().get_name());
     }

@@ -407,7 +407,7 @@ mod tests {
     use crate::terminal::terminal_manager;
     use crate::ui::build_ui;
     use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-    use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
+    
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -457,14 +457,14 @@ mod tests {
     fn test_initialise() {
         // GIVEN a valid character info view for a player's inventory
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
-        let character_details = build_default_character_details();
-        let mut player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let _character_details = build_default_character_details();
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
         let mut level = build_test_level(player);
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test().unwrap();
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
-        let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|data| {None}) };
+        let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|_data| {None}) };
 
         // WHEN we call to initialise
         // THEN we expect it to complete successfully

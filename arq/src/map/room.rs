@@ -23,7 +23,7 @@ impl Room {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    
 
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position, Side};

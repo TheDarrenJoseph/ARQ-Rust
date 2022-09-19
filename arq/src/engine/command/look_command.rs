@@ -115,7 +115,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::io::{Error, ErrorKind};
+    
 
     use uuid::Uuid;
 
@@ -127,7 +127,7 @@ mod tests {
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::Room;
     use crate::map::tile::Tile;
-    use crate::view::framehandler::character;
+    
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();
@@ -149,7 +149,7 @@ mod tests {
             containers: area_containers
         };
 
-        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
         return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
     }
 
@@ -289,7 +289,7 @@ mod tests {
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
 
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -312,7 +312,7 @@ mod tests {
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
 
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -332,7 +332,7 @@ mod tests {
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
         assert_eq!(1, source_container.get_total_count());
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -357,7 +357,7 @@ mod tests {
         chest.push(vec![bag, item1, item2]);
         source_container.push(vec![chest]);
         assert_eq!(4, source_container.get_total_count());
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -373,9 +373,9 @@ mod tests {
     fn test_describe_area_empty() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing nothing
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         assert_eq!(0, source_container.get_total_count());
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -395,7 +395,7 @@ mod tests {
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
         assert_eq!(1, source_container.get_total_count());
-        let source = source_container.clone();
+        let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 
@@ -411,7 +411,7 @@ mod tests {
     fn test_describe_area_invalid_container_type() {
         // GIVEN a valid map
         // that holds a source container of an unsupported type (OBJECT)
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 

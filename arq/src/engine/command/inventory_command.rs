@@ -153,32 +153,32 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::collections::HashSet;
+    
 
-    use termion::input::TermRead;
-    use tui::backend::TestBackend;
-    use tui::buffer::{Buffer, Cell};
-    use tui::layout::Rect;
-    use tui::text::Text;
-    use tui::widgets::Widget;
+    
+    
+    
+    
+    
+    
     use uuid::Uuid;
 
     use crate::character::build_player;
-    use crate::engine::command::inventory_command::{CallbackState, handle_callback, InventoryCommand};
+    use crate::engine::command::inventory_command::{CallbackState, handle_callback};
     use crate::engine::level::{Characters, Level};
-    use crate::list_selection::ListSelection;
+    
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
-    use crate::menu;
-    use crate::terminal;
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui;
-    use crate::ui::{UI};
-    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    
+    
+    
+    
+    
+    
+    use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -224,7 +224,7 @@ mod tests {
             containers: area_containers
         };
 
-        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
         return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
     }
 
@@ -243,7 +243,7 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
+        let view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DropItems returned with 0 un-dropped items
@@ -280,7 +280,7 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
+        let view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DropItems returned with 1 un-dropped items
@@ -317,7 +317,7 @@ mod tests {
         assert_eq!(2, selected_container_items.len());
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-        let mut view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
+        let view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
         let undropped = handle_callback(CallbackState { level: &mut level, container: &mut container, data: view_result }).unwrap();
 
         // THEN we expect a DropItems returned with 2 un-dropped items

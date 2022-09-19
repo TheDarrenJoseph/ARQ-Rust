@@ -488,7 +488,7 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we try to add an AREA container (immovable)
-        let mut floor =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+        let floor =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
         container.add(floor);
 
         // THEN we expect nothing to happen as it's an unsupported type
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn test_get_loot_value_empty() {
         // GIVEN we have a valid container with no items
-        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the total item value
         let total_value = container.get_loot_value();
@@ -574,7 +574,7 @@ mod tests {
     #[test]
     fn test_get_content_count_empty() {
         // GIVEN we have a valid container
-        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         // AND it contains nothing
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the content count
@@ -631,7 +631,7 @@ mod tests {
     #[test]
     fn test_get_item_count_empty() {
         // GIVEN we have a valid container
-        let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         // AND it contains nothing
         assert_eq!(0, container.get_contents().len());
         // WHEN we call to get the item count

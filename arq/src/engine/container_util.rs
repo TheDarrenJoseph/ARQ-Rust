@@ -265,13 +265,13 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::character::{build_character, build_default_character_details, build_player};
+    use crate::character::{build_player};
     use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::{Characters, Level};
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items::build_container_item;
+    
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, Tile};
+    use crate::map::tile::{Tile};
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MoveItems;
     use crate::view::framehandler::container::MoveItemsData;
 
@@ -295,7 +295,7 @@ mod tests {
             containers: area_containers
         };
 
-        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
         return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
     }
 
@@ -315,7 +315,7 @@ mod tests {
             rooms: Vec::new(),
             containers: HashMap::new()
         };
-        let mut player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
         return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
     }
 
@@ -351,7 +351,7 @@ mod tests {
                     assert!(result_data.to_move.is_empty());
 
                     // AND The map 'source' container will have the items removed
-                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    let map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         // There should be 2 items in to root container's top level
                         assert_eq!(2, c.get_top_level_count());
@@ -406,7 +406,7 @@ mod tests {
         assert_eq!(3, carton.get_top_level_count());
 
         let source = carton.clone();
-        let source_clone = source.clone();
+        let _source_clone = source.clone();
         let expected_source = source.clone();
         let target = bag.clone();
         let expected_target = target.clone();
@@ -433,13 +433,13 @@ mod tests {
 
                     // AND the map will be updated to reflect this
                     // Carton
-                    let mut source_updated = level.get_map_mut().unwrap().find_container(&expected_source, container_pos);
+                    let source_updated = level.get_map_mut().unwrap().find_container(&expected_source, container_pos);
                     assert_eq!(1, source_updated.unwrap().get_top_level_count());
 
                     let mut target_updated = level.get_map_mut().unwrap().find_container(&expected_target, container_pos);
                     assert_eq!(6, target_updated.as_ref().unwrap().get_top_level_count());
 
-                    let mut target_contents = target_updated.as_mut().unwrap().get_contents();
+                    let target_contents = target_updated.as_mut().unwrap().get_contents();
                     assert_eq!(item4_id, target_contents.get(0).unwrap().get_self_item().get_id());
                     assert_eq!(item5_id, target_contents.get(1).unwrap().get_self_item().get_id());
                     assert_eq!(item6_id, target_contents.get(2).unwrap().get_self_item().get_id());
@@ -475,7 +475,7 @@ mod tests {
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let target_item = source_container.get(5).get_self_item().clone();
-        let expected_target = target_item.clone();
+        let _expected_target = target_item.clone();
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 1 and 2 to the bottom of the list (Container 6's location)
@@ -492,7 +492,7 @@ mod tests {
                     assert_eq!(0, result_data.to_move.len());
 
                     // AND The map 'source' container will have it's items reshuffled
-                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    let map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
@@ -533,7 +533,7 @@ mod tests {
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let target_item = source_container.get(0).get_self_item().clone();
-        let expected_target = target_item.clone();
+        let _expected_target = target_item.clone();
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 5 and 6 to the top of the list (Container 1's location)
@@ -550,7 +550,7 @@ mod tests {
                     assert_eq!(0, result_data.to_move.len());
 
                     // AND The map 'source' container will have it's items reshuffled
-                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    let map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
@@ -591,7 +591,7 @@ mod tests {
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let target_item = source_container.get(4).get_self_item().clone();
-        let expected_target = target_item.clone();
+        let _expected_target = target_item.clone();
         let mut level = build_test_level(container_pos, source_container);
         let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
         let data_expected = data.clone();
@@ -606,7 +606,7 @@ mod tests {
                     assert_eq!(0, result_data.to_move.len());
 
                     // AND The map 'source' container will have it's items reshuffled
-                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    let map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
@@ -646,7 +646,7 @@ mod tests {
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let target_item = source_container.get(1).get_self_item().clone();
-        let expected_target = target_item.clone();
+        let _expected_target = target_item.clone();
         let mut level = build_test_level(container_pos, source_container);
         let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
         let data_expected = data.clone();
@@ -661,7 +661,7 @@ mod tests {
                     assert_eq!(0, result_data.to_move.len());
 
                     // AND The map 'source' container will have it's items reshuffled
-                    let mut map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
+                    let map_container = level.get_map_mut().unwrap().find_container(&data_expected.source, container_pos);
                     if let Some(c) = map_container {
                         assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
@@ -695,12 +695,12 @@ mod tests {
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
         let target = source_container.get(2).clone();
-        let target_item = target.get_self_item().clone();
+        let _target_item = target.get_self_item().clone();
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to move container 1 into container 3 without a position for the container
         let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
-        let data_expected = data.clone();
+        let _data_expected = data.clone();
         let result = move_items(data, &mut level);
         // THEN we expect None to return
         assert!(result.is_none());

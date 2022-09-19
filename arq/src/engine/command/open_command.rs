@@ -200,32 +200,32 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::collections::HashSet;
+    
 
-    use termion::input::TermRead;
-    use tui::backend::TestBackend;
-    use tui::buffer::{Buffer, Cell};
-    use tui::layout::Rect;
-    use tui::text::Text;
-    use tui::widgets::Widget;
+    
+    
+    
+    
+    
+    
     use uuid::Uuid;
 
-    use crate::character::{build_character, build_default_character_details, build_player, Character};
-    use crate::engine::command::open_command::{handle_callback, OpenCommand};
+    use crate::character::{build_character, build_default_character_details, Character};
+    use crate::engine::command::open_command::{handle_callback};
     use crate::engine::level::{Characters, Level};
-    use crate::list_selection::ListSelection;
-    use crate::map::objects::container;
+    
+    
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
-    use crate::menu;
-    use crate::terminal;
-    use crate::terminal::terminal_manager::TerminalManager;
-    use crate::ui;
-    use crate::ui::{UI};
-    use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-    use crate::view::framehandler::container::{build_container_frame_handler, build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
+    
+    
+    
+    
+    
+    
+    use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -275,13 +275,13 @@ mod tests {
     fn test_take_callback() {
         // GIVEN a valid level with an player inventory to extract items into
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
-        let character_details = build_default_character_details();
+        let _character_details = build_default_character_details();
         let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
         let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
 
         // WHEN we call to handle a take callback with some of the items in a container
-        let mut container = build_test_container();
+        let container = build_test_container();
         let mut selected_container_items = Vec::new();
         for i in 0..=1 {
             selected_container_items.push(container.get(i).get_self_item().clone());
@@ -291,7 +291,7 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
 
         let data = TakeItemsData { source: container.clone(), to_take: selected_container_items, position: Some(container_pos) };
-        let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
+        let view_result = ContainerFrameHandlerInputResult::TakeItems(data);
         let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 0 un-taken items
@@ -316,14 +316,14 @@ mod tests {
     fn test_take_callback_too_many_items() {
         // GIVEN a valid map with an player inventory to extract items into
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
-        let character_details = build_default_character_details();
+        let _character_details = build_default_character_details();
         let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
         let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
 
         // WHEN we call to handle a take callback with 3 items (with only space for 2 of them)
-        let mut container = build_test_container();
-        let mut callback_container = container.clone();
+        let container = build_test_container();
+        let _callback_container = container.clone();
         let mut selected_container_items = Vec::new();
         for i in 0..=2 {
             selected_container_items.push(container.get(i).get_self_item().clone());
@@ -333,7 +333,7 @@ mod tests {
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let data = TakeItemsData { source: container, to_take: selected_container_items, position: Some(container_pos) };
-        let mut view_result = ContainerFrameHandlerInputResult::TakeItems(data);
+        let view_result = ContainerFrameHandlerInputResult::TakeItems(data);
         let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 1 un-taken items

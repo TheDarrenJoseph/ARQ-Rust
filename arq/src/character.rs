@@ -209,10 +209,10 @@ mod tests {
     #[test]
     fn test_build_player() {
         let name = String::from("Test Person");
-        let health = 100;
-        let colour = Colour::Green;
+        let _health = 100;
+        let _colour = Colour::Green;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let _inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let mut character = build_player(name, position);
 
         assert_eq!("Test Person", character.get_name());

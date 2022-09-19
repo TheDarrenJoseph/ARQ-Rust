@@ -1,4 +1,3 @@
-use tui::buffer::{Buffer, Cell};
 use tui::layout::{Alignment, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
@@ -46,6 +45,8 @@ pub fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
 
 #[test]
 fn test_build_headings() {
+    use tui::buffer::{Buffer, Cell};
+
     // GIVEN a view with a series of columns configured
     let columns = vec![
         Column {name : "NAME".to_string(), size: 12},
@@ -58,7 +59,7 @@ fn test_build_headings() {
 
     // THEN we expect it to render to the buffer as expected
     let area = Rect { x: 0, y: 0, height: 2, width: 31 };
-    let cell_buffer : Vec<Cell> = Vec::new();
+    let _cell_buffer : Vec<Cell> = Vec::new();
     let mut buffer = Buffer::empty(area.clone());
     headings.render(area, &mut buffer);
     assert_eq!(Buffer::with_lines(vec!["NAME         WEIGHT (Kg)  VALUE", "    "]), buffer);
