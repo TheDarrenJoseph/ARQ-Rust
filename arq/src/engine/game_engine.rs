@@ -3,6 +3,7 @@ use std::io;
 use log::log;
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
+use rand_seeder::Seeder;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -15,8 +16,8 @@ use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
-use crate::engine::game_engine::LevelChange::NONE;
-use crate::engine::level::{Characters, Level};
+use crate::engine::level::LevelChange::NONE;
+use crate::engine::level::{Characters, init_level_manager, Level, LevelChange, Levels};
 use crate::map::Map;
 use crate::map::map_generator::{build_dev_chest, build_dev_inventory, build_generator};
 use crate::map::objects::container;
@@ -43,20 +44,6 @@ use crate::widget::boolean_widget::build_boolean_widget;
 use crate::widget::text_widget::build_text_input;
 use crate::widget::widgets::WidgetList;
 use crate::widget::{Widget, WidgetType};
-
-pub struct Levels {
-    map_seed: String,
-    // Implied to always reflect updates to levels
-    _current_level: usize,
-    levels : Vec<Level>
-}
-
-#[derive(Clone)]
-enum LevelChange {
-    UP,
-    DOWN,
-    NONE
-}
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {
     ui : ui::UI,
@@ -155,65 +142,6 @@ impl <B : Backend> UIWrapper<B> {
     }
 }
 
-impl Levels {
-    fn add_level(&mut self, level: Level) {
-        self.levels.push(level);
-    }
-
-    fn get_level_mut(&mut self) -> &mut Level {
-        return self.levels.get_mut(self._current_level).unwrap();
-    }
-
-    fn generate_level(&mut self) {
-        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
-        let mut map_generator = build_generator(self.map_seed.to_string(),map_area);
-
-        let mut new_level;
-        if !self.levels.is_empty() {
-            let player = self.get_level_mut().characters.remove_player();
-            new_level = Level {
-                map: Some(map_generator.generate()),
-                characters: Characters { characters: vec![player] }
-            };
-        } else {
-            new_level = Level {
-                map: Some(map_generator.generate()),
-                characters: Characters { characters: Vec::new() }
-            };
-        }
-
-        self.levels.push(new_level);
-    }
-
-    fn change_level(&mut self, level_change: LevelChange) -> Result<bool, io::Error>  {
-        match level_change {
-            LevelChange::UP => {
-                if self._current_level > 0 {
-                    let player = self.get_level_mut().characters.remove_player();
-                    self._current_level -= 1;
-                    self.get_level_mut().characters.set_characters(vec![player]);
-                    return Ok(true);
-                }
-            },
-            LevelChange::DOWN => {
-                if self._current_level < self.levels.len() - 1 {
-                    let player = self.get_level_mut().characters.remove_player();
-                    self._current_level += 1;
-                    self.get_level_mut().characters.set_characters(vec![player]);
-                } else {
-                    self.generate_level();
-                    self._current_level += 1;
-                }
-                return Ok(true);
-            },
-            _ => {
-            }
-        }
-        return Ok(false);
-    }
-}
-
-
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
     settings: Settings,
@@ -248,7 +176,8 @@ impl <B : Backend> GameEngine<B> {
 
         let map_seed = self.settings.find_string_setting_value( "Map RNG Seed".to_string()).unwrap();
         log::info!("Map seed updated to: {}", map_seed);
-        self.levels.map_seed = map_seed;
+        let rng = Seeder::from(map_seed).make_rng();
+        self.levels.rng = rng;
 
         Ok(())
     }
@@ -496,10 +425,6 @@ impl <B : Backend> GameEngine<B> {
     }
 }
 
-pub fn init_level_manager(map_seed: String) -> Levels {
-    Levels { map_seed, levels: vec![], _current_level: 0}
-}
-
 pub fn build_settings() -> Settings {
     let fog_of_war : Setting<bool> = Setting { name: "Fog of War".to_string(), value: false };
 
@@ -528,8 +453,8 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(mut terminal_manager : Te
     let settings = build_settings();
     // Grab the randomised seed
     let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
-
-    Ok(GameEngine { levels: init_level_manager(map_seed), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
+    let rng = Seeder::from(map_seed).make_rng();
+    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
 }
 
 
