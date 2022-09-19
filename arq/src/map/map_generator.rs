@@ -15,7 +15,7 @@ use crate::map::room::Room;
 use crate::map::tile::{build_library, Tile, TileDetails};
 use crate::map::tile::Tile::NoTile;
 
-pub struct MapGenerator {
+pub struct MapGenerator<'rng> {
     min_room_size: u16,
     max_room_size: u16,
     room_area_quota_percentage: u16,
@@ -24,11 +24,11 @@ pub struct MapGenerator {
     map_area : Area,
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>,
-    rng: Pcg64,
+    rng: &'rng mut Pcg64,
     map: Map
 }
 
-pub fn build_generator(rng : Pcg64, map_area : Area) -> MapGenerator {
+pub fn build_generator(rng : &mut Pcg64, map_area : Area) -> MapGenerator {
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
@@ -91,7 +91,7 @@ fn generate_room_containers(mut rng: &mut Pcg64, room: Room) -> HashMap<Position
     container_map
 }
 
-impl MapGenerator {
+impl MapGenerator<'_> {
 
     pub fn generate(&mut self) -> Map {
         log::info!("Generating map...");
@@ -493,7 +493,7 @@ mod tests {
     fn test_build_generator() {
         // GIVEN a 12x12 map board
         let map_area = build_square_area(Position {x: 0, y: 0}, 12);
-        let rng = Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).make_rng();
         let generator = build_generator(rng, map_area);
 
         assert_eq!(3, generator.min_room_size);
@@ -509,7 +509,7 @@ mod tests {
     #[test]
     fn test_generate_room() {
         let map_area = build_square_area(Position {x: 0, y: 0}, 12);
-        let rng = Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
 
         let room = generator.generate_room(Position {x: 0, y: 0}, 3);
@@ -522,7 +522,7 @@ mod tests {
     fn test_generate_rooms() {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng = Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
         let rooms = generator.generate_rooms();
         assert_ne!(0, rooms.len());
@@ -540,7 +540,7 @@ mod tests {
     fn test_generate() {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng = Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
         let map = generator.generate();
 

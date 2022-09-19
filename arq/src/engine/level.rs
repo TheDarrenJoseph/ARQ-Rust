@@ -50,18 +50,21 @@ impl Levels {
 
     pub(crate) fn generate_level(&mut self) {
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
-        let mut map_generator = build_generator(self.rng.clone(), map_area);
+
+        let rng = &mut self.rng;
+        let mut map_generator = build_generator(rng, map_area);
 
         let mut new_level;
+        let map = Some(map_generator.generate());
         if !self.levels.is_empty() {
             let player = self.get_level_mut().characters.remove_player();
             new_level = Level {
-                map: Some(map_generator.generate()),
+                map,
                 characters: Characters { characters: vec![player] }
             };
         } else {
             new_level = Level {
-                map: Some(map_generator.generate()),
+                map,
                 characters: Characters { characters: Vec::new() }
             };
         }
