@@ -466,7 +466,7 @@ mod tests {
 
     use crate::character::{build_player, Character};
     use crate::engine::game_engine::*;
-    use crate::map::Map;
+    use crate::map::{Map, Tiles};
     use crate::map::position::{Position};
     use crate::map::position::{Area, build_square_area};
     use crate::map::tile::{build_library, Tile, TileDetails};
@@ -542,7 +542,7 @@ mod tests {
         map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -567,7 +567,7 @@ mod tests {
         map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -593,7 +593,7 @@ mod tests {
         map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -618,7 +618,7 @@ mod tests {
         map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -644,7 +644,7 @@ mod tests {
         map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -669,7 +669,7 @@ mod tests {
         map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -695,7 +695,7 @@ mod tests {
         map_tiles[1] [2] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
             containers: HashMap::new()
         };
@@ -720,7 +720,7 @@ mod tests {
         map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
             containers: HashMap::new()
         };

@@ -404,6 +404,7 @@ mod tests {
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
+    use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::build_ui;
     use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
@@ -441,11 +442,11 @@ mod tests {
 
         let map = crate::map::Map {
             area: map_area,
-            tiles: vec![
-                vec![wall.clone(), wall.clone(), wall.clone()],
-                vec![wall.clone(), rom.clone(), wall.clone()],
-                vec![wall.clone(), wall.clone(), wall.clone()],
-            ],
+            tiles : Tiles { tiles : vec![
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+                vec![ wall.clone(), rom.clone(), wall.clone() ],
+                vec![ wall.clone(), wall.clone(), wall.clone() ],
+            ]},
             rooms: Vec::new(),
             containers: HashMap::new()
         };

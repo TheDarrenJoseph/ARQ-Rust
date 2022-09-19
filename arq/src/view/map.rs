@@ -66,24 +66,28 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         log::info!("Drawing containers...");
         if let Some(view_area) = self.view_area {
             let view_start = view_area.start_position;
-            for (position, container) in &self.map.containers {
-                let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
-                if view_area.contains_position(view_position) {
-                    match container.container_type {
-                        ContainerType::OBJECT => {
-                            self.draw_container(view_position.clone(), container)?;
-                        }
-                        ContainerType::AREA => {
-                            let item_count = container.get_total_count();
-                            log::debug!("[map view] {} has {} items.", container.get_self_item().name, item_count);
-                            if item_count > 0 {
+
+            if self.map.containers.is_empty() {
+                log::error!("No containers exist in this map!");
+            } else {
+                for (position, container) in &self.map.containers {
+                    let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
+                    if view_area.contains_position(view_position) {
+                        match container.container_type {
+                            ContainerType::OBJECT => {
                                 self.draw_container(view_position.clone(), container)?;
                             }
-                        },
-                        _ => {}
+                            ContainerType::AREA => {
+                                let item_count = container.get_total_count();
+                                log::debug!("[map view] {} has {} items.", container.get_self_item().name, item_count);
+                                if item_count > 0 {
+                                    self.draw_container(view_position.clone(), container)?;
+                                }
+                            },
+                            _ => {}
+                        }
                     }
                 }
-
             }
         }
         Ok(())
@@ -92,7 +96,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
     fn draw_cell(&mut self, x: u16, y: u16, cell_x: u16, cell_y: u16) -> Result<(), Error> {
         let view_area = self.view_area.unwrap();
         let backend = self.terminal_manager.terminal.backend_mut();
-        let tiles = &self.map.tiles;
+        let tiles = &self.map.tiles.tiles;
         if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
             let tile_details = &tiles[y as usize][x as usize];
 

@@ -90,5 +90,28 @@ mod tests {
         assert_eq!(Position { x: 1, y: 1}, inside_area.start_position);
         // AND end at 2,2
         assert_eq!(Position { x: 2, y: 2}, inside_area.end_position);
+
+        assert_eq!(4, inside_area.get_total_area());
+    }
+
+    #[test]
+    fn test_get_inside_area_realworld() {
+        // GIVEN a room of 4x4
+        let start_position = Position { x: 2, y: 6};
+        let area = build_square_area(start_position, 6);
+        let doors = Vec::new();
+        let room = Room { area, doors, entry: None, exit: None };
+        assert_eq!(Position { x: 2, y: 6}, room.area.start_position);
+        assert_eq!(Position { x: 7, y: 11}, room.area.end_position);
+
+        // WHEN we call to get the inside area
+        let inside_area = room.get_inside_area();
+
+        // THEN we expect it to start at 1,1
+        assert_eq!(Position { x: 3, y: 7}, inside_area.start_position);
+        // AND end at 2,2
+        assert_eq!(Position { x: 6, y: 10}, inside_area.end_position);
+
+        assert_eq!(16, inside_area.get_total_area());
     }
 }

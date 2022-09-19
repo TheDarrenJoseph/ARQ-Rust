@@ -137,6 +137,8 @@ impl Pathfinding {
                         }
                     }
                 }
+            } else {
+                log::debug!("Position not pave-able: {:?}. Cannot search", current_lowest_score_node.position);
             }
         }
 
@@ -153,6 +155,7 @@ mod tests {
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::Room;
     use crate::map::tile::Tile;
+    use crate::map::Tiles;
 
     fn build_test_map() -> map::Map {
         let tile_library = crate::map::tile::build_library();
@@ -175,12 +178,12 @@ mod tests {
         let map_area = build_square_area(map_pos, 4);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles { tiles: vec![
                 vec![ non.clone(), non.clone(), non.clone(), non.clone(), ],
                 vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
                 vec![ non.clone(), door.clone(), rom.clone(), wall.clone(), ],
                 vec![ non.clone(), wall.clone(), wall.clone(), wall.clone(), ],
-            ], rooms,
+            ]}, rooms,
             containers: HashMap::new()
         };
         map

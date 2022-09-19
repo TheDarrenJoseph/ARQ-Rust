@@ -172,12 +172,9 @@ mod tests {
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
-    
-    
-    
-    
-    
-    
+    use crate::map::Tiles;
+
+
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
@@ -215,11 +212,11 @@ mod tests {
         area_containers.insert(map_pos.clone(), area_container);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles { tiles : vec![
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ],
+            ]},
             rooms: Vec::new(),
             containers: area_containers
         };

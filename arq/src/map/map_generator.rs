@@ -7,7 +7,7 @@ use rand_pcg::Pcg64;
 use uuid::Uuid;
 
 use crate::engine::pathfinding::Pathfinding;
-use crate::map::Map;
+use crate::map::{Map, Tiles};
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
@@ -35,7 +35,7 @@ pub fn build_generator(rng : &mut Pcg64, map_area : Area) -> MapGenerator {
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new(),
         rng,
-        map: Map {area: map_area, tiles: Vec::new(), rooms: Vec::new(), containers: HashMap::new()}}
+        map: Map {area: map_area, tiles: Tiles { tiles: Vec::new() }, rooms: Vec::new(), containers: HashMap::new()}}
 }
 
 pub fn build_dev_inventory() -> Container {
@@ -77,14 +77,15 @@ pub fn build_dev_chest() -> Container {
 fn generate_room_containers(rng: &mut Pcg64, room: Room) -> HashMap<Position, Container> {
     let mut container_map = HashMap::new();
     let inside_area = room.get_inside_area();
-    if inside_area.get_total_area() > 1 {
+    let total_area = inside_area.get_total_area();
+    if total_area > 1 {
         let size_x = inside_area.get_size_x();
         let size_y = inside_area.get_size_y();
         let container_count = rng.gen_range(0..=2);
         for _i in 0..container_count {
-            let random_x: u16 = rng.gen_range(1..=size_x) as u16;
-            let random_y: u16 = rng.gen_range(1..=size_y) as u16;
-            let container_position = Position { x: room.area.start_position.x.clone() + random_x, y: room.area.start_position.y.clone() + random_y };
+            let random_x: u16 = rng.gen_range(0..size_x) as u16;
+            let random_y: u16 = rng.gen_range(0..size_y) as u16;
+            let container_position = Position { x: inside_area.start_position.x.clone() + random_x, y: inside_area.start_position.y.clone() + random_y };
             container_map.insert(container_position, build_dev_chest());
         }
     }
@@ -94,12 +95,8 @@ fn generate_room_containers(rng: &mut Pcg64, room: Room) -> HashMap<Position, Co
 
 impl MapGenerator<'_> {
 
-    pub fn generate(&mut self) -> Map {
-        log::info!("Generating map...");
-        self.build_map();
-        log::info!("Pathfinding...");
-        self.path_rooms();
-
+    // Need to run after tile additions
+    pub fn add_containers(&mut self) {
         let mut area_container_count = 0;
         let area_containers = self.build_area_containers();
         for pos_container in area_containers {
@@ -111,26 +108,39 @@ impl MapGenerator<'_> {
         log::info!("Added {} general area containers to the map.", area_container_count);
 
         let mut room_container_count = 0;
-        let rooms =  &mut self.map.rooms;
+
+        let rooms = &mut self.map.rooms;
         for room in rooms.iter_mut() {
             let room_containers = generate_room_containers(&mut self.rng, room.clone());
-            log::info!("Added {} containers into room general area containers.", room_container_count);
-
-            for pos_container in room_containers {
+            for pos_container in &room_containers {
                 let mut pos = pos_container.0.clone();
                 let container = pos_container.1.clone();
-                if let Some(c) = self.map.containers.get_mut(&mut pos) {
-                    c.add(container);
-                    room_container_count += 1;
+                let tile_type = self.map.tiles.get_tile(pos).unwrap().tile_type;
+                if tile_type == Tile::Room {
+                    if let Some(c) = self.map.containers.get_mut(&mut pos) {
+                        c.add(container);
+                        room_container_count += 1;
+                    }
                 }
             }
+            log::info!("Added {} containers into a room.", &room_containers.len());
         }
+        log::info!("Added {} containers to rooms.", room_container_count);
+    }
+
+    pub fn generate(&mut self) -> Map {
+        log::info!("Generating map...");
+        self.build_map();
         self.add_entry_and_exit();
 
         log::info!("Applying rooms...");
         self.add_rooms_to_map();
 
-        log::info!("Added {} containers to rooms.", room_container_count);
+        self.add_containers();
+
+        log::info!("Pathfinding...");
+        self.path_rooms();
+
         log::info!("Map generated!");
         return self.map.clone();
     }
@@ -181,13 +191,17 @@ impl MapGenerator<'_> {
 
                 let mut pathfinding = Pathfinding::build(door1_position);
                 let path = pathfinding.a_star_search(&self.map, door2_position);
-                for position in path {
-                    let tile_type = self.map.get_tile(position).unwrap().tile_type;
-                    if tile_type != Tile::Door {
-                        log::info!("Adding corridor tile at: {:?}", position);
-                        self.map.set_tile(position, corridor_tile.clone());
-                    } else {
-                        log::info!("Can't add corridor here. Tile is a door.");
+                if path.is_empty() {
+                    log::error!("Failed to build a path..")
+                } else {
+                    for position in path {
+                        let tile_type = self.map.tiles.get_tile(position).unwrap().tile_type;
+                        if tile_type == Tile::NoTile {
+                            log::debug!("Adding corridor tile at: {:?}", position);
+                            self.map.tiles.set_tile(position, corridor_tile.clone());
+                        } else {
+                            log::debug!("Can't add corridor here. Tile is: {:?}", tile_type);
+                        }
                     }
                 }
             }
@@ -277,7 +291,6 @@ impl MapGenerator<'_> {
 
         let mut doors = Vec::new();
 
-        let door_count = 2;
         let door_count = self.rng.gen_range(1..=self.max_door_count);
         let map_area = self.map_area.clone();
         let map_sides = map_area.get_sides();
@@ -292,14 +305,17 @@ impl MapGenerator<'_> {
                 let door_position = area_side.get_mid_point();
 
                 // Don't allow doors at the edges of the map
+                let mut valid_pos = true;
                 for map_side in &map_sides {
                     if map_side.area.contains_position(door_position) {
-                        continue;
+                        valid_pos = false;
                     }
                 }
 
-                let door = build_door(door_position);
-                doors.push(door);
+                if valid_pos {
+                    let door = build_door(door_position);
+                    doors.push(door);
+                }
             }
         }
         room.doors = doors;
@@ -406,7 +422,7 @@ impl MapGenerator<'_> {
         for y in self.map_area.start_position.y..=self.map_area.end_position.y {
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
                 let position = Position { x, y };
-                match self.map.get_tile(position) {
+                match self.map.tiles.get_tile(position) {
                     Some(td) => {
                         if td.tile_type != NoTile {
                             log::debug!("New AREA container at: {}, {}", x,y);
@@ -431,33 +447,33 @@ impl MapGenerator<'_> {
         let inside_area = room.get_inside_area();
         let mut inside_positions = inside_area.get_positions().clone();
         if let Some(entry_pos) = room.entry {
-            self.map.set_tile(entry_pos, entry_tile.clone());
+            self.map.tiles.set_tile(entry_pos, entry_tile.clone());
             if let Some(idx) = inside_positions.iter().position(|p| p == &entry_pos) {
                 inside_positions.remove(idx);
             }
         }
         if let Some(exit_pos) = room.exit {
-            self.map.set_tile(exit_pos, exit_tile.clone());
+            self.map.tiles.set_tile(exit_pos, exit_tile.clone());
             if let Some(idx) = inside_positions.iter().position(|p| p == &exit_pos) {
                 inside_positions.remove(idx);
             }
         }
         for position in inside_positions {
-            self.map.set_tile(position, room_tile.clone());
+            self.map.tiles.set_tile(position, room_tile.clone());
         }
 
         let sides = room.get_sides();
         for side in sides {
             let side_positions = side.area.get_positions();
             for position in side_positions {
-                self.map.set_tile(position, wall_tile.clone());
+                self.map.tiles.set_tile(position, wall_tile.clone());
             }
         }
 
         let doors = &room.doors;
         for door in doors {
             let position = door.position;
-            self.map.set_tile(position, door.tile_details.clone());
+            self.map.tiles.set_tile(position, door.tile_details.clone());
         }
     }
 
@@ -469,17 +485,17 @@ impl MapGenerator<'_> {
     }
 
     fn build_map(&mut self) -> Map {
-        log::info!("Generating rooms..");
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
         let map = crate::map::Map {
             area: map_area,
-            tiles : map_tiles,
+            tiles : Tiles { tiles : map_tiles},
             rooms: Vec::new(),
             containers: HashMap::new()
         };
         self.map = map;
+        log::info!("Generating rooms..");
         let rooms = self.generate_rooms();
         self.map.rooms = rooms;
         return self.map.clone();
@@ -592,7 +608,7 @@ mod tests {
         assert_eq!(11, area.end_position.x);
         assert_eq!(11, area.end_position.y);
 
-        let tiles = map.tiles;
+        let tiles = map.tiles.tiles;
         assert_eq!(12, tiles.len());
         for row in &tiles {
             assert_eq!(12, row.len());
@@ -612,8 +628,8 @@ mod tests {
             "            ".to_string(),
             "       #####".to_string(),
             "       #---#".to_string(),
-            " ##### =-^-#".to_string(),
-            " #---# #---#".to_string(),
+            " #####-=-^-#".to_string(),
+            " #---#-#---#".to_string(),
             " #---=-#####".to_string(),
             " #--^#      ".to_string(),
             " #####      ".to_string(),

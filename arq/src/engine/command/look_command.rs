@@ -127,7 +127,8 @@ mod tests {
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::Room;
     use crate::map::tile::Tile;
-    
+    use crate::map::Tiles;
+
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();
@@ -140,11 +141,11 @@ mod tests {
         area_containers.insert(container_position.clone(), area_container);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles { tiles : vec![
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ],
+            ]},
             rooms: Vec::new(),
             containers: area_containers
         };

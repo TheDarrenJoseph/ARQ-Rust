@@ -15,23 +15,18 @@ pub mod tile;
 #[derive(Clone)]
 pub struct Map {
     pub area : Area,
-    pub tiles : Vec<Vec<TileDetails>>,
+    pub tiles : Tiles,
     pub rooms : Vec<Room>,
     // For containers not belonging to a room (loot containers for example)
     pub containers : HashMap<Position, Container>
 }
 
-impl Map {
+#[derive(Clone)]
+pub struct Tiles {
+    pub tiles : Vec<Vec<TileDetails>>
+}
 
-    pub fn in_bounds(&self, x: usize, y: usize) -> bool {
-        if let Some(row) = self.tiles.get(y) {
-            if let Some(_) = row.get(x) {
-                return true
-            }
-        }
-        false
-    }
-
+impl Tiles {
     pub fn get_tile(&self, position: Position) -> Option<TileDetails> {
         match self.tiles.get(position.y as usize) {
             Some (row) => {
@@ -54,6 +49,19 @@ impl Map {
         let x = position.x as usize;
         let y = position.y as usize;
         self.tiles[y][x] = tile
+    }
+
+}
+
+impl Map {
+
+    pub fn in_bounds(&self, x: usize, y: usize) -> bool {
+        if let Some(row) = self.tiles.tiles.get(y) {
+            if let Some(_) = row.get(x) {
+                return true
+            }
+        }
+        false
     }
 
     pub fn get_rooms(&self) -> Vec<Room> {
@@ -104,7 +112,7 @@ impl Map {
     }
 
     pub fn is_paveable(&self, position: Position) -> bool {
-        match self.get_tile(position) {
+        match self.tiles.get_tile(position) {
             Some(tile) => {
                 // All traversable tile types are paveable, including NoTile
                 if tile.tile_type == Tile::NoTile {
@@ -119,7 +127,7 @@ impl Map {
     }
 
     pub fn is_traversable(&self, position: Position) -> bool {
-        match self.get_tile(position) {
+        match self.tiles.get_tile(position) {
             Some(tile) => {
                 tile.traversable
             }, None => {
@@ -152,6 +160,7 @@ mod tests {
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::Room;
     use crate::map::tile::Tile;
+    use crate::map::Tiles;
 
     #[test]
     fn test_build_map() {
@@ -173,19 +182,19 @@ mod tests {
         let map_area = build_square_area(map_pos, 3);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles {tiles: vec![
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-        ],
+        ]},
             rooms,
             containers: HashMap::new()
         };
 
-        assert_eq!(3, map.tiles.len());
-        assert_eq!(3, map.tiles[0].len());
-        assert_eq!(3, map.tiles[1].len());
-        assert_eq!(3, map.tiles[2].len());
+        assert_eq!(3, map.tiles.tiles.len());
+        assert_eq!(3, map.tiles.tiles[0].len());
+        assert_eq!(3, map.tiles.tiles[1].len());
+        assert_eq!(3, map.tiles.tiles[2].len());
 
     }
 
@@ -208,28 +217,28 @@ mod tests {
         let map_area = build_square_area(map_pos, 3);
         let mut map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles {tiles: vec![
                 vec![ wall.clone(),  wall.clone(),  wall.clone()],
-            ],
+            ]},
             rooms,
             containers: HashMap::new()
         };
 
-        assert_eq!(1, map.tiles.len());
+        assert_eq!(1, map.tiles.tiles.len());
 
         // WHEN we push an item to the first row
-        map.tiles[0].push(wall.clone());
+        map.tiles.tiles[0].push(wall.clone());
         // THEN we expect it to go from 3 to 4 items long
-        assert_eq!(4, map.tiles[0].len());
+        assert_eq!(4, map.tiles.tiles[0].len());
 
         // THEN we expect it to be available at 0,1
-        assert_eq!(crate::map::tile::Tile::Wall, map.tiles[0][1].tile_type);
+        assert_eq!(crate::map::tile::Tile::Wall, map.tiles.tiles[0][1].tile_type);
 
         // AND WHEN we push an new row to the map
-        map.tiles.push(vec![wall.clone()]);
+        map.tiles.tiles.push(vec![wall.clone()]);
         // THEN we expect the length to increase
-        assert_eq!(1, map.tiles[1].len());
+        assert_eq!(1, map.tiles.tiles[1].len());
         // AND the new tile to be available at 1,0
-        assert_eq!(crate::map::tile::Tile::Wall, map.tiles[1][0].tile_type);
+        assert_eq!(crate::map::tile::Tile::Wall, map.tiles.tiles[1][0].tile_type);
     }
 }

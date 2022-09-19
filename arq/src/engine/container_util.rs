@@ -272,6 +272,7 @@ mod tests {
     
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Tile};
+    use crate::map::Tiles;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MoveItems;
     use crate::view::framehandler::container::MoveItemsData;
 
@@ -286,11 +287,11 @@ mod tests {
         area_containers.insert(container_position.clone(), area_container);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles { tiles : vec![
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ],
+            ]},
             rooms: Vec::new(),
             containers: area_containers
         };
@@ -307,11 +308,11 @@ mod tests {
         let map_area = build_square_area(map_pos, 3);
         let map = crate::map::Map {
             area: map_area,
-            tiles : vec![
+            tiles : Tiles { tiles : vec![
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
                 vec![ wall.clone(), rom.clone(), wall.clone() ],
                 vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ],
+            ]},
             rooms: Vec::new(),
             containers: HashMap::new()
         };
