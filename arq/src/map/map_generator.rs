@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use rand::distributions::Standard;
 use rand::Rng;
 
 
@@ -248,7 +249,7 @@ impl MapGenerator<'_> {
                 let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
                 match container_type {
                     // Area containers (Floor) should be fine
-                    _AREA => {},
+                    _area => {},
                     _ => {
                         log::info!("Potential Exit point has a container in the way..");
                         continue;
@@ -275,12 +276,14 @@ impl MapGenerator<'_> {
         let room_sides = room.get_sides();
 
         let mut doors = Vec::new();
+
+        let door_count = 2;
         let door_count = self.rng.gen_range(1..=self.max_door_count);
         let map_area = self.map_area.clone();
         let map_sides = map_area.get_sides();
 
         for _x in 0..door_count {
-            let side : Side = rand::random();
+            let side : Side =  self.rng.sample(Standard);
             if !chosen_sides.contains(&side) {
                 chosen_sides.push(side);
 
@@ -486,8 +489,17 @@ impl MapGenerator<'_> {
 #[cfg(test)]
 mod tests {
     use rand_seeder::Seeder;
+    use crate::map::Map;
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Position};
+
+    fn build_test_map() -> Map {
+        let map_size = 12;
+        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
+        let rng = &mut Seeder::from("test".to_string()).make_rng();
+        let mut generator = build_generator(rng, map_area);
+        generator.generate()
+    }
 
     #[test]
     fn test_build_generator() {
@@ -536,13 +548,23 @@ mod tests {
         }
     }
 
+    fn assert_string_vecs(expected: Vec<String>, actual: Vec<String>) {
+        let mut expected_full = String::from("");
+        for line in &expected {
+            expected_full = format!("{}\n{}", expected_full, line);
+        }
+
+        let mut actual_full = String::from("");
+        for line in &actual {
+            actual_full = format!("{}\n{}", actual_full, line);
+        }
+
+        assert_eq!(actual_full, expected_full);
+    }
+
     #[test]
     fn test_generate() {
-        let map_size = 12;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng = &mut Seeder::from("test".to_string()).make_rng();
-        let mut generator = build_generator(rng, map_area);
-        let map = generator.generate();
+        let map = build_test_map();
 
         let area = map.area;
         assert_eq!(0, area.start_position.x);
@@ -552,7 +574,7 @@ mod tests {
 
         let tiles = map.tiles;
         assert_eq!(12, tiles.len());
-        for row in tiles {
+        for row in &tiles {
             assert_eq!(12, row.len());
         }
 
@@ -565,5 +587,38 @@ mod tests {
             let end_pos = area.end_position;
             assert!(end_pos.x <= 12 && end_pos.y < 12, "Expected room end position < 12 for x,y, but was: {}, {}", end_pos.x, end_pos.y);
         }
+
+        let expected_tiles : Vec<String>  = vec![
+            "            ".to_string(),
+            "       #####".to_string(),
+            "       #---#".to_string(),
+            " ##### =-^-#".to_string(),
+            " #---# #---#".to_string(),
+            " #---=-#####".to_string(),
+            " #--^#      ".to_string(),
+            " #####      ".to_string(),
+            "            ".to_string(),
+            "            ".to_string(),
+            "            ".to_string(),
+            "            ".to_string()
+        ];
+
+        let mut actual_tiles : Vec<String> = Vec::new();
+        for i in 0..expected_tiles.len() {
+            actual_tiles.push("".to_string())
+        }
+
+        let mut x_idx = 0;
+        let mut y_idx = 0;
+        for row in &tiles {
+            let mut row_text = actual_tiles.get_mut(x_idx).unwrap().clone();
+            for tile in row {
+                actual_tiles[x_idx].push(tile.symbol);
+                y_idx += 1;
+            }
+            x_idx += 1;
+        }
+
+        assert_string_vecs(expected_tiles, actual_tiles);
     }
 }

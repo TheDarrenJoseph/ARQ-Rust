@@ -1,5 +1,6 @@
 use std::io;
 use rand_pcg::Pcg64;
+use rand_seeder::Seeder;
 
 use termion::event::Key;
 
@@ -7,7 +8,7 @@ use crate::character::Character;
 use crate::engine::command::input_mapping;
 use crate::map::Map;
 use crate::map::map_generator::build_generator;
-use crate::map::position::{build_rectangular_area, Position, Side};
+use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
 
 #[derive(Default, Clone)]
 pub struct Level {

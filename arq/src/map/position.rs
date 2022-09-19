@@ -185,7 +185,7 @@ pub enum Side {
 
 impl Distribution<Side> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Side {
-        match rng.gen_range(0..8) {
+        match rng.gen_range(0..=3) {
             0 => Side::LEFT,
             1 => Side::RIGHT,
             2 => Side::TOP,
