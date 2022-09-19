@@ -1,7 +1,7 @@
 use tui::layout::{Alignment};
 use tui::style::Style;
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
+use tui::widgets::{Block, Borders, Paragraph, Wrap};
 
 #[derive(Clone)]
 pub struct Column {
@@ -47,7 +47,7 @@ pub fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
 fn test_build_headings() {
     use tui::buffer::{Buffer, Cell};
     use tui::layout::{Rect};
-    use tui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
+    use tui::widgets::{Widget};
 
     // GIVEN a view with a series of columns configured
     let columns = vec![
