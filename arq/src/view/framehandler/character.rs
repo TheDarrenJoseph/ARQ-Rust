@@ -148,10 +148,10 @@ impl CharacterFrameHandler {
             .borders(Borders::ALL)
             .title("Attributes");
         let all_attributes = get_all_attributes();
-        let mut attribute_start = (self.widgets.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
+        let mut _attribute_start = (self.widgets.widgets.len() as u16 - 1) - (all_attributes.len() as u16 - 1);
         // To account for the enter button
         if self.view_mode == ViewMode::CREATION {
-            attribute_start -= 1;
+            _attribute_start -= 1;
         }
         let attributes_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
         frame.render_widget(attributes_block, attributes_area);
@@ -313,13 +313,13 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                                                 return Ok(InputResult {
                                                     generic_input_result: GenericInputResult { done, requires_view_refresh: true },
                                                     view_specific_result: Some(NONE)
-                                                });;
+                                                });
                                             },
                                             other => {
                                                 return Ok(InputResult {
                                                     generic_input_result: GenericInputResult { done, requires_view_refresh: true },
                                                     view_specific_result: Some(other)
-                                                });;
+                                                });
                                             }
                                         }
                                     },

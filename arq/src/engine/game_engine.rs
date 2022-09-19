@@ -60,9 +60,9 @@ impl <B : Backend> UIWrapper<B> {
         Ok(())
     }
 
-    fn print_and_re_render(&mut self, message: String) {
+    fn print_and_re_render(&mut self, message: String) -> Result<(), io::Error> {
         self.ui.console_print(message);
-        self.re_render();
+        self.re_render()
     }
 
     fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
@@ -94,7 +94,7 @@ impl <B : Backend> UIWrapper<B> {
                 main_area.height -= 2;
                 ui.render(frame);
                 character_view.handle_frame(frame, FrameData { data: base_character.clone(), frame_size: main_area });
-            });
+            })?;
             ui.hide_console();
 
             let key = io::stdin().keys().next().unwrap().unwrap();
@@ -103,7 +103,7 @@ impl <B : Backend> UIWrapper<B> {
             match character_creation_result.view_specific_result {
                 Some(VALIDATION(message)) => {
                     self.ui.console_print(message);
-                    self.re_render();
+                    self.re_render()?;
                 },
                 Some(CharacterFrameHandlerInputResult::NONE) => {
                     return Ok(character_view.get_character())
@@ -129,7 +129,7 @@ impl <B : Backend> UIWrapper<B> {
                     map_view.draw_containers()?;
                     map_view.draw_characters()?;
                     self.ui.console_print("Arrow keys to move.".to_string());
-                    self.re_render();
+                    self.re_render()?;
                 }
             },
             None => {}
@@ -192,7 +192,7 @@ impl <B : Backend> GameEngine<B> {
             if last_selection != selection {
                 log::info!("Selection changed to: {}", selection);
                 let _ui = &mut self.ui_wrapper.ui;
-                self.ui_wrapper.draw_start_menu();
+                self.ui_wrapper.draw_start_menu()?;
             }
 
             if self.ui_wrapper.ui.start_menu.exit {
@@ -239,7 +239,7 @@ impl <B : Backend> GameEngine<B> {
                         widgets: WidgetList { widgets, selected_widget: Some(0) }
                     };
 
-                    settings_menu.begin();
+                    settings_menu.begin()?;
                     let widgets = settings_menu.widgets;
 
                     self.handle_settings_menu_selection(widgets)?;
@@ -247,7 +247,7 @@ impl <B : Backend> GameEngine<B> {
                 StartMenuChoice::Info => {
                     log::info!("Showing info..");
                     let _ui = &mut self.ui_wrapper.ui;
-                    self.ui_wrapper.draw_info();
+                    self.ui_wrapper.draw_info()?;
                     io::stdin().keys().next();
                 },
                 StartMenuChoice::Quit => {
@@ -302,7 +302,7 @@ impl <B : Backend> GameEngine<B> {
 
     fn start_game(&mut self) -> Result<(), io::Error>{
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
-        self.ui_wrapper.print_and_re_render("Generating a new level..".to_string());
+        self.ui_wrapper.print_and_re_render("Generating a new level..".to_string())?;
         self.levels.generate_level();
         self.initialise_characters()?;
 
@@ -336,7 +336,7 @@ impl <B : Backend> GameEngine<B> {
         self.levels.get_level_mut().characters.characters[0].set_inventory(build_dev_inventory());
     }
 
-    fn handle_player_movement(&mut self, side: Side) {
+    fn handle_player_movement(&mut self, side: Side) -> Result<(), io::Error> {
         let levels = &mut self.levels;
         let level = levels.get_level_mut();
         let updated_position = level.find_player_side_position(side).clone();
@@ -353,11 +353,11 @@ impl <B : Backend> GameEngine<B> {
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
                         if pos.equals_option(room.exit) {
-                            self.ui_wrapper.print_and_re_render("You've reached the exit! You move down a level..".to_string());
+                            self.ui_wrapper.print_and_re_render("You've reached the exit! You move down a level..".to_string())?;
                             io::stdin().keys().next().unwrap().unwrap();
                             level_change = LevelChange::DOWN;
                         } else if pos.equals_option(room.entry) {
-                            self.ui_wrapper.print_and_re_render("You've reached the entry! You move up a level..".to_string());
+                            self.ui_wrapper.print_and_re_render("You've reached the entry! You move up a level..".to_string())?;
                             io::stdin().keys().next().unwrap().unwrap();
                             level_change = LevelChange::UP;
                         }
@@ -376,14 +376,15 @@ impl <B : Backend> GameEngine<B> {
             },
             None => {}
         }
+        Ok(())
     }
 
     pub fn menu_command(&mut self) -> Result<(), io::Error> {
-        self.ui_wrapper.clear_console();
+        self.ui_wrapper.clear_console()?;
         self.ui_wrapper.ui.hide_console();
         self.start_menu()?;
         self.ui_wrapper.ui.show_console();
-        self.ui_wrapper.clear_console();
+        self.ui_wrapper.clear_console()?;
         Ok(())
     }
 
@@ -391,24 +392,24 @@ impl <B : Backend> GameEngine<B> {
         let level = self.levels.get_level_mut();
         match key {
             Key::Char('q') => {
-                self.menu_command();
+                self.menu_command()?;
             },
             Key::Char('i') => {
                 let mut command = InventoryCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
-                command.handle(key);
+                command.handle(key)?;
             },
             Key::Char('k') => {
                 let mut command = LookCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
-                command.handle(key);
+                command.handle(key)?;
             },
             Key::Char('o') => {
-                self.ui_wrapper.print_and_re_render("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+                self.ui_wrapper.print_and_re_render("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string())?;
                 let mut command = OpenCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
-                command.handle(key);
+                command.handle(key)?;
             },
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = input_mapping::key_to_side(key) {
-                    self.handle_player_movement(side);
+                    self.handle_player_movement(side)?;
                 }
             },
             _ => {}
@@ -419,7 +420,7 @@ impl <B : Backend> GameEngine<B> {
     fn game_loop(&mut self) -> Result<(), io::Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         //self.terminal_manager.terminal.clear()?;
-        self.handle_input(key);
+        self.handle_input(key)?;
         //self.terminal_manager.terminal.clear()?;
         Ok(())
     }
@@ -461,41 +462,16 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    
-    
-
     use termion::event::Key;
-    
-    
-    
-    
 
     use crate::character::{build_player, Character};
     use crate::engine::game_engine::*;
-    
     use crate::map::Map;
-    
-    
-    
-    
     use crate::map::position::{Position};
     use crate::map::position::{Area, build_square_area};
-    
     use crate::map::tile::{build_library, Tile, TileDetails};
-    
-    use crate::menu::Selection;
-    
-    
     use crate::terminal::terminal_manager;
-    
-    
-    
-    
-    
-    
-    
     use crate::view::View;
-    
 
     fn build_tiles(map_area: Area, tile : Tile) -> Vec<Vec<TileDetails>> {
         let tile_library = build_library();
@@ -536,7 +512,7 @@ mod tests {
 
                 // WHEN we push the down key
                 for key in input {
-                    engine.handle_input(key);
+                    engine.handle_input(key).unwrap();
                 }
 
                 // THEN we expect the player to be moved into the traversable tile

@@ -37,7 +37,7 @@ impl StatefulWidget for BooleanState {
         };
 
         let text = format!("{} {}", self.name.clone(), value);
-        if self.selected {;
+        if self.selected {
             buf.set_string(area.left(), area.top(), text , Style::default().fg(Color::Red));
         } else {
             buf.set_string(area.left(), area.top(), text, Style::default());

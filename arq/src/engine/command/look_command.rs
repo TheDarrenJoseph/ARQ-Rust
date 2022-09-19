@@ -265,7 +265,7 @@ mod tests {
         let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
         let gold_bar =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
         let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
-        let silver_bar =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);;
+        let silver_bar =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
 
         container.push(vec![bag, gold_bar, box1, silver_bar]);
         assert_eq!(4, container.get_total_count());
