@@ -1,10 +1,10 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Color, Style};
 use tui::widgets::StatefulWidget;
 
 use crate::widget::{Widget, WidgetType};
-use crate::widget::button_widget::ButtonState;
+
 
 #[derive(Clone)]
 #[derive(Debug)]

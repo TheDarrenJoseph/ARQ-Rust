@@ -3,15 +3,15 @@ use std::io::Error;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Paragraph};
+use tui::widgets::{Block, Borders};
 use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
-use crate::map::objects::items::Item;
+
 use crate::ui::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
-use crate::view::framehandler::container::MoveItemsData;
+
 
 #[derive(Clone)]
 pub struct ContainerChoiceFrameHandler {
@@ -88,7 +88,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerCh
 
         // -3 for the heading and 2  borders
         let mut line_index = 0;
-        let start_index= self.item_list_selection.get_start_index();
+        let _start_index= self.item_list_selection.get_start_index();
         let start_index = 0;
         let end_of_page_representive_index = self.item_list_selection.get_end_of_page_index();
 

@@ -109,7 +109,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
                     ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
                         let container_views = &mut self.frame_handlers.container_frame_handlers;
                         if let Some(topmost_view) = container_views.last_mut() {
-                            let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
+                            let view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
                             match view_specific_result {
                                 ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
                                     // Add the target selected to the callback data
@@ -268,7 +268,7 @@ impl WorldContainerViewFrameHandlers {
             for c in &choices {
                 items.push(c.get_self_item().clone());
             }
-            let mut cfh = build(choices);
+            let cfh = build(choices);
 
             self.choice_frame_handler = Some(cfh);
         }

@@ -72,7 +72,7 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
 }
 
 fn find_container_mut(root : &mut Container, target: Item) -> Option<&mut Container> {
-    let mut target_result: Option<&mut Container> = None;
+    let _target_result: Option<&mut Container> = None;
     let root_name = root.get_self_item().get_name().clone();
     if root.get_self_item().id_equals(&target) {
         return Some(root);
@@ -84,9 +84,9 @@ fn find_container_mut(root : &mut Container, target: Item) -> Option<&mut Contai
     }
 }
 
-fn move_to_container(root : &mut Container, source : Item, mut data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
-    let from_container_name = source.get_name();
-    let from_container_id = source.get_id();
+fn move_to_container(root : &mut Container, source : Item, data: MoveItemsData) -> Option<ContainerFrameHandlerInputResult> {
+    let _from_container_name = source.get_name();
+    let _from_container_id = source.get_id();
     let target_result =  data.target_container.map_or_else(|| { None }, |t| { find_container_mut(root, t.get_self_item().clone()) });
         if let Some(target) = target_result {
             let add_result = add_to_target(data.source, target, data.to_move.clone());
@@ -99,7 +99,7 @@ fn move_to_container(root : &mut Container, source : Item, mut data: MoveItemsDa
                     source_container.remove_matching_items(moved.clone());
                     // If the target contains our source, we need to replace the source there too
                     if let Some(ut) = &mut updated_target {
-                        if let Some(mut found) = ut.find_mut(source_container.get_self_item()) {
+                        if let Some(found) = ut.find_mut(source_container.get_self_item()) {
                            found.remove_matching_items(moved);
                         }
                     }
@@ -195,8 +195,8 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
                 let source_item ;
                 let mut pos_containers = map.find_containers_mut(pos);
 
-                if (pos_containers.len() > 0) {
-                    let mut root_container = pos_containers.get(0).unwrap();
+                if pos_containers.len() > 0 {
+                    let root_container = pos_containers.get(0).unwrap();
                     // Is it the first / root container at this position?
                     let source_is_root = root_container.id_equals(&data.source);
                     let target_root = data.target_container.as_ref().map_or_else(|| false, |c| root_container.id_equals(&c));

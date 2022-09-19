@@ -1,11 +1,11 @@
 use std::collections::HashSet;
-use std::convert::TryInto;
-use std::io;
+
+
 use std::io::Error;
 use std::slice::Iter;
 
 use termion::event::Key;
-use termion::input::TermRead;
+
 use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::symbols::line::VERTICAL;
@@ -21,7 +21,7 @@ use crate::view::{GenericInputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
@@ -117,7 +117,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                         for c in &choices {
                             items.push(c.get_self_item().clone());
                         }
-                        let mut cfh = build(choices);
+                        let cfh = build(choices);
                         self.frame_handler.choice_frame_handler = Some(cfh);
                     }
                 },
@@ -182,7 +182,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                     ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
                         let container_views = &mut self.frame_handler.container_frame_handlers;
                         if let Some(topmost_view) = container_views.last_mut() {
-                            let mut view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
+                            let view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
                             match view_specific_result {
                                 ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
                                     // Add the target selected to the callback data
@@ -326,7 +326,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                         }
 
                         // Finally trigger passthrough to standard container views
-                        if let Ok((gir_result, success)) = self.handle_container_view_input(key) {
+                        if let Ok((gir_result, _success)) = self.handle_container_view_input(key) {
                             // Rewrap this only if something was returned
                             if let Some(gir) = gir_result {
                                 generic_input_result = Some(gir);

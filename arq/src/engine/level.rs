@@ -1,6 +1,6 @@
 use std::io;
 use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
+
 use termion::event::Key;
 
 use crate::character::Character;
@@ -54,7 +54,7 @@ impl Levels {
         let rng = &mut self.rng;
         let mut map_generator = build_generator(rng, map_area);
 
-        let mut new_level;
+        let new_level;
         let map = Some(map_generator.generate());
         if !self.levels.is_empty() {
             let player = self.get_level_mut().characters.remove_player();

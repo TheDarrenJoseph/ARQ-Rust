@@ -26,7 +26,7 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-fn handle_callback(level : &mut Level, position: Position, mut data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback(level : &mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let mut input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TakeItems(mut data) => {
@@ -40,7 +40,7 @@ fn handle_callback(level : &mut Level, position: Position, mut data : ContainerF
             return container_util::move_items(data, level);
         },
         MoveToContainerChoice(ref mut data) => {
-            if let Some(target) = &data.target_container {
+            if let Some(_target) = &data.target_container {
                 // Translate to the typical moving data
                 let move_data = MoveItemsData {
                     source: data.source.clone(),

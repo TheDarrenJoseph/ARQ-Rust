@@ -9,7 +9,7 @@ use crate::{menu, ui};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::menu::{Menu, ToList};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
-use crate::view::settings_menu::SettingsMenu;
+
 use crate::widget::{Widget, WidgetType};
 
 pub struct UI {

@@ -3,10 +3,10 @@ use std::convert::TryInto;
 use std::io::Error;
 
 use termion::event::Key;
-use tui::layout::{Alignment, Rect};
+use tui::layout::{Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
+
+use tui::widgets::{Block, Borders};
 
 use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -15,9 +15,9 @@ use crate::map::position::Position;
 use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
-use crate::view::framehandler::container_choice::build;
+
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
-use crate::view::framehandler::util::tabling::{build_headings, build_padding, build_paragraph, Column};
+use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {

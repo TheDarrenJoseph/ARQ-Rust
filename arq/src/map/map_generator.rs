@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use rand::Rng;
 
-use rand_seeder::{Seeder};
+
 use rand_pcg::Pcg64;
 use uuid::Uuid;
 
@@ -73,7 +73,7 @@ pub fn build_dev_chest() -> Container {
     return container;
 }
 
-fn generate_room_containers(mut rng: &mut Pcg64, room: Room) -> HashMap<Position, Container> {
+fn generate_room_containers(rng: &mut Pcg64, room: Room) -> HashMap<Position, Container> {
     let mut container_map = HashMap::new();
     let inside_area = room.get_inside_area();
     if inside_area.get_total_area() > 1 {
@@ -103,7 +103,7 @@ impl MapGenerator<'_> {
         let area_containers = self.build_area_containers();
         for pos_container in area_containers {
             let pos = pos_container.0.clone();
-            let mut container = pos_container.1.clone();
+            let container = pos_container.1.clone();
             self.map.containers.insert( pos, container);
             area_container_count += 1;
         }
@@ -142,7 +142,7 @@ impl MapGenerator<'_> {
         let mut entry_idx : usize = 0;
         while updated_entry_room.is_none() {
             entry_idx = self.rng.gen_range(0..rooms_len) as usize;
-            let mut entry_room = rooms.get(entry_idx).unwrap().clone();
+            let entry_room = rooms.get(entry_idx).unwrap().clone();
             log::info!("Adding entry..");
             updated_entry_room = self.add_entry(entry_room);
         }
@@ -153,7 +153,7 @@ impl MapGenerator<'_> {
         let mut exit_idx : usize = 0;
         while updated_exit_room.is_none() {
             exit_idx = self.rng.gen_range(0..rooms_len) as usize;
-            let mut exit_room = rooms.get(exit_idx).unwrap().clone();
+            let exit_room = rooms.get(exit_idx).unwrap().clone();
             log::info!("Adding exit..");
             updated_exit_room = self.add_exit(exit_room);
         }
@@ -211,7 +211,7 @@ impl MapGenerator<'_> {
                 let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
                 match container_type {
                     // Area containers (Floor) should be fine
-                    AREA => {},
+                    _AREA => {},
                     _ => {
                         log::info!("Potential Exit point has a container in the way..");
                         continue;
@@ -248,7 +248,7 @@ impl MapGenerator<'_> {
                 let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
                 match container_type {
                     // Area containers (Floor) should be fine
-                    AREA => {},
+                    _AREA => {},
                     _ => {
                         log::info!("Potential Exit point has a container in the way..");
                         continue;
@@ -470,7 +470,7 @@ impl MapGenerator<'_> {
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
-        let mut map = crate::map::Map {
+        let map = crate::map::Map {
             area: map_area,
             tiles : map_tiles,
             rooms: Vec::new(),

@@ -1,5 +1,5 @@
 use std::io;
-use std::io::{Error, ErrorKind};
+use std::io::{Error};
 
 use termion::event::Key;
 
@@ -10,12 +10,12 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::ui::{FrameData, FrameHandler};
+
 use crate::view::callback::Callback;
 use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, MoveItems, MoveToContainerChoice};
-use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler};
+
 use crate::view::View;
 
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
@@ -77,7 +77,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
             return container_util::move_player_items(data, state.level);
         },
         MoveToContainerChoice(ref data) => {
-            return if let Some(target) = &data.target_container {
+            return if let Some(_target) = &data.target_container {
                 // Translate to the typical moving data
                 let move_data = MoveItemsData {
                     source: data.source.clone(),

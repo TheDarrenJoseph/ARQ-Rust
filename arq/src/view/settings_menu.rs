@@ -6,7 +6,7 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::UI;
 use crate::view::{GenericInputResult, resolve_input, View};
-use crate::widget::{Focusable, Widget, WidgetType};
+use crate::widget::{Focusable, WidgetType};
 use crate::widget::widgets::WidgetList;
 
 pub struct SettingsMenu<'a, B : tui::backend::Backend> {

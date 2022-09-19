@@ -7,8 +7,8 @@ use tui::Frame;
 use tui::layout::Rect;
 
 use crate::map::position::{Area, build_rectangular_area, Position};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
-use crate::view::framehandler::container_choice::ContainerChoiceFrameHandlerInputResult;
+
+
 
 pub mod framehandler;
 pub mod callback;

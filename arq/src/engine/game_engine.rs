@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 use std::io;
-use log::log;
+
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
 use rand_seeder::Seeder;
@@ -18,27 +18,27 @@ use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
 use crate::engine::level::{Characters, init_level_manager, Level, LevelChange, Levels};
-use crate::map::Map;
-use crate::map::map_generator::{build_dev_chest, build_dev_inventory, build_generator};
-use crate::map::objects::container;
-use crate::map::objects::container::ContainerType;
-use crate::map::objects::items;
+
+use crate::map::map_generator::{build_dev_inventory};
+
+
+
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::menu;
 use crate::menu::Selection;
-use crate::settings;
-use crate::settings::{Setting, Settings, Toggleable};
+
+use crate::settings::{Setting, Settings};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
 use crate::ui::{build_ui, Draw, FrameData, FrameHandler};
-use crate::ui::{SettingsMenuChoice, StartMenuChoice};
+use crate::ui::{StartMenuChoice};
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
-use crate::widget::button_widget::build_button;
+
 use crate::widget::character_stat_line::build_character_stat_line;
 use crate::widget::boolean_widget::build_boolean_widget;
 use crate::widget::text_widget::build_text_input;
@@ -191,7 +191,7 @@ impl <B : Backend> GameEngine<B> {
             log::info!("Selection is: {}", selection);
             if last_selection != selection {
                 log::info!("Selection changed to: {}", selection);
-                let ui = &mut self.ui_wrapper.ui;
+                let _ui = &mut self.ui_wrapper.ui;
                 self.ui_wrapper.draw_start_menu();
             }
 
@@ -246,7 +246,7 @@ impl <B : Backend> GameEngine<B> {
                 },
                 StartMenuChoice::Info => {
                     log::info!("Showing info..");
-                    let ui = &mut self.ui_wrapper.ui;
+                    let _ui = &mut self.ui_wrapper.ui;
                     self.ui_wrapper.draw_info();
                     io::stdin().keys().next();
                 },
@@ -272,7 +272,7 @@ impl <B : Backend> GameEngine<B> {
 
     fn respawn_player(&mut self, change: LevelChange) {
         let level = self.levels.get_level_mut();
-        let mut player = level.characters.get_player_mut();
+        let player = level.characters.get_player_mut();
 
         // Grab the first room and set the player's position there
         if let Some(map) = &level.map {
@@ -291,7 +291,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
-        let mut characters = self.build_characters();
+        let characters = self.build_characters();
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = Characters { characters: characters.clone() };
@@ -448,7 +448,7 @@ pub fn build_settings_widgets(settings : &Settings) -> Vec<Widget> {
     widgets
 }
 
-pub fn build_game_engine<'a, B: tui::backend::Backend>(mut terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
+pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let settings = build_settings();
     // Grab the randomised seed
