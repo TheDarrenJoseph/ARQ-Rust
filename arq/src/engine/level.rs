@@ -49,14 +49,24 @@ impl Levels {
         return self.levels.get_mut(self._current_level).unwrap();
     }
 
-    pub(crate) fn generate_level(&mut self) {
-        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
+    fn build_test_map(&mut self) -> Map {
+        let map_size = 12;
+        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
+        self.rng = Seeder::from("test".to_string()).make_rng();
+        let mut generator = build_generator(&mut self.rng, map_area);
+        generator.generate()
+    }
 
+    fn build_map(&mut self) -> Map {
+        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
         let rng = &mut self.rng;
         let mut map_generator = build_generator(rng, map_area);
+        map_generator.generate()
+    }
 
+    pub(crate) fn generate_level(&mut self) {
         let new_level;
-        let map = Some(map_generator.generate());
+        let map = Some(self.build_map());
         if !self.levels.is_empty() {
             let player = self.get_level_mut().characters.remove_player();
             new_level = Level {
