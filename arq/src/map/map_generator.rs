@@ -492,6 +492,7 @@ mod tests {
     use crate::map::Map;
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Position};
+    use crate::map::tile::TileDetails;
 
     fn build_test_map() -> Map {
         let map_size = 12;
@@ -562,6 +563,25 @@ mod tests {
         assert_eq!(actual_full, expected_full);
     }
 
+    fn build_tile_strings(length: i32, tiles: &Vec<Vec<TileDetails>>) -> Vec<String> {
+        let mut tile_strings : Vec<String> = Vec::new();
+        for i in 0..length {
+            tile_strings.push("".to_string())
+        }
+
+        let mut x_idx = 0;
+        let mut y_idx = 0;
+        for row in tiles {
+            let mut row_text = tile_strings.get_mut(x_idx).unwrap().clone();
+            for tile in row {
+                tile_strings[x_idx].push(tile.symbol);
+                y_idx += 1;
+            }
+            x_idx += 1;
+        }
+        tile_strings
+    }
+
     #[test]
     fn test_generate() {
         let map = build_test_map();
@@ -603,22 +623,7 @@ mod tests {
             "            ".to_string()
         ];
 
-        let mut actual_tiles : Vec<String> = Vec::new();
-        for i in 0..expected_tiles.len() {
-            actual_tiles.push("".to_string())
-        }
-
-        let mut x_idx = 0;
-        let mut y_idx = 0;
-        for row in &tiles {
-            let mut row_text = actual_tiles.get_mut(x_idx).unwrap().clone();
-            for tile in row {
-                actual_tiles[x_idx].push(tile.symbol);
-                y_idx += 1;
-            }
-            x_idx += 1;
-        }
-
+        let actual_tiles = build_tile_strings(12, &tiles);
         assert_string_vecs(expected_tiles, actual_tiles);
     }
 }
