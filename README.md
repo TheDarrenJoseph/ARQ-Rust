@@ -17,10 +17,10 @@ MADE USING
 
 TODO (Not in any specific order)
 ----
-- [ ] Procedural levels
+- [X] Procedural levels
     - [X] Room generation
     - [X] Pathfinding
-    - [ ] Level traversal (Exit/Entry, next level/previous level)
+    - [X] Level traversal (Exit/Entry, next level/previous level)
 - [ ] Overworld
 - [ ] Items (valuables, potions, scrolls, etc)
     - [X] Basic valuables
@@ -52,6 +52,6 @@ TODO (Not in any specific order)
     - [ ] Combat turns
     - [ ] Level bosses
 - [X] Settings Menu
-- [ ] Ending Screen (Game Over / Dungeon escape)
+- [X] Ending Screen (Game Over / Dungeon escape)
 - [ ] Leaderboard / Graveyard
 - [ ] (Optional) Export / Load game/item maps from files
