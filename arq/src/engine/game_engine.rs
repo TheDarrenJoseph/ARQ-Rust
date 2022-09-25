@@ -506,6 +506,12 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
 }
 
+pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
+    let ui = build_ui();
+    let settings = build_settings();
+    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -540,11 +546,11 @@ mod tests {
         vec![player]
     }
 
-    fn test_movement_input(map: Map, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
+    fn test_movement_input(levels: Levels, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
         // GIVEN a game engine with a 3x3 grid of tiles
         let _tile_library = build_library();
         let terminal_manager = terminal_manager::init_test().unwrap();
-        let game_engine = build_game_engine(terminal_manager);
+        let game_engine = build_test_game_engine(levels, terminal_manager);
 
         match game_engine {
             Result::Ok(mut engine) => {
@@ -552,7 +558,6 @@ mod tests {
                     let characters = build_characters(start_position);
                     let level = &mut engine.levels.get_level_mut();
                     level.characters.set_characters(characters);
-                    level.set_map(Some(map));
                 }
 
                 // AND The player is placed in the middle of the map
@@ -570,6 +575,18 @@ mod tests {
                 panic!("Expected a valid Game Engine instance!")
             }
         }
+    }
+
+    fn build_test_levels(map: Map) -> Levels {
+        let level = Level {
+            map: Some(map.clone()),
+            characters: Characters { characters: Vec::new() }
+        };
+
+        let rng = Seeder::from("test".to_string()).make_rng();
+        let mut levels = init_level_manager(rng);
+        levels.add_level(level);
+        levels
     }
 
     #[test]
@@ -595,13 +612,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move down
         let input = vec![Key::Down];
         // THEN we expect the player's position to be updated to the other corridor tile
         let expected_end_position = Position{x:1, y: 2};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -620,13 +639,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move down
         let input = vec![Key::Down];
         // THEN we expect the player's position to remain unchanged
         let expected_end_position = Position{x:1, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -646,13 +667,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the bottom middle of the map
         let start_position = Position{x:1, y:2};
         // WHEN we attempt to move up
         let input = vec![Key::Up];
         // THEN we expect the player's position to be updated to the other corridor tile
         let expected_end_position = Position{x:1, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -671,13 +694,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle end of the map
         let start_position = Position{x:1, y:2};
         // WHEN we attempt to move up
         let input = vec![Key::Up];
         // THEN we expect the player's position to remain unchanged
         let expected_end_position = Position{x:1, y: 2};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -697,13 +722,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move left
         let input = vec![Key::Left];
         // THEN we expect the player's position to be updated to the other corridor tile
         let expected_end_position = Position{x:0, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -722,13 +749,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move left
         let input = vec![Key::Left];
         // THEN we expect the player's position to remain unchanged
         let expected_end_position = Position{x:1, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -748,13 +777,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move right
         let input = vec![Key::Right];
         // THEN we expect the player's position to be updated to the other corridor tile
         let expected_end_position = Position{x:2, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
     #[test]
@@ -773,13 +804,15 @@ mod tests {
             containers: HashMap::new()
         };
 
+        let levels = build_test_levels(map);
+
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
         // WHEN we attempt to move right
         let input = vec![Key::Right];
         // THEN we expect the player's position to remain unchanged
         let expected_end_position = Position{x:1, y: 1};
-        test_movement_input(map, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position);
     }
 
 }

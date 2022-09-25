@@ -47,7 +47,7 @@ pub enum LevelChangeResult {
 
 
 impl Levels {
-    fn add_level(&mut self, level: Level) {
+    pub fn add_level(&mut self, level: Level) {
         self.levels.push(level);
     }
 
