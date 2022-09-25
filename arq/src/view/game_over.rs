@@ -1,6 +1,9 @@
 use std::io::Error;
 use termion::event::Key;
-use tui::layout::Rect;
+use tui::layout::{Alignment, Rect};
+use tui::style::Style;
+use tui::text::Span;
+use tui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::UI;
@@ -12,6 +15,7 @@ use crate::widget::{Focusable, WidgetType};
 use crate::widget::WidgetType::Button;
 
 pub struct GameOver<'a, B : tui::backend::Backend> {
+    pub message : String,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub widgets: WidgetList
@@ -22,8 +26,8 @@ pub enum GameOverChoice {
     EXIT
 }
 
-pub fn build_game_over_menu<'a, B : tui::backend::Backend>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> GameOver<'a, B> {
-    GameOver { ui, terminal_manager, widgets:
+pub fn build_game_over_menu<'a, B : tui::backend::Backend>(message: String, ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> GameOver<'a, B> {
+    GameOver { message, ui, terminal_manager, widgets:
     WidgetList { selected_widget: Some(0), widgets :
         vec![ build_button(7, String::from("Restart")),
               build_button(7, String::from("Exit"))
@@ -51,19 +55,29 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
     }
 
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+        let paragraph = Paragraph::new(self.message.clone())
+            .block(Block::default().borders(Borders::NONE))
+            .style(Style::default()).alignment(Alignment::Center).wrap(Wrap { trim: true });
+
         let terminal = &mut self.terminal_manager.terminal;
         let widgets = &self.widgets;
         terminal.draw(|frame| {
             let frame_size = frame.size();
-            let mut offset = 0;
-            for widget in widgets.widgets.iter() {
-                let mut half_width = frame_size.width.clone() / 2;
-                // Remove length of longest title
-                if half_width >= 7 {
-                    half_width -= 7;
-                }
+            let mut half_width = frame_size.width.clone() / 2;
 
-                let mut half_height = frame_size.height.clone() / 2;
+            // Remove length of longest title
+            if half_width >= 7 {
+                half_width -= 7;
+            }
+
+            let mut half_height = frame_size.height.clone() / 2;
+            let mut offset = 0;
+
+            let frame_size = frame.size();
+            let paragraph_size = Rect::new(0, frame_size.height / 4, frame_size.width, 2);
+            frame.render_widget(paragraph, paragraph_size);
+
+            for widget in widgets.widgets.iter() {
                 let widget_area = Rect::new(half_width, half_height + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &widget.state_type {
                     WidgetType::Button(w) => {

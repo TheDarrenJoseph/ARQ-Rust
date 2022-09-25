@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 use std::io;
+use std::io::empty;
 
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
@@ -140,13 +141,13 @@ impl <B : Backend> UIWrapper<B> {
         Ok(())
     }
 
-    fn clear_console(&mut self) -> Result<(), io::Error> {
+    pub fn clear_screen(&mut self) -> Result<(), io::Error> {
         self.terminal_manager.terminal.clear()
     }
 }
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
-    ui_wrapper : UIWrapper<B>,
+    pub ui_wrapper : UIWrapper<B>,
     settings: Settings,
     levels: Levels,
     game_running : bool,
@@ -299,8 +300,10 @@ impl <B : Backend> GameEngine<B> {
                     player.set_position(exit_room.exit.unwrap());
                 },
                 LevelChange::DOWN => {
-                    let entry_room = map.rooms.iter().find(|room| room.entry.is_some()).unwrap();
-                    player.set_position(entry_room.entry.unwrap());
+                    let entry_room = map.rooms.iter().find(|room| room.entry.is_some());
+                    if let Some(er) = entry_room {
+                        player.set_position(er.entry.unwrap());
+                    }
                 },
                 _ => { }
             }
@@ -396,6 +399,7 @@ impl <B : Backend> GameEngine<B> {
                                 },
                                 LevelChangeResult::OutOfDungeon => {
                                     let mut menu = build_game_over_menu(
+                                        String::from("You left the dungeon."),
                                         &mut self.ui_wrapper.ui,
                                         &mut self.ui_wrapper.terminal_manager);
                                     let result = menu.begin()?;
@@ -415,13 +419,15 @@ impl <B : Backend> GameEngine<B> {
     }
 
     pub fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
-        self.ui_wrapper.clear_console()?;
+        self.ui_wrapper.clear_screen()?;
         self.ui_wrapper.ui.hide_console();
         if let Some(goc) = self.start_menu(None)? {
+            self.ui_wrapper.ui.show_console();
+            self.ui_wrapper.clear_screen()?;
             return Ok(Some(goc));
         }
         self.ui_wrapper.ui.show_console();
-        self.ui_wrapper.clear_console()?;
+        self.ui_wrapper.clear_screen()?;
         Ok(None)
     }
 
@@ -429,7 +435,9 @@ impl <B : Backend> GameEngine<B> {
         let level = self.levels.get_level_mut();
         match key {
             Key::Char('q') => {
-                self.menu_command()?;
+                if let Some(goc) = self.menu_command()? {
+                    return Ok(Some(goc));
+                }
             },
             Key::Char('i') => {
                 let mut command = InventoryCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };

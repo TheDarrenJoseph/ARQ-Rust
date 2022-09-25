@@ -8,6 +8,12 @@ pub struct TerminalManager<B : tui::backend::Backend> {
     pub terminal : tui::Terminal<B>,
 }
 
+impl <B : tui::backend::Backend>  TerminalManager<B> {
+    pub fn clear_screen(&mut self) -> Result<(), io::Error> {
+        self.terminal.clear()
+    }
+}
+
 pub fn init() -> Result<TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>, io::Error> {
     let stdout = io::stdout().into_raw_mode()?;
     let backend = TermionBackend::new(stdout);
