@@ -17,7 +17,7 @@ use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
-use crate::engine::level::{Characters, init_level_manager, Level, LevelChange, Levels};
+use crate::engine::level::{Characters, init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
 
 use crate::map::map_generator::{build_dev_inventory};
 
@@ -31,13 +31,16 @@ use crate::menu::Selection;
 use crate::settings::{Setting, Settings};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
-use crate::ui::{build_ui, Draw, FrameData, FrameHandler};
+use crate::ui::{build_ui, Draw};
 use crate::ui::{StartMenuChoice};
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
+use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
 use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
+use crate::view::util::widget_menu::WidgetMenu;
 
 use crate::widget::character_stat_line::build_character_stat_line;
 use crate::widget::boolean_widget::build_boolean_widget;
@@ -151,6 +154,16 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
 
 impl <B : Backend> GameEngine<B> {
 
+    pub fn rebuild(&mut self) {
+        let settings = build_settings();
+        // Grab the randomised seed
+        let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
+        let rng = Seeder::from(map_seed).make_rng();
+        self.game_running = false;
+        self.levels = init_level_manager(rng);
+        self.settings = settings;
+    }
+
     fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), io::Error> {
 
         for widget in widgets.widgets {
@@ -211,21 +224,23 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    pub fn start_menu(&mut self) -> Result<(), io::Error> {
+    pub fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Result<Option<GameOverChoice>, io::Error> {
         loop {
             // Hide additional widgets when paused
             self.ui_wrapper.ui.render_additional = false;
             self.ui_wrapper.draw_start_menu()?;
-            let start_choice = self.handle_start_menu_selection()?;
+            let start_choice = if choice.is_some() { choice.clone().unwrap() }  else { self.handle_start_menu_selection()? };
             match start_choice {
                 StartMenuChoice::Play => {
                     self.ui_wrapper.ui.render_additional = true;
                     if !self.game_running {
                         log::info!("Starting game..");
-                        self.start_game()?;
+                        if let Some(goc) = self.start_game()? {
+                            return Ok(Some(goc));
+                        }
                         break;
                     } else {
-                        return Ok(());
+                        return Ok(None);
                     }
                 },
                 StartMenuChoice::Settings => {
@@ -235,12 +250,14 @@ impl <B : Backend> GameEngine<B> {
                     let mut settings_menu = SettingsMenu {
                         ui: &mut self.ui_wrapper.ui,
                         terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                        selected_widget: Some(0),
-                        widgets: WidgetList { widgets, selected_widget: Some(0) }
+                        menu: WidgetMenu {
+                            selected_widget: Some(0),
+                            widgets: WidgetList { widgets, selected_widget: Some(0) }
+                        }
                     };
 
                     settings_menu.begin()?;
-                    let widgets = settings_menu.widgets;
+                    let widgets = settings_menu.menu.widgets;
 
                     self.handle_settings_menu_selection(widgets)?;
                 },
@@ -254,11 +271,11 @@ impl <B : Backend> GameEngine<B> {
                     if self.game_running {
                         self.game_running = false;
                     }
-                    break;
+                    return Ok(Some(GameOverChoice::EXIT));
                 }
             }
         }
-        Ok(())
+        Ok(None)
     }
 
     fn build_characters(&self) -> Vec<Character> {
@@ -300,7 +317,7 @@ impl <B : Backend> GameEngine<B> {
         return Ok(());
     }
 
-    fn start_game(&mut self) -> Result<(), io::Error>{
+    pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render("Generating a new level..".to_string())?;
         self.levels.generate_level();
@@ -326,17 +343,21 @@ impl <B : Backend> GameEngine<B> {
                 _ => {
                 }
             }
-            self.game_loop()?;
+
+            let result = self.game_loop()?;
+            if result.is_some() {
+                return Ok(result);
+            }
         }
         //self.terminal_manager.terminal.clear()?;
-        Ok(())
+        Ok(None)
     }
 
     fn build_testing_inventory(&mut self) {
         self.levels.get_level_mut().characters.characters[0].set_inventory(build_dev_inventory());
     }
 
-    fn handle_player_movement(&mut self, side: Side) -> Result<(), io::Error> {
+    fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
         let levels = &mut self.levels;
         let level = levels.get_level_mut();
         let updated_position = level.find_player_side_position(side).clone();
@@ -368,27 +389,43 @@ impl <B : Backend> GameEngine<B> {
                     NONE => {},
                     change => {
                         let changed = levels.change_level(change.clone());
-                        if changed.is_ok() && changed.unwrap()  {
-                            self.respawn_player(change);
+                        if changed.is_ok() {
+                            match changed.unwrap() {
+                                LevelChangeResult::LevelChanged => {
+                                    self.respawn_player(change);
+                                },
+                                LevelChangeResult::OutOfDungeon => {
+                                    let mut menu = build_game_over_menu(
+                                        &mut self.ui_wrapper.ui,
+                                        &mut self.ui_wrapper.terminal_manager);
+                                    let result = menu.begin()?;
+                                    if let Some(game_over_choice) = result.view_specific_result {
+                                        return Ok(Some(game_over_choice));
+                                    }
+                                },
+                                _ => {}
+                            }
                         }
                     }
                 }
             },
             None => {}
         }
-        Ok(())
+        Ok(None)
     }
 
-    pub fn menu_command(&mut self) -> Result<(), io::Error> {
+    pub fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
         self.ui_wrapper.clear_console()?;
         self.ui_wrapper.ui.hide_console();
-        self.start_menu()?;
+        if let Some(goc) = self.start_menu(None)? {
+            return Ok(Some(goc));
+        }
         self.ui_wrapper.ui.show_console();
         self.ui_wrapper.clear_console()?;
-        Ok(())
+        Ok(None)
     }
 
-    pub fn handle_input(&mut self, key : Key) -> Result<(), io::Error>  {
+    pub fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
         let level = self.levels.get_level_mut();
         match key {
             Key::Char('q') => {
@@ -409,20 +446,20 @@ impl <B : Backend> GameEngine<B> {
             },
             Key::Down | Key::Up | Key::Left | Key::Right => {
                 if let Some(side) = input_mapping::key_to_side(key) {
-                    self.handle_player_movement(side)?;
+                    if let Some(game_over_choice) = self.handle_player_movement(side)? {
+                        return Ok(Some(game_over_choice));
+                    }
                 }
             },
             _ => {}
         }
-        Ok(())
+        Ok(None)
     }
 
-    fn game_loop(&mut self) -> Result<(), io::Error> {
+    fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
         let key = io::stdin().keys().next().unwrap().unwrap();
         //self.terminal_manager.terminal.clear()?;
-        self.handle_input(key)?;
-        //self.terminal_manager.terminal.clear()?;
-        Ok(())
+        return Ok(self.handle_input(key)?);
     }
 }
 

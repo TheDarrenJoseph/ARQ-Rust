@@ -11,7 +11,8 @@ use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::terminal::colour_mapper;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::UI;
-use crate::view::{GenericInputResult, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::character_info::CharacterInfoView;
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -128,11 +129,11 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
     }
 }
 
-impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> {
+impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
-    fn begin(&mut self) -> Result<bool, Error> {
+    fn begin(&mut self) -> Result<InputResult<bool>, Error> {
         self.draw(None)?;
-        Ok(true)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
     fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
@@ -155,8 +156,10 @@ impl<B : tui::backend::Backend> View<'_, GenericInputResult> for MapView<'_, B> 
         self.draw_map_cells()?;
         Ok(())
     }
+}
 
-    fn handle_input(&mut self, _input: Option<Key>) -> Result<bool, Error> {
-        Ok(true)
+impl <COM: tui::backend::Backend> InputHandler<bool> for MapView<'_, COM> {
+    fn handle_input(&mut self, _input: Option<Key>) -> Result<InputResult<bool>, Error> {
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: None});
     }
 }

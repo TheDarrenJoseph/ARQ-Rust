@@ -5,36 +5,37 @@ use crate::map::position::Area;
 
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::UI;
-use crate::view::{GenericInputResult, resolve_input, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
+use crate::view::util::widget_menu::WidgetMenu;
 use crate::widget::{Focusable, WidgetType};
 use crate::widget::widgets::WidgetList;
 
 pub struct SettingsMenu<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub selected_widget: Option<i8>,
-    pub widgets: WidgetList
+    pub menu: WidgetMenu
 }
 
-impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for SettingsMenu<'_, B>  {
-    fn begin(&mut self)  -> Result<bool, Error> {
+impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenu<'_, B>  {
+    fn begin(&mut self)  -> Result<InputResult<bool>, Error> {
         // Select the first widget
-        if self.widgets.widgets.len() > 0 {
-            self.widgets.widgets[0].state_type.focus();
+        if self.menu.widgets.widgets.len() > 0 {
+            self.menu.widgets.widgets[0].state_type.focus();
         }
 
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
 
-        while !self.handle_input(None).unwrap() {
+        while !InputHandler::handle_input(self, None).unwrap().generic_input_result.done {
             self.draw(None)?;
         }
-        Ok(true)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+        let menu_view = &mut self.menu;
         let terminal = &mut self.terminal_manager.terminal;
-        let widgets = &self.widgets;
+        let widgets = &menu_view.widgets;
         terminal.draw(|frame| {
             let frame_size = frame.size();
             let mut offset = 0;
@@ -54,23 +55,26 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for SettingsMe
         })?;
         Ok(())
     }
+}
 
-    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
+impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
+        let menu_view = &mut self.menu;
         let key = resolve_input(input);
         let mut target_widget = None;
-        match self.widgets.selected_widget {
+        match menu_view.widgets.selected_widget {
             Some(idx) => {
-                target_widget = Some(&mut self.widgets.widgets[idx as usize]);
+                target_widget = Some(&mut menu_view.widgets.widgets[idx as usize]);
             },
             None => {}
         }
 
         match key {
             Key::Down => {
-                self.widgets.next_widget();
+                menu_view.widgets.next_widget();
             },
             Key::Up => {
-                self.widgets.previous_widget();
+                menu_view.widgets.previous_widget();
             },
             Key::Char('\n') => {
                 match target_widget {
@@ -99,7 +103,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for SettingsMe
                 }
             }
             Key::Char('q') => {
-                return Ok(true)
+                return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: None});
             },
             Key::Char(c) => {
                 match target_widget {
@@ -119,6 +123,6 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for SettingsMe
             _ => {
             }
         }
-        Ok(false)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
     }
 }

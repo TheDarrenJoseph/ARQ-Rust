@@ -17,7 +17,7 @@ use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
-use crate::view::View;
+use crate::view::{InputResult, View};
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
@@ -105,7 +105,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         Ok(())
     }
 
-    fn open_container(&mut self, p: Position, c: &Container) -> Result<bool, Error> {
+    fn open_container(&mut self, p: Position, c: &Container) -> Result<InputResult<bool>, Error> {
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
         let subview_container = c.clone();
         let view_container = c.clone();

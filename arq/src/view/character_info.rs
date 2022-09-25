@@ -16,11 +16,11 @@ use crate::character::{Character};
 use crate::list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::{FrameData, FrameHandler, UI};
-use crate::view::{GenericInputResult, resolve_input, View};
+use crate::ui::UI;
+use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
-use crate::view::framehandler::container;
+use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
@@ -270,15 +270,15 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     }
 }
 
-impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterInfoView<'_, B>  {
-    fn begin(&mut self)  -> Result<bool, Error> {
+impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
+    fn begin(&mut self) -> Result<InputResult<bool>, Error> {
         self.initialise();
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
-        while !self.handle_input(None).unwrap() {
+        while !self.handle_input(None).unwrap().generic_input_result.done {
             self.draw(None)?;
         }
-        Ok(true)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
@@ -297,12 +297,15 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
         })?;
         Ok(())
     }
+}
 
-    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
+impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, COM> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
         let key = resolve_input(input);
         match key {
             Key::Char('q') => {
-                return self.quit_container_view();
+                let done = self.quit_container_view()?;
+                return Ok(InputResult { generic_input_result: GenericInputResult { done, requires_view_refresh: false }, view_specific_result: None});
             },
             // Horizontal tab
             Key::Char('\t') => {
@@ -310,7 +313,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
             }
             // Passthrough anything not handled here into the sub views
             _ => {
-                let mut generic_input_result : Option<GenericInputResult> = None;
+                let mut generic_input_result: Option<GenericInputResult> = None;
                 match self.frame_handler.tab_choice {
                     TabChoice::INVENTORY => {
                         // Container choice handlers take priority as they're essentially a dialog
@@ -321,7 +324,7 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                             }
                             // Force a redraw
                             if success {
-                                return Ok(false);
+                                return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: true }, view_specific_result: None});
                             }
                         }
 
@@ -343,11 +346,11 @@ impl <'b, B : tui::backend::Backend> View<'b, GenericInputResult> for CharacterI
                         self.terminal_manager.terminal.clear()?;
                     }
                 }
-
             }
         }
 
-        return Ok(false)
+
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
     }
 }
 

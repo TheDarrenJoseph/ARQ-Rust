@@ -12,9 +12,9 @@ use crate::list_selection::{build_list_selection, ItemListSelection, ListSelecti
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
-use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
+use crate::view::framehandler::{FrameData, FrameHandler};
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};

@@ -5,9 +5,9 @@ use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
 
 use crate::character::{Character, Class, determine_class, get_all_attributes};
-use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::{Focusable, Named, Widget, WidgetType};
 use crate::widget::button_widget::build_button;
 use crate::widget::dropdown_widget::{build_dropdown};

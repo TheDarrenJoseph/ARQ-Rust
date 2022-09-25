@@ -6,8 +6,8 @@ use tui::Frame;
 use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
 
-use crate::ui::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::console_input_widget::{build_console_input};
 use crate::widget::WidgetType;
 

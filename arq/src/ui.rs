@@ -9,6 +9,7 @@ use crate::{menu, ui};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::menu::{Menu, ToList};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+use crate::view::framehandler::{FrameData, FrameHandler};
 
 use crate::widget::{Widget, WidgetType};
 
@@ -21,6 +22,7 @@ pub struct UI {
     pub frame_handler: ConsoleFrameHandler
 }
 
+#[derive(Clone)]
 pub enum StartMenuChoice {
     Play,
     Settings,
@@ -32,25 +34,6 @@ pub fn build_ui() -> UI {
     let start_menu = menu::build_start_menu(false);
     let frame_handler = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
     ui::UI { start_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), frame_handler }
-}
-
-// FrameHandlers are "dumb" views that simply draw themselves to a terminal frame
-pub trait FrameHandler<B: tui::backend::Backend, T> {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<T>);
-}
-
-pub struct FrameData<T> {
-    pub data : T,
-    pub frame_size : Rect
-}
-
-impl <T> FrameData<T> {
-    pub fn unpack(&mut self) -> &mut T {
-        &mut self.data
-    }
-    pub fn get_frame_size(&mut self) -> &Rect {
-        &self.frame_size
-    }
 }
 
 impl std::convert::TryFrom<usize> for StartMenuChoice {

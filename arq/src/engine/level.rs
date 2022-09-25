@@ -1,4 +1,5 @@
-use std::io;
+use std::{fmt, io};
+use std::io::{Error, ErrorKind};
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
 
@@ -39,6 +40,11 @@ pub fn init_level_manager(rng : Pcg64) -> Levels {
     Levels { rng, levels: vec![], _current_level: 0}
 }
 
+pub enum LevelChangeResult {
+    LevelChanged,
+    OutOfDungeon
+}
+
 
 impl Levels {
     fn add_level(&mut self, level: Level) {
@@ -47,6 +53,10 @@ impl Levels {
 
     pub(crate) fn get_level_mut(&mut self) -> &mut Level {
         return self.levels.get_mut(self._current_level).unwrap();
+    }
+
+    pub fn get_current_level(&self) -> usize {
+        self._current_level.clone()
     }
 
     fn build_test_map(&mut self) -> Map {
@@ -83,14 +93,16 @@ impl Levels {
         self.levels.push(new_level);
     }
 
-    pub(crate) fn change_level(&mut self, level_change: LevelChange) -> Result<bool, io::Error>  {
+    pub(crate) fn change_level(&mut self, level_change: LevelChange) -> Result<LevelChangeResult, io::Error>  {
         match level_change {
             LevelChange::UP => {
                 if self._current_level > 0 {
                     let player = self.get_level_mut().characters.remove_player();
                     self._current_level -= 1;
                     self.get_level_mut().characters.set_characters(vec![player]);
-                    return Ok(true);
+                    return Ok(LevelChangeResult::LevelChanged);
+                } else {
+                    return Ok(LevelChangeResult::OutOfDungeon);
                 }
             },
             LevelChange::DOWN => {
@@ -102,12 +114,12 @@ impl Levels {
                     self.generate_level();
                     self._current_level += 1;
                 }
-                return Ok(true);
+                return Ok(LevelChangeResult::LevelChanged);
             },
             _ => {
             }
         }
-        return Ok(false);
+        return Ok(LevelChangeResult::LevelChanged);
     }
 }
 

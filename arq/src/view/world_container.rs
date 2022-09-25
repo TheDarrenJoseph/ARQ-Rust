@@ -6,11 +6,12 @@ use crate::map::objects::container::Container;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::{FrameData, FrameHandler, UI};
-use crate::view::{GenericInputResult, resolve_input, View};
+use crate::ui::UI;
+use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::InputHandler;
 
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
@@ -133,14 +134,14 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 
 }
 
-impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for WorldContainerView<'_, B>  {
-    fn begin(&mut self)  -> Result<bool, Error> {
+impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
+    fn begin(&mut self)  -> Result<InputResult<bool>, Error> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
-        while !self.handle_input(None).unwrap() {
+        while !self.handle_input(None).unwrap().generic_input_result.done {
             self.draw(None)?;
         }
-        Ok(true)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
@@ -157,8 +158,10 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
         })?;
         Ok(())
     }
+}
 
-    fn handle_input(&mut self, input: Option<Key>) -> Result<bool, Error> {
+impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
         let key = resolve_input(input);
         match key {
             Key::Char('t') => {
@@ -182,12 +185,12 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                             }
                         }
                     }
-                    return Ok(false)
+                    return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
                 } else if container_views.len() == 1 {
                     let last_view = &mut self.frame_handlers.container_frame_handlers[0];
                     self.container = last_view.container.clone();
                 }
-                return Ok(true)
+                return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
             },
             // Passthrough anything not handled here into the sub framehandler
             _ => {
@@ -203,7 +206,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
                     }
                     // Force a redraw
                     if success {
-                        return Ok(false);
+                        return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: true }, view_specific_result: None});
                     }
                 }
 
@@ -230,7 +233,7 @@ impl <B : tui::backend::Backend> View<'_, ContainerFrameHandlerInputResult> for 
             }
         }
 
-        return Ok(false)
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
     }
 }
 

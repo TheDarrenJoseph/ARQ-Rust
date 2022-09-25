@@ -186,21 +186,23 @@ impl MapGenerator<'_> {
 
             for door1 in room1.doors {
                 let door1_position = door1.position;
-                let door2_position = room2.doors[0].position;
-                log::info!("Pathing from door at: {:?} to door at: {:?}", door1_position, door2_position);
+                if room2.doors.len() > 0 {
+                    let door2_position = room2.doors[0].position;
+                    log::info!("Pathing from door at: {:?} to door at: {:?}", door1_position, door2_position);
 
-                let mut pathfinding = Pathfinding::build(door1_position);
-                let path = pathfinding.a_star_search(&self.map, door2_position);
-                if path.is_empty() {
-                    log::error!("Failed to build a path..")
-                } else {
-                    for position in path {
-                        let tile_type = self.map.tiles.get_tile(position).unwrap().tile_type;
-                        if tile_type == Tile::NoTile {
-                            log::debug!("Adding corridor tile at: {:?}", position);
-                            self.map.tiles.set_tile(position, corridor_tile.clone());
-                        } else {
-                            log::debug!("Can't add corridor here. Tile is: {:?}", tile_type);
+                    let mut pathfinding = Pathfinding::build(door1_position);
+                    let path = pathfinding.a_star_search(&self.map, door2_position);
+                    if path.is_empty() {
+                        log::error!("Failed to build a path..")
+                    } else {
+                        for position in path {
+                            let tile_type = self.map.tiles.get_tile(position).unwrap().tile_type;
+                            if tile_type == Tile::NoTile {
+                                log::debug!("Adding corridor tile at: {:?}", position);
+                                self.map.tiles.set_tile(position, corridor_tile.clone());
+                            } else {
+                                log::debug!("Can't add corridor here. Tile is: {:?}", tile_type);
+                            }
                         }
                     }
                 }
