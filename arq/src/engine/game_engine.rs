@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use std::fmt::format;
 use std::io;
 use std::io::empty;
 
@@ -398,8 +399,10 @@ impl <B : Backend> GameEngine<B> {
                                     self.respawn_player(change);
                                 },
                                 LevelChangeResult::OutOfDungeon => {
+                                    let player_score = self.levels.get_level_mut().characters.get_player_mut().get_inventory_mut().get_loot_value();
+
                                     let mut menu = build_game_over_menu(
-                                        String::from("You left the dungeon."),
+                                        format!("You left the dungeon.\nLoot Total: {}", player_score),
                                         &mut self.ui_wrapper.ui,
                                         &mut self.ui_wrapper.terminal_manager);
                                     let result = menu.begin()?;
