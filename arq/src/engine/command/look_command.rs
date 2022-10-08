@@ -120,8 +120,9 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::build_player;
+    use crate::characters::build_characters;
     use crate::engine::command::look_command::{describe_position, describe_position_container, describe_position_in_room};
-    use crate::engine::level::{Characters, Level};
+    use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
@@ -151,7 +152,7 @@ mod tests {
         };
 
         let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
-        return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
+        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new()) };
     }
 
     #[test]

@@ -6,6 +6,7 @@ use rand_seeder::Seeder;
 use termion::event::Key;
 
 use crate::character::Character;
+use crate::characters::{build_characters, Characters};
 use crate::engine::command::input_mapping;
 use crate::map::Map;
 use crate::map::map_generator::build_generator;
@@ -29,11 +30,6 @@ pub(crate) enum LevelChange {
     UP,
     DOWN,
     NONE
-}
-
-#[derive(Default, Clone)]
-pub struct Characters {
-    pub characters : Vec<Character>
 }
 
 pub fn init_level_manager(rng : Pcg64) -> Levels {
@@ -77,19 +73,16 @@ impl Levels {
     pub(crate) fn generate_level(&mut self) {
         let new_level;
         let map = Some(self.build_map());
-        if !self.levels.is_empty() {
-            let player = self.get_level_mut().characters.remove_player();
-            new_level = Level {
-                map,
-                characters: Characters { characters: vec![player] }
-            };
-        } else {
-            new_level = Level {
-                map,
-                characters: Characters { characters: Vec::new() }
-            };
-        }
 
+        let mut player = None;
+        if !self.levels.is_empty() {
+            // Move the player to the next level
+            player = Some(self.get_level_mut().characters.remove_player());
+        }
+        new_level = Level {
+            map,
+            characters: build_characters(player, Vec::new() )
+        };
         self.levels.push(new_level);
     }
 
@@ -99,7 +92,7 @@ impl Levels {
                 if self._current_level > 0 {
                     let player = self.get_level_mut().characters.remove_player();
                     self._current_level -= 1;
-                    self.get_level_mut().characters.set_characters(vec![player]);
+                    self.get_level_mut().characters.set_player(player);
                     return Ok(LevelChangeResult::LevelChanged);
                 } else {
                     return Ok(LevelChangeResult::OutOfDungeon);
@@ -109,7 +102,7 @@ impl Levels {
                 if self._current_level < self.levels.len() - 1 {
                     let player = self.get_level_mut().characters.remove_player();
                     self._current_level += 1;
-                    self.get_level_mut().characters.set_characters(vec![player]);
+                    self.get_level_mut().characters.set_player(player);
                 } else {
                     self.generate_level();
                     self._current_level += 1;
@@ -120,25 +113,6 @@ impl Levels {
             }
         }
         return Ok(LevelChangeResult::LevelChanged);
-    }
-}
-
-
-impl  Characters {
-    pub fn get_player(&self) -> &Character {
-        &self.characters[0]
-    }
-
-    pub fn remove_player(&mut self) -> Character {
-        self.characters.remove(0)
-    }
-
-    pub(crate) fn get_player_mut(&mut self) -> &mut Character {
-        &mut self.characters[0]
-    }
-
-    pub fn set_characters(&mut self, characters: Vec<Character>) {
-        self.characters = characters;
     }
 }
 
@@ -153,7 +127,7 @@ impl Level {
                 }
             },
             Key::Char(_) => {
-                Some(self.characters.get_player_mut().get_position().clone())
+                Some(self.characters.get_player_mut().unwrap().get_position().clone())
             }
             _ => {
                 None
@@ -162,7 +136,7 @@ impl Level {
     }
 
     pub fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
-        let position = self.characters.get_player_mut().get_position().clone();
+        let position = self.characters.get_player_mut().unwrap().get_position().clone();
         let mut side_position = None;
         match side {
             Side::TOP => {

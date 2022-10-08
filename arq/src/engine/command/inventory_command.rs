@@ -31,7 +31,7 @@ struct CallbackState<'a> {
 }
 
 fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
-    let position = state.level.characters.get_player_mut().get_position().clone();
+    let position = state.level.characters.get_player_mut().unwrap().get_position().clone();
     log::info!("InventoryCommand - Dropping {} items at position: {}, {}", items.len(),  position.x, position.y);
 
     // Find the container on the map and add the "container" wrappers there
@@ -57,7 +57,7 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
 }
 
 fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
-    let inventory = level.characters.get_player_mut().get_inventory_mut();
+    let inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
     let sub_containers_result = container_util::build_container_choices(&data.source, inventory);
 
     let sub_containers = sub_containers_result.unwrap();
@@ -104,7 +104,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
     fn open_inventory(&mut self) -> Result<(), io::Error> {
         log::info!("Player opening inventory.");
-        let c = self.level.characters.get_player_mut().get_inventory_mut();
+        let c = self.level.characters.get_player_mut().unwrap().get_inventory_mut();
         let mut callback_container: Container = c.clone();
 
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
@@ -112,7 +112,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         self.ui.console_print("Up/Down - Move\nEnter - Toggle selection".to_string());
 
         let level = &mut self.level;
-        let player = &mut level.characters.characters[0].clone();
+        let player = &mut level.characters.get_player_mut().unwrap().clone();
         let updated_inventory;
         {
             let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|_| {None}) };
@@ -128,7 +128,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
                 }
             }
         }
-        level.characters.characters[0].set_inventory(updated_inventory);
+        level.characters.get_player_mut().unwrap().set_inventory(updated_inventory);
         return Ok(())
     }
 }
@@ -164,8 +164,9 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::build_player;
+    use crate::characters::build_characters;
     use crate::engine::command::inventory_command::{CallbackState, handle_callback};
-    use crate::engine::level::{Characters, Level};
+    use crate::engine::level::Level;
     
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
@@ -222,7 +223,7 @@ mod tests {
         };
 
         let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
-        return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
+        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 
     #[test]

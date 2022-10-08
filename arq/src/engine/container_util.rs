@@ -37,7 +37,7 @@ fn add_to_target(source : Container, target: &mut Container, to_add: Vec<Item>) 
 
 pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
     // TODO have a find_player function?
-    let player = &mut level.characters.characters[0];
+    let player = &mut level.characters.get_player_mut().unwrap();
     log::info!("Found player: {}", player.get_name());
     if let Some(pos) = data.position {
         let mut taken = Vec::new();
@@ -150,7 +150,7 @@ pub fn move_player_items(data: MoveItemsData, level : &mut Level) -> Option<Cont
         None
     } else {
         log::info!("[move_player_items] Attempting to move player items to a target container (inside inventory)...");
-        let player : &mut Character = level.characters.get_player_mut();
+        let player : &mut Character = level.characters.get_player_mut().unwrap();
         let inventory : &mut Container = player.get_inventory_mut();
         let source;
         let source_item ;
@@ -266,8 +266,9 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::{build_player};
+    use crate::characters::build_characters;
     use crate::engine::container_util::{move_items, move_player_items};
-    use crate::engine::level::{Characters, Level};
+    use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     
     use crate::map::position::{build_square_area, Position};
@@ -297,7 +298,7 @@ mod tests {
         };
 
         let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
-        return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
+        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 
     fn build_player_test_level() -> Level {
@@ -317,7 +318,7 @@ mod tests {
             containers: HashMap::new()
         };
         let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
-        return  Level { map: Some(map) , characters: Characters { characters: vec![player] } };
+        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 
     #[test]
@@ -747,7 +748,7 @@ mod tests {
 
         // AND the level has been setup with the player inventory
         let mut level = build_player_test_level();
-        level.characters.get_player_mut().set_inventory(inventory);
+        level.characters.get_player_mut().unwrap().set_inventory(inventory);
 
         // WHEN we try to move these
         let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
@@ -760,7 +761,7 @@ mod tests {
             // with 0 unmoved items
             assert_eq!(0, d.to_move.len());
 
-            let updated_inventory = level.characters.get_player_mut().get_inventory_mut();
+            let updated_inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
             // AND the player's inventory should now have 2 items in it's top level count
             assert_eq!(2, updated_inventory.get_top_level_count());
 
@@ -826,7 +827,7 @@ mod tests {
 
         // AND the level has been setup with the player inventory
         let mut level = build_player_test_level();
-        level.characters.get_player_mut().set_inventory(inventory);
+        level.characters.get_player_mut().unwrap().set_inventory(inventory);
 
         // WHEN we try to move an item from the bag into the root container
         let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
@@ -839,7 +840,7 @@ mod tests {
             // with 0 unmoved items
             assert_eq!(0, d.to_move.len());
 
-            let updated_inventory = level.characters.get_player_mut().get_inventory_mut();
+            let updated_inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
             // AND the player's inventory should not have 4 items in it's content count
             assert_eq!(4, updated_inventory.get_top_level_count());
 
@@ -894,7 +895,7 @@ mod tests {
 
         // AND the level has been setup with the player inventory
         let mut level = build_player_test_level();
-        level.characters.get_player_mut().set_inventory(inventory);
+        level.characters.get_player_mut().unwrap().set_inventory(inventory);
 
         // WHEN we try to move an item from the bag into the root container
         let data = MoveItemsData { source, to_move, target_container: Some(target), target_item: None, position: None };
@@ -910,7 +911,7 @@ mod tests {
             assert!(false, "Unexpected data type returned");
         }
 
-        let updated_inventory = level.characters.get_player_mut().get_inventory_mut();
+        let updated_inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
         // AND the player's inventory should not have 5 items in it's content count
         assert_eq!(5, updated_inventory.get_top_level_count());
         // AND The bag should have only 2 items now

@@ -16,6 +16,7 @@ mod menu;
 mod settings;
 mod view;
 mod character;
+mod characters;
 mod widget;
 mod test;
 mod list_selection;

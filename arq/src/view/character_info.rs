@@ -402,7 +402,8 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::{build_character, build_default_character_details, Character};
-    use crate::engine::level::{Characters, Level};
+    use crate::characters::build_characters;
+    use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
@@ -454,7 +455,7 @@ mod tests {
             containers: HashMap::new()
         };
 
-        return Level { map: Some(map), characters: Characters { characters: vec![player] } };
+        return Level { map: Some(map), characters: build_characters( Some(player), Vec::new())  };
     }
 
     #[test]
@@ -468,7 +469,7 @@ mod tests {
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test().unwrap();
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
-        let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|_data| {None}) };
+        let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut().unwrap(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|_data| {None}) };
 
         // WHEN we call to initialise
         // THEN we expect it to complete successfully

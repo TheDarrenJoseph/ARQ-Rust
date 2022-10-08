@@ -13,13 +13,14 @@ use tui::backend::Backend;
 use tui::layout::Rect;
 
 use crate::character::{build_player, Character};
+use crate::characters::{build_characters, build_default_characters, Characters};
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
-use crate::engine::level::{Characters, init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
+use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
 
 use crate::map::map_generator::{build_dev_inventory};
 
@@ -125,7 +126,7 @@ impl <B : Backend> UIWrapper<B> {
         match map {
             Some(m) => {
                 if let Some(frame_size) = frame_size_copy {
-                    let mut map_view = MapView { map: m, characters: level.characters.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
 
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
@@ -280,18 +281,9 @@ impl <B : Backend> GameEngine<B> {
         Ok(None)
     }
 
-    fn build_characters(&self) -> Vec<Character> {
-        let position = Position { x: 1, y: 1};
-        let player = build_player("Player".to_string(), position);
-
-        let mut characters = Vec::new();
-        characters.push(player);
-        return characters;
-    }
-
     fn respawn_player(&mut self, change: LevelChange) {
         let level = self.levels.get_level_mut();
-        let player = level.characters.get_player_mut();
+        let player = level.characters.get_player_mut().unwrap();
 
         // Grab the first room and set the player's position there
         if let Some(map) = &level.map {
@@ -312,11 +304,19 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
-        let characters = self.build_characters();
+        let player = build_player(String::from("Player"), Position { x: 0, y: 0 });
+        let test_npc = build_player(String::from("Rando"), Position { x: 0, y: 0 });
+        let mut characters = build_characters(Some(player), vec![test_npc]);
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
-        self.levels.get_level_mut().characters = Characters { characters: characters.clone() };
+        self.levels.get_level_mut().characters = characters;
         self.respawn_player(LevelChange::DOWN);
+
+        // Spawn the NPC ontop of the player for now (testing)
+        let mut updated_characters = &mut self.levels.get_level_mut().characters;
+        let player_pos = updated_characters.get_player().unwrap().get_position().clone();
+        let mut npc = updated_characters.get_npcs_mut().get_mut(0).unwrap();
+        npc.set_position(player_pos);
         self.build_testing_inventory();
         return Ok(());
     }
@@ -331,7 +331,7 @@ impl <B : Backend> GameEngine<B> {
         while self.game_running {
             if self.ui_wrapper.ui.additional_widgets.is_empty() {
                 let level = self.levels.get_level_mut();
-                let player = level.characters.get_player_mut();
+                let player = level.characters.get_player_mut().unwrap();
                 let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
                 self.ui_wrapper.ui.additional_widgets.push(stat_line);
             }
@@ -358,7 +358,8 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn build_testing_inventory(&mut self) {
-        self.levels.get_level_mut().characters.characters[0].set_inventory(build_dev_inventory());
+        let player = self.levels.get_level_mut().characters.get_player_mut().unwrap();
+        player.set_inventory(build_dev_inventory());
     }
 
     fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
@@ -371,7 +372,7 @@ impl <B : Backend> GameEngine<B> {
             Some(pos) => {
                 if let Some(m) = &level.map {
                     if m.is_traversable(pos) {
-                        let player =  level.characters.get_player_mut();
+                        let player =  level.characters.get_player_mut().unwrap();
                         player.set_position(pos);
                     }
 
@@ -399,7 +400,7 @@ impl <B : Backend> GameEngine<B> {
                                     self.respawn_player(change);
                                 },
                                 LevelChangeResult::OutOfDungeon => {
-                                    let player_score = self.levels.get_level_mut().characters.get_player_mut().get_inventory_mut().get_loot_value();
+                                    let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
 
                                     let mut menu = build_game_over_menu(
                                         format!("You left the dungeon.\nLoot Total: {}", player_score),
@@ -519,6 +520,7 @@ mod tests {
     use termion::event::Key;
 
     use crate::character::{build_player, Character};
+    use crate::characters::build_empty_characters;
     use crate::engine::game_engine::*;
     use crate::map::{Map, Tiles};
     use crate::map::position::{Position};
@@ -541,11 +543,6 @@ mod tests {
         map_tiles
     }
 
-    fn build_characters(player_position : Position) -> Vec<Character> {
-        let player = build_player("Player".to_string(), player_position);
-        vec![player]
-    }
-
     fn test_movement_input(levels: Levels, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
         // GIVEN a game engine with a 3x3 grid of tiles
         let _tile_library = build_library();
@@ -555,13 +552,13 @@ mod tests {
         match game_engine {
             Result::Ok(mut engine) => {
                 {
-                    let characters = build_characters(start_position);
+                    let characters = build_empty_characters();
                     let level = &mut engine.levels.get_level_mut();
-                    level.characters.set_characters(characters);
+                    level.characters = characters;
                 }
 
                 // AND The player is placed in the middle of the map
-                assert_eq!(start_position, engine.levels.get_level_mut().characters.get_player().get_position());
+                assert_eq!(start_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_position());
 
                 // WHEN we push the down key
                 for key in input {
@@ -569,7 +566,7 @@ mod tests {
                 }
 
                 // THEN we expect the player to be moved into the traversable tile
-                assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().get_position());
+                assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_position());
             },
             _ => {
                 panic!("Expected a valid Game Engine instance!")
@@ -580,7 +577,7 @@ mod tests {
     fn build_test_levels(map: Map) -> Levels {
         let level = Level {
             map: Some(map.clone()),
-            characters: Characters { characters: Vec::new() }
+            characters: build_empty_characters()
         };
 
         let rng = Seeder::from("test".to_string()).make_rng();

@@ -5,6 +5,7 @@ use tui::buffer::Cell;
 use tui::layout::Rect;
 
 use crate::character::Character;
+use crate::characters::Characters;
 use crate::map::Map;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::position::{Area, build_rectangular_area, Position};
@@ -17,32 +18,42 @@ use crate::view::character_info::CharacterInfoView;
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
     pub ui : &'a mut UI,
-    pub characters : Vec<Character>,
+    pub characters : Characters,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub view_area : Option<Area>
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
-    pub fn draw_characters(&mut self) -> Result<(), Error> {
-        log::info!("Drawing characters...");
+    fn draw_character(&mut self, character: &Character) -> Result<(), Error> {
         if let Some(view_area) = self.view_area {
             let view_start = view_area.start_position;
-
             let backend = self.terminal_manager.terminal.backend_mut();
-            for character in &self.characters {
-                let position = character.get_position();
-                let character_colour = character.get_colour();
-                let fg = colour_mapper::map_colour(character_colour);
-                let bg = tui::style::Color::Black;
-                let modifier = tui::style::Modifier::empty();
-                let cell = Cell { symbol: "@".to_string(), fg, bg, modifier };
-                let view_position = Position { x: view_start.x + position.x, y:  position.y + view_start.y};
-                if view_area.contains_position(view_position) {
-                    let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
-                    let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                    backend.draw(updates.into_iter())?;
-                    backend.flush()?;
-                }
+
+            let position = character.get_position();
+            let character_colour = character.get_colour();
+            let fg = colour_mapper::map_colour(character_colour);
+            let bg = tui::style::Color::Black;
+            let modifier = tui::style::Modifier::empty();
+            let cell = Cell { symbol: "@".to_string(), fg, bg, modifier };
+            let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
+            if view_area.contains_position(view_position) {
+                let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+                let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                backend.draw(updates.into_iter())?;
+                backend.flush()?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn draw_characters(&mut self) -> Result<(), Error> {
+        log::info!("Drawing characters...");
+        let characters = &mut self.characters.clone();
+        if let Some(view_area) = self.view_area {
+            let player = characters.get_player().unwrap();
+            self.draw_character(player);
+            for npc in characters.get_npcs() {
+                self.draw_character( npc);
             }
         }
         Ok(())
