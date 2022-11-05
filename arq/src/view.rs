@@ -8,8 +8,6 @@ use tui::layout::Rect;
 
 use crate::map::position::{Area, build_rectangular_area, Position};
 
-
-
 pub mod framehandler;
 pub mod util;
 pub mod callback;

@@ -31,6 +31,7 @@ use crate::map::map_generator::{build_dev_inventory};
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::map::room::Room;
+use crate::map::tile::Tile::Room as RoomTile;
 use crate::menu;
 use crate::menu::Selection;
 
@@ -39,6 +40,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui;
 use crate::ui::{build_ui, Draw};
 use crate::ui::{StartMenuChoice};
+use crate::util::utils::UuidEquals;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
@@ -320,9 +322,21 @@ impl <B : Backend> GameEngine<B> {
         let level = self.levels.get_level_mut();
         let npcs = level.characters.get_npcs_mut();
         if let Some(map) = &level.map {
-            // TODO pick rooms for each NPCs
-            //for npc in npcs {
-            //}
+            let mut non_player_rooms : Vec<Room> = map.rooms.clone();
+            non_player_rooms.retain(|r| !r.uuid_equals(player_room.clone()));
+
+            if !non_player_rooms.is_empty() {
+                let mut moved = 0;
+                for npc in npcs {
+                    // Normal thread RNG / non-reproducible!!
+                    let mut rng = thread_rng();
+                    let random_room_idx = rng.gen_range(0..non_player_rooms.len() - 1);
+                    let chosen_room = non_player_rooms.get(random_room_idx).unwrap();
+                    npc.set_position(chosen_room.random_inside_pos(&mut rng));
+                }
+            } else {
+                log::error!("Cannot respawn NPCs, Cannot find any non player containing rooms.");
+            }
         } else {
             log::error!("Cannot respawn NPCs, Map was None!");
         }
@@ -336,12 +350,7 @@ impl <B : Backend> GameEngine<B> {
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
         let spawn_room = self.respawn_player(LevelChange::DOWN);
-
-        // Spawn the NPC ontop of the player for now (testing)
-        let mut updated_characters = &mut self.levels.get_level_mut().characters;
-        let player_pos = updated_characters.get_player().unwrap().get_position().clone();
-        let mut npc = updated_characters.get_npcs_mut().get_mut(0).unwrap();
-        npc.set_position(player_pos);
+        self.respawn_npcs(spawn_room.unwrap().clone());
         self.build_testing_inventory();
         return Ok(());
     }

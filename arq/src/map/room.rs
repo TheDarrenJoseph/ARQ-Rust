@@ -1,6 +1,9 @@
+use rand::Rng;
+use rand::rngs::ThreadRng;
 use uuid::Uuid;
 use crate::map::objects::door::Door;
 use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
+use crate::util::utils::{HasUuid, UuidEquals};
 
 #[derive(Clone)]
 pub struct Room {
@@ -10,6 +13,14 @@ pub struct Room {
     entry: Option<Position>,
     exit : Option<Position>
 }
+
+impl HasUuid for Room {
+    fn get_id(&self) -> Uuid {
+        self.id
+    }
+}
+
+impl UuidEquals<Room> for Room {}
 
 pub fn build_room (area: Area, doors: Vec<Door>)-> Room {
     return Room { id: Uuid::new_v4(), area, doors, entry: None, exit: None };
@@ -24,6 +35,16 @@ impl Room {
         let start_pos = &self.area.start_position;
         let start_position = Position { x : start_pos.x + 1, y: start_pos.y + 1};
         build_rectangular_area(start_position,  self.area.get_size_x()-2,  self.area.get_size_y() - 2 )
+    }
+
+    pub fn random_inside_pos(&self, rng: &mut ThreadRng) -> Position {
+        let inside_area = self.get_inside_area();
+        let size_x = inside_area.get_size_x();
+        let size_y = inside_area.get_size_y();
+        let random_x: u16 = rng.gen_range(0..size_x) as u16;
+        let random_y: u16 = rng.gen_range(0..size_y) as u16;
+        let random_pos = Position { x: inside_area.start_position.x.clone() + random_x, y: inside_area.start_position.y.clone() + random_y };
+        return random_pos;
     }
 
     pub fn get_id(&self) -> Uuid {

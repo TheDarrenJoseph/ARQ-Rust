@@ -20,7 +20,9 @@ mod characters;
 mod widget;
 mod test;
 mod list_selection;
+mod util;
 pub mod map;
+
 
 fn main<>() -> Result<(), io::Error> {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
