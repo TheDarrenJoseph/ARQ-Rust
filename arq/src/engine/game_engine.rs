@@ -2,6 +2,8 @@ use std::convert::TryInto;
 use std::fmt::format;
 use std::io;
 use std::io::empty;
+use log4rs::config::Logger;
+use log::error;
 
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
@@ -28,6 +30,7 @@ use crate::map::map_generator::{build_dev_inventory};
 
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
+use crate::map::room::Room;
 use crate::menu;
 use crate::menu::Selection;
 
@@ -281,7 +284,12 @@ impl <B : Backend> GameEngine<B> {
         Ok(None)
     }
 
-    fn respawn_player(&mut self, change: LevelChange) {
+    /*
+     * Finds the first entry or exit containing room depending on the direction
+     * Sets the player position to match that
+     * Returns the room the player has been moved to (for further spawning decisions)
+     */
+    fn respawn_player(&mut self, change: LevelChange) -> Option<Room> {
         let level = self.levels.get_level_mut();
         let player = level.characters.get_player_mut().unwrap();
 
@@ -289,17 +297,34 @@ impl <B : Backend> GameEngine<B> {
         if let Some(map) = &level.map {
             match change {
                 LevelChange::UP => {
-                    let exit_room = map.rooms.iter().find(|room| room.exit.is_some()).unwrap();
-                    player.set_position(exit_room.exit.unwrap());
+                    let exit_room = map.rooms.iter().find(|room| room.get_exit().is_some()).unwrap();
+                    player.set_position(exit_room.get_exit().unwrap());
+                    return Some(exit_room.clone());
                 },
                 LevelChange::DOWN => {
-                    let entry_room = map.rooms.iter().find(|room| room.entry.is_some());
+                    let entry_room = map.rooms.iter().find(|room| room.get_entry().is_some());
                     if let Some(er) = entry_room {
-                        player.set_position(er.entry.unwrap());
+                        player.set_position(er.get_entry().unwrap());
+                        return Some(er.clone());
                     }
                 },
                 _ => { }
             }
+        } else {
+            log::error!("Cannot respawn player, Map was None!");
+        }
+        return None;
+    }
+
+    fn respawn_npcs(&mut self, player_room: Room) {
+        let level = self.levels.get_level_mut();
+        let npcs = level.characters.get_npcs_mut();
+        if let Some(map) = &level.map {
+            // TODO pick rooms for each NPCs
+            //for npc in npcs {
+            //}
+        } else {
+            log::error!("Cannot respawn NPCs, Map was None!");
         }
     }
 
@@ -310,7 +335,7 @@ impl <B : Backend> GameEngine<B> {
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
-        self.respawn_player(LevelChange::DOWN);
+        let spawn_room = self.respawn_player(LevelChange::DOWN);
 
         // Spawn the NPC ontop of the player for now (testing)
         let mut updated_characters = &mut self.levels.get_level_mut().characters;
@@ -378,11 +403,11 @@ impl <B : Backend> GameEngine<B> {
 
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
-                        if pos.equals_option(room.exit) {
+                        if pos.equals_option(room.get_exit()) {
                             self.ui_wrapper.print_and_re_render("You've reached the exit! You move down a level..".to_string())?;
                             io::stdin().keys().next().unwrap().unwrap();
                             level_change = LevelChange::DOWN;
-                        } else if pos.equals_option(room.entry) {
+                        } else if pos.equals_option(room.get_entry()) {
                             self.ui_wrapper.print_and_re_render("You've reached the entry! You move up a level..".to_string())?;
                             io::stdin().keys().next().unwrap().unwrap();
                             level_change = LevelChange::UP;

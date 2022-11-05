@@ -20,7 +20,7 @@ pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
 }
 
 fn describe_position_in_room(pos: Position, room: &Room) -> Option<String> {
-    if let Some(door) = &room.doors.iter().find(|d| d.position == pos) {
+    if let Some(door) = &room.get_doors().iter().find(|d| d.position == pos) {
         log::info!("Position is a door.");
         return Some(format!("There's a {} here.", &door.tile_details.name));
     }
@@ -49,7 +49,7 @@ fn describe_position_container(c: &Container) -> Result<String, io::Error> {
 
 fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Error> {
     if let Some(map) = &level.map {
-        if let Some(room) = map.get_rooms().iter().find(|r| r.area.contains_position(pos)) {
+        if let Some(room) = map.get_rooms().iter().find(|r| r.get_area().contains_position(pos)) {
             log::info!("Position is in a room.");
             let prompt = describe_position_in_room(pos, room);
             if prompt.is_some() {
@@ -126,7 +126,7 @@ mod tests {
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::Room;
+    use crate::map::room::{build_room, Room};
     use crate::map::tile::Tile;
     use crate::map::Tiles;
 
@@ -165,7 +165,7 @@ mod tests {
         let door = build_door(door_position);
         let mut doors = Vec::new();
         doors.push(door);
-        let room = Room { area, doors, entry: None, exit: None };
+        let room = build_room(area, doors);
 
         // WHEN we call to describe a door position
         let prompt = describe_position_in_room(door_position, &room);

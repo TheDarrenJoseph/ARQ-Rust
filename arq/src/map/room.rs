@@ -1,12 +1,18 @@
+use uuid::Uuid;
 use crate::map::objects::door::Door;
 use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
 
 #[derive(Clone)]
 pub struct Room {
-    pub area: Area,
-    pub doors : Vec<Door>,
-    pub entry: Option<Position>,
-    pub exit : Option<Position>
+    id: Uuid,
+    area: Area,
+    doors : Vec<Door>,
+    entry: Option<Position>,
+    exit : Option<Position>
+}
+
+pub fn build_room (area: Area, doors: Vec<Door>)-> Room {
+    return Room { id: Uuid::new_v4(), area, doors, entry: None, exit: None };
 }
 
 impl Room {
@@ -19,6 +25,38 @@ impl Room {
         let start_position = Position { x : start_pos.x + 1, y: start_pos.y + 1};
         build_rectangular_area(start_position,  self.area.get_size_x()-2,  self.area.get_size_y() - 2 )
     }
+
+    pub fn get_id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn get_area(&self) -> Area {
+        self.area
+    }
+
+    pub fn get_doors(&self) -> &Vec<Door> {
+        &self.doors
+    }
+
+    pub fn set_doors(&mut self, doors: Vec<Door>) {
+        self.doors = doors;
+    }
+
+    pub fn get_entry(&self) -> Option<Position> {
+        self.entry
+    }
+
+    pub fn set_entry(&mut self, entry: Option<Position>) {
+        self.entry = entry;
+    }
+
+    pub fn get_exit(&self) -> Option<Position> {
+        self.exit
+    }
+
+    pub fn set_exit(&mut self, exit: Option<Position>) {
+        self.exit = exit;
+    }
 }
 
 #[cfg(test)]
@@ -27,7 +65,7 @@ mod tests {
 
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position, Side};
-    use crate::map::room::Room;
+    use crate::map::room::{build_room, Room};
 
     #[test]
     fn test_get_sides() {
@@ -38,8 +76,8 @@ mod tests {
         let door = build_door(door_position);
         let mut doors = Vec::new();
         doors.push(door);
-        let room = Room { area, doors, entry: None, exit: None };
 
+        let room = build_room(area, doors);
         let sides = room.get_sides();
 
         assert_eq!(4, sides.len());
@@ -78,8 +116,7 @@ mod tests {
         // GIVEN a room of 4x4
         let start_position = Position { x: 0, y: 0};
         let area = build_square_area(start_position, 4);
-        let doors = Vec::new();
-        let room = Room { area, doors, entry: None, exit: None };
+        let room = build_room(area, Vec::new());
         assert_eq!(Position { x: 0, y: 0}, room.area.start_position);
         assert_eq!(Position { x: 3, y: 3}, room.area.end_position);
 
@@ -99,8 +136,7 @@ mod tests {
         // GIVEN a room of 4x4
         let start_position = Position { x: 2, y: 6};
         let area = build_square_area(start_position, 6);
-        let doors = Vec::new();
-        let room = Room { area, doors, entry: None, exit: None };
+        let room = build_room(area, Vec::new());
         assert_eq!(Position { x: 2, y: 6}, room.area.start_position);
         assert_eq!(Position { x: 7, y: 11}, room.area.end_position);
 

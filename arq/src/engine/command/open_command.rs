@@ -153,8 +153,8 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 
             let mut to_open = None;
             if let Some(map) = &mut self.level.map {
-                if let Some(room) = map.get_rooms().iter_mut().find(|r| r.area.contains_position(p)) {
-                    if let Some(_door) = &room.doors.iter().find(|d| d.position == p) {
+                if let Some(room) = map.get_rooms().iter_mut().find(|r| r.get_area().contains_position(p)) {
+                    if let Some(_door) = &room.get_doors().iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
                         self.ui.console_print("There's a door here.".to_string());
                         // TODO encapsulate view components / refactor

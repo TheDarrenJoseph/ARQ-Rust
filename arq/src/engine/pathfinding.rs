@@ -153,7 +153,7 @@ mod tests {
     use crate::engine::pathfinding::{ManhattanPathCosting, Node, Pathfinding};
     use crate::map;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::Room;
+    use crate::map::room::{build_room, Room};
     use crate::map::tile::Tile;
     use crate::map::Tiles;
 
@@ -169,7 +169,7 @@ mod tests {
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
         let doors = Vec::new();
-        let room = Room { area: room_area, doors, entry: None, exit: None };
+        let room = build_room(room_area, doors);
 
         let mut rooms = Vec::new();
         rooms.push(room);
