@@ -444,7 +444,7 @@ impl <B : Backend> GameEngine<B> {
                 let mut command = OpenCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
                 command.handle(key)?;
             },
-            Key::Down | Key::Up | Key::Left | Key::Right => {
+            Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
                 if let Some(side) = input_mapping::key_to_side(key) {
                     if let Some(game_over_choice) = self.handle_player_movement(side)? {
                         return Ok(Some(game_over_choice));

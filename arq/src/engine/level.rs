@@ -119,7 +119,7 @@ impl Levels {
 impl Level {
     pub(crate) fn find_adjacent_player_position(&mut self, key: Key) -> Option<Position> {
         return match key {
-            Key::Down | Key::Up | Key::Left | Key::Right => {
+            Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
                 if let Some(side) = input_mapping::key_to_side(key) {
                     self.find_player_side_position(side)
                 } else {
