@@ -5,6 +5,7 @@ use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
 
 use crate::character::{Character, Class, determine_class, get_all_attributes};
+use crate::error_utils::{error, error_result};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -292,10 +293,10 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
             generic_input_result: GenericInputResult { done, requires_view_refresh: true },
             view_specific_result: None
         });
-        let key = resolve_input(input);
+        let key = resolve_input(input)?;
         match key {
             Key::Char('q') => {
-                return Err(Error::new(ErrorKind::Other, "Quit interrupt.".to_string()));
+                return error_result("Quit interrupt.".to_string());
             },
             Key::Char('\n') => {
                 match selected_widget {

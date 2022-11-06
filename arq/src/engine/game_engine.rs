@@ -3,7 +3,7 @@ use std::fmt::format;
 use std::io;
 use std::io::empty;
 use log4rs::config::Logger;
-use log::error;
+use log::{error, log};
 
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
@@ -23,10 +23,9 @@ use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
 use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
+use crate::error_utils::error_result;
 
 use crate::map::map_generator::{build_dev_inventory};
-
-
 
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
@@ -37,9 +36,8 @@ use crate::menu::Selection;
 
 use crate::settings::{Setting, Settings};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui;
-use crate::ui::{build_ui, Draw};
-use crate::ui::{StartMenuChoice};
+use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
+use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
@@ -56,102 +54,6 @@ use crate::widget::text_widget::build_text_input;
 use crate::widget::widgets::WidgetList;
 use crate::widget::{Widget, WidgetType};
 
-pub struct UIWrapper<B: 'static + tui::backend::Backend> {
-    ui : ui::UI,
-    terminal_manager : TerminalManager<B>,
-}
-
-impl <B : Backend> UIWrapper<B> {
-    // TODO refactor into a singular component shared with commands
-    fn re_render(&mut self) -> Result<(), io::Error>  {
-        let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
-        })?;
-        Ok(())
-    }
-
-    fn print_and_re_render(&mut self, message: String) -> Result<(), io::Error> {
-        self.ui.console_print(message);
-        self.re_render()
-    }
-
-    fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
-        let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
-    }
-
-    fn draw_info(&mut self) -> Result<(), io::Error>  {
-        let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_info(frame) })
-    }
-
-    // TODO this should live in it's own view likely
-    // Shows character creation screen
-    // Returns the finished character once input is confirmed
-    fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
-        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), selected_widget: None }, view_mode: ViewMode::CREATION};
-        // Begin capture of a new character
-        let mut character_creation_result = InputResult { generic_input_result:
-        GenericInputResult { done: false, requires_view_refresh: false },
-            view_specific_result: None
-        };
-        while !character_creation_result.generic_input_result.done {
-            let ui = &mut self.ui;
-            ui.show_console();
-            self.terminal_manager.terminal.draw(|frame| {
-                let areas: Vec<Rect> = ui.get_view_areas(frame.size());
-                let mut main_area = areas[0];
-                main_area.height -= 2;
-                ui.render(frame);
-                character_view.handle_frame(frame, FrameData { data: base_character.clone(), frame_size: main_area });
-            })?;
-            ui.hide_console();
-
-            let key = io::stdin().keys().next().unwrap().unwrap();
-            character_creation_result = character_view.handle_input(Some(key))?;
-
-            match character_creation_result.view_specific_result {
-                Some(VALIDATION(message)) => {
-                    self.ui.console_print(message);
-                    self.re_render()?;
-                },
-                Some(CharacterFrameHandlerInputResult::NONE) => {
-                    return Ok(character_view.get_character())
-                },
-                _ => {}
-            }
-        }
-        return Ok(character_view.get_character());
-    }
-
-    fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
-        let map = &mut level.get_map_mut().cloned();
-        let frame_size_copy = self.ui.frame_size.clone();
-        match map {
-            Some(m) => {
-                if let Some(frame_size) = frame_size_copy {
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
-
-                    // Adjust the map view size to fit within our borders / make space for the console
-                    let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
-                    let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
-                    map_view.draw(map_view_frame_size)?;
-                    map_view.draw_containers()?;
-                    map_view.draw_characters()?;
-                    self.ui.console_print("Arrow keys to move.".to_string());
-                    self.re_render()?;
-                }
-            },
-            None => {}
-        }
-        Ok(())
-    }
-
-    pub fn clear_screen(&mut self) -> Result<(), io::Error> {
-        self.terminal_manager.terminal.clear()
-    }
-}
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     pub ui_wrapper : UIWrapper<B>,
@@ -350,16 +252,34 @@ impl <B : Backend> GameEngine<B> {
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
         let spawn_room = self.respawn_player(LevelChange::DOWN);
-        self.respawn_npcs(spawn_room.unwrap().clone());
-        self.build_testing_inventory();
-        return Ok(());
+        if let Some(sr) = spawn_room {
+            self.respawn_npcs(sr.clone());
+            self.build_testing_inventory();
+            return Ok(());
+        } else {
+            return error_result(String::from("Player was not properly spawned/no player spawn room returned!"));
+        }
     }
 
     pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
-        self.ui_wrapper.print_and_re_render("Generating a new level..".to_string())?;
-        self.levels.generate_level();
-        self.initialise_characters()?;
+        self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
+
+        let mut generated = false;
+        while !generated {
+            self.levels.generate_level();
+
+            match self.initialise_characters() {
+                Err(e) => {
+                    log::error!("Generation round failed with error {}. Trying again...", e);
+                    self.ui_wrapper.print_and_re_render(String::from("Bad level. Trying again..."));
+                    break;
+                },
+                _ => {
+                    generated = true;
+                },
+            }
+        }
 
         self.game_running = true;
         while self.game_running {
@@ -414,11 +334,11 @@ impl <B : Backend> GameEngine<B> {
                         .find(|r| r.get_inside_area().contains_position(pos)) {
                         if pos.equals_option(room.get_exit()) {
                             self.ui_wrapper.print_and_re_render("You've reached the exit! You move down a level..".to_string())?;
-                            io::stdin().keys().next().unwrap().unwrap();
+                            get_input_key();
                             level_change = LevelChange::DOWN;
                         } else if pos.equals_option(room.get_entry()) {
                             self.ui_wrapper.print_and_re_render("You've reached the entry! You move up a level..".to_string())?;
-                            io::stdin().keys().next().unwrap().unwrap();
+                            get_input_key();
                             level_change = LevelChange::UP;
                         }
                     }
@@ -486,7 +406,7 @@ impl <B : Backend> GameEngine<B> {
                 command.handle(key)?;
             },
             Key::Char('o') => {
-                self.ui_wrapper.print_and_re_render("What do you want to open?. Arrow keys to choose. Repeat command to choose current location.".to_string())?;
+                let key = self.ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat command to choose current location."))?;
                 let mut command = OpenCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
                 command.handle(key)?;
             },
@@ -503,7 +423,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
-        let key = io::stdin().keys().next().unwrap().unwrap();
+        let key = get_input_key()?;
         //self.terminal_manager.terminal.clear()?;
         return Ok(self.handle_input(key)?);
     }

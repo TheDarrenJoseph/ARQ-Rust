@@ -6,7 +6,7 @@ use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::UI;
+use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::game_over::GameOverChoice::{EXIT, RESTART};
 use crate::widget::button_widget::build_button;
@@ -102,7 +102,7 @@ impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B
             None => {}
         }
 
-        let key = resolve_input(input);
+        let key = resolve_input(input)?;
         match key {
             Key::Down => {
                 self.widgets.next_widget();

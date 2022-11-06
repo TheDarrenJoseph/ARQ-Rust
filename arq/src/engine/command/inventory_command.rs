@@ -9,7 +9,7 @@ use crate::engine::level::Level;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui;
+use crate::ui::ui::UI;
 
 use crate::view::callback::Callback;
 use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
@@ -20,7 +20,7 @@ use crate::view::View;
 
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
-    pub ui: &'a mut ui::UI,
+    pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 

@@ -6,7 +6,7 @@ use crate::map::objects::container::Container;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::UI;
+use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
@@ -162,7 +162,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
-        let key = resolve_input(input);
+        let key = resolve_input(input)?;
         match key {
             Key::Char('t') => {
                 if let Some(parent_view) = self.frame_handlers.container_frame_handlers.last_mut() {

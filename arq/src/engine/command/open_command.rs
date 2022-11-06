@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::io;
 use std::io::{Error, ErrorKind};
+use log::error;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -8,10 +9,10 @@ use termion::input::TermRead;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::level::Level;
+use crate::error_utils::{error, error_result};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui;
 use crate::view::callback::Callback;
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
@@ -19,12 +20,15 @@ use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, T
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::{InputResult, View};
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
+use crate::ui::ui::{get_input_key, UI};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
-    pub ui: &'a mut ui::UI,
+    pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>
 }
+
+const NOTHING_ERROR : &str = "There's nothing here to open.";
 
 fn handle_callback(level : &mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let mut input_result : ContainerFrameHandlerInputResult = data;
@@ -84,13 +88,13 @@ fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) 
                 result_data.position = Some(pos);
                 return Ok(MoveToContainerChoice(result_data));
             } else {
-                return Err(Error::new(ErrorKind::Other, format!("Failed build container choices: {}", sub_containers_result.err().unwrap())));
+                return error_result(format!("Failed build container choices: {}", sub_containers_result.err().unwrap()));
             }
         } else {
-            return Err(Error::new(ErrorKind::Other, format!("Cannot build container choices. Cannot find container at position: {:?}", pos)));
+            return error_result( format!("Cannot build container choices. Cannot find container at position: {:?}", pos));
         }
     } else {
-        return Err(Error::new(ErrorKind::Other, "Cannot build container choices. No position provided."));
+        return error_result(String::from("Cannot build container choices. No position provided."));
     }
 }
 
@@ -145,9 +149,10 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        if let Some(p) = self.level.find_adjacent_player_position(key, command_key) {
+    fn handle(&mut self, key: Key) -> Result<(), io::Error> {
+
+        let mut message = NOTHING_ERROR.to_string();
+        if let Some(p) = self.level.find_adjacent_player_position(key) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;
 
@@ -156,30 +161,22 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                 if let Some(room) = map.get_rooms().iter_mut().find(|r| r.get_area().contains_position(p)) {
                     if let Some(_door) = &room.get_doors().iter().find(|d| d.position == p) {
                         log::info!("Player opening door.");
-                        self.ui.console_print("There's a door here.".to_string());
-                        // TODO encapsulate view components / refactor
-                    } else {
-                        self.ui.console_print("There's nothing here to open.".to_string());
-                        // TODO encapsulate view components / refactor
+                        message = "There's a door here.".to_string();
                     }
                 }
 
-                if let None = to_open  {
+                if let None = to_open {
                     if let Some(c) = map.containers.get(&p) {
                         let item_count = c.get_top_level_count();
-                         if item_count > 0 {
-                             log::info!("Found map container.");
-                             let contains_single_container = item_count == 1 && c.get_contents()[0].is_true_container();
-                             if contains_single_container &&  c.get_contents()[0].get_top_level_count() > 0 {
-                                 to_open = Some(c.get_contents()[0].clone());
-                             } else {
-                                 to_open = Some(c.clone());
-                             }
+                        if item_count > 0 {
+                            log::info!("Found map container.");
+                            let contains_single_container = item_count == 1 && c.get_contents()[0].is_true_container();
+                            if contains_single_container && c.get_contents()[0].get_top_level_count() > 0 {
+                                to_open = Some(c.get_contents()[0].clone());
+                            } else {
+                                to_open = Some(c.clone());
+                            }
                         }
-                    } else {
-                        self.ui.console_print("There's nothing here to open.".to_string());
-                        // TODO encapsulate view components / refactor
-                        self.re_render()?;
                     }
                 }
             }
@@ -188,9 +185,11 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                 self.re_render()?;
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_total_count());
                 self.open_container(p.clone(), &c)?;
+            } else {
+                self.ui.console_print(message);
+                self.re_render();
+                io::stdin().keys().next().unwrap()?;
             }
-
-             io::stdin().keys().next().unwrap()?;
         }
         Ok(())
     }

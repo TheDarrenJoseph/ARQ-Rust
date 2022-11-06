@@ -416,7 +416,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
             view_specific_result: Some(ContainerFrameHandlerInputResult::None)});
         loop {
-            let key = resolve_input(input);
+            let key = resolve_input(input)?;
             match key {
                 Key::Char('d') => {
                     if self.commands.contains(&DROP) {

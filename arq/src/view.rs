@@ -7,6 +7,7 @@ use tui::Frame;
 use tui::layout::Rect;
 
 use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::ui::ui::get_input_key;
 
 pub mod framehandler;
 pub mod util;
@@ -49,13 +50,13 @@ pub fn resolve_area<B : tui::backend::Backend>(area: Option<Rect>, frame: &Frame
     }
 }
 
-pub fn resolve_input(input : Option<Key>) -> Key {
+pub fn resolve_input(input : Option<Key>) -> Result<Key, io::Error> {
     match input {
         Some(input_key) => {
-            input_key
+            Ok(input_key)
         },
         _ => {
-            io::stdin().keys().next().unwrap().unwrap()
+            Ok(get_input_key()?)
         }
     }
 

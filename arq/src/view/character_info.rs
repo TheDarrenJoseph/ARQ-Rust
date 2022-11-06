@@ -16,7 +16,7 @@ use crate::character::{Character};
 use crate::list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::UI;
+use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
@@ -301,7 +301,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
-        let key = resolve_input(input);
+        let key = resolve_input(input)?;
         match key {
             Key::Char('q') => {
                 let done = self.quit_container_view()?;
@@ -410,7 +410,7 @@ mod tests {
     use crate::map::tile::{Colour, Tile};
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
-    use crate::ui::build_ui;
+    use crate::ui::ui::build_ui;
     use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
     
 

@@ -11,7 +11,7 @@ use crate::map::objects::container::{Container, ContainerType};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::terminal::colour_mapper;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::UI;
+use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::character_info::CharacterInfoView;
 

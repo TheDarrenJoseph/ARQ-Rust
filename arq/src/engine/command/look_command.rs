@@ -6,16 +6,17 @@ use termion::input::TermRead;
 
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
+use crate::error_utils::{error, error_result};
 use crate::map::objects::container::Container;
 use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui;
+use crate::ui::ui::{get_input_key, UI};
 
 pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
-    pub ui: &'a mut ui::UI,
+    pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
 }
 
@@ -32,7 +33,7 @@ fn describe_position_container(c: &Container) -> Result<String, io::Error> {
     let container_type = c.get_container_type();
 
     if container_type != AREA  {
-        return Err(Error::new(ErrorKind::Other, format!("Unexpected input! Cannot describe position with container of type {}.", container_type)))
+        return error_result( format!("Unexpected input! Cannot describe position with container of type {}.", container_type));
     }
 
     let c_item_name = c.get_self_item().get_name();
@@ -99,14 +100,14 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
         self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
         self.re_render().unwrap();
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        let position = self.level.find_adjacent_player_position(key, command_key);
+        let key = get_input_key()?;
+        let position = self.level.find_adjacent_player_position(key);
         if let Some(p) = position {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;
             let prompt =  describe_position(p, &mut self.level)?;
             self.print(prompt)?;
-            io::stdin().keys().next().unwrap().unwrap();
+            get_input_key();
         }
         Ok(())
     }

@@ -4,7 +4,7 @@ use tui::layout::Rect;
 use crate::map::position::Area;
 
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::UI;
+use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::util::widget_menu::WidgetMenu;
 use crate::widget::{Focusable, WidgetType};
@@ -60,7 +60,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenu<'_, B>  {
 impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
         let menu_view = &mut self.menu;
-        let key = resolve_input(input);
+        let key = resolve_input(input)?;
         let mut target_widget = None;
         match menu_view.widgets.selected_widget {
             Some(idx) => {
