@@ -1,7 +1,8 @@
 use std::convert::TryInto;
 use std::fmt::format;
-use std::io;
+use std::{io, thread};
 use std::io::empty;
+use std::time::Duration;
 use log4rs::config::Logger;
 use log::{error, log};
 
@@ -31,10 +32,11 @@ use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
-use crate::menu;
+use crate::{menu, sound};
 use crate::menu::Selection;
 
 use crate::settings::{Setting, Settings};
+use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
 use crate::ui::ui_wrapper::UIWrapper;
@@ -59,6 +61,7 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     pub ui_wrapper : UIWrapper<B>,
     settings: Settings,
     levels: Levels,
+    sound_sinks: Option<SoundSinks>,
     game_running : bool,
 }
 
@@ -261,7 +264,7 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
+    fn initialise(&mut self) -> Result<(), io::Error> {
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
@@ -281,15 +284,25 @@ impl <B : Backend> GameEngine<B> {
             }
         }
 
+        self.sound_sinks = Some(build_sound_sinks());
+
+        Ok(())
+    }
+
+    fn add_additional_widgets(&mut self) {
+        if self.ui_wrapper.ui.additional_widgets.is_empty() {
+            let level = self.levels.get_level_mut();
+            let player = level.characters.get_player_mut().unwrap();
+            let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
+            self.ui_wrapper.ui.additional_widgets.push(stat_line);
+        }
+    }
+
+    pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
+        self.initialise();
         self.game_running = true;
         while self.game_running {
-            if self.ui_wrapper.ui.additional_widgets.is_empty() {
-                let level = self.levels.get_level_mut();
-                let player = level.characters.get_player_mut().unwrap();
-                let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
-                self.ui_wrapper.ui.additional_widgets.push(stat_line);
-            }
-
+            self.add_additional_widgets();
             self.ui_wrapper.ui.show_console();
 
             let level = self.levels.get_level_mut();
@@ -300,6 +313,17 @@ impl <B : Backend> GameEngine<B> {
                 }
                 _ => {
                 }
+            }
+
+            if let Some(sinks) = &mut self.sound_sinks {
+                sinks.play_background();
+               // sinks.bg_thread.as_ref().unwrap().join();
+
+                //sinks.play_background();
+                //let volume = sinks.bg_sink.set_volume(100.0);
+               // sinks.bg_sink.();
+                //log::info!("waiting for sound..");
+
             }
 
             let result = self.game_loop()?;
@@ -432,10 +456,21 @@ impl <B : Backend> GameEngine<B> {
         Ok(None)
     }
 
-    fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+    fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, io::Error> {
         let key = get_input_key()?;
         //self.terminal_manager.terminal.clear()?;
         return Ok(self.handle_input(key)?);
+    }
+
+    fn npc_turns(&mut self)  -> Result<(), io::Error> {
+        // TODO NPC movement
+        return Ok(());
+    }
+
+    fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+        let game_over_choice = self.player_turn()?;
+        self.npc_turns()?;
+        return Ok(game_over_choice);
     }
 }
 
@@ -468,13 +503,13 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     // Grab the randomised seed
     let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
     let rng = Seeder::from(map_seed).make_rng();
-    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
+    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false})
 }
 
 pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let settings = build_settings();
-    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, game_running: false})
+    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false})
 }
 
 

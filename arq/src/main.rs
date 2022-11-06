@@ -24,6 +24,7 @@ mod widget;
 mod test;
 mod list_selection;
 mod util;
+mod sound;
 pub mod map;
 
 

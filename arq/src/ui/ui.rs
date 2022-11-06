@@ -161,7 +161,17 @@ impl Draw for UI {
 
     fn draw_info<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         self.render(frame);
-        let spans = vec![Spans::from(Span::raw("Made by Darren Joseph. Written in Rust."))];
+
+        let dev_spans = vec!(Span::raw("Made by Darren Joseph. Written in Rust."));
+        let spans = vec![Spans::from(dev_spans),
+                         Spans::from(Span::raw("--- Credits ---")),
+                         Spans::from(Span::raw("Background music:")),
+                         Spans::from(Span::raw("Tavern Loop One by Alexander Nakarada | https://www.serpentsoundstudios.com")),
+                         Spans::from(Span::raw("Music promoted by https://www.free-stock-music.com")),
+                         Spans::from(Span::raw("Attribution 4.0 International (CC BY 4.0)")),
+                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/"))
+        ];
+
         let spans_len = spans.len() as u16;
         let paragraph = Paragraph::new(spans)
             .block(Block::default().borders(Borders::NONE))
@@ -170,7 +180,7 @@ impl Draw for UI {
             .wrap(Wrap { trim: true });
 
         let frame_size = frame.size();
-        let paragraph_size = Rect::new(4, 4, frame_size.width / 2, spans_len + 2);
+        let paragraph_size = Rect::new(4, 4, frame_size.width - 4, spans_len + 4);
         frame.render_widget(paragraph, paragraph_size);
     }
 
