@@ -333,13 +333,23 @@ impl <B : Backend> GameEngine<B> {
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
                         if pos.equals_option(room.get_exit()) {
-                            self.ui_wrapper.print_and_re_render("You've reached the exit! You move down a level..".to_string())?;
-                            get_input_key();
-                            level_change = LevelChange::DOWN;
+                            match self.ui_wrapper.yes_or_no(
+                                String::from("You've reached the exit! There's a staircase downwards; would you like to leave?"),
+                                Some(String::from("You move downstairs a level.."))) {
+                                Ok(true) => {
+                                    level_change = LevelChange::DOWN;
+                                },
+                                _ => {}
+                            }
                         } else if pos.equals_option(room.get_entry()) {
-                            self.ui_wrapper.print_and_re_render("You've reached the entry! You move up a level..".to_string())?;
-                            get_input_key();
-                            level_change = LevelChange::UP;
+                            match self.ui_wrapper.yes_or_no(
+                                String::from("This is the entrance. There's a staircase upwards; wold you like to leave?"),
+                                Some(String::from("You move upstairs a level.."))) {
+                                Ok(true) => {
+                                    level_change = LevelChange::UP;
+                                },
+                                _ => {}
+                            }
                         }
                     }
                 }

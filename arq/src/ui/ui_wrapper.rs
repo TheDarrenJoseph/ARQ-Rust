@@ -39,6 +39,27 @@ impl <B : Backend> UIWrapper<B> {
         get_input_key()
     }
 
+    pub fn yes_or_no(&mut self, prompt: String, confirm_message: Option<String>) -> Result<bool, io::Error> {
+        let final_prompt = format!("{} (y/n)", prompt);
+        loop {
+            match self.get_prompted_input(final_prompt.clone())? {
+                Key::Char('y') | Key::Char('Y') => {
+                    if let Some(message) = confirm_message {
+                        let final_message = format!("{} (any key to continue)", message);
+                        self.print_and_re_render(final_message);
+                        get_input_key();
+                    }
+                    return Ok(true);
+                },
+                Key::Char('n') | Key::Char('N')  => {
+                    return Ok(false);
+                }
+                _ => {}
+            }
+        }
+        Ok(false)
+    }
+
     pub(crate) fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
