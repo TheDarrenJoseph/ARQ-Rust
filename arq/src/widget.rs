@@ -64,10 +64,10 @@ impl Named for WidgetType {
                 String::from("Console")
             },
             WidgetType::Number(state) => {
-                state.name.clone()
+                state.get_name().clone()
             },
             WidgetType::Dropdown(state) => {
-                state.get_name()
+                state.get_name().clone()
             },
             WidgetType::Button(state) => {
                 state.get_name()

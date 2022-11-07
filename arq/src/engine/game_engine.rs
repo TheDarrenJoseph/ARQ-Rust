@@ -35,7 +35,7 @@ use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound};
 use crate::menu::Selection;
 
-use crate::settings::{Setting, Settings};
+use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
@@ -53,7 +53,7 @@ use crate::view::util::widget_menu::WidgetMenu;
 use crate::widget::character_stat_line::build_character_stat_line;
 use crate::widget::boolean_widget::build_boolean_widget;
 use crate::widget::text_widget::build_text_input;
-use crate::widget::widgets::WidgetList;
+use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{Widget, WidgetType};
 
 
@@ -70,13 +70,15 @@ impl <B : Backend> GameEngine<B> {
     pub fn rebuild(&mut self) {
         let settings = build_settings();
         // Grab the randomised seed
-        let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
+        let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
+
         let rng = Seeder::from(map_seed).make_rng();
         self.game_running = false;
         self.levels = init_level_manager(rng);
         self.settings = settings;
     }
 
+    // Saves the widget values into the settings
     fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), io::Error> {
 
         for widget in widgets.widgets {
@@ -93,18 +95,33 @@ impl <B : Backend> GameEngine<B> {
                         s.value = t.get_input();
                     }
                 },
+                WidgetType::Number(mut t) => {
+                    let setting = self.settings.u32_settings.iter_mut().find(|x| x.name == t.get_name());
+                    if let Some(s) = setting {
+                        s.value = t.get_input() as u32;
+                    }
+                },
                 _ => {}
             }
         }
 
-        // TODO pass this through
-        //let fog_of_war = self.settings.find_bool_setting_value(|x| x.name == "Fog of War");
+        Ok(())
+    }
 
-        let map_seed = self.settings.find_string_setting_value( "Map RNG Seed".to_string()).unwrap();
+    // Updates the game to reflect current settings
+    fn update_from_settings(&mut self) -> Result<(), io::Error>  {
+        // TODO pass this through
+        let fog_of_war = self.settings.find_bool_setting_value(SETTING_FOG_OF_WAR.to_string()).unwrap();
+
+        let map_seed = self.settings.find_string_setting_value( SETTING_RNG_SEED.to_string()).unwrap();
         log::info!("Map seed updated to: {}", map_seed);
         let rng = Seeder::from(map_seed).make_rng();
         self.levels.rng = rng;
 
+        let bg_music_volume = self.settings.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).unwrap();
+        if let Some(sinks) = &mut self.sound_sinks {
+            sinks.configure_bg_music(bg_music_volume);
+        }
         Ok(())
     }
 
@@ -315,17 +332,8 @@ impl <B : Backend> GameEngine<B> {
                 }
             }
 
-            if let Some(sinks) = &mut self.sound_sinks {
-                sinks.play_background();
-               // sinks.bg_thread.as_ref().unwrap().join();
-
-                //sinks.play_background();
-                //let volume = sinks.bg_sink.set_volume(100.0);
-               // sinks.bg_sink.();
-                //log::info!("waiting for sound..");
-
-            }
-
+            // Ensure we're using any changes to the settings
+            self.update_from_settings();
             let result = self.game_loop()?;
             if result.is_some() {
                 return Ok(result);
@@ -474,34 +482,11 @@ impl <B : Backend> GameEngine<B> {
     }
 }
 
-pub fn build_settings() -> Settings {
-    let fog_of_war : Setting<bool> = Setting { name: "Fog of War".to_string(), value: false };
-
-    let random_seed: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(12)
-        .map(char::from)
-        .collect();
-    let map_seed : Setting<String> = Setting { name: "Map RNG Seed".to_string(), value: random_seed };
-    Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed]}
-}
-
-pub fn build_settings_widgets(settings : &Settings) -> Vec<Widget> {
-    let mut widgets = Vec::new();
-    for setting in &settings.bool_settings {
-        widgets.push(build_boolean_widget(15, setting.name.clone(), setting.value))
-    }
-    for setting in &settings.string_settings {
-        widgets.push(build_text_input(15, setting.name.clone(), setting.value.clone(), 1))
-    }
-    widgets
-}
-
 pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let settings = build_settings();
     // Grab the randomised seed
-    let map_seed = settings.find_string_setting_value("Map RNG Seed".to_string()).unwrap();
+    let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
     let rng = Seeder::from(map_seed).make_rng();
     Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false})
 }

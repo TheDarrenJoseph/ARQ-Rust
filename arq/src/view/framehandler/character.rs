@@ -176,7 +176,7 @@ impl CharacterFrameHandler {
         for widget in self.widgets.widgets.iter_mut() {
             match &mut widget.state_type {
                 WidgetType::Number(state) => {
-                    if state.name == "Free points" {
+                    if "Free points" == state.get_name() {
                         state.set_input(free_points.clone());
                     }
                 },
@@ -241,7 +241,7 @@ impl CharacterFrameHandler {
         }
 
         for attribute in get_all_attributes() {
-            let number_state = number_states.iter_mut().find(|ns| ns.name == attribute.to_string());
+            let number_state = number_states.iter_mut().find(|ns| ns.get_name() == attribute.to_string());
             match number_state {
                 Some(ns) => {
                     let score = scores.iter_mut().find(|score| score.attribute == attribute);

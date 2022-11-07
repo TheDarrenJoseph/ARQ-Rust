@@ -48,6 +48,9 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenu<'_, B>  {
                     WidgetType::Boolean(w) => {
                         frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
+                    WidgetType::Number(number_state) => {
+                        frame.render_stateful_widget(number_state.clone(), widget_area, &mut number_state.clone());
+                    },
                     _ => {}
                     }
                 offset += 1;
@@ -113,6 +116,36 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                             WidgetType::Text(state) => {
                                 state.add_char(c);
                                 log::info!("Widget state input is: {}", state.get_input());
+                            },
+                            _ => {}
+                        }
+                    },
+                    None => {}
+                }
+            },
+            Key::Left => {
+                match target_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Number(state) => {
+                                if state.editable {
+                                    state.decrement()
+                                }
+                            },
+                            _ => {}
+                        }
+                    },
+                    None => {}
+                }
+            },
+            Key::Right => {
+                match target_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            WidgetType::Number(state) => {
+                                if state.editable {
+                                    state.increment()
+                                }
                             },
                             _ => {}
                         }

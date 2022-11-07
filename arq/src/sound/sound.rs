@@ -38,13 +38,13 @@ impl SoundSinks {
         });
     }
 
-    pub fn play_background(&mut self) {
+    pub fn configure_bg_music(&mut self, volume: u32) {
         if let Some(sink) = &self.bg_sink {
             let writeable = sink.write();
             if let Ok(w) = writeable{
                 log::info!("Handling background music...");
-                // TODO pass a sound config into here
-                w.set_volume(0.5);
+                let float_volume = (volume as f32 / 100.0) as f32;
+                w.set_volume(float_volume);
             } else {
                 log::info!("No write lock.");
             }

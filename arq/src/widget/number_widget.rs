@@ -14,7 +14,7 @@ pub struct NumberInputState {
     input : i32,
     min: i32,
     max: i32,
-    pub name: String,
+    name: String,
     input_padding: i8
 }
 
@@ -58,6 +58,10 @@ impl NumberInputState {
         if max > self.min {
             self.max = max;
         }
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 }
 
