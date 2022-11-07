@@ -5,6 +5,8 @@ pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
 pub const SETTING_BG_MUSIC : &str = "Background music";
 
+pub const SETTING_BG_MUSIC_VOLUME_DEFAULT : u32 = 50;
+
 pub struct Setting<T> {
     pub name : String,
     pub value : T
@@ -51,7 +53,7 @@ pub fn build_settings() -> Settings {
         .map(char::from)
         .collect();
     let map_seed : Setting<String> = Setting { name: SETTING_RNG_SEED.to_string(), value: random_seed };
-    let bg_music_volume : Setting<u32> = Setting { name: SETTING_BG_MUSIC.to_string(), value: 100 };
+    let bg_music_volume : Setting<u32> = Setting { name: SETTING_BG_MUSIC.to_string(), value: SETTING_BG_MUSIC_VOLUME_DEFAULT };
     Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed], u32_settings: vec![bg_music_volume]}
 }
 

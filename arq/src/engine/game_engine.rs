@@ -120,7 +120,7 @@ impl <B : Backend> GameEngine<B> {
 
         let bg_music_volume = self.settings.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).unwrap();
         if let Some(sinks) = &mut self.sound_sinks {
-            sinks.configure_bg_music(bg_music_volume);
+            sinks.get_bg_sink_mut().configure(bg_music_volume);
         }
         Ok(())
     }
@@ -154,7 +154,20 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
+    fn setup_sinks(&mut self) -> Result<(), io::Error> {
+        if self.sound_sinks.is_none() {
+            // Start the sound sinks and play bg music
+            let mut sinks = build_sound_sinks();
+            let bg_music_volume = self.settings.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).unwrap();
+            sinks.get_bg_sink_mut().configure(bg_music_volume);
+            sinks.get_bg_sink_mut().play();
+            self.sound_sinks = Some(sinks);
+        }
+        Ok(())
+    }
+
     pub fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Result<Option<GameOverChoice>, io::Error> {
+        self.setup_sinks();
         loop {
             // Hide additional widgets when paused
             self.ui_wrapper.ui.render_additional = false;
@@ -188,8 +201,9 @@ impl <B : Backend> GameEngine<B> {
 
                     settings_menu.begin()?;
                     let widgets = settings_menu.menu.widgets;
-
                     self.handle_settings_menu_selection(widgets)?;
+                    // Ensure we're using any changes to the settings
+                    self.update_from_settings();
                 },
                 StartMenuChoice::Info => {
                     log::info!("Showing info..");
@@ -300,9 +314,6 @@ impl <B : Backend> GameEngine<B> {
                 },
             }
         }
-
-        self.sound_sinks = Some(build_sound_sinks());
-
         Ok(())
     }
 
@@ -332,8 +343,6 @@ impl <B : Backend> GameEngine<B> {
                 }
             }
 
-            // Ensure we're using any changes to the settings
-            self.update_from_settings();
             let result = self.game_loop()?;
             if result.is_some() {
                 return Ok(result);
@@ -421,11 +430,13 @@ impl <B : Backend> GameEngine<B> {
     pub fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
         self.ui_wrapper.clear_screen()?;
         self.ui_wrapper.ui.hide_console();
+
         if let Some(goc) = self.start_menu(None)? {
             self.ui_wrapper.ui.show_console();
             self.ui_wrapper.clear_screen()?;
             return Ok(Some(goc));
         }
+
         self.ui_wrapper.ui.show_console();
         self.ui_wrapper.clear_screen()?;
         Ok(None)
