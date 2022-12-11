@@ -22,7 +22,7 @@ pub struct Item {
     pub colour : Colour,
     pub weight : i32,
     pub value : i32,
-    pub equipped: bool
+    equipped: bool
 }
 
 impl Item {
@@ -41,6 +41,7 @@ impl Item {
     pub fn is_container(&self) -> bool {
         self.item_type == ItemType::CONTAINER
     }
+    pub fn is_equipped(&self) -> bool { self.equipped }
     pub fn id_equals(&self, other: &Item) -> bool {
         self.id == other.id
     }
@@ -56,6 +57,10 @@ impl Item {
             _ => {}
         }
         false
+    }
+
+    pub fn unequip(&mut self) {
+        self.equipped = false;
     }
 }
 

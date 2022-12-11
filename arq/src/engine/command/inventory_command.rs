@@ -59,7 +59,9 @@ fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHa
             for item in items {
                 // Find the "container" wrappper matching the item returned
                 if let Some(container_item) = state.container.find_mut(&item) {
-                    let dropping_container_item = container_item.clone();
+                    let mut dropping_container_item = container_item.clone();
+                    let self_item = dropping_container_item.get_self_item_mut();
+                    self_item.unequip();
                     if pos_container.can_fit_container_item(&dropping_container_item) {
                         log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
                         pos_container.add(dropping_container_item)

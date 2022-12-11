@@ -87,7 +87,7 @@ fn build_default_columns() -> Vec<Column> {
 fn build_column_text(column: &Column, item: &Item) -> String {
     match column.name.as_str() {
         "NAME" => {
-            if item.equipped {
+            if item.is_equipped() {
                 format!("{} (e)", item.get_name())
             } else {
                 item.get_name()
@@ -288,7 +288,7 @@ impl ContainerFrameHandler {
 
                 let item =  contents.get_mut(pos).unwrap().get_self_item_mut();
                 item.toggle_equipped();
-                log::info!("Item: {} equipped? {}", item.get_name(), item.equipped);
+                log::info!("Item: {} equipped? {}", item.get_name(), item.is_equipped());
             }
         }
     }
