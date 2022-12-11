@@ -22,7 +22,7 @@ use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, OPEN};
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, EQUIP, OPEN};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
 use crate::widget::widgets::WidgetList;
@@ -64,6 +64,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
         commands.insert(OPEN);
         commands.insert(DROP);
+        commands.insert(EQUIP);
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), commands);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
@@ -221,6 +222,9 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
                             container_views.push(stacked_view);
                         },
                         ContainerFrameHandlerInputResult::DropItems(_) => {
+                            self.trigger_callback(view_specific_result);
+                        },
+                        ContainerFrameHandlerInputResult::EquipItems(_) => {
                             self.trigger_callback(view_specific_result);
                         },
                         ContainerFrameHandlerInputResult::MoveItems(_) => {

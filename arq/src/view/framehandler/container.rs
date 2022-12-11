@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::convert::TryInto;
+use std::fmt::format;
 use std::io::Error;
+use std::ptr::eq;
 
 use termion::event::Key;
 use tui::layout::{Rect};
@@ -13,7 +15,7 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::DROP;
+use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, EQUIP};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
@@ -34,7 +36,8 @@ pub struct ContainerFrameHandler {
 pub enum ContainerFrameHandlerCommand {
     OPEN,
     TAKE,
-    DROP
+    DROP,
+    EQUIP // For weapons / armour
 }
 
 #[derive(Clone)]
@@ -69,12 +72,13 @@ pub enum ContainerFrameHandlerInputResult {
     MoveToContainerChoice(MoveToContainerChoiceData),
     MoveItems(MoveItemsData),
     TakeItems(TakeItemsData),
-    DropItems(Vec<Item>)
+    DropItems(Vec<Item>),
+    EquipItems(Vec<Item>)
 }
 
 fn build_default_columns() -> Vec<Column> {
     vec![
-        Column {name : "NAME".to_string(), size: 12},
+        Column {name : "NAME".to_string(), size: 16},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
         Column {name : "VALUE".to_string(), size: 12}
     ]
@@ -83,7 +87,11 @@ fn build_default_columns() -> Vec<Column> {
 fn build_column_text(column: &Column, item: &Item) -> String {
     match column.name.as_str() {
         "NAME" => {
-            item.get_name()
+            if item.equipped {
+                format!("{} (e)", item.get_name())
+            } else {
+                item.get_name()
+            }
         },
         "WEIGHT (Kg)" => {
             item.get_weight().to_string()
@@ -131,12 +139,11 @@ impl ContainerFrameHandler {
         None
     }
 
+
     fn find_focused_item(&mut self) -> Option<Item> {
         let list_selection = &self.item_list_selection;
-        if list_selection.is_selecting() {
-            if let Some(focused_item) =list_selection.get_focused_item() {
-                return Some(focused_item.clone());
-            }
+        if let Some(focused_item) = list_selection.get_focused_item() {
+            return Some(focused_item.clone());
         }
         None
     }
@@ -202,7 +209,12 @@ impl ContainerFrameHandler {
         let from_container = self.container.clone();
         let selected_container_items = self.get_selected_items();
         let focused_container = self.find_focused_container();
-        let focused_item = if focused_container.is_none() { self.find_focused_item() } else { None };
+
+        let focused_item = if self.item_list_selection.is_selecting() {
+            self.find_focused_item()
+        } else {
+            None
+        };
 
         let container_name = if let Some(c) = focused_container.clone() { c.get_self_item().get_name() } else { String::from("N/a") };
         log::info!("Triggering MoveItems of {} items into: {}", selected_container_items.len(), container_name);
@@ -268,6 +280,19 @@ impl ContainerFrameHandler {
         }
     }
 
+    fn equip_items(&mut self, equipped: Vec<Item>) {
+        log::info!("Equipping {} items..", equipped.len());
+        let contents = self.container.get_contents_mut();
+        for to_equip in equipped {
+            if let Some(pos) = contents.iter().position(|c| *c.get_self_item() == to_equip) {
+
+                let item =  contents.get_mut(pos).unwrap().get_self_item_mut();
+                item.toggle_equipped();
+                log::info!("Item: {} equipped? {}", item.get_name(), item.equipped);
+            }
+        }
+    }
+
     pub fn rebuild_to_container(&mut self, container: Container) {
         self.container = container;
         self.item_list_selection.cancel_selection();
@@ -279,6 +304,9 @@ impl ContainerFrameHandler {
         match result {
             ContainerFrameHandlerInputResult::DropItems(undropped) => {
                 self.retain_selected_items(undropped);
+            },
+            ContainerFrameHandlerInputResult::EquipItems(equipped) => {
+                self.equip_items(equipped);
             },
             ContainerFrameHandlerInputResult::TakeItems(data) => {
                 self.retain_selected_items(data.to_take);
@@ -333,6 +361,9 @@ fn build_command_usage_descriptions(commands: &HashSet<ContainerFrameHandlerComm
             },
             ContainerFrameHandlerCommand::DROP => {
                 description += "d - drop";
+            },
+            ContainerFrameHandlerCommand::EQUIP => {
+                description += "e - equip";
             }
         }
         if i < len {
@@ -419,11 +450,24 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             let key = resolve_input(input)?;
             match key {
                 Key::Char('d') => {
+                    log::info!("[container frame handler] new result for DropItems..");
                     if self.commands.contains(&DROP) {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
                             view_specific_result: Some(ContainerFrameHandlerInputResult::DropItems(selected_container_items))
+                        });
+                    }
+                },
+                Key::Char('e') => {
+                    if self.commands.contains(&EQUIP) {
+                        log::info!("[container frame handler] new result for EquipItems..");
+                        let focused_item = self.find_focused_item().unwrap();
+                        let mut items = Vec::new();
+                        items.push(focused_item);
+                        return Ok(InputResult {
+                            generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::EquipItems(items))
                         });
                     }
                 },
@@ -433,6 +477,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 }
                 Key::Char('o') => {
+                    log::info!("[container frame handler] new result for OpenContainerView..");
                     if let Some(stacked_view) = self.build_view_for_focused_container() {
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },

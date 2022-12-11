@@ -14,7 +14,7 @@ use crate::ui::ui::UI;
 use crate::view::callback::Callback;
 use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
-use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, MoveItems, MoveToContainerChoice};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, EquipItems, MoveItems, MoveToContainerChoice};
 
 use crate::view::View;
 
@@ -28,6 +28,24 @@ struct CallbackState<'a> {
     pub level : &'a mut Level,
     pub container: &'a mut Container,
     pub data : ContainerFrameHandlerInputResult
+}
+
+fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
+    let inventory = state.level.characters.get_player_mut().unwrap().get_inventory_mut();
+    if !items.is_empty() {
+        let mut toggled = Vec::new();
+        for to_equip in items {
+            let result = inventory.find_mut(&to_equip);
+            if let Some(c) = result {
+                if c.get_self_item_mut().toggle_equipped() {
+                    toggled.push(c.get_self_item().clone());
+                }
+            }
+        }
+        return Some(EquipItems(toggled));
+    }
+
+    None
 }
 
 fn drop_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
@@ -75,6 +93,10 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
         MoveItems(data) => {
             log::info!("[inventory command] Received data for MoveItems with {} items", data.to_move.len());
             return container_util::move_player_items(data, state.level);
+        },
+        EquipItems(ref data) => {
+            log::info!("[inventory command] Received data for EquipItems with {} items", data.len());
+            return equip_items(data.clone(), state);
         },
         MoveToContainerChoice(ref data) => {
             return if let Some(_target) = &data.target_container {
@@ -138,7 +160,7 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         return match key {
             Key::Char('i') => {
                 true
-            }
+            },
             _ => {
                 false
             }

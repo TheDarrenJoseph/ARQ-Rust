@@ -123,7 +123,7 @@ impl <B : Backend> UIWrapper<B> {
                     map_view.draw(map_view_frame_size)?;
                     map_view.draw_containers()?;
                     map_view.draw_characters()?;
-                    self.ui.console_print("Arrow keys to move.".to_string());
+                    self.ui.console_print("Use the arrow keys/WASD to move.".to_string());
                     self.re_render()?;
                 }
             },

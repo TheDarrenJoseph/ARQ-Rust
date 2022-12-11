@@ -42,6 +42,10 @@ impl Container {
         &self.item
     }
 
+    pub fn get_self_item_mut(&mut self) -> &mut Item {
+        &mut self.item
+    }
+
     pub fn id_equals(&self, other: &Container) -> bool {
         self.item.get_id() == other.get_self_item().get_id()
     }

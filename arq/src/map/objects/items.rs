@@ -21,7 +21,8 @@ pub struct Item {
     pub symbol : char,
     pub colour : Colour,
     pub weight : i32,
-    pub value : i32
+    pub value : i32,
+    pub equipped: bool
 }
 
 impl Item {
@@ -44,14 +45,30 @@ impl Item {
         self.id == other.id
     }
 
+    // Toggles equipped flag, only for supported types
+    // Returns a boolean representing if the toggle was successful
+    pub fn toggle_equipped(&mut self) -> bool {
+        match self.item_type {
+            ItemType::WEAPON => {
+                self.equipped = !self.equipped;
+                return true;
+            },
+            _ => {}
+        }
+        false
+    }
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value }
+    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value, equipped: false }
+}
+
+pub fn build_weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
+    Item {id, item_type: ItemType::WEAPON, name, symbol, colour: Colour::White, weight, value, equipped: false }
 }
 
 pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value }
+    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value, equipped: false }
 }
 
 #[cfg(test)]
