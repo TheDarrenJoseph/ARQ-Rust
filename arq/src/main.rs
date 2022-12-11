@@ -40,7 +40,6 @@ fn main<>() -> Result<(), io::Error> {
     let mut game_over = false;
     while !game_over {
         if let Some(goc) = engine.start_menu(choice.clone())? {
-            engine.ui_wrapper.clear_screen();
             match goc {
                 GameOverChoice::RESTART => {
                     engine.rebuild();
