@@ -46,7 +46,7 @@ impl Settings {
 
 pub fn build_settings() -> Settings {
     let fog_of_war : Setting<bool> = Setting { name: SETTING_FOG_OF_WAR.to_string(), value: false };
-
+    // Generate a new random seed
     let random_seed: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(12)

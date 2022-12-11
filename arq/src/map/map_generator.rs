@@ -383,12 +383,22 @@ impl MapGenerator<'_> {
 
                     let area_usage_percentage : u16 = (room_area as f32 / total_area as f32 * 100.00 as f32) as u16;
                     log::info!("Room area usage: {}%", area_usage_percentage);
+                    log::info!("{} potential room positions left", self.possible_room_positions.len());
                     total_area_usage_percentage += area_usage_percentage;
                     log::info!("Total room area usage: {}/{}", room_area_total, total_area);
                     log::info!("Total room area usage: {}%", total_area_usage_percentage);
                     break;
+                } else {
+                    log::info!("Cannot fit room of size {} at position: {:?}", size, position);
+                    // Remove the positions regardless
+                    let potential_area = build_square_area(position, size);
+                    for unusable_pos in &potential_area.get_positions() {
+                        self.remove_possible_position(*unusable_pos);
+                    }
                 }
             }
+
+
         }
         rooms
     }

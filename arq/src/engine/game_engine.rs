@@ -303,14 +303,12 @@ impl <B : Backend> GameEngine<B> {
         let mut generated = false;
         while !generated {
             self.levels.generate_level();
-
             match self.initialise_characters() {
                 Err(e) => {
                     log::error!("Generation round failed with error {}. Trying again...", e);
                     self.ui_wrapper.print_and_re_render(String::from("Bad level. Trying again..."));
-                    break;
                 },
-                _ => {
+                Ok(_) => {
                     generated = true;
                 },
             }
@@ -328,7 +326,7 @@ impl <B : Backend> GameEngine<B> {
     }
 
     pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
-        self.initialise();
+        self.initialise()?;
         self.game_running = true;
         while self.game_running {
             self.add_additional_widgets();
