@@ -28,6 +28,9 @@ Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 ```
 
+![Main map dev screenshot](images/map_view_dev_example.png)
+![Inventory view dev screenshot](images/inventory_dev_example.png)
+
 TODO (Not in any specific order)
 ----
 - [X] Procedural levels
