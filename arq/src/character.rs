@@ -1,6 +1,7 @@
 pub mod characters;
 pub mod character_details;
 pub mod stats;
+pub mod equipment;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
