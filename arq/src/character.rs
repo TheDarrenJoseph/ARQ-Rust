@@ -1,10 +1,28 @@
+pub mod characters;
+pub mod character_details;
+pub mod stats;
+
 use std::fmt::{Debug, Display, Formatter, Result};
 
 use uuid::Uuid;
+use crate::character::character_details::{build_default_character_details, CharacterDetails};
+use crate::character::stats::attributes::AttributeScore;
 
 use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::position::Position;
 use crate::map::tile::Colour;
+
+#[derive(Clone, Debug)]
+pub enum Race {Human,Goblin}
+
+#[derive(Clone, Debug)]
+pub enum Class {None,Warrior}
+
+impl Display for Class {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        Debug::fmt(self, f)
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Character {
@@ -15,14 +33,6 @@ pub struct Character {
     position: Position,
     inventory: Container
 }
-
-#[derive(Clone, Debug)]
-pub enum Race {Human,Goblin}
-#[derive(Clone, Debug)]
-pub enum Class {None,Warrior}
-#[derive(PartialEq, Clone, Debug)]
-pub enum Attribute {Strength, Health, Agility, Intelligence, Stealth}
-
 
 pub fn determine_class(name: String) -> Option<Class> {
     match name.as_str() {
@@ -38,64 +48,13 @@ pub fn determine_class(name: String) -> Option<Class> {
     }
 }
 
-
-impl Display for Attribute {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl Display for Class {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        Debug::fmt(self, f)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct AttributeScore {
-    pub attribute: Attribute,
-    pub score: i8
-}
-
-#[derive(Clone, Debug)]
-pub struct CharacterDetails {
-    race: Race,
-    class: Class,
-    level: i32,
-    max_free_attribute_points: i8,
-    free_attribute_points: i8,
-    attributes: Vec<AttributeScore>
-}
-pub fn get_all_attributes() -> Vec<Attribute> {
-    vec![Attribute::Strength, Attribute::Health, Attribute::Agility, Attribute::Intelligence, Attribute::Stealth]
-}
-
-pub fn build_default_attributes() -> Vec<AttributeScore> {
-    let mut scores = Vec::new();
-    let attributes = get_all_attributes();
-    for attr in attributes {
-        scores.push(AttributeScore { attribute: attr, score: 0 });
-    }
-    return scores;
-}
-
-pub fn build_default_character_details() -> CharacterDetails{
-    let attributes = build_default_attributes();
-    return CharacterDetails { race: Race::Human, class: Class::None, level:0, max_free_attribute_points: 6, free_attribute_points: 6, attributes};
-}
-
 pub fn build_player(name : String, position: Position) -> Character {
-    let health = 100;
-    let colour = Colour::Green;
     let inventory = build(Uuid::new_v4(), name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-    let character_details = build_default_character_details();
-    let player = Character { name, character_details, health, colour, position, inventory };
-    return player;
+    return build_character(name, position, Colour::Green, inventory)
 }
 
-pub fn build_character(name : String, position: Position, inventory: Container) -> Character {
+pub fn build_character(name : String, position: Position, colour: Colour, inventory: Container) -> Character {
     let health = 100;
-    let colour = Colour::Red;
     let character_details = build_default_character_details();
     let player = Character { name, character_details, health, colour, position, inventory };
     return player;
@@ -143,39 +102,39 @@ impl Character {
     }
 
     pub fn get_race(&mut self) -> Race {
-        self.character_details.race.clone()
+        self.character_details.get_race().clone()
     }
 
     pub fn set_race(&mut self, race: Race) {
-        self.character_details.race = race;
+        self.character_details.set_race(race);
     }
 
     pub fn get_class(&mut self) -> Class {
-        self.character_details.class.clone()
+        self.character_details.get_class()
     }
 
     pub fn set_class(&mut self, class: Class) {
-        self.character_details.class = class
+        self.character_details.set_class(class)
     }
 
     pub fn get_max_free_attribute_points(&mut self) -> i8 {
-        self.character_details.max_free_attribute_points
+        self.character_details.get_max_free_attribute_points()
     }
 
     pub fn get_free_attribute_points(&mut self) -> i8 {
-        self.character_details.free_attribute_points
+        self.character_details.get_free_attribute_points()
     }
 
     pub fn set_free_attribute_points(&mut self, points: i8) {
-        self.character_details.free_attribute_points = points;
+        self.character_details.set_free_attribute_points(points);
     }
 
     pub fn get_attribute_scores(&mut self) -> Vec<AttributeScore> {
-        self.character_details.attributes.clone()
+        self.character_details.get_attributes()
     }
 
     pub fn set_attribute_scores(&mut self, scores : Vec<AttributeScore> ) {
-        self.character_details.attributes = scores;
+        self.character_details.set_attributes(scores);
     }
 }
 
@@ -183,7 +142,8 @@ impl Character {
 mod tests {
     use uuid::Uuid;
 
-    use crate::character::{build_default_character_details, build_player, Character};
+    use crate::character::{build_player, Character};
+    use crate::character::character_details::build_default_character_details;
     use crate::map::objects::container::ContainerType;
     use crate::map::position::Position;
     use crate::map::tile::Colour;

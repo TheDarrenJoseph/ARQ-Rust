@@ -6,7 +6,7 @@ use rand_seeder::Seeder;
 use termion::event::Key;
 
 use crate::character::Character;
-use crate::characters::{build_characters, Characters};
+use crate::character::characters::{build_characters, Characters};
 use crate::engine::command::input_mapping;
 use crate::map::Map;
 use crate::map::map_generator::build_generator;

@@ -13,13 +13,12 @@ use crate::view::game_over::GameOverChoice::EXIT;
 
 mod error_utils;
 mod engine;
+mod character;
 mod terminal;
 mod ui;
 mod menu;
 mod settings;
 mod view;
-mod character;
-mod characters;
 mod widget;
 mod test;
 mod list_selection;

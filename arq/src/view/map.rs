@@ -5,7 +5,7 @@ use tui::buffer::Cell;
 use tui::layout::Rect;
 
 use crate::character::Character;
-use crate::characters::Characters;
+use crate::character::characters::Characters;
 use crate::map::Map;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::position::{Area, build_rectangular_area, Position};

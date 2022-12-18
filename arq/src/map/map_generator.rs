@@ -639,15 +639,15 @@ mod tests {
 
         let expected_tiles : Vec<String>  = vec![
             "            ".to_string(),
-            "       #####".to_string(),
-            "       #---#".to_string(),
-            " #####-=---#".to_string(),
-            " #---#-#--^#".to_string(),
-            " #-^-=-#####".to_string(),
-            " #---#      ".to_string(),
+            "            ".to_string(),
+            "            ".to_string(),
             " #####      ".to_string(),
-            "            ".to_string(),
-            "            ".to_string(),
+            " #---#      ".to_string(),
+            " #-^-=-     ".to_string(),
+            " #---#-     ".to_string(),
+            " #####---#=#".to_string(),
+            "        -=^#".to_string(),
+            "         #=#".to_string(),
             "            ".to_string(),
             "            ".to_string()
         ];

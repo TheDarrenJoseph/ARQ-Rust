@@ -16,7 +16,7 @@ use tui::backend::Backend;
 use tui::layout::Rect;
 
 use crate::character::{build_player, Character};
-use crate::characters::{build_characters, build_default_characters, Characters};
+use crate::character::characters::{build_characters, build_default_characters, Characters};
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
@@ -281,7 +281,7 @@ impl <B : Backend> GameEngine<B> {
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
         let player = build_player(String::from("Player"), Position { x: 0, y: 0 });
-        let test_npc = build_player(String::from("Rando"), Position { x: 0, y: 0 });
+        let test_npc = build_player(String::from("Ruggo"), Position { x: 0, y: 0 });
         let mut characters = build_characters(Some(player), vec![test_npc]);
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
@@ -514,7 +514,7 @@ mod tests {
     use termion::event::Key;
 
     use crate::character::{build_player, Character};
-    use crate::characters::build_empty_characters;
+    use crate::character::characters::build_empty_characters;
     use crate::engine::game_engine::*;
     use crate::map::{Map, Tiles};
     use crate::map::position::{Position};

@@ -199,22 +199,14 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    
-
-    
-    
-    
-    
-    
-    
     use uuid::Uuid;
 
-    use crate::character::{build_character, build_default_character_details, Character};
-    use crate::characters::{build_characters, build_default_characters, Characters};
+    use crate::character::{build_character, Character};
+    use crate::character::character_details::build_default_character_details;
+    use crate::character::characters::{build_characters, build_default_characters, Characters};
     use crate::engine::command::open_command::{handle_callback};
     use crate::engine::level::{Level};
-    
-    
+
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
@@ -273,7 +265,7 @@ mod tests {
         // GIVEN a valid level with an player inventory to extract items into
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
-        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, Colour::Green, inventory);
         let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
 
@@ -314,7 +306,7 @@ mod tests {
         // GIVEN a valid map with an player inventory to extract items into
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
-        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, Colour::Green, inventory);
         let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
 

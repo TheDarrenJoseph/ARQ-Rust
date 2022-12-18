@@ -405,8 +405,9 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::character::{build_character, build_default_character_details, Character};
-    use crate::characters::build_characters;
+    use crate::character::{build_character, Character};
+    use crate::character::character_details::build_default_character_details;
+    use crate::character::characters::build_characters;
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
@@ -467,7 +468,7 @@ mod tests {
         // GIVEN a valid character info view for a player's inventory
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
-        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, inventory);
+        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, Colour::Green, inventory);
         let mut level = build_test_level(player);
 
         let mut ui = build_ui();

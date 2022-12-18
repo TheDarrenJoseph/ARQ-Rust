@@ -266,7 +266,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::{build_player};
-    use crate::characters::build_characters;
+    use crate::character::characters::build_characters;
     use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};

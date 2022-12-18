@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Color, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::character::CharacterDetails;
+use crate::character::character_details::CharacterDetails;
 use crate::widget::{Widget, WidgetType};
 
 #[derive(Clone)]

@@ -188,7 +188,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::build_player;
-    use crate::characters::build_characters;
+    use crate::character::characters::build_characters;
     use crate::engine::command::inventory_command::{CallbackState, handle_callback};
     use crate::engine::level::Level;
     
