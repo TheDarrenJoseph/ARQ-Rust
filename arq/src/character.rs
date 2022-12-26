@@ -7,6 +7,7 @@ use std::fmt::{Debug, Display, Formatter, Result};
 
 use uuid::Uuid;
 use crate::character::character_details::{build_default_character_details, CharacterDetails};
+use crate::character::equipment::Equipment;
 use crate::character::stats::attributes::AttributeScore;
 
 use crate::map::objects::container::{build, Container, ContainerType};
@@ -32,7 +33,8 @@ pub struct Character {
     health: i8,
     colour: Colour,
     position: Position,
-    inventory: Container
+    inventory: Container,
+    equipment: Equipment
 }
 
 pub fn determine_class(name: String) -> Option<Class> {
@@ -57,7 +59,8 @@ pub fn build_player(name : String, position: Position) -> Character {
 pub fn build_character(name : String, position: Position, colour: Colour, inventory: Container) -> Character {
     let health = 100;
     let character_details = build_default_character_details();
-    let player = Character { name, character_details, health, colour, position, inventory };
+    let equipment = Equipment::new();
+    let player = Character { name, character_details, health, colour, position, inventory, equipment };
     return player;
 }
 
@@ -100,6 +103,14 @@ impl Character {
 
     pub fn set_inventory(&mut self, container: Container) {
        self.inventory = container;
+    }
+
+    pub fn set_equipment(&mut self, equipment: Equipment) {
+        self.equipment = equipment
+    }
+
+    pub fn get_equipment_mut(&mut self) -> &mut Equipment {
+        return &mut self.equipment;
     }
 
     pub fn get_race(&mut self) -> Race {
@@ -145,6 +156,7 @@ mod tests {
 
     use crate::character::{build_player, Character};
     use crate::character::character_details::build_default_character_details;
+    use crate::character::equipment::Equipment;
     use crate::map::objects::container::ContainerType;
     use crate::map::position::Position;
     use crate::map::tile::Colour;
@@ -157,7 +169,8 @@ mod tests {
         let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
         let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let mut character = Character { name, character_details, health, colour, position, inventory };
+        let equipment = Equipment::new();
+        let mut character = Character { name, character_details, health, colour, position, inventory, equipment };
 
         assert_eq!("Test Person", character.get_name());
         assert_eq!(100, character.get_health());

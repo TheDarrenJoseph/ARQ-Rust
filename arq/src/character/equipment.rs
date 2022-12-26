@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 use strum_macros::EnumIter;
+use crate::character::equipment::EquipmentSlot::{HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
 
 use crate::error_utils::error_result;
 use crate::map::objects::container::{Container, ContainerType, wrap_item};
-use crate::map::objects::items::Item;
+use crate::map::objects::items::{Item, ItemType};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, EnumIter)]
 pub enum EquipmentSlot {
@@ -26,6 +27,27 @@ impl Display for EquipmentSlot {
 #[derive(Clone, Debug)]
 pub struct Equipment {
     slots : HashMap<EquipmentSlot, Item>
+}
+
+// Slot mapping
+pub fn get_potential_slots(item_type: ItemType) -> Vec<EquipmentSlot> {
+    return match item_type {
+        ItemType::WEAPON => {
+            vec![PRIMARY, SECONDARY]
+        },
+        ItemType::HEADGEAR => {
+            vec![HEAD]
+        },
+        ItemType::TORSO => {
+            vec![TORSO]
+        },
+        ItemType::LEGS => {
+            vec![LEGS]
+        }
+        _ => {
+            Vec::new()
+        }
+    }
 }
 
 impl Equipment {
@@ -58,6 +80,24 @@ impl Equipment {
     pub fn get_item(&self, slot: EquipmentSlot) -> Option<&Item> {
         self.slots.get(&slot)
     }
+
+    /**
+    pub fn contains(&self, item: Item) -> bool {
+        if self.slots.is_empty() {
+            return false;
+        } else {
+          let potential = get_potential_slots(item.item_type.clone());
+
+          for p in potential {
+              if self.is_slot_filled(p.clone()) {
+                  if let Some(slot_item) = self.slots.get(&p) {
+                      return slot_item.id_equals(&item);
+                  }
+              }
+          }
+        }
+        false
+    }**/
 
     pub fn unequip(&mut self, slot: EquipmentSlot) -> Result<Container, Error> {
         return if self.is_slot_filled(slot.clone()) {

@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::character::equipment::EquipmentSlot;
 
 use crate::map::tile::Colour;
 
@@ -22,7 +23,7 @@ pub struct Item {
     pub colour : Colour,
     pub weight : i32,
     pub value : i32,
-    equipped: bool
+    equipment_slot: Option<EquipmentSlot>
 }
 
 impl Item {
@@ -41,39 +42,34 @@ impl Item {
     pub fn is_container(&self) -> bool {
         self.item_type == ItemType::CONTAINER
     }
-    pub fn is_equipped(&self) -> bool { self.equipped }
+    pub fn is_equipped(&self) -> bool { self.equipment_slot.is_some() }
     pub fn id_equals(&self, other: &Item) -> bool {
         self.id == other.id
     }
 
-    // Toggles equipped flag, only for supported types
-    // Returns a boolean representing if the toggle was successful
-    pub fn toggle_equipped(&mut self) -> bool {
-        match self.item_type {
-            ItemType::WEAPON => {
-                self.equipped = !self.equipped;
-                return true;
-            },
-            _ => {}
-        }
-        false
+    pub fn set_equipment_slot(&mut self, slot: Option<EquipmentSlot>) {
+      self.equipment_slot = slot
+    }
+
+    pub fn get_equipment_slot(&self) -> Option<EquipmentSlot> {
+        self.equipment_slot.clone()
     }
 
     pub fn unequip(&mut self) {
-        self.equipped = false;
+        self.equipment_slot = None;
     }
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value, equipped: false }
+    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
 }
 
 pub fn build_weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::WEAPON, name, symbol, colour: Colour::White, weight, value, equipped: false }
+    Item {id, item_type: ItemType::WEAPON, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
 }
 
 pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value, equipped: false }
+    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
 }
 
 #[cfg(test)]

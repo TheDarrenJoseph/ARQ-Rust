@@ -5,7 +5,7 @@ pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
 pub const SETTING_BG_MUSIC : &str = "Background music";
 
-pub const SETTING_BG_MUSIC_VOLUME_DEFAULT : u32 = 50;
+pub const SETTING_BG_MUSIC_VOLUME_DEFAULT : u32 = 0;
 
 pub struct Setting<T> {
     pub name : String,

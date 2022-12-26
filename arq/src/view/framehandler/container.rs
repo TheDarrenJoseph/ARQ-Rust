@@ -78,7 +78,7 @@ pub enum ContainerFrameHandlerInputResult {
 
 fn build_default_columns() -> Vec<Column> {
     vec![
-        Column {name : "NAME".to_string(), size: 16},
+        Column {name : "NAME".to_string(), size: 30},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
         Column {name : "VALUE".to_string(), size: 12}
     ]
@@ -88,7 +88,7 @@ fn build_column_text(column: &Column, item: &Item) -> String {
     match column.name.as_str() {
         "NAME" => {
             if item.is_equipped() {
-                format!("{} (e)", item.get_name())
+                format!("{} ({})", item.get_name(), item.get_equipment_slot().unwrap())
             } else {
                 item.get_name()
             }
@@ -280,15 +280,15 @@ impl ContainerFrameHandler {
         }
     }
 
-    fn equip_items(&mut self, equipped: Vec<Item>) {
-        log::info!("Equipping {} items..", equipped.len());
+    fn equip_items(&mut self, modified: Vec<Item>) {
+        log::info!("Equip modified {} items..", modified.len());
         let contents = self.container.get_contents_mut();
-        for to_equip in equipped {
-            if let Some(pos) = contents.iter().position(|c| *c.get_self_item() == to_equip) {
-
-                let item =  contents.get_mut(pos).unwrap().get_self_item_mut();
-                item.toggle_equipped();
-                log::info!("Item: {} equipped? {}", item.get_name(), item.is_equipped());
+        for modified_item in modified {
+            // Update the equipment slot of any items we're holding
+            if let Some(pos) = contents.iter().position(|c| c.get_self_item().id_equals(&modified_item)) {
+                let mut item = contents.get_mut(pos).unwrap().get_self_item_mut();
+                item.set_equipment_slot(modified_item.get_equipment_slot());
+                log::info!("Item: {} equipped? : {} : {}", item.get_name(), item.is_equipped(), item.get_equipment_slot().map_or_else(|| String::new(), |s| s.to_string()));
             }
         }
     }
