@@ -296,7 +296,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
         });
         let key = resolve_input(input)?;
         match key {
-            Key::Char('q') => {
+            Key::Esc => {
                 return error_result("Quit interrupt.".to_string());
             },
             Key::Char('\n') => {

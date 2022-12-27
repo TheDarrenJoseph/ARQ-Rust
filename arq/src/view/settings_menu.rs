@@ -105,7 +105,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                     None => {}
                 }
             }
-            Key::Char('q') => {
+            Key::Esc => {
                 return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: None});
             },
             Key::Char(c) => {

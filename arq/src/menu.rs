@@ -53,7 +53,7 @@ impl Selection for Menu {
     fn handle_input(&mut self, key: termion::event::Key) {
         self.selected = false;
         match key {
-            Key::Char('q') => {
+            Key::Esc => {
                 self.exit = true;
             }
             Key::Char('\n') => {

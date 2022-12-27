@@ -444,7 +444,7 @@ impl <B : Backend> GameEngine<B> {
     pub fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
         let level = self.levels.get_level_mut();
         match key {
-            Key::Char('q') => {
+            Key::Esc => {
                 if let Some(goc) = self.menu_command()? {
                     return Ok(Some(goc));
                 }

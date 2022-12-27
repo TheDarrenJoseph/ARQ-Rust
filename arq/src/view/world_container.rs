@@ -172,7 +172,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, 
                     self.trigger_callback(result);
                 }
             },
-            Key::Char('q') => {
+            Key::Esc => {
                 // Drop the last container view and keep going
                 let container_views = &self.frame_handlers.container_frame_handlers;
                 if container_views.len() > 1 {

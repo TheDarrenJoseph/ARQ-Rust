@@ -19,6 +19,8 @@ pub struct UIWrapper<B: 'static + tui::backend::Backend> {
     pub(crate) terminal_manager : TerminalManager<B>,
 }
 
+const UI_USAGE_HINT: &str = "Use the arrow keys/WASD to move.\n Esc - Menu";
+
 impl <B : Backend> UIWrapper<B> {
     // TODO refactor into a singular component shared with commands
     fn re_render(&mut self) -> Result<(), io::Error>  {
@@ -123,7 +125,7 @@ impl <B : Backend> UIWrapper<B> {
                     map_view.draw(map_view_frame_size)?;
                     map_view.draw_containers()?;
                     map_view.draw_characters()?;
-                    self.ui.console_print("Use the arrow keys/WASD to move.".to_string());
+                    self.ui.console_print(UI_USAGE_HINT.to_string());
                     self.re_render()?;
                 }
             },

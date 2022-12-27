@@ -471,7 +471,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                         });
                     }
                 },
-                Key::Char('q') => {
+                Key::Esc => {
                     if self.handle_quit()? {
                         return default_done_result;
                     }

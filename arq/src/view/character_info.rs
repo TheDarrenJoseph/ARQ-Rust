@@ -307,7 +307,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, C
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
         let key = resolve_input(input)?;
         match key {
-            Key::Char('q') => {
+            Key::Esc => {
                 let done = self.quit_container_view()?;
                 return Ok(InputResult { generic_input_result: GenericInputResult { done, requires_view_refresh: false }, view_specific_result: None});
             },
