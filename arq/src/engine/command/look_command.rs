@@ -64,8 +64,8 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
             Ok("There's nothing here.".to_string())
         }
     } else {
-        log::error!("Look command failure, no map on level!");
-        return Err(Error::new(ErrorKind::Other, "Look command failure, no map on level!"))
+        log::error!("Look usage failure, no map on level!");
+        return Err(Error::new(ErrorKind::Other, "Look usage failure, no map on level!"))
     }
 }
 
@@ -98,7 +98,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
     }
 
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
-        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat command to choose current location.".to_string());
+        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
         let key = get_input_key()?;
         let position = self.level.find_adjacent_player_position(key);

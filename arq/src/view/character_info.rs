@@ -1,9 +1,8 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 
 use std::io::Error;
 use std::slice::Iter;
-
 use termion::event::Key;
 
 use tui::layout::Rect;
@@ -21,10 +20,10 @@ use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, EQUIP, OPEN};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
+use crate::view::usage::{build_usage, UsageCommand};
 use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -61,10 +60,11 @@ pub struct CharacterInfoViewFrameHandler {
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     fn initialise(&mut self) {
-        let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
-        commands.insert(OPEN);
-        commands.insert(DROP);
-        commands.insert(EQUIP);
+        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
+        commands.insert(Key::Char('o'), build_usage('o', String::from("open") ));
+        commands.insert(Key::Char('d'), build_usage('d', String::from("drop") ));
+        commands.insert(Key::Char('e'), build_usage('e', String::from("equip") ));
+
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), commands);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 

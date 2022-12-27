@@ -37,7 +37,7 @@ pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
 #[derive(Eq, Hash, PartialEq)]
 #[derive(Debug)]
 #[derive(Copy, Clone)]
-pub enum ContainerFrameHandlerCommand {
+pub enum ContainerChoiceCommand {
     SELECT
 }
 

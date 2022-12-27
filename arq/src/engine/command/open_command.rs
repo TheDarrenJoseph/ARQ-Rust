@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::io::{Error, ErrorKind};
 use log::error;
@@ -15,12 +15,12 @@ use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::view::callback::Callback;
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandlerCommand, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{OPEN, TAKE};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::{InputResult, View};
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::ui::ui::{get_input_key, UI};
+use crate::view::usage::{build_usage, UsageCommand};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -30,16 +30,16 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
 
 const NOTHING_ERROR : &str = "There's nothing here to open.";
 
-fn handle_callback(level : &mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
+fn handle_callback<'a>(level : &'a mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let mut input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
         TakeItems(mut data) => {
-            log::info!("[open command] Received data for TakeItems with {} items", data.to_take.len());
+            log::info!("[open usage] Received data for TakeItems with {} items", data.to_take.len());
             data.position = Some(position.clone());
             return container_util::take_items(data , level);
         },
         MoveItems(mut data) => {
-            log::info!("[open command] Received data for MoveItems with {} items", data.to_move.len());
+            log::info!("[open usage] Received data for MoveItems with {} items", data.to_move.len());
             data.position = Some(position.clone());
             return container_util::move_items(data, level);
         },
@@ -54,10 +54,10 @@ fn handle_callback(level : &mut Level, position: Position, data : ContainerFrame
                     // Both position and a target needed to move to a world container
                     position: Some(position)
                 };
-                log::info!("[open command] Moving items for MoveToContainerChoice...");
+                log::info!("[open usage] Moving items for MoveToContainerChoice...");
                 return container_util::move_items(move_data, level);
             } else {
-                log::info!("[open command] Building choices for MoveToContainerChoice...");
+                log::info!("[open usage] Building choices for MoveToContainerChoice...");
                 // Add the position of the currently opened container
                 data.position = Some(position);
                 // Build container choices and pass the result back down to the view/handlers
@@ -74,7 +74,7 @@ fn handle_callback(level : &mut Level, position: Position, data : ContainerFrame
     return None
 }
 
-fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
+fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
     if let Some(pos) = data.position {
         let map = level.get_map_mut().unwrap();
         let container_result = map.find_container_mut(pos);
@@ -114,9 +114,10 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let subview_container = c.clone();
         let view_container = c.clone();
 
-        let mut commands : HashSet<ContainerFrameHandlerCommand> = HashSet::new();
-        commands.insert(OPEN);
-        commands.insert(TAKE);
+        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
+        commands.insert(Key::Char('o'), build_usage('o', String::from("open") ));
+        commands.insert(Key::Char('t'), build_usage('t', String::from("take") ));
+
         let container_view = container::build_container_frame_handler(subview_container, commands);
 
         let ui = &mut self.ui;

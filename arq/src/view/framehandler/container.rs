@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use std::fmt::format;
 use std::io::Error;
@@ -15,11 +15,13 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
-use crate::view::framehandler::container::ContainerFrameHandlerCommand::{DROP, EQUIP};
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::framehandler::container_choice::ContainerChoiceCommand;
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
+use crate::view::usage::container_framehandler_usage::*;
+use crate::view::usage::{UsageCommand, UsageLine};
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {
@@ -27,17 +29,7 @@ pub struct ContainerFrameHandler {
     columns : Vec<Column>,
     row_count: i32,
     pub item_list_selection : ItemListSelection,
-    commands : HashSet<ContainerFrameHandlerCommand>
-}
-
-#[derive(Eq, Hash, PartialEq)]
-#[derive(Debug)]
-#[derive(Copy, Clone)]
-pub enum ContainerFrameHandlerCommand {
-    OPEN,
-    TAKE,
-    DROP,
-    EQUIP // For weapons / armour
+    commands : HashMap<Key, UsageCommand>
 }
 
 #[derive(Clone)]
@@ -104,8 +96,7 @@ fn build_column_text(column: &Column, item: &Item) -> String {
 }
 
 
-
-pub fn build_container_frame_handler(container: Container, commands : HashSet<ContainerFrameHandlerCommand>) -> ContainerFrameHandler {
+pub fn build_container_frame_handler(container: Container, commands : HashMap<Key, UsageCommand>) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -347,32 +338,7 @@ impl ContainerFrameHandler {
     }
 }
 
-fn build_command_usage_descriptions(commands: &HashSet<ContainerFrameHandlerCommand>) -> String {
-    let mut description = String::from("");
-    let len = commands.len();
-    let mut i = 0;
-    for c in commands.iter() {
-        match c {
-            ContainerFrameHandlerCommand::OPEN => {
-                description += "o - open";
-            },
-            ContainerFrameHandlerCommand::TAKE => {
-                description += "t - take";
-            },
-            ContainerFrameHandlerCommand::DROP => {
-                description += "d - drop";
-            },
-            ContainerFrameHandlerCommand::EQUIP => {
-                description += "e - equip";
-            }
-        }
-        if i < len {
-            description += ", ";
-        }
-        i+=1;
-    }
-    description
-}
+
 
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
@@ -426,7 +392,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
                 line_index += 1;
             }
 
-            let usage_description = build_command_usage_descriptions(&self.commands);
+            let usage_description = ContainerFrameHandler::build_command_usage_descriptions(&self.commands.values().cloned().collect());
             let usage_text = build_paragraph(usage_description.clone());
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
@@ -451,7 +417,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             match key {
                 Key::Char('d') => {
                     log::info!("[container frame handler] new result for DropItems..");
-                    if self.commands.contains(&DROP) {
+                    if self.commands.contains_key( &Key::Char('d')) {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
@@ -460,7 +426,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 },
                 Key::Char('e') => {
-                    if self.commands.contains(&EQUIP) {
+                    if self.commands.contains_key(&key) {
                         log::info!("[container frame handler] new result for EquipItems..");
                         let focused_item = self.find_focused_item().unwrap();
                         let mut items = Vec::new();
@@ -518,7 +484,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
     }
 }
 
-pub fn build_default_container_view(container: Container) -> ContainerFrameHandler {
+pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -526,7 +492,7 @@ pub fn build_default_container_view(container: Container) -> ContainerFrameHandl
         columns,
         row_count: 1,
         item_list_selection: build_list_selection(items, 1),
-        commands : HashSet::new()
+        commands : HashMap::new()
     }
 }
 

@@ -458,7 +458,7 @@ impl <B : Backend> GameEngine<B> {
                 command.handle(key)?;
             },
             Key::Char('o') => {
-                let key = self.ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat command to choose current location."))?;
+                let key = self.ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
                 let mut command = OpenCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
                 command.handle(key)?;
             },

@@ -119,7 +119,7 @@ fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFra
     return Some(DropItems(undropped));
 }
 
-fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
+fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
     let inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
     let sub_containers_result = container_util::build_container_choices(&data.source, inventory);
 
@@ -132,15 +132,15 @@ fn build_container_choices(data: &MoveToContainerChoiceData, level: &mut Level) 
 fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
     match state.data {
         DropItems(ref items) => {
-            log::info!("[inventory command] Received data for DropItems with {} items", items.len());
+            log::info!("[inventory usage] Received data for DropItems with {} items", items.len());
             return drop_items(items.to_vec(), state);
         },
         MoveItems(data) => {
-            log::info!("[inventory command] Received data for MoveItems with {} items", data.to_move.len());
+            log::info!("[inventory usage] Received data for MoveItems with {} items", data.to_move.len());
             return container_util::move_player_items(data, state.level);
         },
         EquipItems(ref data) => {
-            log::info!("[inventory command] Received data for EquipItems with {} items", data.len());
+            log::info!("[inventory usage] Received data for EquipItems with {} items", data.len());
             return equip_items(data.clone(), state);
         },
         MoveToContainerChoice(ref data) => {
@@ -153,11 +153,11 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
                     target_item: None,
                     position: None
                 };
-                log::info!("[inventory command] Moving player items for MoveToContainerChoice...");
+                log::info!("[inventory usage] Moving player items for MoveToContainerChoice...");
                 return container_util::move_player_items(move_data, state.level);
             } else {
                 // Build container choices and pass the result back down to the view/handlers
-                log::info!("[inventory command] Building choices for MoveToContainerChoice...");
+                log::info!("[inventory usage] Building choices for MoveToContainerChoice...");
                 build_container_choices(data, state.level).ok()
             }
         }
