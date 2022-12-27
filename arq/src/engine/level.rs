@@ -64,7 +64,7 @@ impl Levels {
     }
 
     fn build_map(&mut self) -> Map {
-        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 20, 20);
+        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 30, 20);
         let rng = &mut self.rng;
         let mut map_generator = build_generator(rng, map_area);
         map_generator.generate()

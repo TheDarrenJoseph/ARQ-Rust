@@ -19,7 +19,7 @@ pub struct UIWrapper<B: 'static + tui::backend::Backend> {
     pub(crate) terminal_manager : TerminalManager<B>,
 }
 
-const UI_USAGE_HINT: &str = "Use the arrow keys/WASD to move.\n Esc - Menu";
+const UI_USAGE_HINT: &str = "Use the arrow keys/WASD to move.\nEsc - Menu";
 
 impl <B : Backend> UIWrapper<B> {
     // TODO refactor into a singular component shared with commands
