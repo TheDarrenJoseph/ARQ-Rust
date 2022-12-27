@@ -20,8 +20,7 @@ use crate::view::framehandler::container_choice::ContainerChoiceCommand;
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
-use crate::view::usage::container_framehandler_usage::*;
-use crate::view::usage::{UsageCommand, UsageLine};
+use crate::view::usage_line::{UsageCommand, UsageLine};
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {
@@ -29,7 +28,7 @@ pub struct ContainerFrameHandler {
     columns : Vec<Column>,
     row_count: i32,
     pub item_list_selection : ItemListSelection,
-    commands : HashMap<Key, UsageCommand>
+    usage_line : UsageLine
 }
 
 #[derive(Clone)]
@@ -96,7 +95,7 @@ fn build_column_text(column: &Column, item: &Item) -> String {
 }
 
 
-pub fn build_container_frame_handler(container: Container, commands : HashMap<Key, UsageCommand>) -> ContainerFrameHandler {
+pub fn build_container_frame_handler(container: Container, usage_line : UsageLine) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -104,7 +103,7 @@ pub fn build_container_frame_handler(container: Container, commands : HashMap<Ke
         columns,
         row_count: 1,
         item_list_selection: build_list_selection(items, 1),
-        commands
+        usage_line
     }
 }
 
@@ -238,7 +237,7 @@ impl ContainerFrameHandler {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
                     if let Some(focused_container) = self.container.find_mut(focused_item) {
-                        return Some(build_container_frame_handler(focused_container.clone(), self.commands.clone()))
+                        return Some(build_container_frame_handler(focused_container.clone(), self.usage_line.clone()))
                     }
                 }
             }
@@ -392,7 +391,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
                 line_index += 1;
             }
 
-            let usage_description = ContainerFrameHandler::build_command_usage_descriptions(&self.commands.values().cloned().collect());
+
+            let usage_description = self.usage_line.describe();
             let usage_text = build_paragraph(usage_description.clone());
             let text_area = Rect::new( window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
             frame.render_widget(usage_text.clone(), text_area);
@@ -417,7 +417,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             match key {
                 Key::Char('d') => {
                     log::info!("[container frame handler] new result for DropItems..");
-                    if self.commands.contains_key( &Key::Char('d')) {
+                    if self.usage_line.commands.contains_key( &Key::Char('d')) {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
@@ -426,7 +426,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 },
                 Key::Char('e') => {
-                    if self.commands.contains_key(&key) {
+                    if self.usage_line.commands.contains_key(&key) {
                         log::info!("[container frame handler] new result for EquipItems..");
                         let focused_item = self.find_focused_item().unwrap();
                         let mut items = Vec::new();
@@ -492,7 +492,7 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
         columns,
         row_count: 1,
         item_list_selection: build_list_selection(items, 1),
-        commands : HashMap::new()
+        usage_line : UsageLine::new(HashMap::new())
     }
 }
 

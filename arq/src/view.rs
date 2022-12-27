@@ -17,7 +17,7 @@ pub mod map;
 pub mod world_container;
 pub mod settings_menu;
 pub mod game_over;
-pub mod usage;
+pub mod usage_line;
 
 // A View begins an I/O loop (upon calling begin()) while rendering
 pub trait View<T>  {

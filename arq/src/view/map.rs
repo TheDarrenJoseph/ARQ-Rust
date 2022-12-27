@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::convert::TryInto;
 use std::io::Error;
 
 use termion::event::Key;
@@ -14,13 +16,16 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::character_info::CharacterInfoView;
+use crate::view::framehandler::util::tabling::build_paragraph;
+use crate::view::usage_line::{UsageCommand, UsageLine};
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
     pub ui : &'a mut UI,
     pub characters : Characters,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub view_area : Option<Area>
+    pub view_area : Option<Area>,
+    pub usage_line : UsageLine
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B>{
@@ -148,23 +153,23 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     }
 
     fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
-        log::info!("Drawing map tiles...");
+        log::info!("Drawing map...");
 
         let ui = &mut self.ui;
         let mut frame_size = Rect::new(0,0, 20, 20);
+
+        self.view_area = area;
+        let map_area = self.view_area.unwrap();
+
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
             frame_size = frame.size();
+
+
         })?;
 
-        let view_area = if let Some(a) = area {
-            a
-        } else {
-            let start_position = Position { x: frame_size.x + 1, y:frame_size.y + 1};
-            build_rectangular_area(start_position, frame_size.width, frame_size.height)
-        };
-        self.view_area = Some(view_area);
         self.draw_map_cells()?;
+
         Ok(())
     }
 }

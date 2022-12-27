@@ -20,7 +20,7 @@ use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{Mov
 use crate::view::{InputResult, View};
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::ui::ui::{get_input_key, UI};
-use crate::view::usage::{build_usage, UsageCommand};
+use crate::view::usage_line::{UsageCommand, UsageLine};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -115,10 +115,10 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let view_container = c.clone();
 
         let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-        commands.insert(Key::Char('o'), build_usage('o', String::from("open") ));
-        commands.insert(Key::Char('t'), build_usage('t', String::from("take") ));
-
-        let container_view = container::build_container_frame_handler(subview_container, commands);
+        commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
+        commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
+        let usage_line = UsageLine { commands };
+        let container_view = container::build_container_frame_handler(subview_container, usage_line);
 
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;

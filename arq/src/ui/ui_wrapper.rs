@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io;
 use termion::event::Key;
 use tui::backend::Backend;
@@ -12,6 +13,7 @@ use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map::MapView;
+use crate::view::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {
@@ -117,7 +119,10 @@ impl <B : Backend> UIWrapper<B> {
         match map {
             Some(m) => {
                 if let Some(frame_size) = frame_size_copy {
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+                    let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
+                    commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
+                    let usage_line = UsageLine { commands };
+                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None, usage_line };
 
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
