@@ -95,9 +95,13 @@ fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFra
 
     // Find the container on the map and add the "container" wrappers there
     let mut undropped = Vec::new();
+    for item in &items {
+        undropped.push(item.clone());
+    }
+
     if let Some(m) = state.level.get_map_mut() {
         if let Some(pos_container) = m.find_container_mut(position) {
-            for item in items {
+            for item in &items {
                 // Find the "container" wrappper matching the item returned
                 if let Some(ref mut container) = state.container {
                     if let Some(container_item) = &mut container.find_mut(&item) {
@@ -106,10 +110,11 @@ fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFra
                         self_item.unequip();
                         if pos_container.can_fit_container_item(&dropping_container_item) {
                             log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
-                            pos_container.add(dropping_container_item)
+                            pos_container.add(dropping_container_item);
+                            let pos = undropped.iter().position(|x| x.id_equals(&item));
+                            undropped.remove(pos.unwrap());
                         } else {
                             log::info!("Cannot fit item: {}  into: {}", item.get_name(), pos_container.get_self_item().get_name());
-                            undropped.push(item);
                         }
                     }
                 }
