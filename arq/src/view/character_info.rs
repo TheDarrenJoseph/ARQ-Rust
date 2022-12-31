@@ -294,7 +294,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
             let areas = ui.get_view_areas(frame.size());
-            let view_area = areas[0];
+            let view_area = areas.get_main_area();
             // Sizes for the entire 'Character Info' frame area
             let frame_area = Rect { x : view_area.x, y : view_area.y +1 , width: view_area.width.clone(),  height: view_area.height.clone() - 1};
             let specific_frame_data = CharacterInfoViewFrameData { character };

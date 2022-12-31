@@ -6,21 +6,22 @@ use termion::input::TermRead;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, ListState, Paragraph, Wrap};
+use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
 
 use crate::{menu, ui};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::menu::{Menu, ToList};
+use crate::ui::ui_areas::UIAreas;
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
-use crate::widget::{Widget, WidgetType};
+use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 
 pub struct UI {
     pub start_menu : Menu,
     pub render_additional: bool,
     pub console_visible: bool,
-    pub additional_widgets: Vec<Widget>,
+    pub additional_widgets: Vec<StandardWidgetType>,
     pub frame_size : Option<Area>,
     pub frame_handler: ConsoleFrameHandler
 }
@@ -89,7 +90,7 @@ impl UI {
 
     // If the console if visible, splits a frame vertically into the 'main' and lower console areas
     // Otherwise returns the original frame size
-    pub fn get_view_areas(&self, frame_size: Rect) -> Vec<Rect> {
+    pub fn get_view_areas(&self, frame_size: Rect) -> UIAreas {
         let areas: Vec<Rect> = if self.console_visible {
             Layout::default()
                 .direction(Direction::Vertical)
@@ -103,14 +104,14 @@ impl UI {
         } else {
             vec![frame_size.clone()]
         };
-        areas
+        UIAreas::new(areas[0], areas.get(1).cloned())
     }
 
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let main_block = build_main_block();
         let frame_size = frame.size();
-        let areas: Vec<Rect> = self.get_view_areas(frame_size);
-        let main_area = areas[0];
+        let areas: UIAreas = self.get_view_areas(frame_size);
+        let main_area = areas.get_main_area();
         frame.render_widget(main_block, main_area.clone());
 
         let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
@@ -121,7 +122,7 @@ impl UI {
         }
 
         if self.console_visible {
-            self.draw_console(frame, areas[1]);
+            self.draw_console(frame, areas.get_console_area().unwrap());
         }
     }
 
@@ -191,15 +192,20 @@ impl Draw for UI {
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
-        let main_window_width = frame_size.width / 2;
+        let max_width = frame_size.width / 2;
         let widget_count = self.additional_widgets.len();
+        let main_area = self.get_view_areas(frame_size).get_main_area();
         if widget_count > 0 {
             let mut _offset = 0;
             for widget in self.additional_widgets.iter_mut() {
-                match &mut widget.state_type {
-                    WidgetType::StatLine(w) => {
-                        let stats_area = Rect::new(1, 0, main_window_width, 1);
-                        frame.render_stateful_widget(w.clone(), stats_area, &mut w.clone());
+                match widget {
+                    StandardWidgetType::StatLine(w) => {
+                        frame.render_widget(w.clone(),
+                                            Rect::new(main_area.x + 1, main_area.y, max_width, 1));
+                    },
+                    StandardWidgetType::UsageLine(w) => {
+                        frame.render_widget(w.clone(),
+                                            Rect::new(main_area.x + 1, main_area.height - 1, main_area.width, 1));
                     },
                     _ => {}
                 }

@@ -14,10 +14,10 @@ use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::position::Position;
 use crate::map::tile::Colour;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum Race {Human,Goblin}
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum Class {None,Warrior}
 
 impl Display for Class {

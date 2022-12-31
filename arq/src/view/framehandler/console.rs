@@ -9,7 +9,7 @@ use tui::widgets::{Block, Borders};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::console_input_widget::{build_console_input};
-use crate::widget::WidgetType;
+use crate::widget::StatefulWidgetType;
 
 pub struct ConsoleFrameHandler {
     pub buffer: ConsoleBuffer
@@ -34,7 +34,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrame
         let console_input = build_console_input(length, self.buffer.content.clone(), 0);
         let text_area = Rect::new(frame_size.x +  1, frame_size.y + 1, frame_size.width - 2 , frame_size.height - 2 );
 
-        if let WidgetType::Console(w) = console_input.state_type {
+        if let StatefulWidgetType::Console(w) = console_input.state_type {
             frame.render_stateful_widget(w.clone(), text_area, &mut w.clone());
         }
     }

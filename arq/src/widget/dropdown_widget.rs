@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::widget::{Widget, WidgetType};
+use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -58,9 +58,9 @@ impl DropdownInputState {
     }
 }
 
-pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> Widget {
-    let state = WidgetType::Dropdown( DropdownInputState { selected: false, editable, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
-    Widget{ state_type: state}
+pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> StatefulWidgetState {
+    let state = StatefulWidgetType::Dropdown( DropdownInputState { selected: false, editable, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
+    StatefulWidgetState { state_type: state}
 }
 
 

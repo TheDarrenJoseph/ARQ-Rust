@@ -1,6 +1,7 @@
+use crate::view::usage_line::UsageLine;
 use crate::widget::boolean_widget::BooleanState;
 use crate::widget::button_widget::ButtonState;
-use crate::widget::character_stat_line::CharacterStatLineState;
+use crate::widget::character_stat_line::CharacterStatLineWidget;
 use crate::widget::console_input_widget::ConsoleInputState;
 use crate::widget::dropdown_widget::DropdownInputState;
 use crate::widget::number_widget::NumberInputState;
@@ -13,6 +14,7 @@ pub mod boolean_widget;
 pub mod button_widget;
 pub mod character_stat_line;
 pub mod console_input_widget;
+pub mod usage_line_widget;
 pub mod widgets;
 
 pub fn build_buffer(length: i8, input: String) -> String {
@@ -31,45 +33,51 @@ pub fn build_buffer(length: i8, input: String) -> String {
     return buffer;
 }
 
-// TODO potentially convert to a Widget trait/WidgetBase struct?
+
+// For anything that has input / selection state ideally
 #[derive(Debug)]
-pub enum WidgetType {
+pub enum StatefulWidgetType {
     Text(TextInputState),
     Console(ConsoleInputState),
     Number(NumberInputState),
     Dropdown(DropdownInputState),
     Button(ButtonState),
-    Boolean(BooleanState),
-    StatLine(CharacterStatLineState)
+    Boolean(BooleanState)
 }
 
-pub struct Widget {
-    pub state_type: WidgetType
+// Non stateful
+pub enum StandardWidgetType {
+    StatLine(CharacterStatLineWidget),
+    UsageLine(UsageLine)
+}
+
+pub struct StatefulWidgetState {
+    pub state_type: StatefulWidgetType
 }
 
 pub trait Named {
     fn get_name(&mut self) -> String;
 }
 
-impl Named for WidgetType {
+impl Named for StatefulWidgetType {
     fn get_name(&mut self) -> String {
         match self {
-            WidgetType::Text(state) => {
+            StatefulWidgetType::Text(state) => {
                 state.get_name()
             },
-            WidgetType::Boolean(state) => {
+            StatefulWidgetType::Boolean(state) => {
                 state.get_name()
             },
-            WidgetType::Console(_state) => {
+            StatefulWidgetType::Console(_state) => {
                 String::from("Console")
             },
-            WidgetType::Number(state) => {
+            StatefulWidgetType::Number(state) => {
                 state.get_name().clone()
             },
-            WidgetType::Dropdown(state) => {
+            StatefulWidgetType::Dropdown(state) => {
                 state.get_name().clone()
             },
-            WidgetType::Button(state) => {
+            StatefulWidgetType::Button(state) => {
                 state.get_name()
             },
             _ => { "".to_string() }
@@ -83,39 +91,39 @@ pub trait Focusable {
     fn is_focused(&mut self) -> bool;
 }
 
-impl Focusable for WidgetType {
+impl Focusable for StatefulWidgetType {
     fn focus(&mut self) {
         match self {
-            WidgetType::Text(state) =>  state.selected = true,
-            WidgetType::Console(state) => state.selected = true,
-            WidgetType::Number(state) => state.selected = true,
-            WidgetType::Dropdown(state) => state.selected = true,
-            WidgetType::Button(state) => state.selected = true,
-            WidgetType::Boolean(state) => state.selected = true,
+            StatefulWidgetType::Text(state) =>  state.selected = true,
+            StatefulWidgetType::Console(state) => state.selected = true,
+            StatefulWidgetType::Number(state) => state.selected = true,
+            StatefulWidgetType::Dropdown(state) => state.selected = true,
+            StatefulWidgetType::Button(state) => state.selected = true,
+            StatefulWidgetType::Boolean(state) => state.selected = true,
             _ => {}
         }
     }
 
     fn unfocus(&mut self) {
         match self {
-            WidgetType::Text(state) =>  state.selected = false,
-            WidgetType::Console(state) => state.selected = false,
-            WidgetType::Number(state) => state.selected = false,
-            WidgetType::Dropdown(state) => state.selected = false,
-            WidgetType::Button(state) => state.selected = false,
-            WidgetType::Boolean(state) => state.selected = false,
+            StatefulWidgetType::Text(state) =>  state.selected = false,
+            StatefulWidgetType::Console(state) => state.selected = false,
+            StatefulWidgetType::Number(state) => state.selected = false,
+            StatefulWidgetType::Dropdown(state) => state.selected = false,
+            StatefulWidgetType::Button(state) => state.selected = false,
+            StatefulWidgetType::Boolean(state) => state.selected = false,
             _ => {}
         }
     }
 
     fn is_focused(&mut self) -> bool {
         match self {
-            WidgetType::Text(state) => state.selected.clone(),
-            WidgetType::Console(state) => state.selected.clone(),
-            WidgetType::Number(state) => state.selected.clone(),
-            WidgetType::Dropdown(state) => state.selected.clone(),
-            WidgetType::Button(state) => state.selected.clone(),
-            WidgetType::Boolean(state) => state.selected.clone(),
+            StatefulWidgetType::Text(state) => state.selected.clone(),
+            StatefulWidgetType::Console(state) => state.selected.clone(),
+            StatefulWidgetType::Number(state) => state.selected.clone(),
+            StatefulWidgetType::Dropdown(state) => state.selected.clone(),
+            StatefulWidgetType::Button(state) => state.selected.clone(),
+            StatefulWidgetType::Boolean(state) => state.selected.clone(),
             _ => { false }
         }
     }

@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::widget::{Widget, WidgetType};
+use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -13,9 +13,9 @@ pub struct ButtonState {
     name: String
 }
 
-pub fn build_button(length: i8, name: String) -> Widget {
-    let name_input_state = WidgetType::Button( ButtonState { selected: false, length, name});
-    Widget{ state_type: name_input_state}
+pub fn build_button(length: i8, name: String) -> StatefulWidgetState {
+    let name_input_state = StatefulWidgetType::Button( ButtonState { selected: false, length, name});
+    StatefulWidgetState { state_type: name_input_state}
 }
 
 impl ButtonState {

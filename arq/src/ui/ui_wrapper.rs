@@ -8,6 +8,7 @@ use crate::engine::level::Level;
 use crate::map::position::{build_rectangular_area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, UI};
+use crate::ui::ui_areas::UIAreas;
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -88,8 +89,8 @@ impl <B : Backend> UIWrapper<B> {
             let ui = &mut self.ui;
             ui.show_console();
             self.terminal_manager.terminal.draw(|frame| {
-                let areas: Vec<Rect> = ui.get_view_areas(frame.size());
-                let mut main_area = areas[0];
+                let areas: UIAreas = ui.get_view_areas(frame.size());
+                let mut main_area = areas.get_main_area();
                 main_area.height -= 2;
                 ui.render(frame);
                 character_view.handle_frame(frame, FrameData { data: base_character.clone(), frame_size: main_area });
@@ -119,10 +120,8 @@ impl <B : Backend> UIWrapper<B> {
         match map {
             Some(m) => {
                 if let Some(frame_size) = frame_size_copy {
-                    let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-                    commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
-                    let usage_line = UsageLine { commands };
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None, usage_line };
+
+                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
 
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};

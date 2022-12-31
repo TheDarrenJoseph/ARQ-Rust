@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use termion::event::Key;
 use crate::character::Character;
+use crate::map::position::Position;
 
 #[derive(Eq, Hash, PartialEq)]
 #[derive(Debug)]
@@ -27,13 +28,15 @@ impl UsageCommand {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct UsageLine {
-    pub commands : HashMap<Key, UsageCommand>
+    pub commands : HashMap<Key, UsageCommand>,
+    pub start_position: Option<Position>
 }
 
 impl UsageLine {
     pub const fn new(commands: HashMap<Key, UsageCommand>) -> Self {
-        UsageLine { commands }
+        UsageLine { commands, start_position: None }
     }
 
     pub fn describe(&self) -> String {

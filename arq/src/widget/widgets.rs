@@ -1,12 +1,12 @@
 use crate::settings::Settings;
-use crate::widget::{Focusable, Widget};
+use crate::widget::{Focusable, StatefulWidgetState};
 use crate::widget::boolean_widget::build_boolean_widget;
 use crate::widget::number_widget::build_number_input_with_value;
 use crate::widget::text_widget::build_text_input;
 
 pub struct WidgetList {
     pub selected_widget: Option<i8>,
-    pub widgets: Vec<Widget>
+    pub widgets: Vec<StatefulWidgetState>
 }
 
 impl WidgetList {
@@ -38,7 +38,7 @@ impl WidgetList {
     }
 }
 
-pub fn build_settings_widgets(settings : &Settings) -> Vec<Widget> {
+pub fn build_settings_widgets(settings : &Settings) -> Vec<StatefulWidgetState> {
     let mut widgets = Vec::new();
     for setting in &settings.bool_settings {
         widgets.push(build_boolean_widget(15, setting.name.clone(), setting.value))

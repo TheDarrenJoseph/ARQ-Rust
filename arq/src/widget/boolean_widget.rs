@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Color, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::widget::{Widget, WidgetType};
+use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
 
 #[derive(Clone)]
@@ -15,9 +15,9 @@ pub struct BooleanState {
     name: String
 }
 
-pub fn build_boolean_widget(length: i8, name: String, value: bool) -> Widget {
-    let name_input_state = WidgetType::Boolean( BooleanState { selected: false, value, length, name});
-    Widget{ state_type: name_input_state }
+pub fn build_boolean_widget(length: i8, name: String, value: bool) -> StatefulWidgetState {
+    let name_input_state = StatefulWidgetType::Boolean( BooleanState { selected: false, value, length, name});
+    StatefulWidgetState { state_type: name_input_state }
 }
 
 impl BooleanState {

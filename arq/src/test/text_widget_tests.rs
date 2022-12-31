@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod test_text_input {
     use crate::widget::text_widget::{build_text_input, TextInputState};
-    use crate::widget::WidgetType;
+    use crate::widget::StatefulWidgetType;
 
-    fn assert_for_text_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(TextInputState) {
+    fn assert_for_text_widget<F>(widget_type : StatefulWidgetType, mut callback: F) where F : FnMut(TextInputState) {
         match widget_type {
-            WidgetType::Text(s ) => {
+            StatefulWidgetType::Text(s ) => {
                 callback(s);
             }
             _ => {

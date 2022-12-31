@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod text_dropdown {
     use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
-    use crate::widget::WidgetType;
+    use crate::widget::StatefulWidgetType;
 
-    fn assert_for_dropdown_widget<F>(widget_type : WidgetType, mut callback: F) where F : FnMut(DropdownInputState) {
+    fn assert_for_dropdown_widget<F>(widget_type : StatefulWidgetType, mut callback: F) where F : FnMut(DropdownInputState) {
         match widget_type {
-            WidgetType::Dropdown(s ) => {
+            StatefulWidgetType::Dropdown(s ) => {
                 callback(s);
             }
             _ => {

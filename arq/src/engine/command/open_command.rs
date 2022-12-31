@@ -117,7 +117,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
         commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
         commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
-        let usage_line = UsageLine { commands };
+        let usage_line = UsageLine::new(commands);
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
 
         let ui = &mut self.ui;

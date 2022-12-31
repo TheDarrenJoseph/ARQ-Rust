@@ -7,7 +7,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::util::widget_menu::WidgetMenu;
-use crate::widget::{Focusable, WidgetType};
+use crate::widget::{Focusable, StatefulWidgetType};
 use crate::widget::widgets::WidgetList;
 
 pub struct SettingsMenu<'a, B : tui::backend::Backend> {
@@ -42,13 +42,13 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenu<'_, B>  {
             for widget in widgets.widgets.iter() {
                 let widget_area = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &widget.state_type {
-                    WidgetType::Text(w) => {
+                    StatefulWidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
-                    WidgetType::Boolean(w) => {
+                    StatefulWidgetType::Boolean(w) => {
                         frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
-                    WidgetType::Number(number_state) => {
+                    StatefulWidgetType::Number(number_state) => {
                         frame.render_stateful_widget(number_state.clone(), widget_area, &mut number_state.clone());
                     },
                     _ => {}
@@ -83,7 +83,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Boolean(state) => {
+                            StatefulWidgetType::Boolean(state) => {
                                 state.value = !state.value;
                             }
                             _ => {}
@@ -96,7 +96,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Text(state) => {
+                            StatefulWidgetType::Text(state) => {
                                 state.delete_char();
                             }
                             _ => {}
@@ -113,7 +113,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                     Some(widget) => {
                         log::info!("Input: {}", c.to_string());
                         match &mut widget.state_type {
-                            WidgetType::Text(state) => {
+                            StatefulWidgetType::Text(state) => {
                                 state.add_char(c);
                                 log::info!("Widget state input is: {}", state.get_input());
                             },
@@ -127,7 +127,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Number(state) => {
+                            StatefulWidgetType::Number(state) => {
                                 if state.editable {
                                     state.decrement()
                                 }
@@ -142,7 +142,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Number(state) => {
+                            StatefulWidgetType::Number(state) => {
                                 if state.editable {
                                     state.increment()
                                 }

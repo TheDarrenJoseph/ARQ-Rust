@@ -11,8 +11,8 @@ use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, 
 use crate::view::game_over::GameOverChoice::{EXIT, RESTART};
 use crate::widget::button_widget::build_button;
 use crate::widget::widgets::WidgetList;
-use crate::widget::{Focusable, WidgetType};
-use crate::widget::WidgetType::Button;
+use crate::widget::{Focusable, StatefulWidgetType};
+use crate::widget::StatefulWidgetType::Button;
 
 pub struct GameOver<'a, B : tui::backend::Backend> {
     pub message : String,
@@ -80,7 +80,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
             for widget in widgets.widgets.iter() {
                 let widget_area = Rect::new(half_width, half_height + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &widget.state_type {
-                    WidgetType::Button(w) => {
+                    StatefulWidgetType::Button(w) => {
                         frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
                     _ => {}
@@ -114,7 +114,7 @@ impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B
                 match target_widget {
                     Some(mut widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Button(button) => {
+                            StatefulWidgetType::Button(button) => {
                                 log::info!("Current widget: {}", button.get_name());
                                 // TODO have internal result / name mappings
                                 if button.get_name() == "Exit" {

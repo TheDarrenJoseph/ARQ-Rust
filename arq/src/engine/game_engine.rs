@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use std::fmt::format;
 use std::{io, thread};
+use std::collections::HashMap;
 use std::io::empty;
 use std::time::Duration;
 use log4rs::config::Logger;
@@ -32,7 +33,7 @@ use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
-use crate::{menu, sound};
+use crate::{menu, sound, widget};
 use crate::menu::Selection;
 
 use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
@@ -48,14 +49,14 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
 use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
+use crate::view::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
 use crate::widget::character_stat_line::build_character_stat_line;
 use crate::widget::boolean_widget::build_boolean_widget;
 use crate::widget::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
-use crate::widget::{Widget, WidgetType};
-
+use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
@@ -83,19 +84,19 @@ impl <B : Backend> GameEngine<B> {
 
         for widget in widgets.widgets {
             match widget.state_type {
-                WidgetType::Boolean(mut b) => {
+                StatefulWidgetType::Boolean(mut b) => {
                     let setting = self.settings.bool_settings.iter_mut().find(|x| x.name == b.get_name());
                     if let Some(s) = setting {
                         s.value = b.value;
                     }
                 },
-                WidgetType::Text(mut t) => {
+                StatefulWidgetType::Text(mut t) => {
                     let setting = self.settings.string_settings.iter_mut().find(|x| x.name == t.get_name());
                     if let Some(s) = setting {
                         s.value = t.get_input();
                     }
                 },
-                WidgetType::Number(mut t) => {
+                StatefulWidgetType::Number(mut t) => {
                     let setting = self.settings.u32_settings.iter_mut().find(|x| x.name == t.get_name());
                     if let Some(s) = setting {
                         s.value = t.get_input() as u32;
@@ -316,12 +317,29 @@ impl <B : Backend> GameEngine<B> {
         Ok(())
     }
 
-    fn add_additional_widgets(&mut self) {
+    fn add_or_update_additional_widgets(&mut self) {
         if self.ui_wrapper.ui.additional_widgets.is_empty() {
             let level = self.levels.get_level_mut();
             let player = level.characters.get_player_mut().unwrap();
             let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
-            self.ui_wrapper.ui.additional_widgets.push(stat_line);
+            self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::StatLine(stat_line));
+
+            let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
+            commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
+            // TODO inject view area / start pos??
+            let map_usage_line = UsageLine::new(commands);
+            self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::UsageLine(map_usage_line));
+
+        } else {
+            match self.ui_wrapper.ui.additional_widgets.get_mut(0) {
+                Some(StandardWidgetType::StatLine(s)) => {
+                    let level = self.levels.get_level_mut();
+                    let player = level.characters.get_player_mut().unwrap();
+                    s.set_health(player.get_health());
+                    s.set_loot_score(player.get_inventory_mut().get_loot_value());
+                }
+                _ => {}
+            }
         }
     }
 
@@ -329,10 +347,11 @@ impl <B : Backend> GameEngine<B> {
         self.initialise()?;
         self.game_running = true;
         while self.game_running {
-            self.add_additional_widgets();
+            self.add_or_update_additional_widgets();
             self.ui_wrapper.ui.show_console();
 
             let level = self.levels.get_level_mut();
+
             match self.ui_wrapper.draw_map_view(level) {
                 Err(e) => {
                     log::error!("Error when attempting to draw map: {}", e);

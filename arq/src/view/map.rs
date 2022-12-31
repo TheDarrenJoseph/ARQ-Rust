@@ -24,8 +24,7 @@ pub struct MapView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub characters : Characters,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub view_area : Option<Area>,
-    pub usage_line : UsageLine
+    pub view_area : Option<Area>
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B>{

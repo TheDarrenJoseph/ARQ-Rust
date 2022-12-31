@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::widget::{build_buffer, Widget, WidgetType};
+use crate::widget::{build_buffer, StatefulWidgetState, StatefulWidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -16,9 +16,9 @@ pub struct TextInputState {
     selected_index: i8,
 }
 
-pub fn build_text_input(length: i8, name: String, input: String, input_padding: i8) -> Widget {
-    let name_input_state = WidgetType::Text( TextInputState { selected: false, length, input, name, input_padding,  selected_index: 0 });
-    Widget{ state_type: name_input_state}
+pub fn build_text_input(length: i8, name: String, input: String, input_padding: i8) -> StatefulWidgetState {
+    let name_input_state = StatefulWidgetType::Text( TextInputState { selected: false, length, input, name, input_padding,  selected_index: 0 });
+    StatefulWidgetState { state_type: name_input_state}
 }
 
 impl TextInputState {

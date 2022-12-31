@@ -10,7 +10,7 @@ use crate::error_utils::{error, error_result};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::widget::{Focusable, Named, Widget, WidgetType};
+use crate::widget::{Focusable, Named, StatefulWidgetState, StatefulWidgetType};
 use crate::widget::button_widget::build_button;
 use crate::widget::dropdown_widget::{build_dropdown};
 use crate::widget::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
@@ -44,7 +44,7 @@ impl CharacterFrameHandler {
             let editable = self.view_mode == ViewMode::CREATION;
             let mut attribute_input = build_number_input(editable,1, attribute.to_string(), 1);
             match attribute_input.state_type {
-                WidgetType::Number(ref mut state) => {
+                StatefulWidgetType::Number(ref mut state) => {
                     match score {
                         Some(s) => {
                             state.set_input(s.score.into());
@@ -70,7 +70,7 @@ impl CharacterFrameHandler {
 
         let mut class_input = build_dropdown("Class".to_string(), creation_mode,vec!["None".to_string(), "Warrior".to_string()]);
         match class_input.state_type {
-            WidgetType::Dropdown(ref mut state) => {
+            StatefulWidgetType::Dropdown(ref mut state) => {
                 state.select(character.get_class().to_string())
             }, _ => {}
         }
@@ -95,13 +95,13 @@ impl CharacterFrameHandler {
             for widget in self.widgets.widgets.iter_mut() {
                 let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &mut widget.state_type {
-                    WidgetType::Text(w) => {
+                    StatefulWidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
-                    WidgetType::Dropdown(w) => {
+                    StatefulWidgetType::Dropdown(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
-                    WidgetType::Button(w) => {
+                    StatefulWidgetType::Button(w) => {
                         let area = Rect::new(6, widget_count as u16 + 5, frame_size.width.clone() / 2, 1);
                         frame.render_stateful_widget(w.clone(), area, &mut w.clone());
                     },
@@ -119,7 +119,7 @@ impl CharacterFrameHandler {
             for widget in self.widgets.widgets.iter_mut() {
                 let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
                 match &mut widget.state_type {
-                    WidgetType::Number(w) => {
+                    StatefulWidgetType::Number(w) => {
                         frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
                     },
                     _ => {}
@@ -176,7 +176,7 @@ impl CharacterFrameHandler {
     pub fn update_free_points(&mut self, free_points: i32) {
         for widget in self.widgets.widgets.iter_mut() {
             match &mut widget.state_type {
-                WidgetType::Number(state) => {
+                StatefulWidgetType::Number(state) => {
                     if "Free points" == state.get_name() {
                         state.set_input(free_points.clone());
                     }
@@ -207,7 +207,7 @@ impl CharacterFrameHandler {
             let state_type = &mut widget.state_type;
             if String::from("Name") == state_type.get_name() {
                 match state_type {
-                    WidgetType::Text(state) => {
+                    StatefulWidgetType::Text(state) => {
                         character.set_name(state.get_input());
                     },
                     _ => {}
@@ -216,7 +216,7 @@ impl CharacterFrameHandler {
 
             if String::from("Class") == state_type.get_name() {
                 match state_type {
-                    WidgetType::Dropdown(state) => {
+                    StatefulWidgetType::Dropdown(state) => {
                         let class = determine_class(state.get_selection());
                         match class {
                             Some(c) => {
@@ -303,10 +303,10 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Dropdown(state) => {
+                            StatefulWidgetType::Dropdown(state) => {
                                 state.toggle_show();
                             },
-                            WidgetType::Button(state) => {
+                            StatefulWidgetType::Button(state) => {
                                 match state.get_name().as_str() {
                                     "[Enter]" => {
                                         match self.validate_character() {
@@ -346,7 +346,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                         log::info!("Input: {}", c.to_string());
 
                         match &mut widget.state_type {
-                            WidgetType::Text(state) => {
+                            StatefulWidgetType::Text(state) => {
                                 state.add_char(c);
                                 log::info!("Widget state input is: {}", state.get_input());
                             },
@@ -360,7 +360,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Text(state) => {
+                            StatefulWidgetType::Text(state) => {
                                 state.delete_char();
                             }
                             _ => {}
@@ -374,7 +374,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Dropdown(state) => {
+                            StatefulWidgetType::Dropdown(state) => {
                                 if state.editable {
                                     if state.is_showing_options() {
                                         state.select_next();
@@ -395,7 +395,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Dropdown(state) => {
+                            StatefulWidgetType::Dropdown(state) => {
                                 if state.editable {
                                     if state.is_showing_options() {
                                         state.select_previous();
@@ -416,7 +416,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Number(state) => {
+                            StatefulWidgetType::Number(state) => {
                                 if state.editable {
                                     let free_points = self.character.get_free_attribute_points().clone();
                                     if free_points > 0 {
@@ -436,7 +436,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {
-                            WidgetType::Number(state) => {
+                            StatefulWidgetType::Number(state) => {
                                 if state.editable {
                                     let free_points = self.character.get_free_attribute_points();
                                     if free_points < self.character.get_max_free_attribute_points() {
@@ -461,9 +461,9 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
     }
 }
 
-fn map_state(widget : &mut Widget) -> Option<NumberInputState> {
+fn map_state(widget : &mut StatefulWidgetState) -> Option<NumberInputState> {
     match &widget.state_type {
-        WidgetType::Number(state) => {
+        StatefulWidgetType::Number(state) => {
             Some(state.clone())
         },
         _ => {

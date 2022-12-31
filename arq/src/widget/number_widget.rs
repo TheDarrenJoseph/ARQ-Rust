@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::widgets::StatefulWidget;
 
-use crate::widget::{build_buffer, Widget, WidgetType};
+use crate::widget::{build_buffer, StatefulWidgetState, StatefulWidgetType};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -18,14 +18,14 @@ pub struct NumberInputState {
     input_padding: i8
 }
 
-pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> Widget {
-    let name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
-    Widget{ state_type: name_input_state}
+pub fn build_number_input(editable: bool, length: i8, name: String, input_padding: i8) -> StatefulWidgetState {
+    let name_input_state = StatefulWidgetType::Number( NumberInputState { selected: false, editable, length, input: 0, min: 0, max: 100, name, input_padding});
+    StatefulWidgetState { state_type: name_input_state}
 }
 
-pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> Widget {
-    let name_input_state = WidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
-    Widget{ state_type: name_input_state}
+pub fn build_number_input_with_value(editable: bool, input: i32, length: i8, name: String, input_padding: i8) -> StatefulWidgetState {
+    let name_input_state = StatefulWidgetType::Number( NumberInputState { selected: false, editable, length, input, min: 0, max: 100, name, input_padding});
+    StatefulWidgetState { state_type: name_input_state}
 }
 
 impl NumberInputState {
