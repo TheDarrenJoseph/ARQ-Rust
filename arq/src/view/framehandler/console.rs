@@ -8,7 +8,7 @@ use tui::widgets::{Block, Borders};
 
 use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::widget::console_input_widget::{build_console_input};
+use crate::widget::stateful::console_input_widget::{build_console_input};
 use crate::widget::StatefulWidgetType;
 
 pub struct ConsoleFrameHandler {

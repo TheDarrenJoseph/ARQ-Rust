@@ -1,21 +1,16 @@
 use crate::view::usage_line::UsageLine;
-use crate::widget::boolean_widget::BooleanState;
-use crate::widget::button_widget::ButtonState;
+use crate::widget::stateful::boolean_widget::BooleanState;
+use crate::widget::stateful::button_widget::ButtonState;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
-use crate::widget::console_input_widget::ConsoleInputState;
-use crate::widget::dropdown_widget::DropdownInputState;
-use crate::widget::number_widget::NumberInputState;
-use crate::widget::text_widget::TextInputState;
+use crate::widget::stateful::console_input_widget::ConsoleInputState;
+use crate::widget::stateful::dropdown_widget::DropdownInputState;
+use crate::widget::stateful::number_widget::NumberInputState;
+use crate::widget::stateful::text_widget::TextInputState;
 
-pub mod text_widget;
-pub mod dropdown_widget;
-pub mod number_widget;
-pub mod boolean_widget;
-pub mod button_widget;
 pub mod character_stat_line;
-pub mod console_input_widget;
 pub mod usage_line_widget;
 pub mod widgets;
+pub mod stateful;
 
 pub fn build_buffer(length: i8, input: String) -> String {
     let mut buffer = String::from("");

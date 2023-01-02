@@ -53,8 +53,8 @@ use crate::view::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
 use crate::widget::character_stat_line::build_character_stat_line;
-use crate::widget::boolean_widget::build_boolean_widget;
-use crate::widget::text_widget::build_text_input;
+use crate::widget::stateful::boolean_widget::build_boolean_widget;
+use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 

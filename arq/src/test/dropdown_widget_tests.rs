@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod text_dropdown {
-    use crate::widget::dropdown_widget::{build_dropdown, DropdownInputState};
+    use crate::widget::stateful::dropdown_widget::{build_dropdown, DropdownInputState};
     use crate::widget::StatefulWidgetType;
 
     fn assert_for_dropdown_widget<F>(widget_type : StatefulWidgetType, mut callback: F) where F : FnMut(DropdownInputState) {

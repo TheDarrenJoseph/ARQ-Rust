@@ -1,8 +1,10 @@
 use crate::settings::Settings;
 use crate::widget::{Focusable, StatefulWidgetState};
-use crate::widget::boolean_widget::build_boolean_widget;
-use crate::widget::number_widget::build_number_input_with_value;
-use crate::widget::text_widget::build_text_input;
+use crate::widget::stateful::boolean_widget::build_boolean_widget;
+use crate::widget::stateful::number_widget::build_number_input_with_value;
+use crate::widget::stateful::text_widget::build_text_input;
+
+
 
 pub struct WidgetList {
     pub selected_widget: Option<i8>,

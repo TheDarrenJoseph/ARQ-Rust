@@ -498,30 +498,15 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
 
 #[cfg(test)]
 mod tests {
-    
-
-    
-    
-    
-    
-    
-    
     use uuid::Uuid;
-
     use crate::list_selection::{ListSelection};
     
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::tile::Colour;
     use crate::menu;
-    
-    
-    
-    
-    
-    use crate::view::framehandler::container::{build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
-    
 
+    use crate::view::framehandler::container::{build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
