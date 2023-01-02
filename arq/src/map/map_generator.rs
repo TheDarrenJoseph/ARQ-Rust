@@ -173,8 +173,7 @@ impl <'rng> MapGenerator<'rng> {
         self.set_step(4, String::from("Pathfinding..."));
         self.path_rooms();
 
-        self.set_step(5, String::from("DONE!"));
-
+        self.set_step(5, String::from("DONE! [ any key to start ]"));
         return self.map.clone();
     }
 

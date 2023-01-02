@@ -22,7 +22,7 @@ fn build_gauge(progress: StepProgress) -> Gauge<'static> {
         .block(Block::default()
             .title("Map Generation"))
         .label(label)
-        .gauge_style(Style::default().fg(Color::Yellow))
+        .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
         .percent((100 / progress.step_count) * progress.current_step)
 }
 

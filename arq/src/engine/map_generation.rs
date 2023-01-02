@@ -30,9 +30,10 @@ impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
         let fh = &mut self.frame_handler;
         self.terminal_manager.terminal.draw(|frame| {
             let mut area = frame.size().clone();
-            area.y = frame.size().y / 2;
+            area.y = frame.size().y / 2 + 2;
+            area.x = area.width / 3;
             area.height = 4;
-
+            area.width = area.width / 3;
             fh.handle_frame(frame, FrameData { data: progress.clone(), frame_size: area})
         });
     }
