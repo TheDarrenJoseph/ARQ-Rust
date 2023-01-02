@@ -1,11 +1,16 @@
 use std::convert::TryInto;
 use std::fmt::format;
 use std::{io, thread};
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::future::Future;
 use std::io::empty;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use std::time::Duration;
+use futures::executor::block_on;
 use log4rs::config::Logger;
-use log::{error, log};
+use log::{error, info, log};
 
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
@@ -15,6 +20,10 @@ use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
 use tui::layout::Rect;
+use tui::style::Style;
+use tui::widgets::Gauge;
+
+use futures::FutureExt;
 
 use crate::character::{build_player, Character};
 use crate::character::characters::{build_characters, build_default_characters, Characters};
@@ -34,7 +43,9 @@ use crate::map::position::Side;
 use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound, widget};
+use crate::map::Map;
 use crate::menu::Selection;
+use crate::progress::StepProgress;
 
 use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
@@ -57,6 +68,9 @@ use crate::widget::stateful::boolean_widget::build_boolean_widget;
 use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
+use crate::engine::map_generation;
+use crate::engine::map_generation::MapGeneration;
+use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
@@ -66,7 +80,7 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     game_running : bool,
 }
 
-impl <B : Backend> GameEngine<B> {
+impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     pub fn rebuild(&mut self) {
         let settings = build_settings();
@@ -167,61 +181,65 @@ impl <B : Backend> GameEngine<B> {
         Ok(())
     }
 
-    pub fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Result<Option<GameOverChoice>, io::Error> {
-        self.setup_sinks();
-        loop {
-            // Hide additional widgets when paused
-            self.ui_wrapper.ui.render_additional = false;
-            self.ui_wrapper.draw_start_menu()?;
-            let start_choice = if choice.is_some() { choice.clone().unwrap() }  else { self.handle_start_menu_selection()? };
-            self.ui_wrapper.clear_screen();
-            match start_choice {
-                StartMenuChoice::Play => {
-                    self.ui_wrapper.ui.render_additional = true;
-                    if !self.game_running {
-                        log::info!("Starting game..");
-                        if let Some(goc) = self.start_game()? {
-                            return Ok(Some(goc));
-                        }
-                        break;
-                    } else {
-                        return Ok(None);
-                    }
-                },
-                StartMenuChoice::Settings => {
-                    log::info!("Showing settings..");
+    // std::result::Result< rtsp_types::Response<Body>, ClientActionError> > + Send> >
 
-                    let widgets = build_settings_widgets(&self.settings);
-                    let mut settings_menu = SettingsMenu {
-                        ui: &mut self.ui_wrapper.ui,
-                        terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                        menu: WidgetMenu {
-                            selected_widget: Some(0),
-                            widgets: WidgetList { widgets, selected_widget: Some(0) }
+    pub async fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, io::Error> > + '_ >> {
+        Box::pin(async move {
+            self.setup_sinks();
+            loop {
+                // Hide additional widgets when paused
+                self.ui_wrapper.ui.render_additional = false;
+                self.ui_wrapper.draw_start_menu()?;
+                let start_choice = if choice.is_some() { choice.clone().unwrap() } else { self.handle_start_menu_selection()? };
+                self.ui_wrapper.clear_screen();
+                match start_choice {
+                    StartMenuChoice::Play => {
+                        self.ui_wrapper.ui.render_additional = true;
+                        if !self.game_running {
+                            log::info!("Starting game..");
+                            if let Some(goc) = self.start_game().await? {
+                                return Ok(Some(goc));
+                            }
+                            break;
+                        } else {
+                            return Ok(None);
                         }
-                    };
+                    },
+                    StartMenuChoice::Settings => {
+                        log::info!("Showing settings..");
 
-                    settings_menu.begin()?;
-                    let widgets = settings_menu.menu.widgets;
-                    self.handle_settings_menu_selection(widgets)?;
-                    // Ensure we're using any changes to the settings
-                    self.update_from_settings();
-                },
-                StartMenuChoice::Info => {
-                    log::info!("Showing info..");
-                    let _ui = &mut self.ui_wrapper.ui;
-                    self.ui_wrapper.draw_info()?;
-                    io::stdin().keys().next();
-                },
-                StartMenuChoice::Quit => {
-                    if self.game_running {
-                        self.game_running = false;
+                        let widgets = build_settings_widgets(&self.settings);
+                        let mut settings_menu = SettingsMenu {
+                            ui: &mut self.ui_wrapper.ui,
+                            terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                            menu: WidgetMenu {
+                                selected_widget: Some(0),
+                                widgets: WidgetList { widgets, selected_widget: Some(0) }
+                            }
+                        };
+
+                        settings_menu.begin()?;
+                        let widgets = settings_menu.menu.widgets;
+                        self.handle_settings_menu_selection(widgets)?;
+                        // Ensure we're using any changes to the settings
+                        self.update_from_settings();
+                    },
+                    StartMenuChoice::Info => {
+                        log::info!("Showing info..");
+                        let _ui = &mut self.ui_wrapper.ui;
+                        self.ui_wrapper.draw_info()?;
+                        io::stdin().keys().next();
+                    },
+                    StartMenuChoice::Quit => {
+                        if self.game_running {
+                            self.game_running = false;
+                        }
+                        return Ok(Some(GameOverChoice::EXIT));
                     }
-                    return Ok(Some(GameOverChoice::EXIT));
                 }
             }
-        }
-        Ok(None)
+            return Ok(None)
+        })
     }
 
     /*
@@ -297,13 +315,25 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    fn initialise(&mut self) -> Result<(), io::Error> {
+    async fn generate_map(&mut self) -> Result<Map, io::Error> {
+        let map_framehandler = MapGenerationFrameHandler { };
+        let mut map_generator = self.levels.build_map_generator();
+        let mut level_generator = MapGeneration {
+            terminal_manager: &mut self.ui_wrapper.terminal_manager,
+            map_generator,
+            frame_handler: map_framehandler,
+        };
+        level_generator.generate_level().await
+    }
+
+    async fn initialise(&mut self) -> Result<(), io::Error> {
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
         let mut generated = false;
         while !generated {
-            self.levels.generate_level();
+            let map = self.generate_map().await.unwrap();
+            self.levels.add_level(map);
             match self.initialise_characters() {
                 Err(e) => {
                     log::error!("Generation round failed with error {}. Trying again...", e);
@@ -343,8 +373,8 @@ impl <B : Backend> GameEngine<B> {
         }
     }
 
-    pub(crate) fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
-        self.initialise()?;
+    pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
+        self.initialise().await.unwrap();
         self.game_running = true;
         while self.game_running {
             self.add_or_update_additional_widgets();
@@ -361,7 +391,7 @@ impl <B : Backend> GameEngine<B> {
                 }
             }
 
-            let result = self.game_loop()?;
+            let result = self.game_loop().await?;
             if result.is_some() {
                 return Ok(result);
             }
@@ -375,11 +405,14 @@ impl <B : Backend> GameEngine<B> {
         player.set_inventory(build_dev_inventory());
     }
 
-    fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
+
+
+    async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
         let levels = &mut self.levels;
         let level = levels.get_level_mut();
         let updated_position = level.find_player_side_position(side).clone();
 
+        let mut must_generate_map = false;
         let mut level_change = NONE;
         match updated_position {
             Some(pos) => {
@@ -391,65 +424,65 @@ impl <B : Backend> GameEngine<B> {
 
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
-                        if pos.equals_option(room.get_exit()) {
-                            match self.ui_wrapper.yes_or_no(
-                                String::from("You've reached the exit! There's a staircase downwards; would you like to leave?"),
-                                Some(String::from("You move downstairs a level.."))) {
-                                Ok(true) => {
-                                    level_change = LevelChange::DOWN;
-                                },
-                                _ => {}
-                            }
-                        } else if pos.equals_option(room.get_entry()) {
-                            match self.ui_wrapper.yes_or_no(
-                                String::from("This is the entrance. There's a staircase upwards; wold you like to leave?"),
-                                Some(String::from("You move upstairs a level.."))) {
-                                Ok(true) => {
-                                    level_change = LevelChange::UP;
-                                },
-                                _ => {}
-                            }
-                        }
+                        // TODO move to a specific controller instead?
+                      level_change = self.ui_wrapper.check_room_entry_exits(room, pos);
                     }
                 }
 
                 match level_change {
                     NONE => {},
                     change => {
-                        let changed = levels.change_level(change.clone());
-                        if changed.is_ok() {
-                            match changed.unwrap() {
-                                LevelChangeResult::LevelChanged => {
-                                    self.respawn_player(change);
-                                },
-                                LevelChangeResult::OutOfDungeon => {
-                                    let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
-
-                                    let mut menu = build_game_over_menu(
-                                        format!("You left the dungeon.\nLoot Total: {}", player_score),
-                                        &mut self.ui_wrapper.ui,
-                                        &mut self.ui_wrapper.terminal_manager);
-                                    let result = menu.begin()?;
-                                    if let Some(game_over_choice) = result.view_specific_result {
-                                        return Ok(Some(game_over_choice));
-                                    }
-                                },
-                                _ => {}
-                            }
-                        }
+                        must_generate_map = levels.must_build_level(change.clone());
+                        level_change = change;
                     }
                 }
             },
             None => {}
         }
+
+        let mut map : Option<Map> = None;
+        if must_generate_map {
+            let map_generator = levels.build_map_generator();
+            let map_framehandler = MapGenerationFrameHandler { };
+            let mut level_generator = MapGeneration {
+                terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                map_generator: map_generator,
+                frame_handler: map_framehandler
+            };
+            let map_result = level_generator.generate_level().await;
+            map = Some(map_result.unwrap());
+        }
+
+        let changed = levels.change_level(level_change.clone(), map);
+        if changed.is_ok() {
+            match changed.unwrap() {
+                LevelChangeResult::LevelChanged => {
+                    self.respawn_player(level_change.clone());
+                },
+                LevelChangeResult::OutOfDungeon => {
+                    let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
+
+                    let mut menu = build_game_over_menu(
+                        format!("You left the dungeon.\nLoot Total: {}", player_score),
+                        &mut self.ui_wrapper.ui,
+                        &mut self.ui_wrapper.terminal_manager);
+                    let result = menu.begin()?;
+                    if let Some(game_over_choice) = result.view_specific_result {
+                        return Ok(Some(game_over_choice));
+                    }
+                },
+                _ => {}
+            }
+        }
+
         Ok(None)
     }
 
-    pub fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+    pub async fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
         self.ui_wrapper.clear_screen()?;
         self.ui_wrapper.ui.hide_console();
 
-        if let Some(goc) = self.start_menu(None)? {
+        if let Some(goc) = self.start_menu(None).await.await? {
             self.ui_wrapper.ui.show_console();
             self.ui_wrapper.clear_screen()?;
             return Ok(Some(goc));
@@ -460,11 +493,11 @@ impl <B : Backend> GameEngine<B> {
         Ok(None)
     }
 
-    pub fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
+    pub async fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
         let level = self.levels.get_level_mut();
         match key {
             Key::Esc => {
-                if let Some(goc) = self.menu_command()? {
+                if let Some(goc) = self.menu_command().await? {
                     return Ok(Some(goc));
                 }
             },
@@ -483,7 +516,7 @@ impl <B : Backend> GameEngine<B> {
             },
             Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
                 if let Some(side) = input_mapping::key_to_side(key) {
-                    if let Some(game_over_choice) = self.handle_player_movement(side)? {
+                    if let Some(game_over_choice) = self.handle_player_movement(side).await? {
                         return Ok(Some(game_over_choice));
                     }
                 }
@@ -493,10 +526,10 @@ impl <B : Backend> GameEngine<B> {
         Ok(None)
     }
 
-    fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, io::Error> {
+    async fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, io::Error> {
         let key = get_input_key()?;
         //self.terminal_manager.terminal.clear()?;
-        return Ok(self.handle_input(key)?);
+        return Ok(self.handle_input(key).await?);
     }
 
     fn npc_turns(&mut self)  -> Result<(), io::Error> {
@@ -504,8 +537,8 @@ impl <B : Backend> GameEngine<B> {
         return Ok(());
     }
 
-    fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
-        let game_over_choice = self.player_turn()?;
+    async fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+        let game_over_choice = self.player_turn().await?;
         self.npc_turns()?;
         return Ok(game_over_choice);
     }
@@ -517,13 +550,13 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     // Grab the randomised seed
     let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
     let rng = Seeder::from(map_seed).make_rng();
-    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false})
+    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 
 pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let settings = build_settings();
-    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false})
+    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 
 
@@ -556,7 +589,7 @@ mod tests {
         map_tiles
     }
 
-    fn test_movement_input(levels: Levels, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
+    async fn test_movement_input(levels: Levels, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
         // GIVEN a game engine with a 3x3 grid of tiles
         let _tile_library = build_library();
         let terminal_manager = terminal_manager::init_test().unwrap();
@@ -569,7 +602,7 @@ mod tests {
                 assert_eq!(start_position, player.unwrap().get_position());
 
                 for key in input {
-                    engine.handle_input(key).unwrap();
+                    engine.handle_input(key).await.unwrap();
                 }
                 assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_position());
             },
@@ -587,7 +620,7 @@ mod tests {
 
         let rng = Seeder::from("test".to_string()).make_rng();
         let mut levels = init_level_manager(rng);
-        levels.add_level(level);
+        levels.add_level_directly(level);
         levels
     }
 

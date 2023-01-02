@@ -4,8 +4,6 @@ use crate::widget::stateful::boolean_widget::build_boolean_widget;
 use crate::widget::stateful::number_widget::build_number_input_with_value;
 use crate::widget::stateful::text_widget::build_text_input;
 
-
-
 pub struct WidgetList {
     pub selected_widget: Option<i8>,
     pub widgets: Vec<StatefulWidgetState>

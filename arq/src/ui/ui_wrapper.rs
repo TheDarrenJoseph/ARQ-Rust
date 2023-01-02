@@ -4,8 +4,9 @@ use termion::event::Key;
 use tui::backend::Backend;
 use tui::layout::Rect;
 use crate::character::Character;
-use crate::engine::level::Level;
+use crate::engine::level::{Level, LevelChange};
 use crate::map::position::{build_rectangular_area, Position};
+use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, UI};
 use crate::ui::ui_areas::UIAreas;
@@ -136,6 +137,30 @@ impl <B : Backend> UIWrapper<B> {
             None => {}
         }
         Ok(())
+    }
+
+    pub fn check_room_entry_exits(&mut self, room: &Room, pos: Position) -> LevelChange {
+        if pos.equals_option(room.get_exit()) {
+            match self.yes_or_no(
+                String::from("You've reached the exit! There's a staircase downwards; would you like to leave?"),
+                Some(String::from("You move downstairs a level.."))) {
+                Ok(true) => {
+                    return LevelChange::DOWN;
+                },
+                _ => {}
+            }
+        } else if pos.equals_option(room.get_entry()) {
+            match self.yes_or_no(
+                String::from("This is the entrance. There's a staircase upwards; wold you like to leave?"),
+                Some(String::from("You move upstairs a level.."))) {
+                Ok(true) => {
+                    return LevelChange::UP;
+                },
+                _ => {}
+            }
+        }
+
+        return LevelChange::NONE;
     }
 
     pub fn clear_screen(&mut self) -> Result<(), io::Error> {

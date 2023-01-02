@@ -5,6 +5,7 @@ pub mod console;
 pub mod container;
 pub mod container_choice;
 pub mod util;
+pub mod map_generation;
 
 // FrameHandlers are "dumb" views that simply draw themselves to a terminal frame
 pub trait FrameHandler<B: tui::backend::Backend, T> {

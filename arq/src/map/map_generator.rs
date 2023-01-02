@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use std::time::Duration;
 use rand::distributions::Standard;
 use rand::Rng;
-
 
 use rand_pcg::Pcg64;
 use uuid::Uuid;
@@ -15,6 +18,7 @@ use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, Tile, TileDetails};
 use crate::map::tile::Tile::NoTile;
+use crate::progress::StepProgress;
 
 pub struct MapGenerator<'rng> {
     min_room_size: u16,
@@ -26,15 +30,18 @@ pub struct MapGenerator<'rng> {
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>,
     rng: &'rng mut Pcg64,
+    pub progress: StepProgress,
     map: Map
 }
 
-pub fn build_generator(rng : &mut Pcg64, map_area : Area) -> MapGenerator {
+pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator<'a> {
+    let progress = StepProgress { step_name: "".to_string(), current_step: 0, step_count: 5};
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
         possible_room_positions : Vec::new(),
         rng,
+        progress,
         map: Map {area: map_area, tiles: Tiles { tiles: Vec::new() }, rooms: Vec::new(), containers: HashMap::new()}}
 }
 
@@ -96,7 +103,19 @@ fn generate_room_containers(rng: &mut Pcg64, room: Room) -> HashMap<Position, Co
     container_map
 }
 
-impl MapGenerator<'_> {
+impl <'rng> Future for MapGenerator<'rng> {
+    type Output = Map;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        return if self.progress.is_done() {
+            Poll::Ready(self.map.clone())
+        } else {
+            Poll::Pending
+        }
+    }
+}
+
+impl <'rng> MapGenerator<'rng> {
 
     // Need to run after tile additions
     pub fn add_containers(&mut self) {
@@ -131,20 +150,31 @@ impl MapGenerator<'_> {
         log::info!("Added {} containers to rooms.", room_container_count);
     }
 
-    pub fn generate(&mut self) -> Map {
-        log::info!("Generating map...");
+    fn set_step(&mut self, current_step: u16, name: String) {
+        self.progress.current_step = current_step;
+        self.progress.step_name = String::from(name.clone());
+        log::info!("{}", name.to_string());
+    }
+
+    pub async fn generate(&mut self) -> Map {
+        self.set_step(0, String::from("Generating map..."));
         self.build_map();
+
+        self.set_step(1, String::from("Adding entry/exit..."));
         self.add_entry_and_exit();
 
-        log::info!("Applying rooms...");
+        self.set_step(2, String::from("Applying rooms..."));
         self.add_rooms_to_map();
 
+
+        self.set_step(3, String::from("Generating containers..."));
         self.add_containers();
 
-        log::info!("Pathfinding...");
+        self.set_step(4, String::from("Pathfinding..."));
         self.path_rooms();
 
-        log::info!("Map generated!");
+        self.set_step(5, String::from("DONE!"));
+
         return self.map.clone();
     }
 
@@ -191,7 +221,7 @@ impl MapGenerator<'_> {
                 let door1_position = door1.position;
                 if room2.get_doors().len() > 0 {
                     let door2_position = room2.get_doors()[0].position;
-                    log::info!("Pathing from door at: {:?} to door at: {:?}", door1_position, door2_position);
+                    //log::info!("Pathing from door at: {:?} to door at: {:?}", door1_position, door2_position);
 
                     let mut pathfinding = Pathfinding::build(door1_position);
                     let path = pathfinding.a_star_search(&self.map, door2_position);
@@ -497,7 +527,7 @@ impl MapGenerator<'_> {
         }
     }
 
-    fn build_map(&mut self) -> Map {
+    pub(crate) fn build_map(&mut self) -> Map {
         let map_area = self.map_area.clone();
         log::info!("Constructing base tiles...");
         let map_tiles = self.build_empty_tiles();
@@ -513,22 +543,28 @@ impl MapGenerator<'_> {
         self.map.rooms = rooms;
         return self.map.clone();
     }
+
+    pub fn get_progress(&self) -> StepProgress {
+        self.progress.clone()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use rand_seeder::Seeder;
+    use crate::block_on;
     use crate::map::Map;
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::TileDetails;
+    use crate::progress::StepProgress;
 
     fn build_test_map() -> Map {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
-        generator.generate()
+        block_on(generator.generate())
     }
 
     #[test]

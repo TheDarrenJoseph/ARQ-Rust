@@ -1,7 +1,9 @@
 extern crate core;
 
+use std::convert::TryInto;
 use std::io;
 use std::io::SeekFrom::Start;
+use futures::executor::block_on;
 
 use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
@@ -23,12 +25,11 @@ mod widget;
 mod test;
 mod list_selection;
 mod util;
+mod progress;
 mod sound;
 pub mod map;
 
-
-fn main<>() -> Result<(), io::Error> {
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+async fn begin() -> Result<(), io::Error> {
     let mut game_engine: Result<GameEngine<TermionBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
     let mut terminal_manager = terminal::terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
@@ -38,7 +39,7 @@ fn main<>() -> Result<(), io::Error> {
     let mut choice = None;
     let mut game_over = false;
     while !game_over {
-        if let Some(goc) = engine.start_menu(choice.clone())? {
+        if let Ok(Some(goc)) = engine.start_menu(choice.clone()).await.await {
             match goc {
                 GameOverChoice::RESTART => {
                     engine.rebuild();
@@ -51,4 +52,10 @@ fn main<>() -> Result<(), io::Error> {
         }
     }
     Ok(())
+}
+
+#[tokio::main]
+async fn main<>() {
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    block_on(begin());
 }

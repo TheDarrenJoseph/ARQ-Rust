@@ -9,6 +9,7 @@ use crate::widget::stateful::text_widget::TextInputState;
 
 pub mod character_stat_line;
 pub mod usage_line_widget;
+pub mod loading_screen;
 pub mod widgets;
 pub mod stateful;
 

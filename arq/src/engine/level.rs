@@ -9,8 +9,9 @@ use crate::character::Character;
 use crate::character::characters::{build_characters, Characters};
 use crate::engine::command::input_mapping;
 use crate::map::Map;
-use crate::map::map_generator::build_generator;
+use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
+use crate::progress::StepProgress;
 
 #[derive(Default, Clone)]
 pub struct Level {
@@ -26,7 +27,7 @@ pub struct Levels {
 }
 
 #[derive(Clone)]
-pub(crate) enum LevelChange {
+pub enum LevelChange {
     UP,
     DOWN,
     NONE
@@ -43,7 +44,7 @@ pub enum LevelChangeResult {
 
 
 impl Levels {
-    pub fn add_level(&mut self, level: Level) {
+    pub fn add_level_directly(&mut self, level: Level) {
         self.levels.push(level);
     }
 
@@ -55,25 +56,24 @@ impl Levels {
         self._current_level.clone()
     }
 
+    /*
     fn build_test_map(&mut self) -> Map {
         let map_size = 12;
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
         self.rng = Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(&mut self.rng, map_area);
-        generator.generate()
-    }
+        generator.generate_async()
+    }*/
 
-    fn build_map(&mut self) -> Map {
-        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 30, 20);
+    pub fn build_map_generator(&mut self) -> MapGenerator {
+        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 30, 30);
         let rng = &mut self.rng;
-        let mut map_generator = build_generator(rng, map_area);
-        map_generator.generate()
+        build_generator(rng, map_area)
     }
 
-    pub(crate) fn generate_level(&mut self) {
+    pub(crate) fn add_level(&mut self, mut map: Map) {
         let new_level;
-        let map = Some(self.build_map());
-
+        let map = Some(map);
         let mut player = None;
         if !self.levels.is_empty() {
             // Move the player to the next level
@@ -86,7 +86,32 @@ impl Levels {
         self.levels.push(new_level);
     }
 
-    pub(crate) fn change_level(&mut self, level_change: LevelChange) -> Result<LevelChangeResult, io::Error>  {
+    pub fn must_build_level(&self, level_change: LevelChange) -> bool {
+        match level_change {
+            LevelChange::UP => {
+                if self._current_level > 0 {
+                    return true;
+                } else {
+                    // Out of dungeon
+                    return false;
+                }
+            },
+            LevelChange::DOWN => {
+                if self._current_level < self.levels.len() - 1 {
+                    // Existing level
+                    return false;
+                } else {
+                    // Out of current levels
+                    return true;
+                }
+            }
+            _ => {
+                return false;
+            }
+        }
+    }
+
+    pub(crate) fn change_level(&mut self, level_change: LevelChange, new_map: Option<Map>) -> Result<LevelChangeResult, io::Error>  {
         match level_change {
             LevelChange::UP => {
                 if self._current_level > 0 {
@@ -104,7 +129,8 @@ impl Levels {
                     self._current_level += 1;
                     self.get_level_mut().characters.set_player(player);
                 } else {
-                    self.generate_level();
+                    // TODO find a nicer way than assuming the provided new map
+                    self.add_level(new_map.unwrap());
                     self._current_level += 1;
                 }
                 return Ok(LevelChangeResult::LevelChanged);
