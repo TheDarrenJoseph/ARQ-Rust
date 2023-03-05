@@ -13,14 +13,14 @@ use crate::error_utils::{error, error_result};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::callback::Callback;
+use crate::view::util::callback::Callback;
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::{InputResult, View};
 use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::ui::ui::{get_input_key, UI};
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,

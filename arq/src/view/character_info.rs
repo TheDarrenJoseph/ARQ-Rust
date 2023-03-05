@@ -17,13 +17,13 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
-use crate::view::callback::Callback;
+use crate::view::util::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]

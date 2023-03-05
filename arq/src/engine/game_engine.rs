@@ -60,7 +60,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
 use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
 use crate::widget::character_stat_line::build_character_stat_line;

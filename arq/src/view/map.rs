@@ -17,7 +17,7 @@ use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::character_info::CharacterInfoView;
 use crate::view::framehandler::util::tabling::build_paragraph;
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,

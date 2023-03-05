@@ -20,7 +20,7 @@ use crate::view::framehandler::container_choice::ContainerChoiceCommand;
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
 #[derive(Clone)]
 pub struct ContainerFrameHandler {

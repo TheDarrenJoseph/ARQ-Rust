@@ -4,7 +4,7 @@ use tui::style::{Color, Style};
 use tui::widgets::Widget;
 
 use crate::character::character_details::CharacterDetails;
-use crate::view::usage_line::UsageLine;
+use crate::view::model::usage_line::UsageLine;
 use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
 impl Widget for UsageLine {

@@ -1,4 +1,4 @@
-use crate::view::usage_line::UsageLine;
+use crate::view::model::usage_line::UsageLine;
 use crate::widget::stateful::boolean_widget::BooleanState;
 use crate::widget::stateful::button_widget::ButtonState;
 use crate::widget::character_stat_line::CharacterStatLineWidget;

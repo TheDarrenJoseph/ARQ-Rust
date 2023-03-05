@@ -11,13 +11,12 @@ use crate::ui::ui::get_input_key;
 
 pub mod framehandler;
 pub mod util;
-pub mod callback;
 pub mod character_info;
 pub mod map;
 pub mod world_container;
 pub mod settings_menu;
 pub mod game_over;
-pub mod usage_line;
+pub mod model;
 
 // A View begins an I/O loop (upon calling begin()) while rendering
 pub trait View<T>  {

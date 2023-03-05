@@ -8,7 +8,7 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
-use crate::view::callback::Callback;
+use crate::view::util::callback::Callback;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};

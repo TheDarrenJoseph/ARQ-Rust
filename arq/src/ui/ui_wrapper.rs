@@ -15,7 +15,7 @@ use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map::MapView;
-use crate::view::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {
