@@ -54,7 +54,7 @@ async fn begin() -> Result<(), io::Error> {
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(worker_threads = 2)]
 async fn main<>() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
     block_on(begin());

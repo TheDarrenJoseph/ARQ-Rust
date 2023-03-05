@@ -13,6 +13,9 @@ use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
 use crate::progress::StepProgress;
 
+const MAP_SIZE_X: u16 = 30;
+const MAP_SIZE_Y: u16 = 30;
+
 #[derive(Default, Clone)]
 pub struct Level {
     pub map : Option<Map>,
@@ -66,7 +69,7 @@ impl Levels {
     }*/
 
     pub fn build_map_generator(&mut self) -> MapGenerator {
-        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, 30, 30);
+        let map_area = build_rectangular_area(Position { x: 0, y: 0 }, MAP_SIZE_X, MAP_SIZE_Y);
         let rng = &mut self.rng;
         build_generator(rng, map_area)
     }
@@ -89,12 +92,7 @@ impl Levels {
     pub fn must_build_level(&self, level_change: LevelChange) -> bool {
         match level_change {
             LevelChange::UP => {
-                if self._current_level > 0 {
-                    return true;
-                } else {
-                    // Out of dungeon
-                    return false;
-                }
+                return false;
             },
             LevelChange::DOWN => {
                 if self._current_level < self.levels.len() - 1 {

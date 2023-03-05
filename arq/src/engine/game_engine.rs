@@ -69,7 +69,7 @@ use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 use crate::engine::map_generation;
-use crate::engine::map_generation::MapGeneration;
+use crate::engine::map_generation::{MapGeneration, ProgressDisplay};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
@@ -318,10 +318,14 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     async fn generate_map(&mut self) -> Result<Map, io::Error> {
         let map_framehandler = MapGenerationFrameHandler { };
         let mut map_generator = self.levels.build_map_generator();
-        let mut level_generator = MapGeneration {
+
+        let mut progress_display = ProgressDisplay {
             terminal_manager: &mut self.ui_wrapper.terminal_manager,
+            frame_handler: map_framehandler
+        };
+        let mut level_generator = MapGeneration {
             map_generator,
-            frame_handler: map_framehandler,
+            progress_display
         };
         level_generator.generate_level().await
     }
@@ -444,10 +448,14 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         if must_generate_map {
             let map_generator = levels.build_map_generator();
             let map_framehandler = MapGenerationFrameHandler { };
-            let mut level_generator = MapGeneration {
+
+            let mut progress_display = ProgressDisplay {
                 terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                map_generator: map_generator,
                 frame_handler: map_framehandler
+            };
+            let mut level_generator = MapGeneration {
+                progress_display,
+                map_generator
             };
             let map_result = level_generator.generate_level().await;
             map = Some(map_result.unwrap());

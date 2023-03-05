@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
 use std::time::Duration;
 use rand::distributions::Standard;
@@ -35,7 +36,7 @@ pub struct MapGenerator<'rng> {
 }
 
 pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator<'a> {
-    let progress = StepProgress { step_name: "".to_string(), current_step: 0, step_count: 5};
+    let progress = StepProgress { step_name: "".to_string(), current_step: 0, step_count: 6};
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
@@ -156,24 +157,33 @@ impl <'rng> MapGenerator<'rng> {
         log::info!("{}", name.to_string());
     }
 
-    pub async fn generate(&mut self) -> Map {
-        self.set_step(0, String::from("Generating map..."));
+    fn send_progress(&mut self, tx: &Sender<StepProgress>) {
+        tx.send(self.progress.clone());
+    }
+
+    pub async fn generate(&mut self, tx: Sender<StepProgress>) -> Map {
+        self.set_step(1, String::from("Generating map..."));
+        self.send_progress(&tx);
         self.build_map();
 
-        self.set_step(1, String::from("Adding entry/exit..."));
+        self.set_step(2, String::from("Adding entry/exit..."));
+        self.send_progress(&tx);
         self.add_entry_and_exit();
 
-        self.set_step(2, String::from("Applying rooms..."));
+        self.set_step(3, String::from("Applying rooms..."));
+        self.send_progress(&tx);
         self.add_rooms_to_map();
 
-
-        self.set_step(3, String::from("Generating containers..."));
+        self.set_step(4, String::from("Generating containers..."));
+        self.send_progress(&tx);
         self.add_containers();
 
-        self.set_step(4, String::from("Pathfinding..."));
+        self.set_step(5, String::from("Pathfinding..."));
+        self.send_progress(&tx);
         self.path_rooms();
 
-        self.set_step(5, String::from("DONE! [ any key to start ]"));
+        self.set_step(6, String::from("DONE! [ any key to start ]"));
+        self.send_progress(&tx);
         return self.map.clone();
     }
 
@@ -550,6 +560,7 @@ impl <'rng> MapGenerator<'rng> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::mpsc::channel;
     use rand_seeder::Seeder;
     use crate::block_on;
     use crate::map::Map;
@@ -563,7 +574,9 @@ mod tests {
         let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
-        block_on(generator.generate())
+
+        let (tx, rx) = channel();
+        block_on(generator.generate(tx))
     }
 
     #[test]
