@@ -11,6 +11,7 @@ use rand_pcg::Pcg64;
 use uuid::Uuid;
 
 use crate::engine::pathfinding::Pathfinding;
+use crate::engine::process::Progressible;
 use crate::map::{Map, Tiles};
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{Container, ContainerType};
@@ -553,7 +554,10 @@ impl <'rng> MapGenerator<'rng> {
         return self.map.clone();
     }
 
-    pub fn get_progress(&self) -> StepProgress {
+}
+
+impl Progressible for MapGenerator<'_> {
+    fn get_progress(&self) -> StepProgress {
         self.progress.clone()
     }
 }

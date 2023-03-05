@@ -1,27 +1,10 @@
-use std::{io, thread};
-use std::pin::Pin;
-use std::sync::mpsc::{channel, Receiver};
-use std::task::{Context, Poll};
-use std::time::Duration;
-
-use futures::future::join;
-use futures::task;
-use log::info;
+use std::io;
+use std::sync::mpsc::Receiver;
 use termion::input::TermRead;
-use tokio::join;
-
-use crate::map::Map;
-use crate::map::map_generator::MapGenerator;
 use crate::progress::StepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::UI;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
-
-pub struct MapGeneration<'rng, 'a, B : tui::backend::Backend> {
-    pub map_generator: MapGenerator<'rng>,
-    pub progress_display: ProgressDisplay<'a, B>
-}
 
 pub struct ProgressDisplay<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -29,8 +12,8 @@ pub struct ProgressDisplay<'a, B : tui::backend::Backend> {
 }
 
 impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
-    async fn handle_progress(&mut self, rx : Receiver<StepProgress>) {
-        loop {
+    pub async fn handle_progress(&mut self, rx : Receiver<StepProgress>, total_steps: u16) {
+        for i in 0..=total_steps {
             let mut progress = rx.recv();
             if let Ok(p) = progress {
                 self.show_progress(p.clone());
@@ -54,17 +37,5 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
             area.width = area.width / 3;
             fh.handle_frame(frame, FrameData { data: progress.clone(), frame_size: area})
         });
-    }
-}
-
-impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
-    pub(crate) async fn generate_level(&mut self) -> Result<Map, io::Error> {
-        let (tx, rx) = channel();
-        let handling = self.progress_display.handle_progress(rx);
-        tx.send(self.map_generator.get_progress().clone());
-        let map = self.map_generator.generate(tx);
-
-        let result = join!(map, handling);
-        return Ok(result.0);
     }
 }

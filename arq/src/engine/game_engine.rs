@@ -46,6 +46,8 @@ use crate::{menu, sound, widget};
 use crate::map::Map;
 use crate::menu::Selection;
 use crate::progress::StepProgress;
+use crate::engine::process;
+use crate::engine::process::map_generation::MapGeneration;
 
 use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
@@ -68,9 +70,8 @@ use crate::widget::stateful::boolean_widget::build_boolean_widget;
 use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
-use crate::engine::map_generation;
-use crate::engine::map_generation::{MapGeneration, ProgressDisplay};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
+use crate::view::util::progress_display::ProgressDisplay;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
