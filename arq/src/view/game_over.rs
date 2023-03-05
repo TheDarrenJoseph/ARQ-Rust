@@ -14,6 +14,9 @@ use crate::widget::widgets::WidgetList;
 use crate::widget::{Focusable, StatefulWidgetType};
 use crate::widget::StatefulWidgetType::Button;
 
+/*
+    This View handles the "Game Over" screen for when you die/escape the dungeon
+ */
 pub struct GameOver<'a, B : tui::backend::Backend> {
     pub message : String,
     pub ui : &'a mut UI,

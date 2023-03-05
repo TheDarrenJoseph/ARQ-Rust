@@ -14,6 +14,9 @@ use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHan
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::InputHandler;
 
+/*
+    This View is responsible for displaying/interacting with containers in the world (i.e chests, dropped items, dead bodies)
+ */
 pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,

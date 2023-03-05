@@ -42,7 +42,10 @@ struct CharacterInfoViewFrameData {
     pub character : Character
 }
 
-// Combines multiple character info views into one w/ tabbing
+/*
+    This View is responsible for the Player's "Character Info" screen i.e Inventory, Character Stats
+    Callbacks are used to provide actions (Use, Equip, Drop, etc)
+ */
 pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub character : &'a mut Character,
     pub ui : &'a mut UI,
@@ -51,6 +54,9 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
 }
 
+/*
+    This is responsible for properly displaying the tabbed screen, and each individual tab / frame handler
+ */
 pub struct CharacterInfoViewFrameHandler {
     pub tab_choice : TabChoice,
     pub container_frame_handlers: Vec<ContainerFrameHandler>,

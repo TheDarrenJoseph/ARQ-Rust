@@ -23,6 +23,9 @@ pub enum ViewMode {
     VIEW
 }
 
+/*
+    This Frame handler displays the current player attributes / stats
+ */
 pub struct CharacterFrameHandler {
     pub character : Character,
     pub widgets : WidgetList,

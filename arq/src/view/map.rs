@@ -19,6 +19,11 @@ use crate::view::character_info::CharacterInfoView;
 use crate::view::framehandler::util::tabling::build_paragraph;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
+/*
+    This View is responsible for showing the "default" view while playing including:
+    1. The current map/level and it's contents
+    2. The console
+ */
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
     pub ui : &'a mut UI,

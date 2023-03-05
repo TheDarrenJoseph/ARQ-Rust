@@ -18,7 +18,10 @@ pub mod settings_menu;
 pub mod game_over;
 pub mod model;
 
-// A View begins an I/O loop (upon calling begin()) while rendering
+/*
+    A "View" is essentially something that can take control of I/O (rendering, keyboard input, etc) until it exits
+    A View takes control / begins an I/O loop (upon calling begin()) while rendering
+ */
 pub trait View<T>  {
     fn begin(&mut self) -> Result<InputResult<T>, Error>;
     fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;

@@ -10,6 +10,12 @@ use crate::view::util::widget_menu::WidgetMenu;
 use crate::widget::{Focusable, StatefulWidgetType};
 use crate::widget::widgets::WidgetList;
 
+/*
+    This view is for allowing you to adjust elements of the game i.e:
+    1. Fog of war
+    2. Map seed value
+    2. Music volume
+ */
 pub struct SettingsMenu<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,

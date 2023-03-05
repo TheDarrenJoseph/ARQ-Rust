@@ -11,6 +11,9 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::stateful::console_input_widget::{build_console_input};
 use crate::widget::StatefulWidgetType;
 
+/*
+ This frame handler displays the console window to display contextual info/get input
+ */
 pub struct ConsoleFrameHandler {
     pub buffer: ConsoleBuffer
 }

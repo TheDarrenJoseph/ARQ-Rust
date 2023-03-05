@@ -22,6 +22,10 @@ use crate::view::framehandler::util::paging::{build_page_count, build_weight_lim
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
+/*
+    This frame handler is meant to display containers (Chests, Floor items, Dead bodies) in a tabular display
+    This allows opening nested containers, and provides callbacks to perform operations on objects within them (Take, Drop, Use, Equip, etc)
+ */
 #[derive(Clone)]
 pub struct ContainerFrameHandler {
     pub container : Container,
