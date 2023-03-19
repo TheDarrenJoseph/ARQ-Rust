@@ -81,24 +81,6 @@ impl Equipment {
         self.slots.get(&slot)
     }
 
-    /**
-    pub fn contains(&self, item: Item) -> bool {
-        if self.slots.is_empty() {
-            return false;
-        } else {
-          let potential = get_potential_slots(item.item_type.clone());
-
-          for p in potential {
-              if self.is_slot_filled(p.clone()) {
-                  if let Some(slot_item) = self.slots.get(&p) {
-                      return slot_item.id_equals(&item);
-                  }
-              }
-          }
-        }
-        false
-    }**/
-
     pub fn unequip(&mut self, slot: EquipmentSlot) -> Result<Container, Error> {
         return if self.is_slot_filled(slot.clone()) {
             let item = self.slots.remove(&slot).unwrap();
@@ -107,6 +89,10 @@ impl Equipment {
         } else {
             error_result(format!("Cannot un-equip. Equipment slot: {} is empty.", slot))
         }
+    }
+
+    pub fn get_slots(&self) -> &HashMap<EquipmentSlot, Item> {
+        &self.slots
     }
 }
 

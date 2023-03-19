@@ -16,6 +16,7 @@ pub mod map;
 pub mod world_container;
 pub mod settings_menu;
 pub mod game_over;
+pub mod combat;
 pub mod model;
 
 /*

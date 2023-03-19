@@ -2,11 +2,16 @@ use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use rand::rngs::ThreadRng;
 use rand_pcg::Pcg64;
+use tui::layout::Rect;
 
 #[derive(Copy, Clone, std::cmp::PartialEq, Hash, Debug)]
 pub struct Position {
     pub x : u16,
     pub y : u16
+}
+
+pub fn start_position_from_rect(rect: Rect) -> Position {
+    Position { x : rect.x, y: rect.y }
 }
 
 impl Position {
@@ -55,7 +60,16 @@ pub struct Area {
     pub size_y : u16
 }
 
+pub fn area_from_rect(rect: Rect) -> Area {
+  let start_position = start_position_from_rect(rect)  ;
+  build_rectangular_area(start_position, rect.width,rect.height)
+}
+
 impl Area {
+    pub fn to_rect(&self) -> Rect {
+        Rect { x: self.start_position.x, y: self.start_position.y, width: self.size_x, height: self.size_y}
+    }
+
     pub fn get_total_area(&self) -> u16 {
         self.size_x * self.size_y
     }

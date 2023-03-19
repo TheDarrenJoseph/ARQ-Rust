@@ -160,16 +160,12 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         log::info!("Drawing map...");
 
         let ui = &mut self.ui;
-        let mut frame_size = Rect::new(0,0, 20, 20);
 
         self.view_area = area;
         let map_area = self.view_area.unwrap();
 
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
-            frame_size = frame.size();
-
-
         })?;
 
         self.draw_map_cells()?;

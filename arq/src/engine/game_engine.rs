@@ -43,6 +43,7 @@ use crate::map::position::Side;
 use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound, widget};
+use crate::character::battle::Battle;
 use crate::map::Map;
 use crate::menu::Selection;
 use crate::progress::StepProgress;
@@ -56,9 +57,11 @@ use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
 use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::combat::CombatView;
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::framehandler::combat::CombatFrameHandler;
 use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
 use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
@@ -87,10 +90,10 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         let settings = build_settings();
         // Grab the randomised seed
         let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
-
+        let seed_copy = map_seed.clone();
         let rng = Seeder::from(map_seed).make_rng();
         self.game_running = false;
-        self.levels = init_level_manager(rng);
+        self.levels = init_level_manager(seed_copy, rng);
         self.settings = settings;
     }
 
@@ -318,6 +321,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     async fn generate_map(&mut self) -> Result<Map, io::Error> {
         let map_framehandler = MapGenerationFrameHandler { };
+        let seed = self.levels.get_seed();
         let mut map_generator = self.levels.build_map_generator();
 
         let mut progress_display = ProgressDisplay {
@@ -328,6 +332,8 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
             map_generator,
             progress_display
         };
+
+        log::info!("Generating map using RNG seed: {}", seed);
         level_generator.generate_level().await
     }
 
@@ -510,6 +516,18 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                     return Ok(Some(goc));
                 }
             },
+            Key::Char('c') => {
+                let characters = &level.characters;
+                let player = characters.get_player().unwrap().clone();
+                let mut npcs = Vec::new();
+                npcs.push(characters.get_npcs().first().unwrap().clone());
+                let battle_characters = build_characters(Some(player), npcs);
+                let battle = Battle { characters: battle_characters , in_progress: true };
+                let frame_handler = CombatFrameHandler { areas: None };
+                let mut combat_view = CombatView { ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager, battle, frame_handler };
+
+                combat_view.begin();
+            },
             Key::Char('i') => {
                 let mut command = InventoryCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
                 command.handle(key)?;
@@ -558,8 +576,9 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     let settings = build_settings();
     // Grab the randomised seed
     let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
+    let seed_copy = map_seed.clone();
     let rng = Seeder::from(map_seed).make_rng();
-    Ok(GameEngine { levels: init_level_manager(rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
+    Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 
 pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
@@ -627,8 +646,10 @@ mod tests {
             characters: build_characters(Some(player), Vec::new())
         };
 
-        let rng = Seeder::from("test".to_string()).make_rng();
-        let mut levels = init_level_manager(rng);
+        let seed = "test".to_string();
+        let seed_copy = seed.clone();
+        let rng = Seeder::from(seed).make_rng();
+        let mut levels = init_level_manager(seed_copy, rng);
         levels.add_level_directly(level);
         levels
     }

@@ -23,6 +23,7 @@ pub struct Level {
 }
 
 pub struct Levels {
+    seed: String,
     pub rng : Pcg64,
     // Implied to always reflect updates to levels
     _current_level: usize,
@@ -36,8 +37,8 @@ pub enum LevelChange {
     NONE
 }
 
-pub fn init_level_manager(rng : Pcg64) -> Levels {
-    Levels { rng, levels: vec![], _current_level: 0}
+pub fn init_level_manager(seed: String, rng : Pcg64) -> Levels {
+    Levels { seed, rng, levels: vec![], _current_level: 0}
 }
 
 pub enum LevelChangeResult {
@@ -47,6 +48,10 @@ pub enum LevelChangeResult {
 
 
 impl Levels {
+    pub fn get_seed(&self) -> String {
+        self.seed.clone()
+    }
+
     pub fn add_level_directly(&mut self, level: Level) {
         self.levels.push(level);
     }

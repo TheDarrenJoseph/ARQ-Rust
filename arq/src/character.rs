@@ -2,6 +2,7 @@ pub mod characters;
 pub mod character_details;
 pub mod stats;
 pub mod equipment;
+pub mod battle;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
