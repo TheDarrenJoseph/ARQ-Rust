@@ -64,15 +64,6 @@ impl Levels {
         self._current_level.clone()
     }
 
-    /*
-    fn build_test_map(&mut self) -> Map {
-        let map_size = 12;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        self.rng = Seeder::from("test".to_string()).make_rng();
-        let mut generator = build_generator(&mut self.rng, map_area);
-        generator.generate_async()
-    }*/
-
     pub fn build_map_generator(&mut self) -> MapGenerator {
         let map_area = build_rectangular_area(Position { x: 0, y: 0 }, MAP_SIZE_X, MAP_SIZE_Y);
         let rng = &mut self.rng;

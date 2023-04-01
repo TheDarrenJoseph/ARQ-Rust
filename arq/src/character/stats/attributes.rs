@@ -15,6 +15,40 @@ pub struct AttributeScore {
     pub score: i8
 }
 
+pub struct AttributeScores {
+    pub scores : Vec<AttributeScore>
+}
+
+impl AttributeScore {
+    pub fn default(attribute: Attribute) -> AttributeScore {
+        AttributeScore { attribute, score: 0 }
+    }
+
+    pub fn new(attribute: Attribute, score: i8) -> AttributeScore {
+        AttributeScore { attribute, score }
+    }
+}
+
+impl AttributeScores {
+    pub fn default() -> AttributeScores {
+        let mut scores = Vec::new();
+        let attributes = get_all_attributes();
+        for attr in attributes {
+            scores.push(AttributeScore::default(attr));
+        }
+        AttributeScores { scores }
+    }
+
+    pub fn all_at_value(score: i8) -> AttributeScores {
+        let mut scores = Vec::new();
+        let attributes = get_all_attributes();
+        for attr in attributes {
+            scores.push(AttributeScore::new(attr, score));
+        }
+        AttributeScores { scores }
+    }
+}
+
 pub fn build_default_attributes() -> Vec<AttributeScore> {
     let mut scores = Vec::new();
     let attributes = get_all_attributes();

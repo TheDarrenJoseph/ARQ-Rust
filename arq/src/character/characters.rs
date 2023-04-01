@@ -1,4 +1,5 @@
-use crate::character::{build_player, Character};
+use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
+use crate::character::Character;
 use crate::map::position::Position;
 
 #[derive(Default, Clone)]
@@ -13,7 +14,9 @@ pub fn build_empty_characters() -> Characters {
 
 pub fn build_default_characters() -> Characters {
     let position = Position { x: 1, y: 1};
-    let player = build_player("Player".to_string(), position);
+    let player =  CharacterBuilder::new(CharacterPattern::player())
+        .position(position)
+        .build(String::from("Player"));
     return Characters { player: Some(player), npcs: Vec::new() };
 }
 

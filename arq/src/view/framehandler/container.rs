@@ -351,7 +351,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 
         let window_block = Block::default()
             .borders(Borders::ALL)
-            .title(container.get_self_item().name.clone());
+            .title(container.get_self_item().get_name().clone());
         let window_area = Rect::new(frame_size.x.clone(), frame_size.y.clone(), frame_size.width.clone(), frame_size.height.clone());
         let inventory_item_lines = window_area.height - 3;
         self.row_count = inventory_item_lines as i32;
@@ -517,7 +517,7 @@ mod tests {
         let mut container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
-        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!("Test Container", container_self_item.get_name());
         assert_eq!('X', container_self_item.symbol);
         assert_eq!(Colour::White, container_self_item.colour);
         assert_eq!(1, container_self_item.weight);

@@ -264,8 +264,8 @@ mod tests {
     use std::collections::HashMap;
 
     use uuid::Uuid;
+    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
 
-    use crate::character::{build_player};
     use crate::character::characters::build_characters;
     use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::Level;
@@ -297,7 +297,8 @@ mod tests {
             containers: area_containers
         };
 
-        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .build(String::from("Test Player"));
         return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 
@@ -317,7 +318,8 @@ mod tests {
             rooms: Vec::new(),
             containers: HashMap::new()
         };
-        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .build(String::from("Test Player"));
         return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 

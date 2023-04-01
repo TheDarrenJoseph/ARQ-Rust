@@ -19,22 +19,33 @@ pub struct TileDetails
     id: u64,
     pub tile_type: Tile,
     pub traversable: bool,
+    pub symbol: Symbol,
+    pub name: String
+}
+
+#[derive(Clone, Debug)]
+pub struct Symbol {
     pub symbol: char,
     pub colour: Colour,
-    pub name: String
+}
+
+impl Symbol {
+    pub fn new(symbol: char, colour: Colour) -> Symbol {
+        Symbol { symbol, colour }
+    }
 }
 
 pub fn build_library() -> HashMap<Tile, TileDetails> {
     let tile_details = [
-        TileDetails {id: 0,     tile_type:  Tile::NoTile,   traversable: false, symbol: ' ', colour: Colour::None, name:  "Empty".to_string()},
-        TileDetails {id: 1,     tile_type:  Tile::Corridor, traversable: true, symbol: '-', colour: Colour::Blue, name:  "Corridor".to_string()},
-        TileDetails {id: 2,     tile_type:  Tile::Room,     traversable: true, symbol: '-', colour: Colour::Blue, name:  "Room".to_string()},
-        TileDetails {id: 3,     tile_type:  Tile::Wall,     traversable: false, symbol: '#', colour: Colour::Brown, name:  "Wall".to_string()},
-        TileDetails {id: 4,     tile_type:  Tile::Window,   traversable: false, symbol: '%', colour: Colour::Cyan, name:  "Window".to_string()},
-        TileDetails {id: 5,     tile_type:  Tile::Door,     traversable: true, symbol: '=', colour: Colour::White, name:  "Door".to_string()},
-        TileDetails {id: 6,     tile_type:  Tile::Entry,    traversable: true, symbol: '^', colour: Colour::Red, name:  "Entry".to_string()},
-        TileDetails {id: 7,     tile_type:  Tile::Exit,     traversable: true, symbol: '^', colour: Colour::Green, name:  "Exit".to_string()},
-        TileDetails {id: 8,     tile_type:  Tile::Deadly,   traversable: false, symbol: '!', colour: Colour::Red, name:  "Deadly".to_string()}
+        TileDetails {id: 0,     tile_type:  Tile::NoTile,   traversable: false, symbol: Symbol::new(' ', Colour::None), name:  "Empty".to_string()},
+        TileDetails {id: 1,     tile_type:  Tile::Corridor, traversable: true,  symbol: Symbol::new('-', Colour::Blue), name: "Corridor".to_string()},
+        TileDetails {id: 2,     tile_type:  Tile::Room,     traversable: true, symbol: Symbol::new('-', Colour::Blue), name:  "Room".to_string()},
+        TileDetails {id: 3,     tile_type:  Tile::Wall,     traversable: false, symbol: Symbol::new('#',  Colour::Brown), name:  "Wall".to_string()},
+        TileDetails {id: 4,     tile_type:  Tile::Window,   traversable: false, symbol: Symbol::new('%', Colour::Cyan), name:  "Window".to_string()},
+        TileDetails {id: 5,     tile_type:  Tile::Door,     traversable: true, symbol: Symbol::new('=', Colour::White), name:  "Door".to_string()},
+        TileDetails {id: 6,     tile_type:  Tile::Entry,    traversable: true, symbol: Symbol::new('^', Colour::Red), name:  "Entry".to_string()},
+        TileDetails {id: 7,     tile_type:  Tile::Exit,     traversable: true, symbol: Symbol::new('^', Colour::Green), name:  "Exit".to_string()},
+        TileDetails {id: 8,     tile_type:  Tile::Deadly,   traversable: false, symbol: Symbol::new('!', Colour::Red), name:  "Deadly".to_string()}
     ];
 
     let mut tile_map = HashMap::new();

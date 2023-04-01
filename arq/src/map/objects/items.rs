@@ -18,7 +18,7 @@ pub enum ItemType {
 pub struct Item {
     id : Uuid,
     pub item_type: ItemType,
-    pub name : String,
+    name : String,
     pub symbol : char,
     pub colour : Colour,
     pub weight : i32,
@@ -33,6 +33,11 @@ impl Item {
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
     pub fn get_weight(&self) -> i32 {
         self.weight.clone()
     }

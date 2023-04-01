@@ -3,6 +3,7 @@ pub mod character_details;
 pub mod stats;
 pub mod equipment;
 pub mod battle;
+pub mod builder;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
@@ -13,7 +14,7 @@ use crate::character::stats::attributes::AttributeScore;
 
 use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::position::Position;
-use crate::map::tile::Colour;
+use crate::map::tile::{Colour, Symbol};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Race {Human,Goblin}
@@ -29,10 +30,11 @@ impl Display for Class {
 
 #[derive(Clone, Debug)]
 pub struct Character {
+    id : Uuid,
     name : String,
     character_details: CharacterDetails,
+    symbol: Symbol,
     health: i8,
-    colour: Colour,
     position: Position,
     inventory: Container,
     equipment: Equipment
@@ -52,20 +54,34 @@ pub fn determine_class(name: String) -> Option<Class> {
     }
 }
 
+/*
 pub fn build_player(name : String, position: Position) -> Character {
     let inventory = build(Uuid::new_v4(), name.clone() + &"'s Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-    return build_character(name, position, Colour::Green, inventory)
+    return Character::new(name, position, Symbol::new('@', Colour::Green), inventory)
 }
 
-pub fn build_character(name : String, position: Position, colour: Colour, inventory: Container) -> Character {
-    let health = 100;
-    let character_details = build_default_character_details();
-    let equipment = Equipment::new();
-    let player = Character { name, character_details, health, colour, position, inventory, equipment };
-    return player;
-}
+pub fn build_npc(name : String, position: Position, symbol: char, symbol_colour: Colour) -> Character {
+    let inventory = build(Uuid::new_v4(), name.clone() + &"'s dead body".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+    return Character::new(name, position, Symbol::new('@', Colour::Green), inventory)
+}*/
 
 impl Character {
+    pub fn new(name : String, position: Position, symbol: Symbol, inventory: Container) -> Character {
+        let id = Uuid::new_v4();
+        let health = 100;
+        let character_details = build_default_character_details();
+        let equipment = Equipment::new();
+
+        let player = Character { id, name, character_details, symbol, health, position, inventory, equipment };
+        return player;
+    }
+
+    pub fn new_detailed(name : String, position: Position, character_details: CharacterDetails, symbol: Symbol, health: i8, inventory: Container, equipment: Equipment) -> Character {
+        let id = Uuid::new_v4();
+        let player = Character { id, name, character_details, symbol, health, position, inventory, equipment };
+        return player;
+    }
+
     pub fn get_name(&self) -> String {
         return self.name.clone();
     }
@@ -86,8 +102,12 @@ impl Character {
         self.health = health;
     }
 
+    pub fn get_symbol(&self) -> char {
+        self.symbol.symbol
+    }
+
     pub fn get_colour(&self) -> Colour {
-        return self.colour.clone();
+        return self.symbol.colour.clone();
     }
 
     pub fn get_position(&self) -> Position {
@@ -155,40 +175,24 @@ impl Character {
 mod tests {
     use uuid::Uuid;
 
-    use crate::character::{build_player, Character};
+    use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::equipment::Equipment;
     use crate::map::objects::container::ContainerType;
     use crate::map::position::Position;
-    use crate::map::tile::Colour;
+    use crate::map::tile::{Colour, Symbol};
 
     #[test]
     fn test_character_build() {
+        let id = Uuid::new_v4();
         let name = String::from("Test Person");
         let character_details = build_default_character_details();
+        let symbol = Symbol { symbol: '@', colour: Colour::Green };
         let health = 100;
-        let colour = Colour::Green;
         let position = Position { x: 1, y: 1};
         let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let equipment = Equipment::new();
-        let mut character = Character { name, character_details, health, colour, position, inventory, equipment };
-
-        assert_eq!("Test Person", character.get_name());
-        assert_eq!(100, character.get_health());
-        assert_eq!(Colour::Green, character.get_colour());
-        assert_eq!(position, character.get_position());
-        assert_eq!(0, character.get_inventory_mut().get_contents().len());
-    }
-
-
-    #[test]
-    fn test_build_player() {
-        let name = String::from("Test Person");
-        let _health = 100;
-        let _colour = Colour::Green;
-        let position = Position { x: 1, y: 1};
-        let _inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let mut character = build_player(name, position);
+        let mut character = Character { id, name, character_details, symbol, health, position, inventory, equipment };
 
         assert_eq!("Test Person", character.get_name());
         assert_eq!(100, character.get_health());

@@ -51,7 +51,7 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
                         equipment_snapshot.unequip(equipped_slot.clone());
                         result_item.unequip();
                         modified.push(result_item.clone());
-                        log::info!("Un-equipped item {} from slot: {}", result_item.name, equipped_slot);
+                        log::info!("Un-equipped item {} from slot: {}", result_item.get_name(), equipped_slot);
                     } else {
                         // Otherwise try the potential slots for it
                         let potential_slots = get_potential_slots(result_item.item_type.clone());
@@ -65,12 +65,12 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
                                 chosen_slot = Some(slot);
                                 result_item.set_equipment_slot(chosen_slot.clone());
                                 modified.push(result_item.clone());
-                                log::info!("Equipped item {} to slot: {}", result_item.name, chosen_slot.unwrap());
+                                log::info!("Equipped item {} to slot: {}", result_item.get_name(), chosen_slot.unwrap());
                                 break;
                             } else if equip_result.is_err() {
-                                log::info!("Failed to equip item {} with error: {}", result_item.name, equip_result.unwrap_err());
+                                log::info!("Failed to equip item {} with error: {}", result_item.get_name(), equip_result.unwrap_err());
                             } else {
-                                log::info!("Failed to equip item {}", result_item.name);
+                                log::info!("Failed to equip item {}", result_item.get_name());
                             }
                         }
                     }
@@ -226,8 +226,8 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
 mod tests {
     use std::collections::HashMap;
     use uuid::Uuid;
+    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
 
-    use crate::character::build_player;
     use crate::character::characters::build_characters;
     use crate::character::equipment::EquipmentSlot;
     use crate::character::equipment::EquipmentSlot::PRIMARY;
@@ -252,7 +252,7 @@ mod tests {
         let mut container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
-        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!("Test Container", container_self_item.get_name());
         assert_eq!('X', container_self_item.symbol);
         assert_eq!(Colour::White, container_self_item.colour);
         assert_eq!(1, container_self_item.weight);
@@ -291,7 +291,8 @@ mod tests {
             containers: area_containers
         };
 
-        let player = build_player(String::from("Test Player"), Position { x: 0, y: 0});
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .build(String::from("Test Player"));
         return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
 
@@ -433,7 +434,7 @@ mod tests {
                 assert_eq!(1, modified.len());
                 let item1 = modified.get(0).unwrap();
                 assert_eq!(expected_id, item1.get_id());
-                assert_eq!("Steel Sword".to_owned(), item1.name);
+                assert_eq!("Steel Sword".to_owned(), item1.get_name());
                 // AND the item should have the PRIMARY EquipmentSlot set against it
                 assert_eq!(Some(PRIMARY), item1.get_equipment_slot());
             },
@@ -470,7 +471,7 @@ mod tests {
             assert_eq!(1, modified.len());
             let item1 = modified.get(0).unwrap();
             assert_eq!(expected_id, item1.get_id());
-            assert_eq!("Steel Sword".to_owned(), item1.name);
+            assert_eq!("Steel Sword".to_owned(), item1.get_name());
             assert_eq!(Some(PRIMARY), item1.get_equipment_slot());
         } else {
            assert!(false, "Expected a valid Some(EquipItems(m) to return!");

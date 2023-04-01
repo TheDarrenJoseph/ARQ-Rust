@@ -119,9 +119,9 @@ impl Container {
                 item_count += 1;
                 let content_count = c.count_contents();
                 item_count += content_count;
-                log::debug!("Child container {} has {} items.", c.get_self_item().name, item_count);
+                log::debug!("Child container {} has {} items.", c.get_self_item().get_name(), item_count);
             }
-            log::debug!("{} has {} items.", self.get_self_item().name, item_count);
+            log::debug!("{} has {} items.", self.get_self_item().get_name(), item_count);
         } else {
             return 0;
         }
@@ -236,13 +236,13 @@ impl Container {
         })
     }
 
-    pub fn find_mut(&mut self, item: &Item) -> Option<&mut Container> {
-        let expected_id = item.get_id();
+    pub fn find_mut(&mut self, target: &Item) -> Option<&mut Container> {
+        let target_id = target.get_id();
         for c in self.contents.iter_mut() {
-            if c.get_self_item().get_id() == expected_id {
+            if c.get_self_item().get_id() == target_id {
                 return Some(c)
             } else {
-                if let Some(subcontainer) = c.find_mut(item) {
+                if let Some(subcontainer) = c.find_mut(target) {
                     return Some(subcontainer);
                 }
             }
@@ -377,7 +377,7 @@ mod tests {
         let container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
 
         assert_eq!(id, container.item.get_id());
-        assert_eq!("Test Container", container.item.name);
+        assert_eq!("Test Container", container.item.get_name());
         assert_eq!('X', container.item.symbol);
         assert_eq!(Colour::White, container.item.colour);
         assert_eq!(1, container.item.weight);

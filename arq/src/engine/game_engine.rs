@@ -25,7 +25,7 @@ use tui::widgets::Gauge;
 
 use futures::FutureExt;
 
-use crate::character::{build_player, Character};
+use crate::character::Character;
 use crate::character::characters::{build_characters, build_default_characters, Characters};
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
@@ -44,11 +44,13 @@ use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound, widget};
 use crate::character::battle::Battle;
+use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
 use crate::map::Map;
 use crate::menu::Selection;
 use crate::progress::StepProgress;
 use crate::engine::process;
 use crate::engine::process::map_generation::MapGeneration;
+use crate::map::tile::Colour;
 
 use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
@@ -303,8 +305,9 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
-        let player = build_player(String::from("Player"), Position { x: 0, y: 0 });
-        let test_npc = build_player(String::from("Ruggo"), Position { x: 0, y: 0 });
+        let player = CharacterBuilder::new(CharacterPattern::player()).build(String::from("Player"));
+        let test_npc = CharacterBuilder::new(CharacterPattern::goblin()).build(String::from("Ruggo"));
+
         let mut characters = build_characters(Some(player), vec![test_npc]);
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
@@ -415,8 +418,6 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         let player = self.levels.get_level_mut().characters.get_player_mut().unwrap();
         player.set_inventory(build_dev_inventory());
     }
-
-
 
     async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
         let levels = &mut self.levels;
@@ -593,7 +594,7 @@ mod tests {
     use std::collections::HashMap;
     use termion::event::Key;
 
-    use crate::character::{build_player, Character};
+    use crate::character::Character;
     use crate::character::characters::build_empty_characters;
     use crate::engine::game_engine::*;
     use crate::map::{Map, Tiles};
@@ -679,7 +680,10 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move down
@@ -707,7 +711,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
         // WHEN we attempt to move down
         let input = vec![Key::Down];
@@ -735,7 +741,9 @@ mod tests {
 
         // AND the player start position is the bottom middle of the map
         let start_position = Position{x:1, y:2};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move up
@@ -763,7 +771,9 @@ mod tests {
 
         // AND the player start position is the middle end of the map
         let start_position = Position{x:1, y:2};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move up
@@ -792,7 +802,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move left
@@ -820,7 +832,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move left
@@ -849,7 +863,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move right
@@ -877,7 +893,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player = build_player(String::from("Test Player"), start_position);
+        let player =  CharacterBuilder::new(CharacterPattern::player())
+            .position(start_position)
+            .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
 
         // WHEN we attempt to move right

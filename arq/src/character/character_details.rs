@@ -59,6 +59,9 @@ impl CharacterDetails {
     pub fn set_attributes(&mut self, attributes: Vec<AttributeScore>) {
         self.attributes = attributes;
     }
+    pub fn new(race: Race, class: Class, level: i32, max_free_attribute_points: i8, free_attribute_points: i8, attributes: Vec<AttributeScore>) -> Self {
+        Self { race, class, level, max_free_attribute_points, free_attribute_points, attributes }
+    }
 }
 
 pub fn build_default_character_details() -> CharacterDetails {

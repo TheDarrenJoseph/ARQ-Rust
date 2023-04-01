@@ -40,10 +40,11 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
 
             let position = character.get_position();
             let character_colour = character.get_colour();
+            let character_symbol = character.get_symbol();
             let fg = colour_mapper::map_colour(character_colour);
             let bg = tui::style::Color::Black;
             let modifier = tui::style::Modifier::empty();
-            let cell = Cell { symbol: "@".to_string(), fg, bg, modifier };
+            let cell = Cell { symbol: character_symbol.to_string(), fg, bg, modifier };
             let view_position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
             if view_area.contains_position(view_position) {
                 let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
@@ -100,7 +101,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
                             }
                             ContainerType::AREA => {
                                 let item_count = container.get_total_count();
-                                log::debug!("[map view] {} has {} items.", container.get_self_item().name, item_count);
+                                log::debug!("[map view] {} has {} items.", container.get_self_item().get_name(), item_count);
                                 if item_count > 0 {
                                     self.draw_container(view_position.clone(), container)?;
                                 }
@@ -121,8 +122,8 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
             let tile_details = &tiles[y as usize][x as usize];
 
-            let symbol = tile_details.symbol.to_string();
-            let fg = colour_mapper::map_colour(tile_details.colour);
+            let symbol = tile_details.symbol.symbol.to_string();
+            let fg = colour_mapper::map_colour(tile_details.symbol.colour);
             let bg = tui::style::Color::Black;
             let modifier = tui::style::Modifier::empty();
             let cell = Cell { symbol, fg, bg, modifier };

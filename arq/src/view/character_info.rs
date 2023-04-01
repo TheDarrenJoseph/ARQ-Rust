@@ -412,14 +412,14 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::character::{build_character, Character};
+    use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::characters::build_characters;
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, Tile};
+    use crate::map::tile::{Colour, Symbol, Tile};
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
@@ -431,7 +431,7 @@ mod tests {
         let mut container = build(id, "Test Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
-        assert_eq!("Test Container", container_self_item.name);
+        assert_eq!("Test Container", container_self_item.get_name());
         assert_eq!('X', container_self_item.symbol);
         assert_eq!(Colour::White, container_self_item.colour);
         assert_eq!(1, container_self_item.weight);
@@ -475,7 +475,7 @@ mod tests {
         // GIVEN a valid character info view for a player's inventory
         let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
-        let player = build_character(String::from("Test Player") , Position { x: 0, y: 0}, Colour::Green, inventory);
+        let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
         let mut level = build_test_level(player);
 
         let mut ui = build_ui();
