@@ -237,7 +237,7 @@ mod tests {
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
-    use crate::map::objects::items::build_item;
+    use crate::map::objects::items::{build_item, Weapon};
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
     use crate::map::Tiles;
@@ -253,8 +253,8 @@ mod tests {
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
-        assert_eq!('X', container_self_item.symbol);
-        assert_eq!(Colour::White, container_self_item.colour);
+        assert_eq!('X', container_self_item.symbol.character);
+        assert_eq!(Colour::White, container_self_item.symbol.colour);
         assert_eq!(1, container_self_item.weight);
         assert_eq!(1, container_self_item.value);
 
@@ -291,7 +291,7 @@ mod tests {
             containers: area_containers
         };
 
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .build(String::from("Test Player"));
         return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
     }
@@ -414,7 +414,7 @@ mod tests {
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50);
+        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 10 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 
@@ -452,7 +452,7 @@ mod tests {
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50);
+        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 

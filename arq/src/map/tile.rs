@@ -23,15 +23,19 @@ pub struct TileDetails
     pub name: String
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Symbol {
-    pub symbol: char,
+    pub character: char,
     pub colour: Colour,
 }
 
 impl Symbol {
-    pub fn new(symbol: char, colour: Colour) -> Symbol {
-        Symbol { symbol, colour }
+    pub fn defaults(character: char) -> Symbol {
+        Symbol { character, colour: Colour::White }
+    }
+
+    pub fn new(character: char, colour: Colour) -> Symbol {
+        Symbol { character, colour }
     }
 }
 

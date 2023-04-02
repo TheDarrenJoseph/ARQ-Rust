@@ -223,8 +223,8 @@ mod tests {
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
-        assert_eq!('X', container_self_item.symbol);
-        assert_eq!(Colour::White, container_self_item.colour);
+        assert_eq!('X', container_self_item.symbol.character);
+        assert_eq!(Colour::White, container_self_item.symbol.colour);
         assert_eq!(1, container_self_item.weight);
         assert_eq!(1, container_self_item.value);
 

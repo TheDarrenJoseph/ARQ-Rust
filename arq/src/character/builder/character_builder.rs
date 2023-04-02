@@ -4,9 +4,10 @@ use crate::character::builder::character_builder::CharacterType::{GoblinWarrior,
 use crate::character::character_details::{build_default_character_details, CharacterDetails};
 use crate::character::equipment::Equipment;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
-use crate::map::map_generator::build_dev_inventory;
-use crate::map::objects::container;
+use crate::map::map_generator::build_dev_player_inventory;
+use crate::map::objects::{container, items};
 use crate::map::objects::container::{build, Container, ContainerType};
+use crate::map::objects::items::Weapon;
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};
 
@@ -28,14 +29,17 @@ pub struct CharacterPattern {
     Future TODO - Consider storing patterns in a proper data store so we can look them up by CharacterType alone / keep the code lightweight
  */
 impl CharacterPattern {
-    pub fn player() -> CharacterPattern {
+    pub fn new_player() -> CharacterPattern {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
+        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 });
+
+        let inventory = build_dev_player_inventory();
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Human, Class::None, 0, 6, 6, attributes),
             position: None,
             symbol: Symbol::new('@', Colour::Green),
             health: 100,
-            inventory: build_dev_inventory(),
+            inventory,
             equipment: Equipment::new()
         };
 
@@ -43,10 +47,12 @@ impl CharacterPattern {
     }
 
     pub fn goblin() -> CharacterPattern {
+        //let steel_short_sword = items::build_weapon(Uuid::new_v4(), "Steel Short Sword".to_owned(), 'X', 3, 50);
+
         let inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         let attributes: Vec<AttributeScore> = AttributeScores::all_at_value(2).scores;
         let blueprint = CharacterBlueprint {
-            details : CharacterDetails::new(Race::Goblin, Class::None, 1, 3, 0, attributes),
+            details : CharacterDetails::new(Race::Goblin, Class::Warrior, 1, 3, 0, attributes),
             position: None,
             symbol: Symbol::new('g', Colour::Green),
             health: 80,
@@ -115,27 +121,78 @@ impl CharacterBuilder {
 #[cfg(test)]
 mod tests {
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern, DEFAULT_POSITION};
+    use crate::character::{Class, Race};
+    use crate::character::stats::attributes::{AttributeScore, AttributeScores};
     use crate::map::tile::Colour;
 
+    fn assert_attribs(expected: Vec<AttributeScore>, actual: Vec<AttributeScore>) {
+        assert_eq!(expected.len(), actual.len());
+        for e in expected {
+            let found = actual.iter().find(|a| a.attribute == e.attribute);
+            assert!(found.is_some());
+            assert_eq!(e.score, found.unwrap().score)
+        }
+    }
+
     #[test]
-    pub fn test_build_player() {
+    pub fn test_build_new_player() {
         // GIVEN a CharacterBuilder with the player pattern
-        let builder = CharacterBuilder::new(CharacterPattern::player());
+        let builder = CharacterBuilder::new(CharacterPattern::new_player());
         // WHEN we calll to build a character
         let mut character = builder.build(String::from("Player"));
 
         assert_eq!("Player", character.name);
-        assert_eq!('@', character.symbol.symbol);
+        assert_eq!('@', character.symbol.character);
         assert_eq!(Colour::Green, character.symbol.colour);
 
         // TODO check details
         let details = character.character_details.clone();
+        assert_eq!(Race::Human, details.get_race().clone());
+        assert_eq!(Class::None, details.get_class().clone());
+        let attribs = details.get_attributes();
+        let expected_attribs = AttributeScores::all_at_value(0).scores;
+        assert_attribs(expected_attribs, attribs);
+        assert_eq!(0, details.get_level());
+        assert_eq!(6, details.get_free_attribute_points());
+        assert_eq!(6, details.get_max_free_attribute_points());
 
         assert_eq!(100, character.health);
         assert_eq!(DEFAULT_POSITION, character.position);
 
         let inventory = character.get_inventory_mut();
-        assert_eq!(62, inventory.get_contents().len());
+        assert_eq!(61, inventory.get_contents().len());
+
+        let equipment = character.get_equipment_mut();
+        assert_eq!(0, equipment.get_slots().len())
+    }
+
+    #[test]
+    pub fn test_build_goblin() {
+        // GIVEN a CharacterBuilder with the goblin pattern
+        let builder = CharacterBuilder::new(CharacterPattern::goblin());
+        // WHEN we calll to build a character
+        let mut character = builder.build(String::from("Ruggo"));
+
+        assert_eq!("Ruggo", character.name);
+        assert_eq!('g', character.symbol.character);
+        assert_eq!(Colour::Green, character.symbol.colour);
+
+        // TODO check details
+        let details = character.character_details.clone();
+        assert_eq!(Race::Goblin, details.get_race().clone());
+        assert_eq!(Class::Warrior, details.get_class().clone());
+        let attribs = details.get_attributes();
+        let expected_attribs = AttributeScores::all_at_value(2).scores;
+        assert_attribs(expected_attribs, attribs);
+        assert_eq!(1, details.get_level());
+        assert_eq!(0, details.get_free_attribute_points());
+        assert_eq!(3, details.get_max_free_attribute_points());
+
+        assert_eq!(80, character.health);
+        assert_eq!(DEFAULT_POSITION, character.position);
+
+        let inventory = character.get_inventory_mut();
+        assert_eq!(0, inventory.get_contents().len());
 
         let equipment = character.get_equipment_mut();
         assert_eq!(0, equipment.get_slots().len())

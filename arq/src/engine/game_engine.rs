@@ -36,7 +36,7 @@ use crate::engine::level::LevelChange::NONE;
 use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
 use crate::error_utils::error_result;
 
-use crate::map::map_generator::{build_dev_inventory};
+use crate::map::map_generator::{build_dev_player_inventory};
 
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
@@ -305,7 +305,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
-        let player = CharacterBuilder::new(CharacterPattern::player()).build(String::from("Player"));
+        let player = CharacterBuilder::new(CharacterPattern::new_player()).build(String::from("Player"));
         let test_npc = CharacterBuilder::new(CharacterPattern::goblin()).build(String::from("Ruggo"));
 
         let mut characters = build_characters(Some(player), vec![test_npc]);
@@ -416,7 +416,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     fn build_testing_inventory(&mut self) {
         let player = self.levels.get_level_mut().characters.get_player_mut().unwrap();
-        player.set_inventory(build_dev_inventory());
+        player.set_inventory(build_dev_player_inventory());
     }
 
     async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
@@ -681,7 +681,7 @@ mod tests {
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
 
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -711,7 +711,7 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -741,7 +741,7 @@ mod tests {
 
         // AND the player start position is the bottom middle of the map
         let start_position = Position{x:1, y:2};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -771,7 +771,7 @@ mod tests {
 
         // AND the player start position is the middle end of the map
         let start_position = Position{x:1, y:2};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -802,7 +802,7 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -832,7 +832,7 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -863,7 +863,7 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -893,7 +893,7 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);

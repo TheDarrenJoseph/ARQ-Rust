@@ -47,13 +47,12 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
         map: Map {area: map_area, tiles: Tiles { tiles: Vec::new() }, rooms: Vec::new(), containers: HashMap::new()}}
 }
 
-pub fn build_dev_inventory() -> Container {
+pub fn build_dev_player_inventory() -> Container {
     let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50, 1, ContainerType::AREA, 130);
     let bronze_bar = items::build_item(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
     let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
     let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
     let tin_bar = items::build_item(Uuid::new_v4(), "Tin Bar".to_owned(), 'X', 1, 50);
-    let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50);
 
     // +1 weight
     carton.add_item(tin_bar);
@@ -63,8 +62,7 @@ pub fn build_dev_inventory() -> Container {
 
     // +8 weight (bad contains 3 weight)
     container.add(bag);
-    // +3 weight
-    container.add_item(steel_sword);
+
     // + 60 weight
     for i in 1..=60 {
         let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
@@ -661,7 +659,7 @@ mod tests {
         for row in tiles {
             let mut row_text = tile_strings.get_mut(x_idx).unwrap().clone();
             for tile in row {
-                tile_strings[x_idx].push(tile.symbol.symbol);
+                tile_strings[x_idx].push(tile.symbol.character);
                 y_idx += 1;
             }
             x_idx += 1;

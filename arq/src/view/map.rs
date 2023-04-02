@@ -72,11 +72,11 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
     fn draw_container(&mut self, view_position: Position, container: &Container)  -> Result<(), Error> {
         let backend = self.terminal_manager.terminal.backend_mut();
         let container_item = container.get_self_item();
-        let colour = container_item.colour;
+        let colour = container_item.symbol.colour;
         let fg = colour_mapper::map_colour(colour);
         let bg = tui::style::Color::Black;
         let modifier = tui::style::Modifier::empty();
-        let cell = Cell { symbol: container_item.symbol.to_string(), fg, bg, modifier };
+        let cell = Cell { symbol: container_item.symbol.character.to_string(), fg, bg, modifier };
         let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
         let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
         backend.draw(updates.into_iter())?;
@@ -122,7 +122,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         if view_area.contains(cell_x, cell_y) && self.map.in_bounds(x as usize, y as usize) {
             let tile_details = &tiles[y as usize][x as usize];
 
-            let symbol = tile_details.symbol.symbol.to_string();
+            let symbol = tile_details.symbol.character.to_string();
             let fg = colour_mapper::map_colour(tile_details.symbol.colour);
             let bg = tui::style::Color::Black;
             let modifier = tui::style::Modifier::empty();

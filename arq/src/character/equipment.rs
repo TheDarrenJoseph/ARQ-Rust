@@ -32,7 +32,7 @@ pub struct Equipment {
 // Slot mapping
 pub fn get_potential_slots(item_type: ItemType) -> Vec<EquipmentSlot> {
     return match item_type {
-        ItemType::WEAPON => {
+        ItemType::WEAPON(w) => {
             vec![PRIMARY, SECONDARY]
         },
         ItemType::HEADGEAR => {
@@ -104,8 +104,13 @@ mod tests {
     use uuid::Uuid;
     use crate::character::equipment::{Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
-    use crate::map::objects::container::{ContainerType, wrap_item};
+    use crate::map::objects::container::{Container, ContainerType, wrap_item};
     use crate::map::objects::{container, items};
+    use crate::map::objects::items::{Item, Weapon};
+
+    fn build_test_weapon() -> Item {
+        items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 })
+    }
 
     #[test]
     pub fn test_is_slot_filled_defaults() {
@@ -124,7 +129,7 @@ mod tests {
         // GIVEN an equipment
         // AND we've equipped an item into the PRIMARY slot
         let mut equipment = Equipment::new();
-        let steel_sword = wrap_item(items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50));
+        let steel_sword = wrap_item(items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 }));
 
         let equip_result = equipment.equip(steel_sword, PRIMARY);
         assert!(equip_result.is_ok());
@@ -146,8 +151,8 @@ mod tests {
     pub fn test_equip() {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50);
-        let wrapped = wrap_item(steel_sword.clone());
+        let weapon = build_test_weapon();
+        let wrapped = wrap_item(weapon.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let equip_result = equipment.equip(wrapped, PRIMARY);
@@ -155,7 +160,7 @@ mod tests {
         // THEN we expect a match to our item
         assert!(equip_result.is_ok());
         assert!(equipment.is_slot_filled(EquipmentSlot::PRIMARY));
-        assert_eq!(steel_sword.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
+        assert_eq!(weapon.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
     }
 
     #[test]
@@ -177,17 +182,18 @@ mod tests {
     pub fn test_equip_slot_taken() {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword 1".to_owned(), 'X', 3, 50);
-        let wrapped = wrap_item(steel_sword.clone());
+        let weapon1 = build_test_weapon();
+        let wrapped = wrap_item(weapon1.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let mut equip_result = equipment.equip(wrapped, PRIMARY);
         assert!(equip_result.is_ok());
         assert!(equipment.is_slot_filled(EquipmentSlot::PRIMARY));
-        assert_eq!(steel_sword.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
+        assert_eq!(weapon1.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
 
         // WHEN we call to equip another item to this slot
-        let wrapped_other =  wrap_item(items::build_weapon(Uuid::new_v4(), "Steel Sword 2".to_owned(), 'X', 3, 50));
+        let weapon2 = build_test_weapon();
+        let wrapped_other = wrap_item(weapon1.clone());
         equip_result = equipment.equip(wrapped_other, PRIMARY);
         // THEN we expect an error to return
         assert!(equip_result.is_err());
@@ -198,14 +204,14 @@ mod tests {
     pub fn test_unequip() {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50);
-        let wrapped = wrap_item(steel_sword.clone());
+        let weapon = build_test_weapon();
+        let wrapped = wrap_item(weapon.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let equip_result = equipment.equip(wrapped.clone(), PRIMARY);
         assert!(equip_result.is_ok());
         assert!(equipment.is_slot_filled(EquipmentSlot::PRIMARY));
-        assert_eq!(steel_sword.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
+        assert_eq!(weapon.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
 
         // WHEN we call to unequip this
         let unequip_result = equipment.unequip(PRIMARY);

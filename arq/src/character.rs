@@ -16,10 +16,10 @@ use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Race {Human,Goblin}
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Class {None,Warrior}
 
 impl Display for Class {
@@ -103,7 +103,7 @@ impl Character {
     }
 
     pub fn get_symbol(&self) -> char {
-        self.symbol.symbol
+        self.symbol.character
     }
 
     pub fn get_colour(&self) -> Colour {
@@ -187,7 +187,7 @@ mod tests {
         let id = Uuid::new_v4();
         let name = String::from("Test Person");
         let character_details = build_default_character_details();
-        let symbol = Symbol { symbol: '@', colour: Colour::Green };
+        let symbol = Symbol { character: '@', colour: Colour::Green };
         let health = 100;
         let position = Position { x: 1, y: 1};
         let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);

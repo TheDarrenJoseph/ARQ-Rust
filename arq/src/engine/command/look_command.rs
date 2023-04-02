@@ -152,7 +152,7 @@ mod tests {
             containers: area_containers
         };
 
-        let player =  CharacterBuilder::new(CharacterPattern::player())
+        let player =  CharacterBuilder::new(CharacterPattern::new_player())
             .build(String::from("Test Player"));
         return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new()) };
     }

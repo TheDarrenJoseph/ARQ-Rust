@@ -1,17 +1,21 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
 
-use crate::map::tile::Colour;
+use crate::map::tile::{Colour, Symbol};
 
-#[derive(Clone)]
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ItemType {
     ITEM,
     CONTAINER,
-    WEAPON,
+    WEAPON(Weapon),
     HEADGEAR,
     TORSO,
     LEGS
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Weapon {
+    pub damage : i32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -19,8 +23,7 @@ pub struct Item {
     id : Uuid,
     pub item_type: ItemType,
     name : String,
-    pub symbol : char,
-    pub colour : Colour,
+    pub symbol : Symbol,
     pub weight : i32,
     pub value : i32,
     equipment_slot: Option<EquipmentSlot>
@@ -66,15 +69,15 @@ impl Item {
 }
 
 pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::ITEM, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
+    Item {id, item_type: ItemType::ITEM, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
 }
 
-pub fn build_weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::WEAPON, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
+pub fn build_weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
+    Item {id, item_type: ItemType::WEAPON(weapon), name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
 }
 
 pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::CONTAINER, name, symbol, colour: Colour::White, weight, value, equipment_slot: None }
+    Item {id, item_type: ItemType::CONTAINER, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
 }
 
 #[cfg(test)]
@@ -91,8 +94,8 @@ mod tests {
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
-        assert_eq!('X', item.symbol);
-        assert_eq!(Colour::White, item.colour);
+        assert_eq!('X', item.symbol.character);
+        assert_eq!(Colour::White, item.symbol.colour);
         assert_eq!(1, item.weight);
         assert_eq!(1, item.value);
     }
@@ -105,8 +108,8 @@ mod tests {
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::CONTAINER, item.item_type);
         assert_eq!("Test Container", item.name);
-        assert_eq!('X', item.symbol);
-        assert_eq!(Colour::White, item.colour);
+        assert_eq!('X', item.symbol.character);
+        assert_eq!(Colour::White, item.symbol.colour);
         assert_eq!(1, item.weight);
         assert_eq!(1, item.value);
     }

@@ -378,8 +378,8 @@ mod tests {
 
         assert_eq!(id, container.item.get_id());
         assert_eq!("Test Container", container.item.get_name());
-        assert_eq!('X', container.item.symbol);
-        assert_eq!(Colour::White, container.item.colour);
+        assert_eq!('X', container.item.symbol.character);
+        assert_eq!(Colour::White, container.item.symbol.colour);
         assert_eq!(1, container.item.weight);
         assert_eq!(1, container.item.value);
 
