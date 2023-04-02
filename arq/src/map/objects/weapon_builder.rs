@@ -1,3 +1,8 @@
+use uuid::Uuid;
+use crate::character::equipment::EquipmentSlot;
+use crate::map::objects::items::{Item, ItemType, Weapon};
+use crate::map::tile::{Colour, Symbol};
+
 pub struct WeaponBlueprint {
 
 }

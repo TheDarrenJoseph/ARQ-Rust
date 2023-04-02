@@ -39,6 +39,7 @@ impl Symbol {
     }
 }
 
+// Future TODO this would fit well in a DB / datastore
 pub fn build_library() -> HashMap<Tile, TileDetails> {
     let tile_details = [
         TileDetails {id: 0,     tile_type:  Tile::NoTile,   traversable: false, symbol: Symbol::new(' ', Colour::None), name:  "Empty".to_string()},

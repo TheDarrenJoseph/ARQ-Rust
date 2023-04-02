@@ -523,14 +523,15 @@ mod tests {
 
     use crate::list_selection::{build_list_selection, ListSelection};
     use crate::map::objects::items;
+    use crate::map::objects::items::Item;
 
     #[test]
     fn test_build_list_selection() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items
@@ -554,10 +555,10 @@ mod tests {
     #[test]
     fn test_multi_page_count() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items with a line count of 2 items per page
@@ -572,7 +573,7 @@ mod tests {
         // GIVEN a series of 60 items to select from
         let mut items = Vec::new();
         for _i in 1..=60 {
-            let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+            let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
             items.push(item);
         }
 
@@ -587,10 +588,10 @@ mod tests {
     #[test]
     fn test_move_up() {
         // GIVEN a selection with a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         // AND an initial container index of 2
@@ -609,10 +610,10 @@ mod tests {
     #[test]
     fn test_move_down_up_of_list() {
         // GIVEN a selection with a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         // AND an initial container index of 3
@@ -633,10 +634,10 @@ mod tests {
     #[test]
     fn test_move_down() {
         // GIVEN a selection with a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         list_selection.set_current_index(0);
@@ -654,10 +655,10 @@ mod tests {
     #[test]
     fn test_move_down_end_of_list() {
         // GIVEN a selection with a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         let mut list_selection = build_list_selection(items, 4);
         list_selection.set_current_index(0);
@@ -692,10 +693,10 @@ mod tests {
     #[test]
     fn test_index_select() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -714,10 +715,10 @@ mod tests {
     #[test]
     fn test_selecting_above() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -741,10 +742,10 @@ mod tests {
     #[test]
     fn test_selecting_above_multi() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -771,10 +772,10 @@ mod tests {
     #[test]
     fn test_reducing_selection_above() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -809,10 +810,10 @@ mod tests {
     #[test]
     fn test_selecting_downwards() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -836,10 +837,10 @@ mod tests {
     #[test]
     fn test_selecting_downwards_multi() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -866,10 +867,10 @@ mod tests {
     #[test]
     fn test_reducing_selection_below_all_selected() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -908,10 +909,10 @@ mod tests {
     #[test]
     fn test_reducing_selection_below() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection
@@ -946,10 +947,10 @@ mod tests {
     #[test]
     fn test_page_down_same_page() {
         // GIVEN a series of items to select from
-        let item = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // AND a valid list selection that has a line count matching our items
@@ -979,14 +980,14 @@ mod tests {
     #[test]
     fn test_page_down_multi_page_same_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
@@ -1017,14 +1018,14 @@ mod tests {
     #[test]
     fn test_page_down_multi_page_next_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
@@ -1062,14 +1063,14 @@ mod tests {
     #[test]
     fn test_page_up_multi_page_same_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
@@ -1104,14 +1105,14 @@ mod tests {
     #[test]
     fn test_page_up_multi_page_previous_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
@@ -1150,14 +1151,14 @@ mod tests {
     #[test]
     fn test_select_second_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items
@@ -1188,14 +1189,14 @@ mod tests {
     #[test]
     fn test_downward_multi_select_second_page() {
         // GIVEN a series of items to select from
-        let item1 = items::build_item(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = items::build_item(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = items::build_item(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = items::build_item(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = items::build_item(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = items::build_item(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = items::build_item(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = items::build_item(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
+        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
+        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
+        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
+        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
+        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
+        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
         let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
 
         // AND a valid list selection that has a line count that fits half of these items

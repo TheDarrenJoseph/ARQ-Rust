@@ -237,7 +237,7 @@ mod tests {
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
-    use crate::map::objects::items::{build_item, Weapon};
+    use crate::map::objects::items::{Item, Weapon};
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
     use crate::map::Tiles;
@@ -259,7 +259,7 @@ mod tests {
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
             container.add_item(test_item);
         }
 
@@ -414,7 +414,7 @@ mod tests {
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 10 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 10 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 
@@ -452,7 +452,7 @@ mod tests {
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 

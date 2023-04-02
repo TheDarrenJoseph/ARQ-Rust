@@ -418,6 +418,7 @@ mod tests {
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
+    use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, Tile};
     use crate::map::Tiles;
@@ -438,7 +439,7 @@ mod tests {
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = items::build_item(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
             container.add_item(test_item);
         }
 

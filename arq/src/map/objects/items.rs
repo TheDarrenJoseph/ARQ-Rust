@@ -68,29 +68,42 @@ impl Item {
     }
 }
 
-pub fn build_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::ITEM, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+impl Item {
+    /*
+        Builds a true item of the type ItemType::ITEM
+     */
+    pub fn new(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
+        Item {id, item_type: ItemType::ITEM, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    }
+
+    /*
+      Builds an Item with the type of ItemType::CONTAINER,
+     */
+    pub fn container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
+        Item {id, item_type: ItemType::CONTAINER, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    }
+
+    /*
+      Builds an Item with the type of ItemType::WEAPON,
+     */
+    pub fn weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
+        Item {id, item_type: ItemType::WEAPON(weapon), name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    }
 }
 
-pub fn build_weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
-    Item {id, item_type: ItemType::WEAPON(weapon), name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
-}
-
-pub fn build_container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-    Item {id, item_type: ItemType::CONTAINER, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
-}
 
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
 
     use crate::map::objects::items;
+    use crate::map::objects::items::Item;
     use crate::map::tile::Colour;
 
     #[test]
     fn test_build_item() {
         let id = Uuid::new_v4();
-        let item = items::build_item(id, "Test Item".to_owned(), 'X', 1, 1);
+        let item = Item::new(id, "Test Item".to_owned(), 'X', 1, 1);
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
@@ -103,7 +116,7 @@ mod tests {
     #[test]
     fn test_build_container() {
         let id = Uuid::new_v4();
-        let item = items::build_container_item(id, "Test Container".to_owned(), 'X', 1, 1);
+        let item = Item::container_item(id, "Test Container".to_owned(), 'X', 1, 1);
 
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::CONTAINER, item.item_type);

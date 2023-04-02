@@ -109,7 +109,7 @@ mod tests {
     use crate::map::objects::items::{Item, Weapon};
 
     fn build_test_weapon() -> Item {
-        items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 })
+        Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 })
     }
 
     #[test]
@@ -129,7 +129,7 @@ mod tests {
         // GIVEN an equipment
         // AND we've equipped an item into the PRIMARY slot
         let mut equipment = Equipment::new();
-        let steel_sword = wrap_item(items::build_weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 }));
+        let steel_sword = wrap_item(Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 }));
 
         let equip_result = equipment.equip(steel_sword, PRIMARY);
         assert!(equip_result.is_ok());
