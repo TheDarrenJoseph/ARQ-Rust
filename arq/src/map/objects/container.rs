@@ -32,6 +32,10 @@ pub struct Container {
 }
 
 impl Container {
+    pub fn wrap(item: Item) -> Container {
+        Container { item, container_type: ContainerType::ITEM, weight_limit: 0, contents: Vec::new() }
+    }
+
     pub fn is_true_container(&self) -> bool {
         let container_type_valid = (self.container_type == ContainerType::OBJECT) | (self.container_type == ContainerType::AREA);
         let item_type_valid = self.item.item_type == ItemType::CONTAINER;
@@ -331,7 +335,7 @@ impl Container {
             },
             _ => {
                 if self.get_weight_total() + item.weight <= self.weight_limit {
-                    let container = wrap_item(item.clone());
+                    let container = Container::wrap(item.clone());
                     self.contents.push(container);
                 }
             }
@@ -353,10 +357,6 @@ impl Container {
     }
 }
 
-pub fn wrap_item(item: Item) -> Container {
-    Container { item, container_type: ContainerType::ITEM, weight_limit: 0, contents: Vec::new() }
-}
-
 pub fn build(id: Uuid, name: String, symbol: char, weight : i32, value : i32, container_type : ContainerType, weight_limit : i32) -> Container {
     let container_item = Item::container_item(id, name, symbol, weight, value);
     Container { item: container_item, container_type, weight_limit, contents: Vec::new()}
@@ -367,7 +367,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::map::objects::container;
-    use crate::map::objects::container::{build, ContainerType};
+    use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::objects::items::{Item, MaterialType};
     use crate::map::tile::Colour;
@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add either an wrapped ITEM or OBJECT container
-        let gold_bar = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
+        let gold_bar = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10, 100));
         let bag_object = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
         container.add(gold_bar);
         container.add(bag_object);
@@ -462,13 +462,13 @@ mod tests {
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
-        let gold_bar_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
+        let gold_bar_1 = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10, 100));
         let mut bag_object = container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
-        let gold_bar_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(),MaterialType::GOLD, 'X', 10, 100));
-        let gold_bar_3 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
-        let gold_bar_4 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
-        let lockpick_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::GOLD,'X', 1, 5));
-        let lockpick_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::IRON,'X', 1, 5));
+        let gold_bar_2 = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10, 100));
+        let gold_bar_3 = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10, 100));
+        let gold_bar_4 = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10, 100));
+        let lockpick_1 = Container::wrap(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::GOLD, 'X', 1, 5));
+        let lockpick_2 = Container::wrap(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::IRON, 'X', 1, 5));
         bag_object.add(gold_bar_2);
         bag_object.add(gold_bar_3);
         bag_object.add(gold_bar_4);

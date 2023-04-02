@@ -16,7 +16,7 @@ use crate::map::{Map, Tiles};
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
-use crate::map::objects::items::{Item, MaterialType};
+use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, Tile, TileDetails};
@@ -50,10 +50,10 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
 
 pub fn build_dev_player_inventory() -> Container {
     let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50, 1, ContainerType::AREA, 130);
-    let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), MaterialType::BRONZE, 'X', 1, 50);
+    let bronze_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::BRONZE, ItemForm::BAR, 'X', 1, 50);
     let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
     let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-    let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), MaterialType::TIN, 'X', 1, 50);
+    let tin_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::TIN, ItemForm::BAR,'X', 1, 50);
 
     // +1 weight
     carton.add_item(tin_bar);

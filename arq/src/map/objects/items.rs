@@ -144,6 +144,10 @@ impl Item {
         Item {id, item_type: ItemType::ITEM, item_form: ItemForm::OTHER(name.clone()), material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
+    pub fn new_with_form(id: Uuid, name: String, material_type: MaterialType, item_form: ItemForm, symbol: char, weight : i32, value : i32) -> Item {
+        Item {id, item_type: ItemType::ITEM, item_form, material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    }
+
     /*
       Builds an Item with the type of ItemType::CONTAINER,
      */

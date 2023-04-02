@@ -5,7 +5,7 @@ use strum_macros::EnumIter;
 use crate::character::equipment::EquipmentSlot::{HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
 
 use crate::error_utils::error_result;
-use crate::map::objects::container::{Container, ContainerType, wrap_item};
+use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemType};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, EnumIter)]
@@ -84,7 +84,7 @@ impl Equipment {
     pub fn unequip(&mut self, slot: EquipmentSlot) -> Result<Container, Error> {
         return if self.is_slot_filled(slot.clone()) {
             let item = self.slots.remove(&slot).unwrap();
-            let container = wrap_item(item);
+            let container = Container::wrap(item);
             Ok(container)
         } else {
             error_result(format!("Cannot un-equip. Equipment slot: {} is empty.", slot))
@@ -104,7 +104,7 @@ mod tests {
     use uuid::Uuid;
     use crate::character::equipment::{Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
-    use crate::map::objects::container::{Container, ContainerType, wrap_item};
+    use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::{container, items};
     use crate::map::objects::items::{Item, Weapon};
 
@@ -129,7 +129,7 @@ mod tests {
         // GIVEN an equipment
         // AND we've equipped an item into the PRIMARY slot
         let mut equipment = Equipment::new();
-        let steel_sword = wrap_item(Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 }));
+        let steel_sword = Container::wrap(Item::weapon(Uuid::new_v4(), "Steel Sword".to_owned(), 'X', 3, 50, Weapon { damage: 20 }));
 
         let equip_result = equipment.equip(steel_sword, PRIMARY);
         assert!(equip_result.is_ok());
@@ -152,7 +152,7 @@ mod tests {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
         let weapon = build_test_weapon();
-        let wrapped = wrap_item(weapon.clone());
+        let wrapped = Container::wrap(weapon.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let equip_result = equipment.equip(wrapped, PRIMARY);
@@ -183,7 +183,7 @@ mod tests {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
         let weapon1 = build_test_weapon();
-        let wrapped = wrap_item(weapon1.clone());
+        let wrapped = Container::wrap(weapon1.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let mut equip_result = equipment.equip(wrapped, PRIMARY);
@@ -193,7 +193,7 @@ mod tests {
 
         // WHEN we call to equip another item to this slot
         let weapon2 = build_test_weapon();
-        let wrapped_other = wrap_item(weapon1.clone());
+        let wrapped_other = Container::wrap(weapon1.clone());
         equip_result = equipment.equip(wrapped_other, PRIMARY);
         // THEN we expect an error to return
         assert!(equip_result.is_err());
@@ -205,7 +205,7 @@ mod tests {
         // GIVEN an equipment
         let mut equipment = Equipment::new();
         let weapon = build_test_weapon();
-        let wrapped = wrap_item(weapon.clone());
+        let wrapped = Container::wrap(weapon.clone());
 
         // AND we've equipped an item into the PRIMARY slot
         let equip_result = equipment.equip(wrapped.clone(), PRIMARY);
