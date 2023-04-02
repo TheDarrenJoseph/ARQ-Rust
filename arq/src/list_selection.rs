@@ -525,27 +525,44 @@ mod tests {
     use crate::map::objects::items;
     use crate::map::objects::items::Item;
 
+    fn build_item_series_4() -> Vec<Item> {
+        let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
+        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
+        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        items
+    }
+
+    fn build_item_series_8() -> Vec<Item> {
+        let item1 = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
+        let item2 = Item::with_defaults("Test Item 2".to_owned(),  1, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(), 1, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
+        let item5 = Item::with_defaults("Test Item 5".to_owned(),  1, 1);
+        let item6 = Item::with_defaults("Test Item 6".to_owned(),  1, 1);
+        let item7 = Item::with_defaults("Test Item 7".to_owned(),  1, 1);
+        let item8 = Item::with_defaults("Test Item 8".to_owned(),  1, 1);
+        vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ]
+    }
+
     #[test]
     fn test_build_list_selection() {
-        // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        // GIVEN a series of items to select from            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
+        let items = build_item_series_4();
 
         // WHEN we call to build a list selection of these items
-        let list_selection = build_list_selection(items, 4);
+        let list_selection = build_list_selection(items.clone(), 4);
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(1, list_selection.get_total_pages());
 
         // THEN we expect it to wrap the items provided
         let wrapped_items = list_selection.get_items();
         assert_eq!(4, wrapped_items.len());
-        assert_eq!(item, wrapped_items[0]);
-        assert_eq!(item2, wrapped_items[1]);
-        assert_eq!(item3, wrapped_items[2]);
-        assert_eq!(item4, wrapped_items[3]);
+        assert_eq!(items[0], wrapped_items[0]);
+        assert_eq!(items[1], wrapped_items[1]);
+        assert_eq!(items[2], wrapped_items[2]);
+        assert_eq!(items[3], wrapped_items[3]);
 
         // AND have no currently selected items
         let selected_items = list_selection.get_selected_items();
@@ -555,14 +572,14 @@ mod tests {
     #[test]
     fn test_multi_page_count() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
+        let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
+        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items with a line count of 2 items per page
-        let list_selection = build_list_selection(items, 2);
+        let list_selection = build_list_selection(items.clone(), 2);
         // THEN we expect there to be 2 pages
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(2, list_selection.get_total_pages());
@@ -573,13 +590,13 @@ mod tests {
         // GIVEN a series of 60 items to select from
         let mut items = Vec::new();
         for _i in 1..=60 {
-            let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
+            let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
             items.push(item);
         }
 
         // WHEN we call to build a list selection of these items
         // with a line count of 36 items per page (Which would give us an odd page count of 1.69)
-        let list_selection = build_list_selection(items, 36);
+        let list_selection = build_list_selection(items.clone(), 36);
         // THEN we expect there to be 2 pages total
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(2, list_selection.get_total_pages());
@@ -588,12 +605,10 @@ mod tests {
     #[test]
     fn test_move_up() {
         // GIVEN a selection with a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
-        let mut list_selection = build_list_selection(items, 4);
+        let items = build_item_series_4();
+
+        let mut list_selection = build_list_selection(items.clone(), 4);
+
         // AND an initial container index of 2
         list_selection.set_current_index(2);
 
@@ -610,12 +625,8 @@ mod tests {
     #[test]
     fn test_move_down_up_of_list() {
         // GIVEN a selection with a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
-        let mut list_selection = build_list_selection(items, 4);
+        let items = build_item_series_4();
+        let mut list_selection = build_list_selection(items.clone(), 4);
         // AND an initial container index of 3
         list_selection.set_current_index(3);
 
@@ -634,12 +645,8 @@ mod tests {
     #[test]
     fn test_move_down() {
         // GIVEN a selection with a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
-        let mut list_selection = build_list_selection(items, 4);
+        let items = build_item_series_4();
+        let mut list_selection = build_list_selection(items.clone(), 4);
         list_selection.set_current_index(0);
 
         // WHEN we call to move down
@@ -655,12 +662,8 @@ mod tests {
     #[test]
     fn test_move_down_end_of_list() {
         // GIVEN a selection with a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
-        let mut list_selection = build_list_selection(items, 4);
+        let items = build_item_series_4();
+        let mut list_selection = build_list_selection(items.clone(), 4);
         list_selection.set_current_index(0);
 
         // WHEN we move down 3 times
@@ -693,14 +696,10 @@ mod tests {
     #[test]
     fn test_index_select() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // WHEN we call to select a particular index
         list_selection.select(1);
@@ -709,20 +708,16 @@ mod tests {
         assert!(list_selection.is_selected(1));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(1, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
+        assert_eq!(items[1], selected_items[0]);
     }
 
     #[test]
     fn test_selecting_above() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -735,21 +730,17 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(1));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(item, selected_items[0]);
-        assert_eq!(item2, selected_items[1]);
+        assert_eq!(items[0], selected_items[0]);
+        assert_eq!(items[1], selected_items[1]);
     }
 
     #[test]
     fn test_selecting_above_multi() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(2);
@@ -764,22 +755,18 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item, selected_items[0]);
-        assert_eq!(item2, selected_items[1]);
-        assert_eq!(item3, selected_items[2]);
+        assert_eq!(items[0], selected_items[0]);
+        assert_eq!(items[1], selected_items[1]);
+        assert_eq!(items[2], selected_items[2]);
     }
 
     #[test]
     fn test_reducing_selection_above() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting above that twice
@@ -803,21 +790,17 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
     }
 
     #[test]
     fn test_selecting_downwards() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -830,21 +813,17 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
     }
 
     #[test]
     fn test_selecting_downwards_multi() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -859,22 +838,18 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(3));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
-        assert_eq!(item4, selected_items[2]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
+        assert_eq!(items[3], selected_items[2]);
     }
 
     #[test]
     fn test_reducing_selection_below_all_selected() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting the first item in the container
         // AND then selecting below that until we reach the bottom of the container
@@ -901,22 +876,18 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item, selected_items[0]);
-        assert_eq!(item2, selected_items[1]);
-        assert_eq!(item3, selected_items[2]);
+        assert_eq!(items[0], selected_items[0]);
+        assert_eq!(items[1], selected_items[1]);
+        assert_eq!(items[2], selected_items[2]);
     }
 
     #[test]
     fn test_reducing_selection_below() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting below that twice
@@ -940,21 +911,17 @@ mod tests {
         assert_eq!(true, list_selection.is_selected(2));
         let selected_items = list_selection.get_selected_items();
         assert_eq!(2, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
     }
 
     #[test]
     fn test_page_down_same_page() {
         // GIVEN a series of items to select from
-        let item = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
+        let items = build_item_series_4();
 
         // AND a valid list selection that has a line count matching our items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -972,26 +939,18 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
-        assert_eq!(item4, selected_items[2]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
+        assert_eq!(items[3], selected_items[2]);
     }
 
     #[test]
     fn test_page_down_multi_page_same_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -1010,26 +969,18 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
-        assert_eq!(item4, selected_items[2]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
+        assert_eq!(items[3], selected_items[2]);
     }
 
     #[test]
     fn test_page_down_multi_page_next_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by selecting an index
         list_selection.set_initial_selection(1);
@@ -1054,27 +1005,19 @@ mod tests {
         // AND the items themselves will also be selected
         let selected_items = list_selection.get_selected_items();
         assert_eq!(4, selected_items.len());
-        assert_eq!(item2, selected_items[0]);
-        assert_eq!(item3, selected_items[1]);
-        assert_eq!(item4, selected_items[2]);
-        assert_eq!(item5, selected_items[3]);
+        assert_eq!(items[1], selected_items[0]);
+        assert_eq!(items[2], selected_items[1]);
+        assert_eq!(items[3], selected_items[2]);
+        assert_eq!(items[4], selected_items[3]);
     }
 
     #[test]
     fn test_page_up_multi_page_same_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by navigating to the correct index and initialising selection
         list_selection.page_down();  // end of first page
@@ -1097,26 +1040,18 @@ mod tests {
 
         let selected_items = list_selection.get_selected_items();
         assert_eq!(3, selected_items.len());
-        assert_eq!(item5, selected_items[0]);
-        assert_eq!(item6, selected_items[1]);
-        assert_eq!(item7, selected_items[2]);
+        assert_eq!(items[4], selected_items[0]);
+        assert_eq!(items[5], selected_items[1]);
+        assert_eq!(items[6], selected_items[2]);
     }
 
     #[test]
     fn test_page_up_multi_page_previous_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've begun by navigating to the correct index and initialising selection
         list_selection.page_down();  // end of first page
@@ -1141,28 +1076,20 @@ mod tests {
         // AND our selection is the last item of page 1 and the first 3 items of page 2
         let selected_items = list_selection.get_selected_items();
         assert_eq!(4, selected_items.len());
-        assert_eq!(item4, selected_items[0]);
-        assert_eq!(item5, selected_items[1]);
-        assert_eq!(item6, selected_items[2]);
-        assert_eq!(item7, selected_items[3]);
+        assert_eq!(items[3], selected_items[0]);
+        assert_eq!(items[4], selected_items[1]);
+        assert_eq!(items[5], selected_items[2]);
+        assert_eq!(items[6], selected_items[3]);
     }
 
 
     #[test]
     fn test_select_second_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've moved to the 2nd page of the view
         list_selection.page_down();  // end of first page
@@ -1189,18 +1116,10 @@ mod tests {
     #[test]
     fn test_downward_multi_select_second_page() {
         // GIVEN a series of items to select from
-        let item1 = Item::new(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1);
-        let item3 = Item::new(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1);
-        let item4 = Item::new(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1);
-        let item5 = Item::new(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1);
-        let item6 = Item::new(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1);
-        let item7 = Item::new(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1);
-        let item8 = Item::new(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1);
-        let items = vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ];
+        let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items, 4);
+        let mut list_selection = build_list_selection(items.clone(), 4);
 
         // AND we've moved to the 2nd page of the view
         list_selection.page_down();  // end of first page

@@ -29,7 +29,7 @@ pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
     ContainerChoiceFrameHandler {
         choices: choices.clone(),
         columns: build_default_columns(),
-        item_list_selection: build_list_selection(items, 1)
+        item_list_selection: build_list_selection(items.clone(), 1)
     }
 }
 

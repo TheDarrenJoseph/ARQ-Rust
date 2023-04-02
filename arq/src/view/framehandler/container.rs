@@ -106,7 +106,7 @@ pub fn build_container_frame_handler(container: Container, usage_line : UsageLin
         container: container.clone(),
         columns,
         row_count: 1,
-        item_list_selection: build_list_selection(items, 1),
+        item_list_selection: build_list_selection(items.clone(), 1),
         usage_line
     }
 }
@@ -495,7 +495,7 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
         container: container.clone(),
         columns,
         row_count: 1,
-        item_list_selection: build_list_selection(items, 1),
+        item_list_selection: build_list_selection(items.clone(), 1),
         usage_line : UsageLine::new(HashMap::new())
     }
 }
@@ -525,7 +525,7 @@ mod tests {
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
             container.add_item(test_item);
         }
 

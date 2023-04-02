@@ -230,7 +230,7 @@ mod tests {
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), 'X', 1, 100);
+            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
             container.add_item(test_item);
         }
 

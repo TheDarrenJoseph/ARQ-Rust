@@ -1,19 +1,34 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
-use crate::map::objects::items::{Item, ItemType, Weapon};
+use crate::map::objects::items::{Item, ItemType, MaterialType, Weapon};
 use crate::map::tile::{Colour, Symbol};
 
 pub struct WeaponBlueprint {
+    weapon: Weapon,
+    item_type: ItemType,
+    material_type: MaterialType,
+    name : String,
+    symbol : Symbol, // TODO allow using the colour for 'special' weapons?
+    weight : i32,
+    value : i32,
+    equipment_slot: Option<EquipmentSlot>
+}
 
+impl WeaponBlueprint {
+    
 }
 
 pub struct WeaponBuilder {
-    weapon: Weapon,
-    pub item_type: ItemType,
-    name : String,
-    pub symbol : char,
-    pub colour : Colour,
-    pub weight : i32,
-    pub value : i32,
-    equipment_slot: Option<EquipmentSlot>
+    blueprint: WeaponBlueprint
+}
+
+impl WeaponBuilder {
+    pub fn new(blueprint : WeaponBlueprint) -> WeaponBuilder {
+        WeaponBuilder { blueprint }
+    }
+
+    pub fn build(&self) -> Item {
+        let blueprint = &self.blueprint;
+        Item::weapon(Uuid::new_v4(), blueprint.name.clone(), blueprint.symbol.character.clone(), blueprint.weight.clone(), blueprint.value.clone(), blueprint.weapon.clone())
+    }
 }

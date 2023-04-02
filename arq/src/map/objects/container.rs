@@ -369,7 +369,7 @@ mod tests {
     use crate::map::objects::container;
     use crate::map::objects::container::{build, ContainerType};
     use crate::map::objects::items;
-    use crate::map::objects::items::Item;
+    use crate::map::objects::items::{Item, MaterialType};
     use crate::map::tile::Colour;
 
     #[test]
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add a new item
-        let item = Item::new(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
+        let item = Item::with_defaults("Test Item".to_owned(), 1, 1);
         container.add_item(item);
 
         // THEN we expect it's contents size to increase
@@ -414,8 +414,8 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we try to add more items than the supported weight limit
-        let item = Item::new(Uuid::new_v4(), "Test Item".to_owned(), 'X', 100, 1);
-        let item2 = Item::new(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1, 1);
+        let item = Item::with_defaults("Test Item".to_owned(), 100, 1);
+        let item2 = Item::with_defaults( "Test Item".to_owned(),1, 1);
         container.add_item(item);
         container.add_item(item2);
 
@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // WHEN we call to add either an wrapped ITEM or OBJECT container
-        let gold_bar = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
         let bag_object = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
         container.add(gold_bar);
         container.add(bag_object);
@@ -462,13 +462,13 @@ mod tests {
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
-        let gold_bar_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
+        let gold_bar_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
         let mut bag_object = container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 0, 1, ContainerType::OBJECT, 30);
-        let gold_bar_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let gold_bar_3 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let gold_bar_4 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 10, 100));
-        let lockpick_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
-        let lockpick_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), 'X', 1, 5));
+        let gold_bar_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(),MaterialType::GOLD, 'X', 10, 100));
+        let gold_bar_3 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
+        let gold_bar_4 = container::wrap_item(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 10, 100));
+        let lockpick_1 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::GOLD,'X', 1, 5));
+        let lockpick_2 = container::wrap_item(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::IRON,'X', 1, 5));
         bag_object.add(gold_bar_2);
         bag_object.add(gold_bar_3);
         bag_object.add(gold_bar_4);
@@ -518,10 +518,10 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
 
         // AND we've added 2 items with different values
-        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1, 100);
         container.add_item(gold_bar);
 
-        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::GOLD,'X', 1, 50);
         container.add_item(silver_bar);
         assert_eq!(2, container.get_contents().len());
 
@@ -537,9 +537,9 @@ mod tests {
         let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
-        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1, 100);
         container.add_item(gold_bar);
-        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1, 50);
         container.add_item(silver_bar);
         assert_eq!(2, container.get_contents().len());
 
@@ -555,16 +555,16 @@ mod tests {
         let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
-        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1, 100);
         container.add_item(gold_bar);
-        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1, 50);
         container.add_item(silver_bar);
 
         // AND we've added a container with it's own series of items
         let mut bag =  container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 20);
-        let coin1 = Item::new(Uuid::new_v4(), "Gold Coin 1".to_owned(), 'X', 1, 10);
-        let coin2 = Item::new(Uuid::new_v4(), "Gold Coin 2".to_owned(), 'X', 1, 10);
-        let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), 'X', 1, 10);
+        let coin1 = Item::new(Uuid::new_v4(), "Gold Coin 1".to_owned(), MaterialType::GOLD,'X', 1, 10);
+        let coin2 = Item::new(Uuid::new_v4(), "Gold Coin 2".to_owned(), MaterialType::GOLD,'X', 1, 10);
+        let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), MaterialType::GOLD,'X', 1, 10);
         bag.add_items(vec![coin1, coin2, coin3]);
         assert_eq!(3, bag.get_contents().len());
         container.add(bag);
@@ -594,9 +594,9 @@ mod tests {
         let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
-        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1, 100);
         container.add_item(gold_bar);
-        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1, 50);
         container.add_item(silver_bar);
         assert_eq!(2, container.get_contents().len());
 
@@ -612,16 +612,16 @@ mod tests {
         let mut container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
-        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 100);
+        let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1, 100);
         container.add_item(gold_bar);
-        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 50);
+        let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1, 50);
         container.add_item(silver_bar);
 
         // AND we've added a container with it's own series of items
         let mut bag =  container::build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 20);
-        let coin1 = Item::new(Uuid::new_v4(), "Gold Coin 1".to_owned(), 'X', 1, 10);
-        let coin2 = Item::new(Uuid::new_v4(), "Gold Coin 2".to_owned(), 'X', 1, 10);
-        let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), 'X', 1, 10);
+        let coin1 = Item::new(Uuid::new_v4(), "Gold Coin 1".to_owned(), MaterialType::GOLD,'X', 1, 10);
+        let coin2 = Item::new(Uuid::new_v4(), "Gold Coin 2".to_owned(), MaterialType::GOLD,'X', 1, 10);
+        let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), MaterialType::GOLD,'X', 1, 10);
         bag.add_items(vec![coin1, coin2, coin3]);
         assert_eq!(3, bag.get_contents().len());
         container.add(bag);

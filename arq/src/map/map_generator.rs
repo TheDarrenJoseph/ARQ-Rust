@@ -16,7 +16,7 @@ use crate::map::{Map, Tiles};
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
-use crate::map::objects::items::Item;
+use crate::map::objects::items::{Item, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, Tile, TileDetails};
@@ -50,10 +50,10 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
 
 pub fn build_dev_player_inventory() -> Container {
     let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50, 1, ContainerType::AREA, 130);
-    let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+    let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), MaterialType::BRONZE, 'X', 1, 50);
     let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
     let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-    let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), 'X', 1, 50);
+    let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), MaterialType::TIN, 'X', 1, 50);
 
     // +1 weight
     carton.add_item(tin_bar);
@@ -66,7 +66,7 @@ pub fn build_dev_player_inventory() -> Container {
 
     // + 60 weight
     for i in 1..=60 {
-        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
+        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), MaterialType::UNKNOWN, '$', 1, 100);
         container.add_item(test_item);
     }
     return container;
@@ -76,16 +76,16 @@ pub fn build_dev_player_inventory() -> Container {
 pub fn build_dev_chest() -> Container {
     let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 50, 1, ContainerType::OBJECT, 100);
 
-    let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 50);
+    let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), MaterialType::BRONZE, 'X', 1, 50);
     let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5, 50, ContainerType::OBJECT, 50);
     let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1, 50, ContainerType::OBJECT, 5);
-    let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), 'X', 1, 50);
+    let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), MaterialType::TIN, 'X', 1, 50);
     carton.add_item(tin_bar);
     bag.add(carton);
     bag.add_item(bronze_bar);
     container.add(bag);
     for i in 1..=60 {
-        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), '$', 1, 100);
+        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), MaterialType::UNKNOWN, '$', 1, 100);
         container.add_item(test_item);
     }
     return container;

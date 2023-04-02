@@ -1,7 +1,10 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
+use crate::map::objects::items::MaterialType::UNKNOWN;
 
 use crate::map::tile::{Colour, Symbol};
+
+const DEFAULT_SYMBOL: Symbol = Symbol { character: 'X',  colour: Colour::White};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum ItemType {
@@ -19,9 +22,63 @@ pub struct Weapon {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum MaterialType {
+    CLOTH,
+    LEATHER,
+    WOOD,
+    STONE,
+    BRONZE,
+    TIN,
+    IRON,
+    STEEL,
+    SILVER,
+    GOLD,
+    UNKNOWN
+}
+
+impl MaterialType {
+    pub fn name(self) -> String {
+        return match self {
+            MaterialType::CLOTH => { String::from("Cloth") }
+            MaterialType::LEATHER => { String::from("Leather") }
+            MaterialType::WOOD => { String::from("Wood") }
+            MaterialType::STONE => { String::from("Stone") }
+            MaterialType::BRONZE => { String::from("Bronze") }
+            MaterialType::TIN => { String::from("Tin") }
+            MaterialType::IRON => { String::from("Iron") }
+            MaterialType::STEEL => { String::from("Steel") }
+            MaterialType::SILVER => { String::from("Silver") }
+            MaterialType::GOLD => { String::from("Gold") }
+            MaterialType::UNKNOWN => { String::from("Unknown")}
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ItemForm {
+    COIN,
+    BAR,
+    SWORD,
+    OTHER(String)
+}
+
+impl ItemForm {
+    pub fn name(self) -> String {
+        return match self {
+            ItemForm::COIN => { String::from("Coin") }
+            ItemForm::BAR => { String::from("Bar") }
+            ItemForm::SWORD => { String::from("Sword") }
+            ItemForm::OTHER(description) => { description }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Item {
     id : Uuid,
     pub item_type: ItemType,
+    item_form: ItemForm,
+    material_type: MaterialType,
     name : String,
     pub symbol : Symbol,
     pub weight : i32,
@@ -35,6 +92,9 @@ impl Item {
     }
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+    pub fn get_default_name(&self) -> String {
+        format!("{} {}", self.material_type.clone().name(), self.item_form.clone().name())
     }
 
     pub fn set_name(&mut self, name: String) {
@@ -70,25 +130,34 @@ impl Item {
 
 impl Item {
     /*
+        Builds a true item of the type ItemType::ITEM additional defaults e.g:
+         UNKNOWN material type
+     */
+    pub fn with_defaults(name: String, weight : i32, value : i32) -> Item {
+        Item {id: Uuid::new_v4(), item_type: ItemType::ITEM, item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: DEFAULT_SYMBOL, weight, value, equipment_slot: None }
+    }
+
+    /*
         Builds a true item of the type ItemType::ITEM
      */
-    pub fn new(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-        Item {id, item_type: ItemType::ITEM, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    pub fn new(id: Uuid, name: String, material_type: MaterialType, symbol: char, weight : i32, value : i32) -> Item {
+        Item {id, item_type: ItemType::ITEM, item_form: ItemForm::OTHER(name.clone()), material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
     /*
       Builds an Item with the type of ItemType::CONTAINER,
      */
     pub fn container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
-        Item {id, item_type: ItemType::CONTAINER, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+        Item {id, item_type: ItemType::CONTAINER, item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
     /*
       Builds an Item with the type of ItemType::WEAPON,
      */
     pub fn weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
-        Item {id, item_type: ItemType::WEAPON(weapon), name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+        Item {id, item_type: ItemType::WEAPON(weapon), item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
+
 }
 
 
@@ -97,13 +166,13 @@ mod tests {
     use uuid::Uuid;
 
     use crate::map::objects::items;
-    use crate::map::objects::items::Item;
+    use crate::map::objects::items::{Item, MaterialType};
     use crate::map::tile::Colour;
 
     #[test]
     fn test_build_item() {
         let id = Uuid::new_v4();
-        let item = Item::new(id, "Test Item".to_owned(), 'X', 1, 1);
+        let item = Item::new(id, "Test Item".to_owned(), MaterialType::GOLD, 'X', 1, 1);
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
