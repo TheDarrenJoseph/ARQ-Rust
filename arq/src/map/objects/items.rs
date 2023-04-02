@@ -91,7 +91,13 @@ impl Item {
         self.id
     }
     pub fn get_name(&self) -> String {
-        self.name.clone()
+        // In some cases / simple items such as "Gold Bar" or "Steel Sword" we can determine a default name purely by item details
+        // In these cases, we don't expect a custom item name to be set
+        if self.name.is_empty() {
+            self.get_default_name()
+        } else {
+            self.name.clone()
+        }
     }
     pub fn get_default_name(&self) -> String {
         format!("{} {}", self.material_type.clone().name(), self.item_form.clone().name())
@@ -158,8 +164,8 @@ impl Item {
     /*
       Builds an Item with the type of ItemType::WEAPON,
      */
-    pub fn weapon(id: Uuid, name: String, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
-        Item {id, item_type: ItemType::WEAPON(weapon), item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
+    pub fn weapon(id: Uuid, name: String, item_form: ItemForm, material_type: MaterialType, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
+        Item {id, item_type: ItemType::WEAPON(weapon), item_form, material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
 }
@@ -176,7 +182,7 @@ mod tests {
     #[test]
     fn test_build_item() {
         let id = Uuid::new_v4();
-        let item = Item::new(id, "Test Item".to_owned(), MaterialType::GOLD, 'X', 1, 1);
+        let item = Item::new(id, "Test Item".to_owned(), MaterialType::UNKNOWN, 'X', 1, 1);
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);

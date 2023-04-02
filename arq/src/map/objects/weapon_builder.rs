@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
-use crate::map::objects::items::{Item, ItemType, MaterialType, Weapon};
+use crate::map::objects::items::{Item, ItemForm, ItemType, MaterialType, Weapon};
 use crate::map::tile::{Colour, Symbol};
 
 pub struct WeaponBlueprint {
@@ -29,6 +29,6 @@ impl WeaponBuilder {
 
     pub fn build(&self) -> Item {
         let blueprint = &self.blueprint;
-        Item::weapon(Uuid::new_v4(), blueprint.name.clone(), blueprint.symbol.character.clone(), blueprint.weight.clone(), blueprint.value.clone(), blueprint.weapon.clone())
+        Item::weapon(Uuid::new_v4(), blueprint.name.clone(), ItemForm::OTHER(blueprint.name.clone()), blueprint.material_type.clone(), blueprint.symbol.character.clone(), blueprint.weight.clone(), blueprint.value.clone(), blueprint.weapon.clone())
     }
 }
