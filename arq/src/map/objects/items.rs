@@ -61,9 +61,6 @@ impl MaterialType {
      * 8050/1000 = 8.05, half-up leaves us 8
      */
     pub fn density_cm3(&self) -> i32 {
-        // Methodology for calculating these e.g
-        //
-        // then rounding using half-up
         return match self {
             MaterialType::CLOTH => { 2 }
             MaterialType::LEATHER => { 2 }
