@@ -6,7 +6,7 @@ use tui::widgets::{Block, Borders};
 
 use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
-use crate::error_utils::{error, error_result};
+use crate::error::io_error_utils::error_result;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::view::framehandler::{FrameData, FrameHandler};

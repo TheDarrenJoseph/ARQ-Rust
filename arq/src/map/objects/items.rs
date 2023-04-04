@@ -52,6 +52,37 @@ impl MaterialType {
             MaterialType::UNKNOWN => { String::from("Unknown")}
         }
     }
+
+
+    /* Simplified Density in grams per cm^3 (Centimeter cubed)
+     * Methodology for calculating these using kg/m3 values e.g
+     * https://en.wikipedia.org/wiki/Steel
+     * Upper steel density 8050 kg/m3 = 8.05 g/cm3 so dividing general kg/m3 values by 1000
+     * 8050/1000 = 8.05, half-up leaves us 8
+     */
+    pub fn density_cm3(&self) -> i32 {
+        // Methodology for calculating these e.g
+        //
+        // then rounding using half-up
+        return match self {
+            MaterialType::CLOTH => { 2 }
+            MaterialType::LEATHER => { 2 }
+            MaterialType::WOOD => { 1 }
+            MaterialType::STONE => {
+                3 // Based on Basalt 2.9 g/cm3
+            }
+            MaterialType::BRONZE => { 9 }
+            MaterialType::TIN => { 7 }
+            MaterialType::IRON => { 8 }
+            MaterialType::STEEL => {
+                8
+            }
+            MaterialType::SILVER => { 10 }
+            MaterialType::GOLD => { 19 }
+            MaterialType::UNKNOWN => { 1 }
+        }
+    }
+
 }
 
 #[derive(Clone, Debug, PartialEq)]

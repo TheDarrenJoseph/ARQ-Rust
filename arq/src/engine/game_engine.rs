@@ -34,7 +34,6 @@ use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
 use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
-use crate::error_utils::error_result;
 
 use crate::map::map_generator::{build_dev_player_inventory};
 
@@ -50,6 +49,7 @@ use crate::menu::Selection;
 use crate::progress::StepProgress;
 use crate::engine::process;
 use crate::engine::process::map_generation::MapGeneration;
+use crate::error::io_error_utils::error_result;
 use crate::map::tile::Colour;
 
 use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};

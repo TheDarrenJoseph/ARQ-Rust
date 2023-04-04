@@ -3,8 +3,8 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 use strum_macros::EnumIter;
 use crate::character::equipment::EquipmentSlot::{HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
+use crate::error::io_error_utils::error_result;
 
-use crate::error_utils::error_result;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemType};
 

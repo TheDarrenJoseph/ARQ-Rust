@@ -13,7 +13,7 @@ use crate::ui::ui::StartMenuChoice::Play;
 use crate::view::game_over::GameOverChoice;
 use crate::view::game_over::GameOverChoice::EXIT;
 
-mod error_utils;
+mod error;
 mod engine;
 mod character;
 mod terminal;

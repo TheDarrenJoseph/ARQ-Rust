@@ -6,7 +6,7 @@ use termion::input::TermRead;
 
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
-use crate::error_utils::{error, error_result};
+use crate::error::io_error_utils::error_result;
 use crate::map::objects::container::Container;
 use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
