@@ -327,10 +327,10 @@ mod tests {
     fn test_move_items_into_container() {
         // GIVEN a valid map
         // that holds a source container containing 3 containers
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         let to_move = vec![container1.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
@@ -377,20 +377,20 @@ mod tests {
         // GIVEN a valid map
 
         // AND a chest that contains a nested bag and carton
-        let mut chest = build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let mut bag = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
-        let mut carton = build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut chest = build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let mut bag = build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
+        let mut carton = build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
         let carton_id = carton.get_self_item().get_id();
 
         // AND each of them contain some other items
-        let item1 = build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item2 = build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item3 = build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item1 = build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item2 = build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item3 = build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
         chest.push(vec![item1, item2, item3]);
 
-        let item4 = build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item5 = build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item6 = build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item4 = build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item5 = build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item6 = build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
 
         let item4_id = item4.get_self_item().get_id();
         let item5_id = item5.get_self_item().get_id();
@@ -398,9 +398,9 @@ mod tests {
 
         bag.push(vec![item4, item5, item6]);
 
-        let item7 = build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item8 = build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
-        let item9 = build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1, ContainerType::ITEM, 0);
+        let item7 = build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item8 = build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
+        let item9 = build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1.0, 1, ContainerType::ITEM, 0);
 
         let item7_id = item7.get_self_item().get_id();
         let item8_id = item8.get_self_item().get_id();
@@ -462,13 +462,13 @@ mod tests {
     fn test_move_items_bottom() {
         // GIVEN a valid map
         // that holds a source container containing 6 containers (Each with a unique name)
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
 
         // Clone everything before moving
         let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
@@ -520,13 +520,13 @@ mod tests {
     fn test_move_items_top() {
         // GIVEN a valid map
         // that holds a source container containing 6 containers (Each with a unique name)
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
 
         // Clone everything before moving
         let to_move = vec![container5.get_self_item().clone(), container6.get_self_item().clone()];
@@ -577,13 +577,13 @@ mod tests {
     fn test_move_item_middle() {
         // GIVEN a valid map
         // that holds a source container containing 6 containers (Each with a unique name)
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
 
         // Clone everything before moving
         let to_move = vec![container1.get_self_item().clone(), container2.get_self_item().clone()];
@@ -632,13 +632,13 @@ mod tests {
     fn test_move_split_items() {
         // GIVEN a valid map
         // that holds a source container containing 6 containers (Each with a unique name)
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container4 =  build(Uuid::new_v4(), "Test Container 4".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container5 =  build(Uuid::new_v4(), "Test Container 5".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container6 =  build(Uuid::new_v4(), "Test Container 6".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
 
         // Clone everything before moving
         let to_move = vec![container1.get_self_item().clone(), container6.get_self_item().clone()];
@@ -688,10 +688,10 @@ mod tests {
     fn test_move_items_no_position() {
         // GIVEN a valid map
         // that holds a source container containing 3 containers
-        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Source Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         let to_move = vec![container1.get_self_item().clone()];
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
@@ -714,22 +714,22 @@ mod tests {
     fn test_move_player_items_from_parent_to_lower() {
         // GIVEN a player inventory containing a nested container (Bag)
         // AND the Bag contains a Carton
-        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
-        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
+        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
 
         // AND all of them contain some other items
-        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
-        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
-        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
         // AND we're moving items 2 and 3 from the parent into the Bag (first child)
         let to_move = vec![item2.get_self_item().clone(), item3.get_self_item().clone()];
@@ -792,22 +792,22 @@ mod tests {
     fn test_move_player_items_from_lower_to_parent() {
         // GIVEN a player inventory containing a nested container (Bag)
         // AND the Bag contains a Carton
-        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
-        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
+        let mut carton =  build(Uuid::new_v4(), "Carton".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
 
         // AND all of them contain some other items
-        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
-        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
-        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item7 =  build(Uuid::new_v4(), "Test Item 7".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item8 =  build(Uuid::new_v4(), "Test Item 8".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item9 =  build(Uuid::new_v4(), "Test Item 9".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
         // AND we're moving items from the underlying Carton into the parent (Bag)
         let to_move = vec![item8.get_self_item().clone()];
@@ -868,17 +868,17 @@ mod tests {
     #[test]
     fn test_move_player_items_from_lower_to_root() {
         // GIVEN a player inventory containing a nested container (Bag)
-        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5, 1, ContainerType::OBJECT, 100);
+        let mut inventory =  build(Uuid::new_v4(), "Player Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let mut bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 5.0, 1, ContainerType::OBJECT, 100);
 
         // AND both the parent container and bag contains some other items
-        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item3 =  build(Uuid::new_v4(), "Test Item 3".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
 
-        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
-        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 0);
+        let item4 =  build(Uuid::new_v4(), "Test Item 4".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item5 =  build(Uuid::new_v4(), "Test Item 5".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        let item6 =  build(Uuid::new_v4(), "Test Item 6".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
         let to_move = vec![item6.get_self_item().clone()];
 
         // AND we're moving items from the underlying bag into the main inventory (root)

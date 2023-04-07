@@ -8,6 +8,7 @@ use crate::map::map_generator::build_dev_player_inventory;
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
+use crate::map::objects::weapon_builder::SwordType;
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};
 
@@ -31,7 +32,7 @@ pub struct CharacterPattern {
 impl CharacterPattern {
     pub fn new_player() -> CharacterPattern {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD, MaterialType::STEEL, 'X', 3, 50, Weapon { damage: 20 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
 
         let inventory = build_dev_player_inventory();
         let blueprint = CharacterBlueprint {
@@ -49,7 +50,7 @@ impl CharacterPattern {
     pub fn goblin() -> CharacterPattern {
         //let steel_short_sword = items::build_weapon(Uuid::new_v4(), "Steel Short Sword".to_owned(), 'X', 3, 50);
 
-        let inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         let attributes: Vec<AttributeScore> = AttributeScores::all_at_value(2).scores;
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Goblin, Class::Warrior, 1, 3, 0, attributes),

@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
 use crate::map::objects::items::MaterialType::UNKNOWN;
+use crate::map::objects::weapon_builder::SwordType;
 
 use crate::map::tile::{Colour, Symbol};
 
@@ -37,7 +38,7 @@ pub enum MaterialType {
 }
 
 impl MaterialType {
-    pub fn name(self) -> String {
+    pub fn name(&self) -> String {
         return match self {
             MaterialType::CLOTH => { String::from("Cloth") }
             MaterialType::LEATHER => { String::from("Leather") }
@@ -60,7 +61,7 @@ impl MaterialType {
      * Upper steel density 8050 kg/m3 = 8.05 g/cm3 so dividing general kg/m3 values by 1000
      * 8050/1000 = 8.05, half-up leaves us 8
      */
-    pub fn density_cm3(&self) -> i32 {
+    pub fn density_grams_cm3(&self) -> i32 {
         return match self {
             MaterialType::CLOTH => { 2 }
             MaterialType::LEATHER => { 2 }
@@ -71,9 +72,7 @@ impl MaterialType {
             MaterialType::BRONZE => { 9 }
             MaterialType::TIN => { 7 }
             MaterialType::IRON => { 8 }
-            MaterialType::STEEL => {
-                8
-            }
+            MaterialType::STEEL => { 8 }
             MaterialType::SILVER => { 10 }
             MaterialType::GOLD => { 19 }
             MaterialType::UNKNOWN => { 1 }
@@ -86,7 +85,7 @@ impl MaterialType {
 pub enum ItemForm {
     COIN,
     BAR,
-    SWORD,
+    SWORD(SwordType),
     OTHER(String)
 }
 
@@ -95,11 +94,24 @@ impl ItemForm {
         return match self {
             ItemForm::COIN => { String::from("Coin") }
             ItemForm::BAR => { String::from("Bar") }
-            ItemForm::SWORD => { String::from("Sword") }
+            ItemForm::SWORD(_swordType) => { String::from("Sword") }
             ItemForm::OTHER(description) => { description }
         }
     }
 }
+
+pub struct Dimensions {
+    pub(crate) height: f32,
+    pub(crate) width: f32,
+    pub(crate) length: f32
+}
+
+impl Dimensions {
+    pub fn area(&self) -> f32 {
+        self.height * self.width * self.length
+    }
+}
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Item {
@@ -109,7 +121,7 @@ pub struct Item {
     material_type: MaterialType,
     name : String,
     pub symbol : Symbol,
-    pub weight : i32,
+    pub weight : f32, // weight in Kilograms
     pub value : i32,
     equipment_slot: Option<EquipmentSlot>
 }
@@ -135,7 +147,7 @@ impl Item {
         self.name = name;
     }
 
-    pub fn get_weight(&self) -> i32 {
+    pub fn get_weight(&self) -> f32 {
         self.weight.clone()
     }
     pub fn get_value(&self) -> i32 {
@@ -167,32 +179,33 @@ impl Item {
         Builds a true item of the type ItemType::ITEM additional defaults e.g:
          UNKNOWN material type
      */
-    pub fn with_defaults(name: String, weight : i32, value : i32) -> Item {
+    pub fn with_defaults(name: String, weight : f32, value : i32) -> Item {
         Item {id: Uuid::new_v4(), item_type: ItemType::ITEM, item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: DEFAULT_SYMBOL, weight, value, equipment_slot: None }
     }
 
     /*
         Builds a true item of the type ItemType::ITEM
      */
-    pub fn new(id: Uuid, name: String, material_type: MaterialType, symbol: char, weight : i32, value : i32) -> Item {
+    pub fn new(id: Uuid, name: String, material_type: MaterialType, symbol: char, weight : f32, value : i32) -> Item {
         Item {id, item_type: ItemType::ITEM, item_form: ItemForm::OTHER(name.clone()), material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
-    pub fn new_with_form(id: Uuid, name: String, material_type: MaterialType, item_form: ItemForm, symbol: char, weight : i32, value : i32) -> Item {
+    pub fn new_with_form(id: Uuid, name: String, material_type: MaterialType, item_form: ItemForm, symbol: char, weight : f32, value : i32) -> Item {
         Item {id, item_type: ItemType::ITEM, item_form, material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
     /*
       Builds an Item with the type of ItemType::CONTAINER,
      */
-    pub fn container_item(id: Uuid, name: String, symbol: char, weight : i32, value : i32) -> Item {
+    pub fn container_item(id: Uuid, name: String, symbol: char, weight : f32, value : i32) -> Item {
         Item {id, item_type: ItemType::CONTAINER, item_form: ItemForm::OTHER(name.clone()), material_type: MaterialType::UNKNOWN, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
     /*
+    TODO Use WeaponBuilder instead
       Builds an Item with the type of ItemType::WEAPON,
      */
-    pub fn weapon(id: Uuid, name: String, item_form: ItemForm, material_type: MaterialType, symbol: char, weight : i32, value : i32, weapon: Weapon) -> Item {
+    pub fn weapon(id: Uuid, name: String, item_form: ItemForm, material_type: MaterialType, symbol: char, weight : f32, value : i32, weapon: Weapon) -> Item {
         Item {id, item_type: ItemType::WEAPON(weapon), item_form, material_type, name, symbol: Symbol::new(symbol, Colour::White), weight, value, equipment_slot: None }
     }
 
@@ -210,27 +223,27 @@ mod tests {
     #[test]
     fn test_build_item() {
         let id = Uuid::new_v4();
-        let item = Item::new(id, "Test Item".to_owned(), MaterialType::UNKNOWN, 'X', 1, 1);
+        let item = Item::new(id, "Test Item".to_owned(), MaterialType::UNKNOWN, 'X', 1.0, 1);
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::ITEM, item.item_type);
         assert_eq!("Test Item", item.name);
         assert_eq!('X', item.symbol.character);
         assert_eq!(Colour::White, item.symbol.colour);
-        assert_eq!(1, item.weight);
+        assert_eq!(1.0, item.weight);
         assert_eq!(1, item.value);
     }
 
     #[test]
     fn test_build_container() {
         let id = Uuid::new_v4();
-        let item = Item::container_item(id, "Test Container".to_owned(), 'X', 1, 1);
+        let item = Item::container_item(id, "Test Container".to_owned(), 'X', 1.0, 1);
 
         assert_eq!(id, item.get_id());
         assert_eq!(items::ItemType::CONTAINER, item.item_type);
         assert_eq!("Test Container", item.name);
         assert_eq!('X', item.symbol.character);
         assert_eq!(Colour::White, item.symbol.colour);
-        assert_eq!(1, item.weight);
+        assert_eq!(1.0, item.weight);
         assert_eq!(1, item.value);
     }
 }

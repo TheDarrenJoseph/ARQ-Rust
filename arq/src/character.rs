@@ -190,7 +190,7 @@ mod tests {
         let symbol = Symbol { character: '@', colour: Colour::Green };
         let health = 100;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         let equipment = Equipment::new();
         let mut character = Character { id, name, character_details, symbol, health, position, inventory, equipment };
 

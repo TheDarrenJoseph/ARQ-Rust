@@ -429,17 +429,17 @@ mod tests {
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
-        let mut container = build(id, "Test Container".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let mut container = build(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
         assert_eq!('X', container_self_item.symbol.character);
         assert_eq!(Colour::White, container_self_item.symbol.colour);
-        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1.0, container_self_item.weight);
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
+            let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
             container.add_item(test_item);
         }
 
@@ -474,7 +474,7 @@ mod tests {
     #[test]
     fn test_initialise() {
         // GIVEN a valid character info view for a player's inventory
-        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 2);
+        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
         let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
         let mut level = build_test_level(player);

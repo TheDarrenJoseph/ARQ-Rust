@@ -3,7 +3,7 @@ use std::fmt::format;
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
 use crate::error::errors::GenericError;
-use crate::map::objects::items::{Item, ItemForm, ItemType, MaterialType, Weapon};
+use crate::map::objects::items::{Dimensions, Item, ItemForm, ItemType, MaterialType, Weapon};
 use crate::map::tile::{Colour, Symbol};
 
 pub struct WeaponBlueprint {
@@ -13,7 +13,7 @@ pub struct WeaponBlueprint {
     material_type: MaterialType,
     name : String,
     symbol : Symbol, // TODO allow using the colour for 'special' weapons?
-    weight : i32,
+    weight : f32,
     value : i32,
     equipment_slot: Option<EquipmentSlot>
 }
@@ -43,7 +43,29 @@ impl WeaponBlueprint {
 
     pub fn new(material_type: MaterialType, item_form: ItemForm) -> Result<WeaponBlueprint, GenericError> {
         let material_strength = Self::determine_damage(material_type.clone())?;
-        let density_cm3 = &material_type.density_cm3();
+        let density_grams_cm3 = material_type.density_grams_cm3() as f32;
+
+        let weight_kg: f32 = match item_form.clone() {
+            ItemForm::SWORD(sword_type) => {
+                let dimensions_cm = sword_type.dimensions_cm();
+                let area_cm3 = dimensions_cm.area();
+                (density_grams_cm3 * area_cm3) / 1000.0
+            },
+            _ => {
+                // TODO
+                1.0
+            }
+        };
+
+        let name = match item_form.clone() {
+            ItemForm::SWORD(sword_type) => {
+                 format!("{} {} Sword", &material_type.name(), sword_type.name())
+            }
+            _ => {
+                "".to_string() // Default to empty name
+            }
+        };
+
         Ok(WeaponBlueprint {
             weapon: Weapon {
                 damage: material_strength
@@ -51,12 +73,50 @@ impl WeaponBlueprint {
             item_type: ItemType::ITEM,
             item_form,
             material_type,
-            name: "".to_string(), // Default to empty name
+            name,
             symbol: Symbol { character: '|', colour: Colour::White},
-            weight: 1,
+            weight: weight_kg,
             value: 1,
             equipment_slot: None
         })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SwordType {
+    ARMING,
+    LONG
+}
+
+impl SwordType {
+    pub fn name(&self) -> String {
+        return match self {
+            SwordType::ARMING => {
+                 String::from("Arming")
+            },
+            SwordType::LONG => {
+                 String::from("Long")
+            }
+        }
+    }
+
+    pub fn dimensions_cm(&self) -> Dimensions {
+        return match self {
+            SwordType::ARMING => {
+                Dimensions {
+                    height: 0.4, // ~4mm blade thickness
+                    width: 4.5, // ~45mm blade width
+                    length: 97.0, // ~97cm total length
+                }
+            },
+            SwordType::LONG => {
+                Dimensions {
+                    height: 0.4, // ~4mm blade thickness
+                    width: 4.5, // ~45mm blade width
+                    length: 110.0, // 110cm total length
+                }
+            }
+        }
     }
 }
 
@@ -72,5 +132,26 @@ impl WeaponBuilder {
     pub fn build(&self) -> Item {
         let blueprint = &self.blueprint;
         Item::weapon(Uuid::new_v4(), blueprint.name.clone(), ItemForm::OTHER(blueprint.name.clone()), blueprint.material_type.clone(), blueprint.symbol.character.clone(), blueprint.weight.clone(), blueprint.value.clone(), blueprint.weapon.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::map::objects::items::{ItemForm, ItemType, MaterialType, Weapon};
+    use crate::map::objects::weapon_builder::{SwordType, WeaponBlueprint, WeaponBuilder};
+
+    #[test]
+    pub fn test_build_arming_sword() {
+        // GIVEN a builder with the relevant blueprint for a Steel Arming Sword
+        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::SWORD(SwordType::ARMING)).unwrap();
+        let builder = WeaponBuilder::new(blueprint);
+
+        // WHEN we call to build the item
+        let weapon = builder.build();
+
+        assert_eq!(ItemType::WEAPON(Weapon { damage: 30}), weapon.item_type);
+        assert_eq!("Steel Arming Sword", weapon.get_name());
+        // Weight in Kilograms
+        assert_eq!(1.3968, weapon.weight);
     }
 }

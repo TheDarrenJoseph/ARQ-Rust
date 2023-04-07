@@ -180,10 +180,10 @@ mod tests {
     #[test]
     fn test_describe_position_container() {
         // GIVEN a valid a container (AREA) containing 3 OBJECT containers
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         container.push(vec![container1, container2, container3]);
         assert_eq!(3, container.get_total_count());
 
@@ -198,8 +198,8 @@ mod tests {
     #[test]
     fn test_describe_position_container_single_item() {
         // GIVEN a valid a container (AREA) containing 1 ITEM
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let item =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 100);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let item =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 100);
         container.push(vec![item]);
         assert_eq!(1, container.get_total_count());
 
@@ -214,10 +214,10 @@ mod tests {
     #[test]
     fn test_describe_position_container_multi_item() {
         // GIVEN a valid a container (AREA) containing 3 ITEMs
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let item1 =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
-        let item2 =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
-        let item3 =  build(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let item1 =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 1);
+        let item2 =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 1);
+        let item3 =  build(Uuid::new_v4(), "Bronze Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 1);
         container.push(vec![item1, item2, item3]);
         assert_eq!(3, container.get_total_count());
 
@@ -232,8 +232,8 @@ mod tests {
     #[test]
     fn test_describe_position_container_object() {
         // GIVEN a valid a container (AREA) containing an object
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
         container.push(vec![bag]);
         assert_eq!(1, container.get_total_count());
 
@@ -248,9 +248,9 @@ mod tests {
     #[test]
     fn test_describe_position_container_multi_object() {
         // GIVEN a valid a container (AREA) containing 2 OBJECTs
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
-        let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
+        let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
         container.push(vec![bag, box1]);
         assert_eq!(2, container.get_total_count());
 
@@ -265,11 +265,11 @@ mod tests {
     #[test]
     fn test_describe_position_container_mixed() {
         // GIVEN a valid a container (AREA) containing 4 mixed containers
-        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
-        let gold_bar =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
-        let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
-        let silver_bar =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1, 1,  ContainerType::ITEM, 1);
+        let mut container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
+        let gold_bar =  build(Uuid::new_v4(), "Gold Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 1);
+        let box1 =  build(Uuid::new_v4(), "Box".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
+        let silver_bar =  build(Uuid::new_v4(), "Silver Bar".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 1);
 
         container.push(vec![bag, gold_bar, box1, silver_bar]);
         assert_eq!(4, container.get_total_count());
@@ -286,10 +286,10 @@ mod tests {
     fn test_describe_room_position_multiple_items() {
         // GIVEN a valid map
         // that holds a container (AREA) containing 3 OBJECT containers
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
 
@@ -309,10 +309,10 @@ mod tests {
     fn test_describe_area_multiple_items() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing 3 OBJECT containers
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
-        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let container1 =  build(Uuid::new_v4(), "Test Container 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container2 =  build(Uuid::new_v4(), "Test Container 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let container3 =  build(Uuid::new_v4(), "Test Container 3".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![container1, container2, container3]);
         assert_eq!(3, source_container.get_total_count());
 
@@ -332,8 +332,8 @@ mod tests {
     fn test_describe_area_single_item() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing 1 OBJECT container
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
         assert_eq!(1, source_container.get_total_count());
         let _source = source_container.clone();
@@ -352,11 +352,11 @@ mod tests {
     fn test_describe_area_chest() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing 1 OBJECT container with contents of it's own
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let mut chest =  build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 10);
-        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
-        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 1);
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let mut chest =  build(Uuid::new_v4(), "Chest".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 10);
+        let item1 =  build(Uuid::new_v4(), "Test Item 1".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
+        let item2 =  build(Uuid::new_v4(), "Test Item 2".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 1);
 
         chest.push(vec![bag, item1, item2]);
         source_container.push(vec![chest]);
@@ -377,7 +377,7 @@ mod tests {
     fn test_describe_area_empty() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing nothing
-        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
+        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
         assert_eq!(0, source_container.get_total_count());
         let _source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
@@ -395,8 +395,8 @@ mod tests {
     fn test_describe_area_nothing() {
         // GIVEN a valid map
         // that holds a source container (AREA) containing 1 OBJECT container
-        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::AREA, 100);
-        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
+        let bag =  build(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         source_container.push(vec![bag]);
         assert_eq!(1, source_container.get_total_count());
         let _source = source_container.clone();
@@ -415,7 +415,7 @@ mod tests {
     fn test_describe_area_invalid_container_type() {
         // GIVEN a valid map
         // that holds a source container of an unsupported type (OBJECT)
-        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1, 1, ContainerType::OBJECT, 100);
+        let source_container =  build(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let container_pos =  Position { x: 1, y: 1};
         let mut level = build_test_level(container_pos, source_container);
 

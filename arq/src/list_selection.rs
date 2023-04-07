@@ -526,23 +526,23 @@ mod tests {
     use crate::map::objects::items::Item;
 
     fn build_item_series_4() -> Vec<Item> {
-        let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
-        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1, 1);
-        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1, 1);
-        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
+        let item = Item::with_defaults("Test Item 1".to_owned(),  1.0, 1);
+        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1.0, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1.0, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1.0, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
         items
     }
 
     fn build_item_series_8() -> Vec<Item> {
-        let item1 = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
-        let item2 = Item::with_defaults("Test Item 2".to_owned(),  1, 1);
-        let item3 = Item::with_defaults("Test Item 3".to_owned(), 1, 1);
-        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
-        let item5 = Item::with_defaults("Test Item 5".to_owned(),  1, 1);
-        let item6 = Item::with_defaults("Test Item 6".to_owned(),  1, 1);
-        let item7 = Item::with_defaults("Test Item 7".to_owned(),  1, 1);
-        let item8 = Item::with_defaults("Test Item 8".to_owned(),  1, 1);
+        let item1 = Item::with_defaults("Test Item 1".to_owned(),  1.0, 1);
+        let item2 = Item::with_defaults("Test Item 2".to_owned(),  1.0, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(), 1.0, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1.0, 1);
+        let item5 = Item::with_defaults("Test Item 5".to_owned(),  1.0, 1);
+        let item6 = Item::with_defaults("Test Item 6".to_owned(),  1.0, 1);
+        let item7 = Item::with_defaults("Test Item 7".to_owned(),  1.0, 1);
+        let item8 = Item::with_defaults("Test Item 8".to_owned(),  1.0, 1);
         vec! [ item1.clone(), item2.clone(), item3.clone(), item4.clone(), item5.clone(), item6.clone(), item7.clone(), item8.clone()  ]
     }
 
@@ -572,10 +572,10 @@ mod tests {
     #[test]
     fn test_multi_page_count() {
         // GIVEN a series of items to select from
-        let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
-        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1, 1);
-        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1, 1);
-        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1, 1);
+        let item = Item::with_defaults("Test Item 1".to_owned(),  1.0, 1);
+        let item2 = Item::with_defaults( "Test Item 2".to_owned(), 1.0, 1);
+        let item3 = Item::with_defaults("Test Item 3".to_owned(),  1.0, 1);
+        let item4 = Item::with_defaults("Test Item 4".to_owned(), 1.0, 1);
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items with a line count of 2 items per page
@@ -590,7 +590,7 @@ mod tests {
         // GIVEN a series of 60 items to select from
         let mut items = Vec::new();
         for _i in 1..=60 {
-            let item = Item::with_defaults("Test Item 1".to_owned(),  1, 1);
+            let item = Item::with_defaults("Test Item 1".to_owned(),  1.0, 1);
             items.push(item);
         }
 

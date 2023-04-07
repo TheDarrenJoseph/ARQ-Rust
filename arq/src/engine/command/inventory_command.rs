@@ -238,6 +238,7 @@ mod tests {
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
+    use crate::map::objects::weapon_builder::SwordType;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
     use crate::map::Tiles;
@@ -249,17 +250,17 @@ mod tests {
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
-        let mut container =  build(id, "Test Container".to_owned(), 'X', 1, 1,  ContainerType::OBJECT, 100);
+        let mut container =  build(id, "Test Container".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
         assert_eq!('X', container_self_item.symbol.character);
         assert_eq!(Colour::White, container_self_item.symbol.colour);
-        assert_eq!(1, container_self_item.weight);
+        assert_eq!(1.0, container_self_item.weight);
         assert_eq!(1, container_self_item.value);
 
         for i in 1..=4 {
-            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
+            let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
             container.add_item(test_item);
         }
 
@@ -299,7 +300,7 @@ mod tests {
     #[test]
     fn test_drop_callback() {
         // GIVEN a valid map with an area container to drop items into
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback with some of the items in the container
@@ -335,7 +336,7 @@ mod tests {
     #[test]
     fn test_drop_callback_too_many_items() {
         // GIVEN a valid map with an area container to drop items into
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback with too many items to fit in the current area container (3 with space for 2)
@@ -373,7 +374,7 @@ mod tests {
     #[test]
     fn test_drop_callback_zero_weightlimit() {
         // GIVEN a valid map with an area container to drop items into (with a zero weightlimit)
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 0);
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 0);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback
@@ -409,12 +410,12 @@ mod tests {
     #[test]
     fn test_equip_callback() {
         // GIVEN a valid callback state
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD,MaterialType::STEEL, 'X', 3, 50, Weapon { damage: 10 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING),MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 10 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 
@@ -447,12 +448,12 @@ mod tests {
     #[test]
     fn test_equip_items() {
         // GIVEN a valid callback state
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0, 0,  ContainerType::AREA, 2);
+        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let mut player = level.characters.get_player_mut().unwrap();
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD, MaterialType::STEEL, 'X', 3, 50, Weapon { damage: 20 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 
