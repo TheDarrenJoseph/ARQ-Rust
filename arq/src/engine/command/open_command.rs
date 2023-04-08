@@ -204,7 +204,7 @@ mod tests {
 
     use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
-    use crate::character::characters::{build_characters, build_default_characters, Characters};
+    use crate::character::characters::{build_characters, Characters};
     use crate::engine::command::open_command::{handle_callback};
     use crate::engine::level::{Level};
 

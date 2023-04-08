@@ -12,14 +12,6 @@ pub fn build_empty_characters() -> Characters {
     return Characters { player: None, npcs: Vec::new() };
 }
 
-pub fn build_default_characters() -> Characters {
-    let position = Position { x: 1, y: 1};
-    let player =  CharacterBuilder::new(CharacterPattern::new_player())
-        .position(position)
-        .build(String::from("Player"));
-    return Characters { player: Some(player), npcs: Vec::new() };
-}
-
 pub fn build_characters(player: Option<Character>, npcs: Vec<Character>) -> Characters {
     return Characters { player, npcs };
 }

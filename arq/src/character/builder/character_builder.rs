@@ -3,12 +3,13 @@ use crate::character::{Character, Class, Race};
 use crate::character::builder::character_builder::CharacterType::{GoblinWarrior, NewPlayer};
 use crate::character::character_details::{build_default_character_details, CharacterDetails};
 use crate::character::equipment::Equipment;
+use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
 use crate::map::map_generator::build_dev_player_inventory;
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
-use crate::map::objects::weapon_builder::SwordType;
+use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};
 
@@ -32,25 +33,40 @@ pub struct CharacterPattern {
 impl CharacterPattern {
     pub fn new_player() -> CharacterPattern {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
 
-        let inventory = build_dev_player_inventory();
+        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::ARMING)).unwrap();
+        let weapon_builder = WeaponBuilder::new(blueprint);
+        let sword = weapon_builder.build();
+        let equipped_sword = Container::wrap(sword.clone());
+        let mut equipment = Equipment::new();
+        equipment.equip(equipped_sword, PRIMARY);
+
+        let mut inventory = build_dev_player_inventory();
+        inventory.add_item(sword);
+
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Human, Class::None, 0, 6, 6, attributes),
             position: None,
             symbol: Symbol::new('@', Colour::Green),
             health: 100,
             inventory,
-            equipment: Equipment::new()
+            equipment
         };
 
         CharacterPattern { character_type: NewPlayer, blueprint }
     }
 
     pub fn goblin() -> CharacterPattern {
-        //let steel_short_sword = items::build_weapon(Uuid::new_v4(), "Steel Short Sword".to_owned(), 'X', 3, 50);
+        let blueprint = WeaponBlueprint::new(MaterialType::IRON, ItemForm::BLADED(BladedWeaponType::DAGGER)).unwrap();
+        let weapon_builder = WeaponBuilder::new(blueprint);
+        let dagger = weapon_builder.build();
+        let equipped_dagger = Container::wrap(dagger.clone());
+        let mut equipment = Equipment::new();
+        equipment.equip(equipped_dagger, PRIMARY);
 
-        let inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let mut inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        inventory.add_item(dagger);
+
         let attributes: Vec<AttributeScore> = AttributeScores::all_at_value(2).scores;
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Goblin, Class::Warrior, 1, 3, 0, attributes),
@@ -58,7 +74,7 @@ impl CharacterPattern {
             symbol: Symbol::new('g', Colour::Green),
             health: 80,
             inventory,
-            equipment: Equipment::new()
+            equipment
         };
 
         CharacterPattern { character_type: GoblinWarrior, blueprint }
@@ -115,7 +131,8 @@ impl CharacterBuilder {
         };
 
         let equipment = &blueprint.equipment;
-        return Character::new_detailed(character_name, position, details.clone(), symbol.clone(), health, inventory.clone(), equipment.clone())
+        let character = Character::new_detailed(character_name, position, details.clone(), symbol.clone(), health, inventory.clone(), equipment.clone());
+        return character;
     }
 }
 
@@ -123,6 +140,7 @@ impl CharacterBuilder {
 mod tests {
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern, DEFAULT_POSITION};
     use crate::character::{Class, Race};
+    use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::character::stats::attributes::{AttributeScore, AttributeScores};
     use crate::map::tile::Colour;
 
@@ -161,10 +179,13 @@ mod tests {
         assert_eq!(DEFAULT_POSITION, character.position);
 
         let inventory = character.get_inventory_mut();
-        assert_eq!(61, inventory.get_contents().len());
+        assert_eq!(62, inventory.get_contents().len());
 
         let equipment = character.get_equipment_mut();
-        assert_eq!(0, equipment.get_slots().len())
+        assert_eq!(1, equipment.get_slots().len());
+
+        let primary_weapon = equipment.get_item(PRIMARY).unwrap();
+        assert_eq!("Steel Arming Sword", primary_weapon.get_name());
     }
 
     #[test]
@@ -193,9 +214,12 @@ mod tests {
         assert_eq!(DEFAULT_POSITION, character.position);
 
         let inventory = character.get_inventory_mut();
-        assert_eq!(0, inventory.get_contents().len());
+        assert_eq!(1, inventory.get_contents().len());
 
         let equipment = character.get_equipment_mut();
-        assert_eq!(0, equipment.get_slots().len())
+        assert_eq!(1, equipment.get_slots().len());
+
+        let primary_weapon = equipment.get_item(PRIMARY).unwrap();
+        assert_eq!("Iron Dagger", primary_weapon.get_name());
     }
 }

@@ -238,7 +238,7 @@ mod tests {
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
-    use crate::map::objects::weapon_builder::SwordType;
+    use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Tile};
     use crate::map::Tiles;
@@ -413,9 +413,11 @@ mod tests {
         let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let mut player = level.characters.get_player_mut().unwrap();
+        // AND the player has nothing equipped in the PRIMARY slot
+        player.get_equipment_mut().unequip(PRIMARY);
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING),MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 10 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 10 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 
@@ -451,9 +453,11 @@ mod tests {
         let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let mut player = level.characters.get_player_mut().unwrap();
+        // AND the player has nothing equipped in the PRIMARY slot
+        player.get_equipment_mut().unequip(PRIMARY);
 
         // AND an item that can be equipped that's inside the player's inventory
-        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
+        let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
         // AND this item should have no equipment slot set so far
         assert_eq!(None, steel_sword.get_equipment_slot());
 

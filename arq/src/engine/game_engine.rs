@@ -26,7 +26,7 @@ use tui::widgets::Gauge;
 use futures::FutureExt;
 
 use crate::character::Character;
-use crate::character::characters::{build_characters, build_default_characters, Characters};
+use crate::character::characters::{build_characters, Characters};
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;

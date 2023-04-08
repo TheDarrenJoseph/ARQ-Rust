@@ -72,6 +72,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
 
         // Player equipment area is the area within the left side window, adjust to fit
         let mut enemy_equipment_area = right_side_area.to_rect().clone();
+        enemy_equipment_area.x += 1;
         enemy_equipment_area.y += 1;
         enemy_equipment_area.height -= 1;
         let enemy_equipment_list = list_equipment(enemy_equipment);

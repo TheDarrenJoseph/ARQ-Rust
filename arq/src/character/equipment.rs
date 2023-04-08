@@ -107,10 +107,10 @@ mod tests {
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::{container, items};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
-    use crate::map::objects::weapon_builder::SwordType;
+    use crate::map::objects::weapon_builder::BladedWeaponType;
 
     fn build_test_weapon() -> Item {
-        Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 })
+        Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 })
     }
 
     #[test]
@@ -130,7 +130,7 @@ mod tests {
         // GIVEN an equipment
         // AND we've equipped an item into the PRIMARY slot
         let mut equipment = Equipment::new();
-        let steel_sword = Container::wrap(Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::SWORD(SwordType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 }));
+        let steel_sword = Container::wrap(Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 }));
 
         let equip_result = equipment.equip(steel_sword, PRIMARY);
         assert!(equip_result.is_ok());

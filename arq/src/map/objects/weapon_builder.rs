@@ -46,7 +46,7 @@ impl WeaponBlueprint {
         let density_grams_cm3 = material_type.density_grams_cm3() as f32;
 
         let weight_kg: f32 = match item_form.clone() {
-            ItemForm::SWORD(sword_type) => {
+            ItemForm::BLADED(sword_type) => {
                 let dimensions_cm = sword_type.dimensions_cm();
                 let area_cm3 = dimensions_cm.area();
                 (density_grams_cm3 * area_cm3) / 1000.0
@@ -58,8 +58,8 @@ impl WeaponBlueprint {
         };
 
         let name = match item_form.clone() {
-            ItemForm::SWORD(sword_type) => {
-                 format!("{} {} Sword", &material_type.name(), sword_type.name())
+            ItemForm::BLADED(sword_type) => {
+                 format!("{} {}", &material_type.name(), sword_type.name())
             }
             _ => {
                 "".to_string() // Default to empty name
@@ -83,33 +83,44 @@ impl WeaponBlueprint {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum SwordType {
+pub enum BladedWeaponType {
+    DAGGER,
     ARMING,
     LONG
 }
 
-impl SwordType {
+impl BladedWeaponType {
     pub fn name(&self) -> String {
         return match self {
-            SwordType::ARMING => {
-                 String::from("Arming")
+            BladedWeaponType::DAGGER => {
+                String::from("Dagger")
             },
-            SwordType::LONG => {
-                 String::from("Long")
+            BladedWeaponType::ARMING => {
+                 String::from("Arming Sword")
+            },
+            BladedWeaponType::LONG => {
+                 String::from("Longsword")
             }
         }
     }
 
     pub fn dimensions_cm(&self) -> Dimensions {
         return match self {
-            SwordType::ARMING => {
+            BladedWeaponType::DAGGER => {
+                Dimensions {
+                    height: 0.4, // ~4mm blade thickness
+                    width: 2.4, // ~24mm blade width
+                    length: 43.0,
+                }
+            },
+            BladedWeaponType::ARMING => {
                 Dimensions {
                     height: 0.4, // ~4mm blade thickness
                     width: 4.5, // ~45mm blade width
                     length: 97.0, // ~97cm total length
                 }
             },
-            SwordType::LONG => {
+            BladedWeaponType::LONG => {
                 Dimensions {
                     height: 0.4, // ~4mm blade thickness
                     width: 4.5, // ~45mm blade width
@@ -138,12 +149,27 @@ impl WeaponBuilder {
 #[cfg(test)]
 mod tests {
     use crate::map::objects::items::{ItemForm, ItemType, MaterialType, Weapon};
-    use crate::map::objects::weapon_builder::{SwordType, WeaponBlueprint, WeaponBuilder};
+    use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
 
     #[test]
-    pub fn test_build_arming_sword() {
+    pub fn test_build_steel_dagger() {
+        // GIVEN a builder with the relevant blueprint for a Steel Dagger
+        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::DAGGER)).unwrap();
+        let builder = WeaponBuilder::new(blueprint);
+
+        // WHEN we call to build the item
+        let weapon = builder.build();
+
+        assert_eq!(ItemType::WEAPON(Weapon { damage: 30}), weapon.item_type);
+        assert_eq!("Steel Dagger", weapon.get_name());
+        // Weight in Kilograms
+        assert_eq!(0.33024, weapon.weight);
+    }
+
+    #[test]
+    pub fn test_build_steel_arming_sword() {
         // GIVEN a builder with the relevant blueprint for a Steel Arming Sword
-        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::SWORD(SwordType::ARMING)).unwrap();
+        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::ARMING)).unwrap();
         let builder = WeaponBuilder::new(blueprint);
 
         // WHEN we call to build the item
@@ -153,5 +179,20 @@ mod tests {
         assert_eq!("Steel Arming Sword", weapon.get_name());
         // Weight in Kilograms
         assert_eq!(1.3968, weapon.weight);
+    }
+
+    #[test]
+    pub fn test_build_steel_long_sword() {
+        // GIVEN a builder with the relevant blueprint for a Steel Long Sword
+        let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::LONG)).unwrap();
+        let builder = WeaponBuilder::new(blueprint);
+
+        // WHEN we call to build the item
+        let weapon = builder.build();
+
+        assert_eq!(ItemType::WEAPON(Weapon { damage: 30}), weapon.item_type);
+        assert_eq!("Steel Longsword", weapon.get_name());
+        // Weight in Kilograms
+        assert_eq!(1.5840001, weapon.weight);
     }
 }

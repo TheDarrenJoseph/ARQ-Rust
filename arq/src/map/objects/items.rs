@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
 use crate::map::objects::items::MaterialType::UNKNOWN;
-use crate::map::objects::weapon_builder::SwordType;
+use crate::map::objects::weapon_builder::BladedWeaponType;
 
 use crate::map::tile::{Colour, Symbol};
 
@@ -85,7 +85,7 @@ impl MaterialType {
 pub enum ItemForm {
     COIN,
     BAR,
-    SWORD(SwordType),
+    BLADED(BladedWeaponType),
     OTHER(String)
 }
 
@@ -94,7 +94,7 @@ impl ItemForm {
         return match self {
             ItemForm::COIN => { String::from("Coin") }
             ItemForm::BAR => { String::from("Bar") }
-            ItemForm::SWORD(_swordType) => { String::from("Sword") }
+            ItemForm::BLADED(_swordType) => { String::from("Sword") }
             ItemForm::OTHER(description) => { description }
         }
     }
@@ -119,6 +119,7 @@ pub struct Item {
     pub item_type: ItemType,
     item_form: ItemForm,
     material_type: MaterialType,
+    // TODO add Dimensions once we have standardised item building
     name : String,
     pub symbol : Symbol,
     pub weight : f32, // weight in Kilograms
