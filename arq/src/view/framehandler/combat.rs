@@ -1,15 +1,50 @@
 use tui::Frame;
+use tui::layout::{Alignment, Rect};
 use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans};
+use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use crate::character::battle::Battle;
-use crate::character::equipment::Equipment;
+use crate::character::equipment::{Equipment, EquipmentSlot};
+use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::ui::ui_areas::UIAreas;
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::framehandler::util::tabling::Column;
 
 pub struct CombatFrameHandler {
-    pub areas : Option<UIAreas>
+    pub(crate) areas : Option<UIAreas>,
+    pub selection: OptionListSelection
+}
+
+impl CombatFrameHandler {
+    pub fn new() -> CombatFrameHandler {
+        CombatFrameHandler { areas: None, selection: OptionListSelection {
+            options: vec![],
+            index: 0
+        }}
+    }
+
+    fn build_options(&self, equipment: Equipment) -> Vec<Column> {
+        let mut columns = Vec::new();
+
+        let slots = equipment.get_slots();
+        if slots.contains_key(&EquipmentSlot::PRIMARY) {
+            columns.push(Column { name: String::from("Attack (Primary)"), size: 16});
+        }
+
+        if slots.contains_key(&EquipmentSlot::SECONDARY) {
+            columns.push(Column { name: String::from("Attack (Secondary)"), size: 18});
+        }
+
+        columns.push(Column { name: String::from("Flee"), size: 4});
+
+        return columns;
+    }
+}
+
+pub struct OptionListSelection {
+    pub options: Vec<Column>,
+    pub index: u16
 }
 
 fn list_equipment(equipment: Equipment) -> Paragraph<'static> {
@@ -27,6 +62,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let mut characters = battle.characters;
         let player = characters.get_player_mut().unwrap();
         let player_equipment = player.get_equipment_mut().clone();
+
+        if self.selection.options.len() == 0 {
+            self.selection = OptionListSelection { options: self.build_options(player_equipment.clone()), index: 0 };
+        }
+
         let player_name = player.get_name().clone();
         let player_equipment_slots = player_equipment.get_slots();
 
@@ -82,6 +122,27 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let console_area = self.areas.as_ref().unwrap().get_console_area().unwrap();
         let console_window_block = Block::default()
             .borders(Borders::ALL);
+
+        let highlighted_option = self.selection.index;
+        let mut i = 0;
+
+        let largest_option_length = self.selection.options.iter().max_by_key(|o| o.size).unwrap().size.clone() as u16;
+        for option in &self.selection.options {
+            let mut style = Style::default();
+            if i == highlighted_option {
+                style = style.add_modifier(Modifier::REVERSED);
+            }
+
+            let paragraph = Paragraph::new(Text::from(option.name.clone()))
+                .style(style)
+                .alignment(Alignment::Left);
+
+            let offset_y = i + 1;
+            let text_area = Rect::new(console_area.x.clone() + 1, console_area.y.clone() + offset_y, largest_option_length, 1);
+            frame.render_widget(paragraph, text_area);
+            i += 1;
+        }
+
         frame.render_widget(console_window_block, console_area);
     }
 }

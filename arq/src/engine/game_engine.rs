@@ -524,7 +524,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                 npcs.push(characters.get_npcs().first().unwrap().clone());
                 let battle_characters = build_characters(Some(player), npcs);
                 let battle = Battle { characters: battle_characters , in_progress: true };
-                let frame_handler = CombatFrameHandler { areas: None };
+                let frame_handler = CombatFrameHandler::new();
                 let mut combat_view = CombatView { ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager, battle, frame_handler };
 
                 combat_view.begin();

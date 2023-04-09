@@ -75,6 +75,22 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
         let key = resolve_input(input)?;
         match key {
+            Key::Up => {
+                let index = self.frame_handler.selection.index;
+                let option_count = self.frame_handler.selection.options.len();
+                if option_count > 0 && index > 0 {
+                    self.frame_handler.selection.index -= 1;
+                }
+                return Ok(self.build_input_not_done_result());
+            },
+            Key::Down => {
+                let index = self.frame_handler.selection.index;
+                let option_count = self.frame_handler.selection.options.len();
+                if option_count > 0 && index < option_count as u16 - 1 {
+                    self.frame_handler.selection.index += 1;
+                }
+                return Ok(self.build_input_not_done_result());
+            }
             Key::Esc => {
                 return Ok(self.build_input_done_result());
             },
