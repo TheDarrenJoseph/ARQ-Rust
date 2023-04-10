@@ -71,7 +71,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenu<'_, COM> {
         let menu_view = &mut self.menu;
         let key = resolve_input(input)?;
         let mut target_widget = None;
-        match menu_view.widgets.selected_widget {
+        match menu_view.widgets.widget_index {
             Some(idx) => {
                 target_widget = Some(&mut menu_view.widgets.widgets[idx as usize]);
             },

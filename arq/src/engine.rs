@@ -4,3 +4,4 @@ pub mod level;
 pub mod command;
 pub mod container_util;
 pub mod process;
+pub mod combat;

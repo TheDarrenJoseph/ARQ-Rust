@@ -1,3 +1,4 @@
+use std::io;
 use std::io::Error;
 use termion::event::Key;
 use tui::layout::Rect;
@@ -5,18 +6,38 @@ use tui::style::{Color, Modifier, Style};
 use tui::text::Span;
 use tui::widgets::{Block, Borders};
 use crate::character::battle::Battle;
+use crate::character::equipment::{EquipmentSlot, WeaponSlot};
 use crate::map::position::{Area, build_rectangular_area, Position, start_position_from_rect};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::UI;
+use crate::ui::ui::{get_input_key, UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::framehandler::combat::CombatFrameHandler;
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::util::callback::Callback;
+use crate::engine::combat::CombatTurnChoice;
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
-    pub ui : &'a mut UI,
-    pub terminal_manager : &'a mut TerminalManager<B>,
-    pub battle : Battle,
-    pub frame_handler : CombatFrameHandler
+    ui : &'a mut UI,
+    terminal_manager : &'a mut TerminalManager<B>,
+    battle : Battle,
+    frame_handler : CombatFrameHandler,
+    callback : Box<dyn FnMut(CombatCallbackData) -> Option<CombatCallbackData> + 'a>
+}
+
+impl <B: tui::backend::Backend> CombatView<'_, B> {
+    pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, battle: Battle) -> CombatView<'a, B> {
+        let frame_handler = CombatFrameHandler::new();
+        let callback = Box::new(|_data| {None});
+        CombatView { ui, terminal_manager, battle, frame_handler, callback }
+    }
+
+    fn re_render(&mut self) -> Result<(), io::Error>  {
+        let ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(frame);
+        })?;
+        Ok(())
+    }
 }
 
 impl <B : tui::backend::Backend> CombatView<'_, B> {
@@ -90,13 +111,61 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
                     self.frame_handler.selection.index += 1;
                 }
                 return Ok(self.build_input_not_done_result());
-            }
+            },
+            // Enter key
+            Key::Char('\n') => {
+                let selection = &self.frame_handler.selection;
+                let option_chosen = selection.options.get(selection.index as usize).unwrap().clone();
+
+                let data = CombatCallbackData { choice: CombatTurnChoice::ATTACK(WeaponSlot::PRIMARY), result: None };
+                self.trigger_callback(data);
+
+                // TODO send-recieve battle turn option
+                return Ok(self.build_input_not_done_result());
+            },
             Key::Esc => {
                 return Ok(self.build_input_done_result());
             },
             _ => {
                 return Ok(self.build_input_not_done_result());
             }
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct CombatCallbackData {
+    pub choice: CombatTurnChoice,
+    pub result: Option<CombatResult>
+}
+
+#[derive(Clone)]
+pub struct CombatResult {
+    pub(crate) messages: Vec<String>
+}
+
+impl <'a, B : tui::backend::Backend> Callback <'a, CombatCallbackData> for CombatView<'a, B>  {
+    fn set_callback(&mut self, callback: Box<impl FnMut(CombatCallbackData) -> Option<CombatCallbackData> + 'a>) {
+        self.callback = callback;
+    }
+
+    /*
+        Triggers a callback to handle the battle logic behind a given combat turn choice
+     */
+    fn trigger_callback(&mut self, data: CombatCallbackData) {
+        let result = (self.callback)(data);
+        self.handle_callback_result(result);
+    }
+
+    /*
+        Any information about the result of a battle action callback will be handled here
+     */
+    fn handle_callback_result(&mut self, data: Option<CombatCallbackData>) {
+        let result = data.unwrap().result.unwrap();
+        for message in result.messages {
+            // TODO either print and re-render here or in the frame handler
+            // self.ui.console_print(message);
+            // let keyc = get_input_key();
         }
     }
 }

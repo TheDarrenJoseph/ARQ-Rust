@@ -4,47 +4,41 @@ use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use crate::character::battle::Battle;
-use crate::character::equipment::{Equipment, EquipmentSlot};
+use crate::character::equipment::{Equipment, EquipmentSlot, WeaponSlot};
 use crate::character::equipment::EquipmentSlot::PRIMARY;
+use crate::engine::combat::CombatTurnChoice;
 use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::option_list_selection::{MappedOption, OptionListSelection};
 use crate::ui::ui_areas::UIAreas;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::tabling::Column;
 
 pub struct CombatFrameHandler {
     pub(crate) areas : Option<UIAreas>,
-    pub selection: OptionListSelection
+    pub selection: OptionListSelection<CombatTurnChoice>
 }
 
 impl CombatFrameHandler {
     pub fn new() -> CombatFrameHandler {
-        CombatFrameHandler { areas: None, selection: OptionListSelection {
-            options: vec![],
-            index: 0
-        }}
+        CombatFrameHandler { areas: None, selection: OptionListSelection::new() }
     }
 
-    fn build_options(&self, equipment: Equipment) -> Vec<Column> {
-        let mut columns = Vec::new();
+    fn build_options(&self, equipment: Equipment) -> Vec<MappedOption<CombatTurnChoice>> {
+        let mut choices = Vec::new();
 
         let slots = equipment.get_slots();
         if slots.contains_key(&EquipmentSlot::PRIMARY) {
-            columns.push(Column { name: String::from("Attack (Primary)"), size: 16});
+            choices.push(MappedOption { mapped: CombatTurnChoice::ATTACK(WeaponSlot::PRIMARY), name: String::from("Attack (Primary)"), size: 16});
         }
 
         if slots.contains_key(&EquipmentSlot::SECONDARY) {
-            columns.push(Column { name: String::from("Attack (Secondary)"), size: 18});
+            choices.push(MappedOption {  mapped: CombatTurnChoice::ATTACK(WeaponSlot::SECONDARY), name: String::from("Attack (Secondary)"), size: 18});
         }
 
-        columns.push(Column { name: String::from("Flee"), size: 4});
+        choices.push(MappedOption { mapped: CombatTurnChoice::FLEE, name: String::from("Flee"), size: 4});
 
-        return columns;
+        return choices;
     }
-}
-
-pub struct OptionListSelection {
-    pub options: Vec<Column>,
-    pub index: u16
 }
 
 fn list_equipment(equipment: Equipment) -> Paragraph<'static> {

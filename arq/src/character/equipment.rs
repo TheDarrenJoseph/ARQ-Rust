@@ -18,6 +18,21 @@ pub enum EquipmentSlot {
     SECONDARY,
 }
 
+#[derive(Clone)]
+pub enum WeaponSlot {
+    PRIMARY,
+    SECONDARY
+}
+
+impl WeaponSlot {
+    pub fn to_equipment_slot(&self) -> EquipmentSlot {
+        match self {
+            WeaponSlot::PRIMARY => { EquipmentSlot::PRIMARY },
+            WeaponSlot::SECONDARY => { EquipmentSlot::SECONDARY }
+        }
+    }
+}
+
 impl Display for EquipmentSlot {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         Debug::fmt(self, f)

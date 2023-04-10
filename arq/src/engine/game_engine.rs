@@ -44,6 +44,7 @@ use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound, widget};
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
+use crate::engine::combat::Combat;
 use crate::map::Map;
 use crate::menu::Selection;
 use crate::progress::StepProgress;
@@ -76,7 +77,9 @@ use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
+use crate::view::util::callback::Callback;
 use crate::view::util::progress_display::ProgressDisplay;
+use crate::view::util::callback::CallbackHandler;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
@@ -220,7 +223,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                             terminal_manager: &mut self.ui_wrapper.terminal_manager,
                             menu: WidgetMenu {
                                 selected_widget: Some(0),
-                                widgets: WidgetList { widgets, selected_widget: Some(0) }
+                                widgets: WidgetList { widgets, widget_index: Some(0) }
                             }
                         };
 
@@ -509,6 +512,27 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         Ok(None)
     }
 
+    fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, io::Error>  {
+        let level = self.levels.get_level_mut();
+
+        let characters = &level.characters;
+        let player = characters.get_player().unwrap().clone();
+        let mut npcs = Vec::new();
+        npcs.push(characters.get_npcs().first().unwrap().clone());
+        let battle_characters = build_characters(Some(player), npcs);
+        let battle = Battle { characters: battle_characters , in_progress: true };
+
+        let view_battle = battle.clone();
+        let mut combat = Combat { battle };
+
+        let mut combat_view = CombatView::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, view_battle);
+        combat_view.set_callback(Box::new(|data| {
+            combat.handle_callback(data)
+        }));
+        combat_view.begin();
+        Ok(None)
+    }
+
     pub async fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
         let level = self.levels.get_level_mut();
         match key {
@@ -518,16 +542,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                 }
             },
             Key::Char('c') => {
-                let characters = &level.characters;
-                let player = characters.get_player().unwrap().clone();
-                let mut npcs = Vec::new();
-                npcs.push(characters.get_npcs().first().unwrap().clone());
-                let battle_characters = build_characters(Some(player), npcs);
-                let battle = Battle { characters: battle_characters , in_progress: true };
-                let frame_handler = CombatFrameHandler::new();
-                let mut combat_view = CombatView { ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager, battle, frame_handler };
-
-                combat_view.begin();
+                self.begin_combat();
             },
             Key::Char('i') => {
                 let mut command = InventoryCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };

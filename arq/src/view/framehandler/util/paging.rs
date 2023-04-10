@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use tui::layout::Rect;
 use tui::widgets::Paragraph;
-use crate::list_selection::{ItemListSelection, ListSelection};
+use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::view::framehandler::util::tabling::build_paragraph;
 

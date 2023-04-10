@@ -12,7 +12,7 @@ use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
 use crate::character::{Character};
-use crate::list_selection::ListSelection;
+use crate::item_list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
@@ -75,7 +75,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
-        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), selected_widget: None }, view_mode: ViewMode::VIEW };
+        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW };
         self.frame_handler.character_view = Some(character_view);
     }
 
@@ -110,68 +110,6 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
             if let Some(idx) = target_index {
                 if let Some(tab_choice) = TabChoice::iterator().nth(idx) {
                     self.frame_handler.tab_choice = tab_choice.clone();
-                }
-            }
-        }
-    }
-
-    fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
-        if let Some(r) = result {
-            match r {
-                ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
-                    if !data.choices.is_empty() {
-                        let choices = data.choices.clone();
-                        let mut items = Vec::new();
-                        for c in &choices {
-                            items.push(c.get_self_item().clone());
-                        }
-                        let cfh = build(choices);
-                        self.frame_handler.choice_frame_handler = Some(cfh);
-                    }
-                },
-                ContainerFrameHandlerInputResult::MoveItems(ref data) => {
-
-                    if data.target_container.is_some() {
-                        // if target_container is the root view container
-                        let root_container = self.frame_handler.container_frame_handlers.first().map(|top_cv| top_cv.container.clone()).unwrap();
-                        let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
-                        let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
-                        // Target is the topmost container, so we're forced to rebuild everything
-                        if target_is_root {
-                            // Drain all after the first
-                            self.frame_handler.container_frame_handlers.drain(1..);
-                            // Then rebuild the remaining (root container) view
-                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
-                                topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
-                            }
-                        } else {
-                            // i.e moving to a parent container that isn't the root
-                            if !target_in_source {
-                                // Rebuild that specific container view
-                                if let Some(cv) = self.frame_handler.container_frame_handlers.iter_mut()
-                                    .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
-                                    cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
-                                }
-                            }
-
-                            // Ensure the current view updates
-                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
-                                topmost_view.handle_callback_result(r);
-                            }
-                        }
-                    } else {
-                        for fh in &mut self.frame_handler.container_frame_handlers {
-                            if fh.container.id_equals(&data.source) {
-                                fh.handle_callback_result(r.clone())
-                            }
-                        }
-                    }
-                }
-                _ => {
-                    // Find source view and update it
-                    if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
-                        topmost_view.handle_callback_result(r);
-                    }
                 }
             }
         }
@@ -278,6 +216,68 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     fn trigger_callback(&mut self, data: ContainerFrameHandlerInputResult) {
         let result = (self.callback)(data);
         self.handle_callback_result(result);
+    }
+
+    fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
+        if let Some(r) = result {
+            match r {
+                ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
+                    if !data.choices.is_empty() {
+                        let choices = data.choices.clone();
+                        let mut items = Vec::new();
+                        for c in &choices {
+                            items.push(c.get_self_item().clone());
+                        }
+                        let cfh = build(choices);
+                        self.frame_handler.choice_frame_handler = Some(cfh);
+                    }
+                },
+                ContainerFrameHandlerInputResult::MoveItems(ref data) => {
+
+                    if data.target_container.is_some() {
+                        // if target_container is the root view container
+                        let root_container = self.frame_handler.container_frame_handlers.first().map(|top_cv| top_cv.container.clone()).unwrap();
+                        let target_is_root = data.target_container.as_ref().map_or_else(|| false, |t| t.id_equals(&root_container));
+                        let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
+                        // Target is the topmost container, so we're forced to rebuild everything
+                        if target_is_root {
+                            // Drain all after the first
+                            self.frame_handler.container_frame_handlers.drain(1..);
+                            // Then rebuild the remaining (root container) view
+                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+                                topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                            }
+                        } else {
+                            // i.e moving to a parent container that isn't the root
+                            if !target_in_source {
+                                // Rebuild that specific container view
+                                if let Some(cv) = self.frame_handler.container_frame_handlers.iter_mut()
+                                    .find(|cv| cv.container.id_equals(&data.target_container.as_ref().unwrap())) {
+                                    cv.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
+                                }
+                            }
+
+                            // Ensure the current view updates
+                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+                                topmost_view.handle_callback_result(r);
+                            }
+                        }
+                    } else {
+                        for fh in &mut self.frame_handler.container_frame_handlers {
+                            if fh.container.id_equals(&data.source) {
+                                fh.handle_callback_result(r.clone())
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    // Find source view and update it
+                    if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+                        topmost_view.handle_callback_result(r);
+                    }
+                }
+            }
+        }
     }
 }
 

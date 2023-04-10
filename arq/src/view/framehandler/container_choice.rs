@@ -4,7 +4,7 @@ use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
-use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
+use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 
 use crate::view::framehandler::util::paging::build_page_count;

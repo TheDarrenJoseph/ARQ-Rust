@@ -31,7 +31,7 @@ pub enum GameOverChoice {
 
 pub fn build_game_over_menu<'a, B : tui::backend::Backend>(message: String, ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> GameOver<'a, B> {
     GameOver { message, ui, terminal_manager, widgets:
-    WidgetList { selected_widget: Some(0), widgets :
+    WidgetList { widget_index: Some(0), widgets :
         vec![ build_button(7, String::from("Restart")),
               build_button(7, String::from("Exit"))
         ]
@@ -98,7 +98,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
 impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<GameOverChoice>, Error> {
         let mut target_widget = None;
-        match self.widgets.selected_widget {
+        match self.widgets.widget_index {
             Some(idx) => {
                 target_widget = Some(&mut self.widgets.widgets[idx as usize]);
             },

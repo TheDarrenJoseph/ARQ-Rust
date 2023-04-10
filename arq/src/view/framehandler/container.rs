@@ -10,7 +10,7 @@ use tui::style::{Color, Modifier, Style};
 
 use tui::widgets::{Block, Borders};
 
-use crate::list_selection::{build_list_selection, ItemListSelection, ListSelection};
+use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
@@ -503,7 +503,7 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
-    use crate::list_selection::{ListSelection};
+    use crate::item_list_selection::{ListSelection};
     
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::items;

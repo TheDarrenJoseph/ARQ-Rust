@@ -86,7 +86,7 @@ impl CharacterFrameHandler {
             self.widgets.widgets.push(button);
         }
 
-        self.widgets.selected_widget = Some(0);
+        self.widgets.widget_index = Some(0);
         self.widgets.widgets[0].state_type.focus();
     }
 
@@ -283,7 +283,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets.widgets;
         let mut selected_widget = None;
-        match self.widgets.selected_widget {
+        match self.widgets.widget_index {
             Some(idx) => {
                 let widget = &mut widgets[idx as usize];
                 widget.state_type.focus();
