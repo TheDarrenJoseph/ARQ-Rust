@@ -2,7 +2,8 @@ use std::io::Error;
 use tui::Frame;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Gauge};
+use tui::text::{Span, Text};
+use tui::widgets::{Block, Gauge, Paragraph};
 use crate::map::Map;
 use crate::map::map_generator::MapGenerator;
 use crate::map::position::Area;
@@ -13,6 +14,7 @@ use crate::view::{GenericInputResult, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 pub struct MapGenerationFrameHandler {
+    pub seed: String
 }
 
 fn build_gauge(progress: StepProgress) -> Gauge<'static> {
@@ -32,6 +34,10 @@ impl <B : tui::backend::Backend> FrameHandler<B, StepProgress> for MapGeneration
         let gauge = build_gauge(data.data);
         let area = data.frame_size;
         frame.render_widget(gauge, area);
+
+        let seed = Span::from(String::from(format!("Map Seed: {}", self.seed)));
+        let seed_area = Rect::new(0,0, frame.size().width, 1);
+        frame.render_widget(Paragraph::new(seed), seed_area);
     }
 }
 

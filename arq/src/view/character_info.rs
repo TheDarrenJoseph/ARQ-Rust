@@ -75,7 +75,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
-        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW };
+        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW, attributes_area: Rect::new(0, 0, 0, 0) };
         self.frame_handler.character_view = Some(character_view);
     }
 

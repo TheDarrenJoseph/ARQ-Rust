@@ -1,8 +1,13 @@
+use std::f32::MIN;
 use std::io;
 use std::sync::mpsc::Receiver;
+use futures::future::err;
+use log::error;
 use termion::input::TermRead;
+use tui::layout::Rect;
 use crate::progress::StepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 
@@ -30,12 +35,14 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
         log::info!("Showing progress: {}/{}", progress.current_step, progress.step_count);
         let fh = &mut self.frame_handler;
         self.terminal_manager.terminal.draw(|frame| {
-            let mut area = frame.size().clone();
-            area.y = frame.size().y / 2 + 2;
-            area.x = area.width / 3;
-            area.height = 4;
-            area.width = area.width / 3;
-            fh.handle_frame(frame, FrameData { data: progress.clone(), frame_size: area})
+            let target_area = Rect::new(0,0, 45,6);
+            let area_result = center_area(target_area, frame.size(), target_area);
+
+            if let Ok(area) = area_result {
+                fh.handle_frame(frame, FrameData { data: progress.clone(), frame_size: area})
+            } else {
+                error!("{}", area_result.err().unwrap());
+            }
         });
     }
 }

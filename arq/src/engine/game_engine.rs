@@ -326,8 +326,9 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     async fn generate_map(&mut self) -> Result<Map, io::Error> {
-        let map_framehandler = MapGenerationFrameHandler { };
         let seed = self.levels.get_seed();
+        let map_framehandler = MapGenerationFrameHandler { seed: seed.clone() };
+
         let mut map_generator = self.levels.build_map_generator();
 
         let mut progress_display = ProgressDisplay {
@@ -457,8 +458,9 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
         let mut map : Option<Map> = None;
         if must_generate_map {
+            let seed = levels.get_seed().clone();
             let map_generator = levels.build_map_generator();
-            let map_framehandler = MapGenerationFrameHandler { };
+            let map_framehandler = MapGenerationFrameHandler { seed };
 
             let mut progress_display = ProgressDisplay {
                 terminal_manager: &mut self.ui_wrapper.terminal_manager,

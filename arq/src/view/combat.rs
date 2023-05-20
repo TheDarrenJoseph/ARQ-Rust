@@ -1,5 +1,6 @@
 use std::io;
 use std::io::Error;
+use log::error;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
@@ -15,6 +16,7 @@ use crate::view::framehandler::combat::CombatFrameHandler;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
+use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
     ui : &'a mut UI,
@@ -82,10 +84,18 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         self.terminal_manager.clear_screen();
         let fh = &mut self.frame_handler;
         self.terminal_manager.terminal.draw(|frame| {
-            let ui_areas = ui.get_view_areas(frame.size());
-            fh.areas = Some(ui_areas);
-            let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };
-            fh.handle_frame(frame, frame_data);
+            let frame_size = frame.size();
+            let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
+
+            if (centered.is_ok()) {
+                let ui_areas = ui.get_view_areas(centered.unwrap());
+                fh.areas = Some(ui_areas);
+                let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };
+                fh.handle_frame(frame, frame_data);
+            } else {
+                let err = centered.err().unwrap();
+                error!("{}", err)
+            }
         });
 
         return Ok(());

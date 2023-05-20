@@ -1,4 +1,6 @@
 use std::io::{Error, ErrorKind};
+use futures::future::err;
+use log::error;
 
 use termion::event::Key;
 use tui::layout::Rect;
@@ -7,6 +9,7 @@ use tui::widgets::{Block, Borders};
 use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
 use crate::error::io_error_utils::error_result;
+use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -29,7 +32,8 @@ pub enum ViewMode {
 pub struct CharacterFrameHandler {
     pub character : Character,
     pub widgets : WidgetList,
-    pub view_mode : ViewMode
+    pub view_mode : ViewMode,
+    pub attributes_area: Rect
 }
 
 pub enum CharacterFrameHandlerInputResult {
@@ -90,44 +94,32 @@ impl CharacterFrameHandler {
         self.widgets.widgets[0].state_type.focus();
     }
 
-    pub fn draw_main_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    pub fn draw_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let frame_size = frame.size();
         let widget_count = self.widgets.widgets.len();
         if widget_count > 0 {
-            let mut offset = 0;
+            let x_offset = 1;
+            let mut y_offset = 1;
             for widget in self.widgets.widgets.iter_mut() {
-                let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
+                //let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
+                let widget_area = Rect::new(self.attributes_area.x + x_offset, self.attributes_area.y + y_offset, self.attributes_area.width.clone() / 2, 1);
                 match &mut widget.state_type {
                     StatefulWidgetType::Text(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
+                        frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
                     StatefulWidgetType::Dropdown(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
+                        frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
                     StatefulWidgetType::Button(w) => {
-                        let area = Rect::new(6, widget_count as u16 + 5, frame_size.width.clone() / 2, 1);
-                        frame.render_stateful_widget(w.clone(), area, &mut w.clone());
+                        //let area = Rect::new(self.attributes_area.x, self.attributes_area.y + widget_count as u16, frame_size.width.clone() / 2, 1);
+                        frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
-                    _ => {}
-                }
-                offset += 1;
-            }
-        }
-    }
-
-    pub fn draw_attribute_inputs<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
-        let frame_size = frame.size();
-        if self.widgets.widgets.len() > 0 {
-            let mut offset = 0;
-            for widget in self.widgets.widgets.iter_mut() {
-                let widget_size = Rect::new(6, 6 + offset.clone(), frame_size.width.clone() / 2, 1);
-                match &mut widget.state_type {
                     StatefulWidgetType::Number(w) => {
-                        frame.render_stateful_widget(w.clone(), widget_size, &mut w.clone());
+                        frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
                     },
                     _ => {}
                 }
-                offset += 1;
+                y_offset += 1;
             }
         }
     }
@@ -158,11 +150,18 @@ impl CharacterFrameHandler {
         if self.view_mode == ViewMode::CREATION {
             _attribute_start -= 1;
         }
-        let attributes_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
-        frame.render_widget(attributes_block, attributes_area);
+        let target_area = Rect::new(frame_size.x + 1, frame_size.y + 1, 50, 10);
+        let mut available_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
+        let attributes_area_result = center_area(target_area, available_area, target_area);
 
-        self.draw_main_inputs(frame);
-        self.draw_attribute_inputs(frame);
+        if let Ok(area) = attributes_area_result {
+            self.attributes_area = area;
+            frame.render_widget(attributes_block, area);
+            self.draw_widgets(frame);
+        } else {
+            error!("{}", attributes_area_result.err().unwrap())
+        }
+
     }
 
     pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, data:  FrameData<Character>) {

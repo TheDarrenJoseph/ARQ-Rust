@@ -80,7 +80,7 @@ impl <B : Backend> UIWrapper<B> {
     // Shows character creation screen
     // Returns the finished character once input is confirmed
     fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
-        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION};
+        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Rect::new(0, 0, 0, 0)};
         // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
         GenericInputResult { done: false, requires_view_refresh: false },

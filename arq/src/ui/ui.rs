@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use termion::event::Key;
 use std::io;
+use std::io::{Error, ErrorKind};
 use termion::input::TermRead;
 
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -12,6 +13,7 @@ use crate::{menu, ui};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::menu::{Menu, ToList};
 use crate::ui::ui_areas::UIAreas;
+use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
@@ -87,6 +89,31 @@ fn build_main_block<'a>() -> Block<'a> {
 }
 
 impl UI {
+
+    /*
+        Tries to build a centered UIAreas based on 80x24 minimum frame size
+        If the view is smaller than this, the view will be split as per usual for smaller sizes
+     */
+    pub fn get_min_area(&self, frame_size: Rect) -> UIAreas {
+        if (frame_size.height >= 80 && frame_size.width >= 24) {
+            let target = Rect::new(0, 0, 80, 24);
+            let centered = center_area(target, frame_size, MIN_AREA).unwrap();
+            let areas = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Percentage(80),
+                        Constraint::Percentage(20)
+                    ].as_ref()
+                )
+                .split(centered);
+
+            UIAreas::new(areas[0], areas.get(1).cloned())
+        } else {
+            return self.get_view_areas(frame_size);
+        }
+    }
+
 
     // If the console if visible, splits a frame vertically into the 'main' and lower console areas
     // Otherwise returns the original frame size
