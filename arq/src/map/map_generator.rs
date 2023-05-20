@@ -34,7 +34,7 @@ pub struct MapGenerator<'rng> {
     possible_room_positions : Vec<Position>,
     rng: &'rng mut Pcg64,
     pub progress: StepProgress,
-    map: Map
+    pub map: Map
 }
 
 pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator<'a> {

@@ -24,7 +24,7 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
                 self.show_progress(p.clone());
                 if p.is_done() {
                     // Wait for confirmation
-                    io::stdin().keys().next().unwrap();
+                    //io::stdin().keys().next().unwrap();
                     return;
                 }
             }

@@ -18,6 +18,7 @@ pub mod settings_menu;
 pub mod game_over;
 pub mod combat;
 pub mod model;
+pub mod dialog;
 
 /*
     A "View" is essentially something that can take control of I/O (rendering, keyboard input, etc) until it exits

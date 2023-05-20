@@ -4,11 +4,12 @@ use std::{io, thread};
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::future::Future;
-use std::io::empty;
+use std::io::{empty, Error};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 use futures::executor::block_on;
+use futures::future::err;
 use log4rs::config::Logger;
 use log::{error, info, log};
 
@@ -61,6 +62,7 @@ use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::combat::CombatView;
+use crate::view::dialog::Dialog;
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -330,6 +332,8 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         let map_framehandler = MapGenerationFrameHandler { seed: seed.clone() };
 
         let mut map_generator = self.levels.build_map_generator();
+        let size_x = map_generator.map.area.size_x;
+        let size_y = map_generator.map.area.size_y;
 
         let mut progress_display = ProgressDisplay {
             terminal_manager: &mut self.ui_wrapper.terminal_manager,
@@ -340,7 +344,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
             progress_display
         };
 
-        log::info!("Generating map using RNG seed: {}", seed);
+        log::info!("Generating map using RNG seed: {} and size: {}, {}", seed, size_x, size_y);
         level_generator.generate_level().await
     }
 
@@ -348,21 +352,17 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
-        let mut generated = false;
-        while !generated {
-            let map = self.generate_map().await.unwrap();
-            self.levels.add_level(map);
-            match self.initialise_characters() {
-                Err(e) => {
-                    log::error!("Generation round failed with error {}. Trying again...", e);
-                    self.ui_wrapper.print_and_re_render(String::from("Bad level. Trying again..."));
-                },
-                Ok(_) => {
-                    generated = true;
-                },
-            }
+        let map = self.generate_map().await.unwrap();
+        self.levels.add_level(map);
+        match self.initialise_characters() {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(_) => {
+                info!("Map generated successfully");
+                return Ok(())
+            },
         }
-        Ok(())
     }
 
     fn add_or_update_additional_widgets(&mut self) {
@@ -392,8 +392,25 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
-        self.initialise().await.unwrap();
-        self.game_running = true;
+        let mut generated = false;
+        while !generated {
+            let init_result = self.initialise().await;
+            match init_result {
+                Ok(()) => {
+                    info!("Engine initialised...");
+                    generated = true;
+                    self.game_running = true;
+                },
+                Err(e) => {
+                    // Rebuild the engine to reset the seed and try again
+                    log::error!("Initialisation failed with error {}. Trying another map seed...", e);
+                    let mut error_dialog = Dialog::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, String::from("Initialisation failed, trying another map seed..."));
+                    error_dialog.begin();
+                    self.rebuild();
+                }
+            }
+        }
+
         while self.game_running {
             self.add_or_update_additional_widgets();
             self.ui_wrapper.ui.show_console();
@@ -423,80 +440,73 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         player.set_inventory(build_dev_player_inventory());
     }
 
-    async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
+    async fn attempt_player_movement(&mut self, side: Side) -> PlayerMovementResult {
         let levels = &mut self.levels;
         let level = levels.get_level_mut();
         let updated_position = level.find_player_side_position(side).clone();
-
-        let mut must_generate_map = false;
-        let mut level_change = NONE;
         match updated_position {
             Some(pos) => {
+                let level_change;
                 if let Some(m) = &level.map {
                     if m.is_traversable(pos) {
-                        let player =  level.characters.get_player_mut().unwrap();
+                        let player = level.characters.get_player_mut().unwrap();
                         player.set_position(pos);
                     }
 
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
                         // TODO move to a specific controller instead?
-                      level_change = self.ui_wrapper.check_room_entry_exits(room, pos);
+                        level_change = self.ui_wrapper.check_room_entry_exits(room, pos);
+                        let must_generate_map = levels.must_build_level(level_change.clone());
+                        return PlayerMovementResult { must_generate_map, level_change: Some(level_change) };
                     }
                 }
 
-                match level_change {
-                    NONE => {},
-                    change => {
-                        must_generate_map = levels.must_build_level(change.clone());
-                        level_change = change;
+            }
+            _ => {}
+        }
+        return PlayerMovementResult { must_generate_map: false, level_change: None };
+    }
+
+    async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
+        // TODO attempt
+        let movement_result : PlayerMovementResult = self.attempt_player_movement(side).await;
+
+        // If the player move results in an up/down level movement, handle this
+        let level_change_option = movement_result.level_change.clone();
+        if let Some(level_change) = level_change_option {
+            let mut map : Option<Map> = None;
+            if movement_result.must_generate_map {
+                map = Some(self.generate_map().await.unwrap());
+            }
+            let levels = &mut self.levels;
+
+            let change_level = levels.change_level(level_change.clone(), map);
+            match change_level {
+                Ok(result) => {
+                    match result {
+                        LevelChangeResult::LevelChanged => {
+                            self.respawn_player(level_change);
+                        },
+                        LevelChangeResult::OutOfDungeon => {
+                            let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
+
+                            let mut menu = build_game_over_menu(
+                                format!("You left the dungeon.\nLoot Total: {}", player_score),
+                                &mut self.ui_wrapper.ui,
+                                &mut self.ui_wrapper.terminal_manager);
+                            let result = menu.begin()?;
+                            if let Some(game_over_choice) = result.view_specific_result {
+                                return Ok(Some(game_over_choice));
+                            }
+                        },
+                        _ => {}
                     }
                 }
-            },
-            None => {}
-        }
-
-        let mut map : Option<Map> = None;
-        if must_generate_map {
-            let seed = levels.get_seed().clone();
-            let map_generator = levels.build_map_generator();
-            let map_framehandler = MapGenerationFrameHandler { seed };
-
-            let mut progress_display = ProgressDisplay {
-                terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                frame_handler: map_framehandler
-            };
-            let mut level_generator = MapGeneration {
-                progress_display,
-                map_generator
-            };
-            let map_result = level_generator.generate_level().await;
-            map = Some(map_result.unwrap());
-        }
-
-        let changed = levels.change_level(level_change.clone(), map);
-        if changed.is_ok() {
-            match changed.unwrap() {
-                LevelChangeResult::LevelChanged => {
-                    self.respawn_player(level_change.clone());
-                },
-                LevelChangeResult::OutOfDungeon => {
-                    let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
-
-                    let mut menu = build_game_over_menu(
-                        format!("You left the dungeon.\nLoot Total: {}", player_score),
-                        &mut self.ui_wrapper.ui,
-                        &mut self.ui_wrapper.terminal_manager);
-                    let result = menu.begin()?;
-                    if let Some(game_over_choice) = result.view_specific_result {
-                        return Ok(Some(game_over_choice));
-                    }
-                },
                 _ => {}
             }
         }
-
-        Ok(None)
+        return Ok(None)
     }
 
     pub async fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
@@ -594,6 +604,8 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     let settings = build_settings();
     // Grab the randomised seed
     let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
+    // Seed override example TODO make this config? env var?
+    //let map_seed = String::from("42nDy1dau59y");
     let seed_copy = map_seed.clone();
     let rng = Seeder::from(map_seed).make_rng();
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
@@ -603,6 +615,11 @@ pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, term
     let ui = build_ui();
     let settings = build_settings();
     Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
+}
+
+struct PlayerMovementResult {
+    must_generate_map: bool,
+    level_change: Option<LevelChange>
 }
 
 
