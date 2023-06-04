@@ -265,8 +265,8 @@ mod tests {
 
     use uuid::Uuid;
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
+    use crate::character::characters::Characters;
 
-    use crate::character::characters::build_characters;
     use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
@@ -297,9 +297,11 @@ mod tests {
             containers: area_containers
         };
 
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .build(String::from("Test Player"));
-        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
+        return  Level { map: Some(map) , characters: Characters::new( Some(player), Vec::new())  };
     }
 
     fn build_player_test_level() -> Level {
@@ -318,9 +320,11 @@ mod tests {
             rooms: Vec::new(),
             containers: HashMap::new()
         };
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .build(String::from("Test Player"));
-        return  Level { map: Some(map) , characters: build_characters( Some(player), Vec::new())  };
+        return  Level { map: Some(map) , characters: Characters::new( Some(player), Vec::new())  };
     }
 
     #[test]

@@ -48,31 +48,6 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
         map: Map {area: map_area, tiles: Tiles { tiles: Vec::new() }, rooms: Vec::new(), containers: HashMap::new()}}
 }
 
-pub fn build_dev_player_inventory() -> Container {
-    let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50.0, 1, ContainerType::AREA, 130);
-    let bronze_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::BRONZE, ItemForm::BAR, 'X', 1.0, 50);
-    let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
-    let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
-    let tin_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::TIN, ItemForm::BAR,'X', 1.0, 50);
-
-    // +1 weight
-    carton.add_item(tin_bar);
-
-    bag.add(carton);
-    bag.add_item(bronze_bar);
-
-    // +8 weight (bad contains 3 weight)
-    container.add(bag);
-
-    // + 60 weight
-    for i in 1..=60 {
-        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), MaterialType::UNKNOWN, '$', 1.0, 100);
-        container.add_item(test_item);
-    }
-    return container;
-}
-
-
 pub fn build_dev_chest() -> Container {
     let mut container = container::build(Uuid::new_v4(), "Chest".to_owned(), '$', 50.0, 1, ContainerType::OBJECT, 100);
 

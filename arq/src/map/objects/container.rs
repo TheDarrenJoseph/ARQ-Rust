@@ -1,6 +1,8 @@
 use std::convert::TryInto;
 use std::fmt;
+use std::fmt::format;
 use uuid::Uuid;
+use crate::error::errors::GenericError;
 
 use crate::map::objects::items::{Item, ItemType};
 
@@ -327,16 +329,27 @@ impl Container {
         self.container_type ==  ContainerType::OBJECT || self.container_type ==  ContainerType::AREA
     }
 
-    pub fn add_item(&mut self, item : Item) {
+    pub fn add_item(&mut self, item : Item) -> Result<(), GenericError> {
         match item.item_type {
             // Container items should only ever be the meta item for a container
             ItemType::CONTAINER => {
-                return;
+                Err(GenericError::new(String::from("Cannot add an item of type CONTAINER to another container.")))
             },
             _ => {
-                if self.get_weight_total() + item.weight <= self.weight_limit as f32 {
+                let weight_total: f32 = self.get_weight_total();
+                let item_weight: f32 = item.weight;
+                let weight_limit: f32 = self.weight_limit as f32;
+                if weight_total + item_weight < weight_limit {
                     let container = Container::wrap(item.clone());
                     self.contents.push(container);
+                    return Ok(())
+                } else {
+                    return Err(GenericError::new(
+                        String::from(
+                            format!("Cannot add item. Not enough free weight space in this container. Current weight total: {}, item weight: {}, weight limit: {}",
+                                    weight_total, item_weight, weight_limit)
+                        )
+                    ))
                 }
             }
         }

@@ -5,7 +5,7 @@ use crate::character::character_details::{build_default_character_details, Chara
 use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
-use crate::map::map_generator::build_dev_player_inventory;
+use crate::error::errors::GenericError;
 use crate::map::objects::{container, items};
 use crate::map::objects::container::{build, Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
@@ -27,11 +27,35 @@ pub struct CharacterPattern {
     blueprint: CharacterBlueprint
 }
 
+pub fn build_dev_player_inventory() -> Container {
+    let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50.0, 1, ContainerType::AREA, 150);
+    let bronze_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::BRONZE, ItemForm::BAR, 'X', 1.0, 50);
+    let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
+    let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
+    let tin_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::TIN, ItemForm::BAR,'X', 1.0, 50);
+
+    // +1 weight
+    carton.add_item(tin_bar);
+
+    bag.add(carton);
+    bag.add_item(bronze_bar);
+
+    // +8 weight (bad contains 3 weight)
+    container.add(bag);
+
+    // + 60 weight
+    for i in 1..=60 {
+        let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), MaterialType::UNKNOWN, '$', 1.0, 100);
+        container.add_item(test_item);
+    }
+    return container;
+}
+
 /*
     Future TODO - Consider storing patterns in a proper data store so we can look them up by CharacterType alone / keep the code lightweight
  */
 impl CharacterPattern {
-    pub fn new_player() -> CharacterPattern {
+    pub fn new_player() -> Result<CharacterPattern, GenericError> {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
 
         let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::ARMING)).unwrap();
@@ -42,7 +66,11 @@ impl CharacterPattern {
         equipment.equip(equipped_sword, PRIMARY);
 
         let mut inventory = build_dev_player_inventory();
-        inventory.add_item(sword);
+        let add_result = inventory.add_item(sword);
+        if add_result.is_err() {
+            return Err(add_result.err().unwrap())
+        }
+
 
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Human, Class::None, 0, 6, 6, attributes),
@@ -52,11 +80,10 @@ impl CharacterPattern {
             inventory,
             equipment
         };
-
-        CharacterPattern { character_type: NewPlayer, blueprint }
+        Ok(CharacterPattern { character_type: NewPlayer, blueprint })
     }
 
-    pub fn goblin() -> CharacterPattern {
+    pub fn goblin() -> Result<CharacterPattern, GenericError> {
         let blueprint = WeaponBlueprint::new(MaterialType::IRON, ItemForm::BLADED(BladedWeaponType::DAGGER)).unwrap();
         let weapon_builder = WeaponBuilder::new(blueprint);
         let dagger = weapon_builder.build();
@@ -65,7 +92,10 @@ impl CharacterPattern {
         equipment.equip(equipped_dagger, PRIMARY);
 
         let mut inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
-        inventory.add_item(dagger);
+        let add_result = inventory.add_item(dagger);
+        if add_result.is_err() {
+            return Err(add_result.err().unwrap())
+        }
 
         let attributes: Vec<AttributeScore> = AttributeScores::all_at_value(2).scores;
         let blueprint = CharacterBlueprint {
@@ -77,7 +107,7 @@ impl CharacterPattern {
             equipment
         };
 
-        CharacterPattern { character_type: GoblinWarrior, blueprint }
+        Ok(CharacterPattern { character_type: GoblinWarrior, blueprint })
     }
 }
 
@@ -156,7 +186,9 @@ mod tests {
     #[test]
     pub fn test_build_new_player() {
         // GIVEN a CharacterBuilder with the player pattern
-        let builder = CharacterBuilder::new(CharacterPattern::new_player());
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let builder = CharacterBuilder::new(player_pattern_result.unwrap());
         // WHEN we calll to build a character
         let mut character = builder.build(String::from("Player"));
 
@@ -191,7 +223,9 @@ mod tests {
     #[test]
     pub fn test_build_goblin() {
         // GIVEN a CharacterBuilder with the goblin pattern
-        let builder = CharacterBuilder::new(CharacterPattern::goblin());
+        let goblin_pattern_result = CharacterPattern::goblin();
+        assert!(goblin_pattern_result.is_ok(), "Failed to build Goblin CharacterPattern!");
+        let builder = CharacterBuilder::new(goblin_pattern_result.unwrap());
         // WHEN we calll to build a character
         let mut character = builder.build(String::from("Ruggo"));
 

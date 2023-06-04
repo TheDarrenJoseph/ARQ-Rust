@@ -27,7 +27,7 @@ use tui::widgets::Gauge;
 use futures::FutureExt;
 
 use crate::character::Character;
-use crate::character::characters::{build_characters, Characters};
+use crate::character::characters::Characters;
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
@@ -36,15 +36,13 @@ use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::LevelChange::NONE;
 use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
 
-use crate::map::map_generator::{build_dev_player_inventory};
-
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::map::room::Room;
 use crate::map::tile::Tile::Room as RoomTile;
 use crate::{menu, sound, widget};
 use crate::character::battle::Battle;
-use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
+use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
 use crate::map::Map;
 use crate::menu::Selection;
@@ -310,10 +308,20 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     fn initialise_characters(&mut self) -> Result<(), io::Error> {
-        let player = CharacterBuilder::new(CharacterPattern::new_player()).build(String::from("Player"));
-        let test_npc = CharacterBuilder::new(CharacterPattern::goblin()).build(String::from("Ruggo"));
+        info!("Building player...");
+        let player_pattern_result = CharacterPattern::new_player();
+        if player_pattern_result.is_err() {
+            return Err(player_pattern_result.unwrap_err().to_io_error())
+        }
+        let player = CharacterBuilder::new(player_pattern_result.unwrap()).build(String::from("Player"));
+        info!("Building NPCs...");
+        let npc_pattern_result = CharacterPattern::goblin();
+        if npc_pattern_result.is_err() {
+            return Err(npc_pattern_result.unwrap_err().to_io_error())
+        }
+        let test_npc = CharacterBuilder::new(npc_pattern_result.unwrap()).build(String::from("Ruggo"));
 
-        let mut characters = build_characters(Some(player), vec![test_npc]);
+        let mut characters = Characters::new(Some(player), vec![test_npc]);
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
@@ -531,7 +539,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         let player = characters.get_player().unwrap().clone();
         let mut npcs = Vec::new();
         npcs.push(characters.get_npcs().first().unwrap().clone());
-        let battle_characters = build_characters(Some(player), npcs);
+        let battle_characters = Characters::new(Some(player), npcs);
         let battle = Battle { characters: battle_characters , in_progress: true };
 
         let view_battle = battle.clone();
@@ -678,7 +686,7 @@ mod tests {
     fn build_test_levels(map: Map, player: Character) -> Levels {
         let level = Level {
             map: Some(map.clone()),
-            characters: build_characters(Some(player), Vec::new())
+            characters: Characters::new(Some(player), Vec::new())
         };
 
         let seed = "test".to_string();
@@ -715,7 +723,10 @@ mod tests {
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
 
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -745,7 +756,10 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -775,7 +789,9 @@ mod tests {
 
         // AND the player start position is the bottom middle of the map
         let start_position = Position{x:1, y:2};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -805,7 +821,9 @@ mod tests {
 
         // AND the player start position is the middle end of the map
         let start_position = Position{x:1, y:2};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -836,7 +854,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -866,7 +886,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -897,7 +919,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);
@@ -927,7 +951,9 @@ mod tests {
 
         // AND the player start position is the middle of the map
         let start_position = Position{x:1, y:1};
-        let player =  CharacterBuilder::new(CharacterPattern::new_player())
+        let player_pattern_result = CharacterPattern::new_player();
+        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
+        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
             .position(start_position)
             .build(String::from("Test Player"));
         let levels = build_test_levels(map, player);

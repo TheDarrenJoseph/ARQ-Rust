@@ -12,11 +12,11 @@ pub fn build_empty_characters() -> Characters {
     return Characters { player: None, npcs: Vec::new() };
 }
 
-pub fn build_characters(player: Option<Character>, npcs: Vec<Character>) -> Characters {
-    return Characters { player, npcs };
-}
-
 impl Characters {
+    pub fn new(player: Option<Character>, npcs: Vec<Character>) -> Characters {
+        Characters { player, npcs }
+    }
+
     pub fn get_player(&self) -> Option<&Character> { self.player.as_ref() }
     pub fn get_player_mut(&mut self) -> Option<&mut Character> { self.player.as_mut() }
     pub fn get_npcs(&self) -> &Vec<Character> { &self.npcs }

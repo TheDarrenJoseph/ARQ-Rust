@@ -204,7 +204,7 @@ mod tests {
 
     use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
-    use crate::character::characters::{build_characters, Characters};
+    use crate::character::characters::Characters;
     use crate::engine::command::open_command::{handle_callback};
     use crate::engine::level::{Level};
 
@@ -259,7 +259,7 @@ mod tests {
             containers: HashMap::new()
         };
 
-        return Level { map: Some(map), characters: build_characters(Some(player), Vec::new())};
+        return Level { map: Some(map), characters: Characters::new(Some(player), Vec::new())};
     }
 
     #[test]
