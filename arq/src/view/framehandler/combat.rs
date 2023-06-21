@@ -18,6 +18,11 @@ pub struct CombatFrameHandler {
     pub selection: OptionListSelection<CombatTurnChoice>
 }
 
+pub struct ConsoleWidgets<'a> {
+    paragraphs : Vec<(Paragraph<'a>, Rect)>,
+    window : (Block<'a>, Rect)
+}
+
 impl CombatFrameHandler {
     pub fn new() -> CombatFrameHandler {
         CombatFrameHandler { areas: None, selection: OptionListSelection::new() }
@@ -38,6 +43,36 @@ impl CombatFrameHandler {
         choices.push(MappedOption { mapped: CombatTurnChoice::FLEE, name: String::from("Flee"), size: 4});
 
         return choices;
+    }
+
+    fn build_console_widgets(&self) -> ConsoleWidgets {
+        let console_area = self.areas.as_ref().unwrap().get_console_area().unwrap();
+        let console_window_block = Block::default()
+            .borders(Borders::ALL);
+
+        let highlighted_option = self.selection.index;
+        let mut i = 0;
+
+        let mut paragraphs: Vec<(Paragraph, Rect)> = Vec::new();
+        let largest_option_length = self.selection.options.iter().max_by_key(|o| o.size).unwrap().size.clone() as u16;
+        for option in &self.selection.options {
+            let mut style = Style::default();
+            if i == highlighted_option {
+                style = style.add_modifier(Modifier::REVERSED);
+            }
+
+            let paragraph = Paragraph::new(Text::from(option.name.clone()))
+                .style(style)
+                .alignment(Alignment::Left);
+
+            let offset_y = i + 1;
+            let text_area = Rect::new(console_area.x.clone() + 1, console_area.y.clone() + offset_y, largest_option_length, 1);
+
+            paragraphs.push((paragraph, text_area));
+            i += 1;
+        }
+
+        return  ConsoleWidgets { window: (console_window_block, console_area), paragraphs };
     }
 }
 
@@ -112,31 +147,12 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let enemy_equipment_list = list_equipment(enemy_equipment);
         frame.render_widget(enemy_equipment_list, enemy_equipment_area);
 
-
-        let console_area = self.areas.as_ref().unwrap().get_console_area().unwrap();
-        let console_window_block = Block::default()
-            .borders(Borders::ALL);
-
-        let highlighted_option = self.selection.index;
-        let mut i = 0;
-
-        let largest_option_length = self.selection.options.iter().max_by_key(|o| o.size).unwrap().size.clone() as u16;
-        for option in &self.selection.options {
-            let mut style = Style::default();
-            if i == highlighted_option {
-                style = style.add_modifier(Modifier::REVERSED);
-            }
-
-            let paragraph = Paragraph::new(Text::from(option.name.clone()))
-                .style(style)
-                .alignment(Alignment::Left);
-
-            let offset_y = i + 1;
-            let text_area = Rect::new(console_area.x.clone() + 1, console_area.y.clone() + offset_y, largest_option_length, 1);
-            frame.render_widget(paragraph, text_area);
-            i += 1;
+        // Build widget / area tuples
+        let console_widgets = self.build_console_widgets();
+        // Unpack these tuples and render them
+        for paragraph_area in console_widgets.paragraphs {
+            frame.render_widget(paragraph_area.0, paragraph_area.1);
         }
-
-        frame.render_widget(console_window_block, console_area);
+        frame.render_widget(console_widgets.window.0, console_widgets.window.1);
     }
 }

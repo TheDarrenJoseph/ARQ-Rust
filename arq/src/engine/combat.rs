@@ -15,8 +15,8 @@ pub struct Combat {
 
 impl CallbackHandler<CombatCallbackData> for Combat {
     fn handle_callback(&mut self, data: CombatCallbackData) -> Option<CombatCallbackData> {
-        let mut result_data = data.clone();
-        let mut messages = Vec::new();
+        let mut result_data: CombatCallbackData = data.clone();
+        let mut messages : Vec<String> = Vec::new();
         match data.choice {
             CombatTurnChoice::ATTACK(_) => {
                 messages.push(String::from("You attempt attack..."));

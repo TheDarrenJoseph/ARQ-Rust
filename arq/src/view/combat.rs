@@ -171,11 +171,8 @@ impl <'a, B : tui::backend::Backend> Callback <'a, CombatCallbackData> for Comba
         Any information about the result of a battle action callback will be handled here
      */
     fn handle_callback_result(&mut self, data: Option<CombatCallbackData>) {
-        let result = data.unwrap().result.unwrap();
-        for message in result.messages {
-            // TODO either print and re-render here or in the frame handler
-            // self.ui.console_print(message);
-            // let keyc = get_input_key();
+        if let Some(data) = data.clone() {
+            // TODO pass messages into the framehandler
         }
     }
 }
