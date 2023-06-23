@@ -9,12 +9,17 @@ use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct CharacterStatLineWidget {
+    level: i32,
     health: i8,
     loot_score: i32,
     character_details : CharacterDetails
 }
 
 impl CharacterStatLineWidget {
+    pub fn new(level: i32, health: i8, character_details: CharacterDetails, loot_score: i32) -> CharacterStatLineWidget {
+        CharacterStatLineWidget { level, health, loot_score, character_details }
+    }
+
     pub fn get_health(&self) -> i8 {
         self.health
     }
@@ -40,24 +45,27 @@ impl CharacterStatLineWidget {
     }
 }
 
-pub fn build_character_stat_line(health: i8, character_details: CharacterDetails, loot_score: i32) -> CharacterStatLineWidget {
-    CharacterStatLineWidget { health, loot_score, character_details }
+fn calculate_offset(x: u16, previous_header: String, previous_value: String) -> u16 {
+    x + 1 + previous_header.len() as u16 + previous_value.len() as u16 + 2
 }
-
-
 
 impl Widget for CharacterStatLineWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let health_header = String::from("Health: ");
-        let health_value = self.health.to_string();
-        buf.set_string(area.x , area.y, health_header.as_str(), Style::default().fg(Color::Green));
-        buf.set_string(area.x + health_header.len() as u16, area.y,self.health.to_string(), Style::default());
+        let level_header = String::from("Level: ");
+        let level_text =  format!("{:0>3}",  self.level.to_string());
+        buf.set_string(area.x , area.y, level_header.as_str(), Style::default().fg(Color::Yellow));
+        buf.set_string(area.x + level_header.len() as u16, area.y,level_text.clone(), Style::default());
 
-        let loot_offset = area.x + 1 + health_header.len() as u16 + health_value.len() as u16 + 2;
+        let health_offset = calculate_offset(area.x, level_header, level_text);
+        let health_header = String::from("Health: ");
+        let loot_text =  format!("{:0>3}",  self.health.to_string());
+        buf.set_string(health_offset , area.y, health_header.as_str(), Style::default().fg(Color::Green));
+        buf.set_string(health_offset + health_header.len() as u16, area.y,loot_text.clone(), Style::default());
+
+        let loot_offset = calculate_offset(health_offset, health_header, loot_text);
         let loot_header = String::from("Loot: ");
-        let loot_value = self.loot_score.to_string();
-        let loot_text =  format!("{:0>6}", loot_value);
+        let loot_text =  format!("{:0>6}",  self.loot_score.to_string());
         buf.set_string(loot_offset, area.y, loot_header.as_str(), Style::default().fg(Color::Blue));
         buf.set_string(loot_offset + loot_header.len() as u16 + 1, area.y, loot_text, Style::default());
     }

@@ -20,6 +20,8 @@ use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{Dro
 
 use crate::view::View;
 
+const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter - Toggle selection\nEsc - Exit";
+
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
@@ -176,12 +178,13 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
     fn open_inventory(&mut self) -> Result<(), io::Error> {
         log::info!("Player opening inventory.");
+        self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
+
         let c = self.level.characters.get_player_mut().unwrap().get_inventory_mut();
         let mut callback_container: Container = c.clone();
 
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
 
-        self.ui.console_print("Up/Down - Move\nEnter - Toggle selection".to_string());
 
         let level = &mut self.level;
         let player = &mut level.characters.get_player_mut().unwrap().clone();

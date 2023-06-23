@@ -20,9 +20,11 @@ use crate::view::framehandler::util::tabling::build_paragraph;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
 /*
-    This View is responsible for showing the "default" view while playing including:
-    1. The current map/level and it's contents
-    2. The console
+    This view draws the following to the screen:
+    1. Individual tiles of the map
+    2. Characters
+    3. Containers
+
  */
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub map : &'a Map,
@@ -115,7 +117,7 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         Ok(())
     }
 
-    fn draw_cell(&mut self, x: u16, y: u16, cell_x: u16, cell_y: u16) -> Result<(), Error> {
+    fn draw_tile(&mut self, x: u16, y: u16, cell_x: u16, cell_y: u16) -> Result<(), Error> {
         let view_area = self.view_area.unwrap();
         let backend = self.terminal_manager.terminal.backend_mut();
         let tiles = &self.map.tiles.tiles;
@@ -136,14 +138,14 @@ impl<B : tui::backend::Backend> MapView<'_, B>{
         Ok(())
     }
 
-    fn draw_map_cells(&mut self) -> Result<(), Error> {
+    fn draw_map_tiles(&mut self) -> Result<(), Error> {
         let view_area = self.view_area.unwrap();
         let view_start_position = view_area.start_position;
         for x in 0..view_area.get_size_x() {
             for y in 0..view_area.get_size_y() {
                 let cell_x = x + view_start_position.x as u16;
                 let cell_y = y + view_start_position.y as u16;
-                self.draw_cell(x, y, cell_x, cell_y)?
+                self.draw_tile(x, y, cell_x, cell_y)?
             }
         }
         Ok(())
@@ -157,19 +159,26 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
+    /*
+        This performs the following rendering operations:
+        1. Calls to the base UI to render base components (Main window, Console window, stat bars)
+        2. Draws the base tiles of the map (Walls, corridors, doors, etc)
+     */
     fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
-        log::info!("Drawing map...");
-
-        let ui = &mut self.ui;
-
         self.view_area = area;
-        let map_area = self.view_area.unwrap();
 
+        // First let the UI draw everything else
+        let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
         })?;
 
-        self.draw_map_cells()?;
+        log::info!("Drawing map (tiles)");
+        self.draw_map_tiles()?;
+        log::info!("Drawing map (containers)");
+        self.draw_containers()?;
+        log::info!("Drawing map (characters)");
+        self.draw_characters()?;
 
         Ok(())
     }

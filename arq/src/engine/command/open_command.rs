@@ -28,6 +28,7 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
+const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter - Toggle selection\nEsc - Exit";
 const NOTHING_ERROR : &str = "There's nothing here to open.";
 
 fn handle_callback<'a>(level : &'a mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
@@ -110,6 +111,8 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
     }
 
     fn open_container(&mut self, p: Position, c: &Container) -> Result<InputResult<bool>, Error> {
+        self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
+
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
         let subview_container = c.clone();
         let view_container = c.clone();
@@ -183,11 +186,12 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             }
 
             if let Some(c) = to_open {
+                self.ui.clear_console_buffer();
                 self.re_render()?;
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_total_count());
                 self.open_container(p.clone(), &c)?;
             } else {
-                self.ui.console_print(message);
+                self.ui.set_console_buffer(message);
                 self.re_render();
                 io::stdin().keys().next().unwrap()?;
             }

@@ -71,7 +71,6 @@ use crate::view::settings_menu::SettingsMenu;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
-use crate::widget::character_stat_line::build_character_stat_line;
 use crate::widget::stateful::boolean_widget::build_boolean_widget;
 use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
@@ -80,6 +79,7 @@ use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 use crate::view::util::callback::Callback;
 use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::util::callback::CallbackHandler;
+use crate::widget::character_stat_line::CharacterStatLineWidget;
 
 pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     ui_wrapper : UIWrapper<B>,
@@ -375,9 +375,14 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     fn add_or_update_additional_widgets(&mut self) {
         if self.ui_wrapper.ui.additional_widgets.is_empty() {
+            let level_number = self.levels.get_current_level() as i32 + 1;
             let level = self.levels.get_level_mut();
             let player = level.characters.get_player_mut().unwrap();
-            let stat_line = build_character_stat_line(player.get_health(), player.get_details(), player.get_inventory_mut().get_loot_value());
+            let stat_line = CharacterStatLineWidget::new(
+                level_number,
+                player.get_health(),
+                player.get_details(),
+                player.get_inventory_mut().get_loot_value());
             self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::StatLine(stat_line));
 
             let mut commands : HashMap<Key, UsageCommand> = HashMap::new();

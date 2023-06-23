@@ -134,6 +134,12 @@ impl UI {
         UIAreas::new(areas[0], areas.get(1).cloned())
     }
 
+    /*
+        Draws the "base" UI that's visible by default:
+        1. The "main" window / main block (This does not put content inside this block, it's just an empty bordered window)
+        2. The console window at the bottom of the screen
+        3. Stat bars and command usage hints (additional widgets)
+     */
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let main_block = build_main_block();
         let frame_size = frame.size();
@@ -161,8 +167,15 @@ impl UI {
         self.console_visible = false;
     }
 
-    pub fn console_print(&mut self, input: String) {
+    /*
+        Updates the buffer that is written to console on each rendering of the UI
+     */
+    pub fn set_console_buffer(&mut self, input: String) {
         self.frame_handler.buffer.content = input;
+    }
+
+    pub fn clear_console_buffer(&mut self) {
+        self.frame_handler.buffer.content = String::new();
     }
 }
 

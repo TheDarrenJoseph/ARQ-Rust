@@ -36,7 +36,7 @@ impl <B : Backend> UIWrapper<B> {
     }
 
     pub(crate) fn print_and_re_render(&mut self, message: String) -> Result<(), io::Error> {
-        self.ui.console_print(message);
+        self.ui.set_console_buffer(message);
         self.re_render()
     }
 
@@ -103,7 +103,7 @@ impl <B : Backend> UIWrapper<B> {
 
             match character_creation_result.view_specific_result {
                 Some(VALIDATION(message)) => {
-                    self.ui.console_print(message);
+                    self.ui.set_console_buffer(message);
                     self.re_render()?;
                 },
                 Some(CharacterFrameHandlerInputResult::NONE) => {
@@ -121,17 +121,16 @@ impl <B : Backend> UIWrapper<B> {
         match map {
             Some(m) => {
                 if let Some(frame_size) = frame_size_copy {
+                    // Add the UI usage hint to the console buffer
+                    self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
                     let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
-
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
                     let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
+
+                    // Draw the base UI (incl. console) and the map
                     map_view.draw(map_view_frame_size)?;
-                    map_view.draw_containers()?;
-                    map_view.draw_characters()?;
-                    self.ui.console_print(UI_USAGE_HINT.to_string());
-                    self.re_render()?;
                 }
             },
             None => {}

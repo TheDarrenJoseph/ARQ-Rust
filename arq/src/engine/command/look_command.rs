@@ -80,7 +80,7 @@ impl <B: tui::backend::Backend> LookCommand<'_, B> {
     }
 
     fn print(&mut self, prompt: String) -> Result<(), io::Error> {
-        self.ui.console_print(prompt);
+        self.ui.set_console_buffer(prompt);
         return self.re_render();
     }
 }
@@ -98,7 +98,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
     }
 
     fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
-        self.ui.console_print("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
+        self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
         let key = get_input_key()?;
         let position = self.level.find_adjacent_player_position(key);
