@@ -20,6 +20,10 @@ impl CharacterStatLineWidget {
         CharacterStatLineWidget { level, health, loot_score, character_details }
     }
 
+    pub fn set_level(&mut self, level: i32) {
+        self.level = level;
+    }
+
     pub fn get_health(&self) -> i8 {
         self.health
     }

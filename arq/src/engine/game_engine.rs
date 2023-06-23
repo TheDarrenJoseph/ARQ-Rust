@@ -394,9 +394,11 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         } else {
             match self.ui_wrapper.ui.additional_widgets.get_mut(0) {
                 Some(StandardWidgetType::StatLine(s)) => {
+                    let level_number = self.levels.get_current_level() as i32 + 1;
                     let level = self.levels.get_level_mut();
                     let player = level.characters.get_player_mut().unwrap();
                     s.set_health(player.get_health());
+                    s.set_level(level_number);
                     s.set_loot_score(player.get_inventory_mut().get_loot_value());
                 }
                 _ => {}
