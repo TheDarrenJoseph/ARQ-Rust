@@ -66,7 +66,6 @@ use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALI
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::combat::CombatFrameHandler;
 use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
-use crate::view::map::MapView;
 use crate::view::settings_menu::SettingsMenu;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
@@ -618,9 +617,9 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     let ui = build_ui();
     let settings = build_settings();
     // Grab the randomised seed
-    let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
+    //let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
     // Seed override example TODO make this config? env var?
-    //let map_seed = String::from("42nDy1dau59y");
+    let map_seed = String::from("02sZFl3vcYKb");
     let seed_copy = map_seed.clone();
     let rng = Seeder::from(map_seed).make_rng();
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })

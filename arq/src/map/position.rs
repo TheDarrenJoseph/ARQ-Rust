@@ -1,3 +1,4 @@
+use std::num;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use rand::rngs::ThreadRng;
@@ -10,11 +11,16 @@ pub struct Position {
     pub y : u16
 }
 
-pub fn start_position_from_rect(rect: Rect) -> Position {
-    Position { x : rect.x, y: rect.y }
-}
 
 impl Position {
+    pub fn new(x: u16, y: u16) -> Position {
+        Position { x, y }
+    }
+
+    pub fn from_rect(rect: Rect) -> Position {
+        Position { x : rect.x, y: rect.y }
+    }
+
     pub fn get_neighbors(&self) -> Vec<Position> {
         let mut positions = Vec::new();
         // Left
@@ -48,6 +54,27 @@ impl Position {
             false
         }
     }
+
+    fn calculate_unsigned_offset_value(&self, actual: u16, offset: i32) -> u16 {
+        let mut output = actual;
+        if offset < 0 {
+            let negative_offset = i32::abs(offset) as u16;
+            if output >= negative_offset {
+                output -= negative_offset;
+            } else {
+                output = 0;
+            }
+        } else if offset > 0 {
+            output += offset as u16;
+        }
+        return output;
+    }
+
+    pub fn offset(&mut self, offset_x: i32, offset_y: i32) -> Position {
+        self.x = self.calculate_unsigned_offset_value(self.x, offset_x);
+        self.y = self.calculate_unsigned_offset_value(self.y, offset_y);
+        *self
+    }
 }
 
 impl Eq for Position {}
@@ -61,8 +88,7 @@ pub struct Area {
 }
 
 pub fn area_from_rect(rect: Rect) -> Area {
-  let start_position = start_position_from_rect(rect)  ;
-  build_rectangular_area(start_position, rect.width,rect.height)
+  build_rectangular_area(Position::from_rect(rect), rect.width,rect.height)
 }
 
 impl Area {
@@ -746,5 +772,41 @@ mod tests {
         assert_eq!(2, bottom.area.start_position.y);
         assert_eq!(2, bottom.area.end_position.x);
         assert_eq!(2, bottom.area.end_position.y);
+    }
+
+    #[test]
+    fn test_offset_positive() {
+        // GIVEN an initial position
+        let mut position = Position { x: 3, y: 3};
+
+        // WHEN we try to offset by +1
+        position = position.offset(1, 1);
+        // THEN we should see x: 4, y: 4
+        assert_eq!(4, position.x);
+        assert_eq!(4, position.y);
+    }
+
+    #[test]
+    fn test_offset_negative() {
+        // GIVEN an initial position
+        let mut position = Position { x: 3, y: 3};
+
+        // WHEN we try to offset by -1
+        position = position.offset(-1, -1);
+        // THEN we should see x: 2, y: 2
+        assert_eq!(2, position.x);
+        assert_eq!(2, position.y);
+    }
+
+    #[test]
+    fn test_offset_negative_lower_bound() {
+        // GIVEN an initial position
+        let mut position = Position { x: 3, y: 3};
+
+        // WHEN we try to offset by -4 (taking us below 0)
+        position = position.offset(-4, -4);
+        // THEN we should see x: 0, y: 0 (the lowest possible positive values w/ offset)
+        assert_eq!(0, position.x);
+        assert_eq!(0, position.y);
     }
 }

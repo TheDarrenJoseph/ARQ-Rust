@@ -8,7 +8,7 @@ use tui::text::Span;
 use tui::widgets::{Block, Borders};
 use crate::character::battle::Battle;
 use crate::character::equipment::{EquipmentSlot, WeaponSlot};
-use crate::map::position::{Area, build_rectangular_area, Position, start_position_from_rect};
+use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};

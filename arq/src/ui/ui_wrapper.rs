@@ -5,7 +5,7 @@ use tui::backend::Backend;
 use tui::layout::Rect;
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
-use crate::map::position::{build_rectangular_area, Position};
+use crate::map::position::{Area, build_rectangular_area, build_square_area, Position};
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, UI};
@@ -124,10 +124,13 @@ impl <B : Backend> UIWrapper<B> {
                     // Add the UI usage hint to the console buffer
                     self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None };
+                    let mut player_position = level.characters.get_player().unwrap().get_position();
+                    let start_position = player_position.offset(-3, -3);
+                    let map_display_area = build_square_area(start_position, 6);
+                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None, map_display_area };
                     // Adjust the map view size to fit within our borders / make space for the console
                     let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
-                    let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 8 ));
+                    let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 9 ));
 
                     // Draw the base UI (incl. console) and the map
                     map_view.draw(map_view_frame_size)?;

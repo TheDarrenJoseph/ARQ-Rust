@@ -20,7 +20,7 @@ use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{Dro
 
 use crate::view::View;
 
-const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter - Toggle selection\nEsc - Exit";
+const UI_USAGE_HINT: &str = "Up/Down - Move, Enter - Toggle selection\nTab - Change tab, Esc - Exit";
 
 pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,

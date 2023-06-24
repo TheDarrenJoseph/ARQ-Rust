@@ -21,8 +21,16 @@ pub mod model;
 pub mod dialog;
 
 /*
-    A "View" is essentially something that can take control of I/O (rendering, keyboard input, etc) until it exits
-    A View takes control / begins an I/O loop (upon calling begin()) while rendering
+    A "View" is:
+     * Responsible for managing a particular screen of the UI
+     * Something that usually contains a series of FrameHandler(s) that own widgets / state that is then rendered to each UI frame (the entire window per render)
+     * Something that often behaves as a proxy between the engine and underlying framehandlers
+     * Able to take control of the UI and I/O (rendering, keyboard input, etc) until it exits
+        * In this manner a View can take control / begin an I/O loop (upon calling begin()) while rendering itself via framhandlers
+
+    From a data perspective, a View has direct access to both:
+     * UI (ARQ's base UI, window areas, and it's elements (widgets))
+     * The terminal manager (from tui-rs) which is what allows us access to each frame via draw() which is then passed to each framehandler, this also allows direct access to the terminal display (character printing etc)
  */
 pub trait View<T>  {
     fn begin(&mut self) -> Result<InputResult<T>, Error>;

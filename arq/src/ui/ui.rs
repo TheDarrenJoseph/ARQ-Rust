@@ -148,7 +148,9 @@ impl UI {
         frame.render_widget(main_block, main_area.clone());
 
         let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
-        self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
+        // TODO double-check this is correct
+        self.frame_size = Some(build_rectangular_area(view_start_pos, frame_size.width, frame_size.height));
+        //self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
 
         if self.render_additional {
             self.draw_additional_widgets(frame);

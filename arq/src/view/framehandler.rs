@@ -9,7 +9,7 @@ pub mod map_generation;
 pub mod combat;
 
 /*
-    FrameHandlers are "dumb" views that simply draw themselves/given input to a terminal frame (the screen)
+    FrameHandlers are "dumb" views that simply draw their state (T) or other given input to a terminal frame (the screen)
  */
 pub trait FrameHandler<B: tui::backend::Backend, T> {
     /*

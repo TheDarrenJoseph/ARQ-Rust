@@ -64,6 +64,10 @@ impl Map {
         false
     }
 
+    pub fn position_in_bounds(&self, position: Position) -> bool {
+       self.in_bounds(position.x as usize, position.y as usize)
+    }
+
     pub fn get_rooms(&self) -> Vec<Room> {
         return self.rooms.clone();
     }
