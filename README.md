@@ -28,8 +28,8 @@ Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
 ```
 
-![Main map dev screenshot](images/map_view_dev_example.png)
-![Inventory view dev screenshot](images/inventory_dev_example.png)
+![Main map dev screenshot](images/map-view-80-25-example.png)
+![Inventory view dev screenshot](images/inventory-view-80-25-example.png)
 
 TODO (Not in any specific order)
 ----
