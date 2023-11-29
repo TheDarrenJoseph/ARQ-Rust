@@ -130,17 +130,19 @@ impl <B : Backend> UIWrapper<B> {
     }
 
     // TODO test this logic
-    fn calculate_map_display_area(&self, map_view_area: Area) -> Area {
-        // TODO center on the player in future??
-        // Setting the display area to the player's position with a -3 offset
-        //let mut player_position = level.characters.get_player().unwrap().get_position();
-        //let display_area_start = player_position.offset(-3, -3);
-        let display_area_start = Position { x: 0, y: 0};
+    fn calculate_map_display_area(&self, level: &Level, map_view_area: Area) -> Area {
 
-        // The display area is essentially:
-        // 1. starting at the map offset of display_area_start
-        // 2. ending at display_area_start + the size of the map view area (giving a map co-ord range)
-        let map_display_area = build_rectangular_area(display_area_start, map_view_area.size_x - map_view_area.start_position.x , map_view_area.size_y - map_view_area.start_position.y );
+        let mut player_position = level.characters.get_player().unwrap().get_global_position();
+
+        let half_of_display_area_x : i32 = (map_view_area.size_x / 2) as i32;
+        let half_of_display_area_y : i32 = (map_view_area.size_y / 2) as i32;
+
+        // Calculate the display area, centering on the player's position
+        let display_area_start = player_position.offset(-half_of_display_area_x, -half_of_display_area_y);
+
+        let display_area_size_x = map_view_area.size_x - map_view_area.start_position.x;
+        let display_area_size_y = map_view_area.size_y - map_view_area.start_position.y;
+        let map_display_area = build_rectangular_area(display_area_start, display_area_size_x, display_area_size_y);
 
         return map_display_area;
     }
@@ -160,7 +162,7 @@ impl <B : Backend> UIWrapper<B> {
                     // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
                     // 3.1 The map display area is what will move with the character throughout larger maps
                     let map_view_area = self.calculate_map_view_area();
-                    let map_display_area = self.calculate_map_display_area(map_view_area.unwrap());
+                    let map_display_area = self.calculate_map_display_area(level, map_view_area.unwrap());
 
                     let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
 
