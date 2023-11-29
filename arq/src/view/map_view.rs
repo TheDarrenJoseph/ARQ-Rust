@@ -60,11 +60,11 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
          AND anything above 8 would return false
          AND anything below 5 would return false
      */
-    fn is_position_in_map_range(&self, position: Position) -> bool {
+    fn is_position_in_map_display_area(&self, position: Position) -> bool {
         self.map_display_area.contains_position(position)
     }
 
-    fn is_position_in_view(&self, position: Position) -> bool {
+    fn is_position_in_view_area(&self, position: Position) -> bool {
         if let Some(view_area) = self.view_area {
             return view_area.contains(position.x, position.y)
         } else {
@@ -86,9 +86,9 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
      */
     fn to_view_position(&self, position: Position) -> Option<Position> {
         if let Some(view_area) = self.view_area {
-            let view_start = view_area.start_position;
-            let position = Position { x: view_start.x + position.x, y: position.y + view_start.y };
-            if self.is_position_in_view(position) {
+            let view_area_start = view_area.start_position;
+            let position = Position { x: view_area_start.x + position.x, y: position.y + view_area_start.y };
+            if self.is_position_in_view_area(position) {
                 return Some(position);
             }
         }
@@ -104,7 +104,7 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
         let modifier = tui::style::Modifier::empty();
         let cell = Cell { symbol: character_symbol.to_string(), fg, bg, modifier };
 
-        if self.is_position_in_map_range(character_position) {
+        if self.is_position_in_map_display_area(character_position) {
             if let Some(view_position) = self.to_view_position(character_position) {
                 let backend = self.terminal_manager.terminal.backend_mut();
                 let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
@@ -152,9 +152,9 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
                 log::error!("No containers exist in this map!");
             } else {
                 for (position, container) in &self.map.containers {
-                    if self.is_position_in_map_range(position.clone()) {
+                    if self.is_position_in_map_display_area(position.clone()) {
                         if let Some(view_position) = self.to_view_position(*position) {
-                            if self.is_position_in_view(view_position) {
+                            if self.is_position_in_view_area(view_position) {
                                 match container.container_type {
                                     ContainerType::OBJECT => {
                                         self.draw_container(view_position.clone(), container)?;
@@ -183,29 +183,31 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
     }
 
     fn draw_tile(&mut self, tile_position: Position, view_position: Position) -> Result<(), Error> {
-        if self.map.position_in_bounds(tile_position) && self.is_position_in_view(view_position) {
-            if self.is_position_in_map_range(view_position) {
-                let tile_details = self.get_tile(tile_position);
-                let symbol = tile_details.symbol.character.to_string();
-                let fg = colour_mapper::map_colour(tile_details.symbol.colour);
-                let bg = tui::style::Color::Black;
-                let modifier = tui::style::Modifier::empty();
-                let cell = Cell { symbol, fg, bg, modifier };
-                let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
-                let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                let backend = self.terminal_manager.terminal.backend_mut();
-                backend.draw(updates.into_iter())?;
-            }
+        let tile_pos_in_map_bounds = self.map.position_in_bounds(tile_position);
+        let view_position_in_view_bounds = self.is_position_in_view_area(view_position);
+        // The map display area is a map-coord based system, so we need to check the tile co-ord against it
+        let tile_position_in_map_display_area = self.is_position_in_map_display_area(tile_position);
+        if tile_pos_in_map_bounds && view_position_in_view_bounds && tile_position_in_map_display_area {
+            let tile_details = self.get_tile(tile_position);
+            let symbol = tile_details.symbol.character.to_string();
+            let fg = colour_mapper::map_colour(tile_details.symbol.colour);
+            let bg = tui::style::Color::Black;
+            let modifier = tui::style::Modifier::empty();
+            let cell = Cell { symbol, fg, bg, modifier };
+            let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+            let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+            let backend = self.terminal_manager.terminal.backend_mut();
+            backend.draw(updates.into_iter())?;
         }
         Ok(())
     }
 
-    fn draw_map_tiles(&mut self) -> Result<(), Error> {
+    fn clear_map_view(&mut self) -> Result<(), Error> {
         if let Some(view_area) = self.view_area {
-            let blanking_cell : Cell = build_blanking_cell();
+            let blanking_cell: Cell = build_blanking_cell();
             // Clear everything in the view area (entire internal window area)
             for view_area_x in view_area.start_position.x..view_area.end_position.x {
-                for view_area_y in view_area.start_position.y..view_area.end_position.y  {
+                for view_area_y in view_area.start_position.y..view_area.end_position.y {
                     let cell_tup: (u16, u16, &Cell) = (view_area_x, view_area_y, &blanking_cell);
                     let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
                     self.terminal_manager.terminal.backend_mut().draw(updates.into_iter())?;
@@ -213,20 +215,42 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
             }
             self.terminal_manager.terminal.backend_mut().flush();
             info!("Map view cleared");
+        }
+        Ok(())
+    }
 
+    // There are 3 map areas to consider:
+    // 1. Map Area - Map co-ords (the position/size of the actual map e.g tiles), this should currently always start at 0,0
+    // 2. Map view area - View co-ords (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
+    // 3. Map display area - Map co-ords (The position/size of the map 'viewfinder', the area that you can actually see the map through)
+    // 3.1 The map display area is what will move with the character throughout larger maps
+    fn draw_map_tiles(&mut self) -> Result<(), Error> {
+        if let Some(view_area) = self.view_area {
+            let map_display_area = self.map_display_area;
 
-            /*for view_area_x in 0..view_area.get_size_x() {
-                for view_area_y in 0..view_area.get_size_y() {
-                    let view_position = Position::new(view_area_x, view_area_y);
-                    let offset_tile_position = self.apply_map_offset(view_position);
+            // For each co-ord in the map view area
+            for view_area_x in view_area.start_position.x..view_area.end_position.x {
+                for view_area_y in view_area.start_position.y..view_area.end_position.y {
+                    // Localise it to a map based co-ord
+                    let mut localised_x = view_area_x - view_area.start_position.x;
+                    let mut localised_y = view_area_y - view_area.start_position.y;
 
-                    if self.is_position_in_map_range(offset_tile_position) {
-                        if let Some(view_position) = self.to_view_position(offset_tile_position) {
-                            self.draw_tile(offset_tile_position, view_position);
-                        }
+                    // Further localise it with the map display offset
+                    localised_x = map_display_area.start_position.x + localised_x;
+                    localised_y = map_display_area.start_position.y + localised_y;
+
+                    let localised_position = Position::new(localised_x, localised_y);
+
+                    // Lookup each co-ord in the map display area to give the true tile co-ordinate for this view co-ordinate
+                    if (map_display_area.contains_position(localised_position)) {
+                        let view_position = Position::new(view_area_x, view_area_y);
+                        //if let Some(view_position) = view_local_position {
+                            self.draw_tile(localised_position, view_position);
+                            self.terminal_manager.terminal.backend_mut().flush();
+                        //}
                     }
                 }
-            }*/
+            }
         }
         self.terminal_manager.terminal.backend_mut().flush();
         Ok(())
@@ -263,6 +287,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
 
         log::info!("Drawing map (tiles)");
+        self.clear_map_view()?;
         self.draw_map_tiles()?;
         // TODO add back
         //log::info!("Drawing map (containers)");

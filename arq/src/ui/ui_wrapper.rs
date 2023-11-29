@@ -129,6 +129,22 @@ impl <B : Backend> UIWrapper<B> {
         return None;
     }
 
+    // TODO test this logic
+    fn calculate_map_display_area(&self, map_view_area: Area) -> Area {
+        // TODO center on the player in future??
+        // Setting the display area to the player's position with a -3 offset
+        //let mut player_position = level.characters.get_player().unwrap().get_position();
+        //let display_area_start = player_position.offset(-3, -3);
+        let display_area_start = Position { x: 0, y: 0};
+
+        // The display area is essentially:
+        // 1. starting at the map offset of display_area_start
+        // 2. ending at display_area_start + the size of the map view area (giving a map co-ord range)
+        let map_display_area = build_rectangular_area(display_area_start, map_view_area.size_x , map_view_area.size_y );
+
+        return map_display_area;
+    }
+
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
         let map = &mut level.get_map_mut().cloned();
         let frame_size_copy = self.ui.frame_size.clone();
@@ -139,16 +155,13 @@ impl <B : Backend> UIWrapper<B> {
                     self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
                     // There are 3 map areas to consider:
-                    // 1. Map Area (the position/size of the actual map e.g tiles)
-                    // 2. Map view area (The position/size of the map view relative to the entire terminal frame)
+                    // 1. Map Area (the position/size of the actual map e.g tiles), this should currently always start at 0,0
+                    // 2. Map view area (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
                     // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
-                    // The map display area is what will move with the character throughout larger maps
+                    // 3.1 The map display area is what will move with the character throughout larger maps
                     let map_view_area = self.calculate_map_view_area();
+                    let map_display_area = self.calculate_map_display_area(map_view_area.unwrap());
 
-                    // Setting the display area to the player's position with a -3 offset
-                    let mut player_position = level.characters.get_player().unwrap().get_position();
-                    let start_position = player_position.offset(-3, -3);
-                    let map_display_area = build_square_area(start_position, 6);
                     let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
 
                     // Draw the base UI (incl. console) and the map

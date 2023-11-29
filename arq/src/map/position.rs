@@ -215,6 +215,7 @@ impl Area {
         }
         positions
     }
+
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
