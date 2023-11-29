@@ -147,7 +147,7 @@ impl Level {
                 }
             },
             Key::Char(_) => {
-                Some(self.characters.get_player_mut().unwrap().get_position().clone())
+                Some(self.characters.get_player_mut().unwrap().get_global_position().clone())
             }
             _ => {
                 None
@@ -156,7 +156,7 @@ impl Level {
     }
 
     pub fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
-        let position = self.characters.get_player_mut().unwrap().get_position().clone();
+        let position = self.characters.get_player_mut().unwrap().get_global_position().clone();
         let mut side_position = None;
         match side {
             Side::TOP => {

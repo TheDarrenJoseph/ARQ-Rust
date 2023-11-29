@@ -72,31 +72,53 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
         }
     }
 
-    /*
-        Applies the starting map position offset to the given position
-        The result of this is a position that refers to the map and not the view
-     */
-    fn apply_map_offset(&self, position: Position) -> Position {
-        return Position { x: position.x + self.map_display_area.start_position.x, y: position.y + self.map_display_area.start_position.y }
+    fn local_to_global(&self, view_area_position: Position) -> Option<Position> {
+        if let Some(view_area) = self.view_area {
+            // Globalise it to a map based co-ord
+            let mut globalised_x = view_area_position.x - view_area.start_position.x;
+            let mut globalised_y = view_area_position.y - view_area.start_position.y;
+
+            // Further globalise it with the map display offset to get the true co-ordinate
+            let display_area_start = self.map_display_area.start_position;
+            globalised_x = display_area_start.x + globalised_x;
+            globalised_y = display_area_start.y + globalised_y;
+
+            let global_position = Position::new(globalised_x, globalised_y);
+            return Some(global_position);
+        }
+        None
     }
 
      /*
-        Offsets a given Position by the view start position
-        The result of this is a position that applies purely to the view
+     * Converts a global (i.e map relative) position to a local position for this view (one that can be used to render a character)
      */
-    fn to_view_position(&self, position: Position) -> Option<Position> {
+    fn global_to_view_local(&self, global_position: Position) -> Option<Position> {
         if let Some(view_area) = self.view_area {
-            let view_area_start = view_area.start_position;
-            let position = Position { x: view_area_start.x + position.x, y: position.y + view_area_start.y };
-            if self.is_position_in_view_area(position) {
-                return Some(position);
-            }
+            let display_area_start = self.map_display_area.start_position;
+
+            // Convert global position to local relative to the display area
+            // As display area is also a global position, we can simply get the difference
+            // i.e
+            // if you're at global position {x: 2, y: 2}
+            // and the display area starts at global pos: {x: 1, y: 1}
+            // This relative value is {x: 1, y: 1} as you're 1,1 closer to 2,2
+            let relative_global_x = global_position.x - display_area_start.x;
+            let relative_global_y = global_position.y - display_area_start.y;
+
+            // Apply the view position offsets to this
+            // i.e
+            // given {x: 1, y: 1}
+            // and the view area starts at frame pos {x: 1, y: 1}
+            // This gives {x: 2, y: 2}
+            let local_x = relative_global_x + view_area.start_position.x;
+            let local_y = relative_global_y + view_area.start_position.y;
+            let view_position = Position::new(local_x, local_y);
+            return Some(view_position);
         }
         None
     }
 
     fn draw_character(&mut self, character: &Character) -> Result<(), Error> {
-        let character_position = character.get_position();
         let character_colour = character.get_colour();
         let character_symbol = character.get_symbol();
         let fg = colour_mapper::map_colour(character_colour);
@@ -104,13 +126,22 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
         let modifier = tui::style::Modifier::empty();
         let cell = Cell { symbol: character_symbol.to_string(), fg, bg, modifier };
 
-        if self.is_position_in_map_display_area(character_position) {
-            if let Some(view_position) = self.to_view_position(character_position) {
-                let backend = self.terminal_manager.terminal.backend_mut();
-                let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
-                let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
-                backend.draw(updates.into_iter())?;
-                backend.flush()?;
+        let global_character_position = character.get_global_position();
+
+        if let Some(view_area) = self.view_area {
+            // Check the player is in the displayed area
+            if self.is_position_in_map_display_area(global_character_position) {
+                let local_position = self.global_to_view_local(global_character_position);
+                if let Some(view_position) = local_position {
+                    if view_area.contains_position(view_position) {
+                        let backend = self.terminal_manager.terminal.backend_mut();
+                        let cell_tup: (u16, u16, &Cell) = (view_position.x, view_position.y, &cell);
+                        let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
+                        backend.draw(updates.into_iter())?;
+                        backend.flush()?;
+                    }
+                }
+
             }
         }
 
@@ -151,9 +182,11 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
             if self.map.containers.is_empty() {
                 log::error!("No containers exist in this map!");
             } else {
-                for (position, container) in &self.map.containers {
-                    if self.is_position_in_map_display_area(position.clone()) {
-                        if let Some(view_position) = self.to_view_position(*position) {
+                for (global_container_position, container) in &self.map.containers {
+                    // Check if the container position is in the current display area
+                    if self.is_position_in_map_display_area(global_container_position.clone()) {
+                        // Convert the global map co-ord to a local view co-ord
+                        if let Some(view_position) = self.global_to_view_local(*global_container_position) {
                             if self.is_position_in_view_area(view_position) {
                                 match container.container_type {
                                     ContainerType::OBJECT => {
@@ -231,23 +264,14 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
             // For each co-ord in the map view area
             for view_area_x in view_area.start_position.x..view_area.end_position.x {
                 for view_area_y in view_area.start_position.y..view_area.end_position.y {
-                    // Localise it to a map based co-ord
-                    let mut localised_x = view_area_x - view_area.start_position.x;
-                    let mut localised_y = view_area_y - view_area.start_position.y;
-
-                    // Further localise it with the map display offset
-                    localised_x = map_display_area.start_position.x + localised_x;
-                    localised_y = map_display_area.start_position.y + localised_y;
-
-                    let localised_position = Position::new(localised_x, localised_y);
-
-                    // Lookup each co-ord in the map display area to give the true tile co-ordinate for this view co-ordinate
-                    if (map_display_area.contains_position(localised_position)) {
-                        let view_position = Position::new(view_area_x, view_area_y);
-                        //if let Some(view_position) = view_local_position {
-                            self.draw_tile(localised_position, view_position);
+                    let view_area_position = Position::new(view_area_x, view_area_y);
+                    let globalised_position = self.local_to_global(view_area_position);
+                    if let Some(global_pos) = globalised_position {
+                        if (map_display_area.contains_position(global_pos)) {
+                            let view_position = Position::new(view_area_x, view_area_y);
+                            self.draw_tile(global_pos, view_position);
                             self.terminal_manager.terminal.backend_mut().flush();
-                        //}
+                        }
                     }
                 }
             }
@@ -291,9 +315,9 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         self.draw_map_tiles()?;
         // TODO add back
         //log::info!("Drawing map (containers)");
-        //self.draw_containers()?;
+        self.draw_containers()?;
         //log::info!("Drawing map (characters)");
-        //self.draw_characters()?;
+        self.draw_characters()?;
 
         Ok(())
     }

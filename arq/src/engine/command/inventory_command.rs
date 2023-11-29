@@ -92,7 +92,7 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
 }
 
 fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFrameHandlerInputResult> {
-    let position = state.level.characters.get_player_mut().unwrap().get_position().clone();
+    let position = state.level.characters.get_player_mut().unwrap().get_global_position().clone();
     log::info!("InventoryCommand - Dropping {} items at position: {}, {}", items.len(),  position.x, position.y);
 
     // Find the container on the map and add the "container" wrappers there

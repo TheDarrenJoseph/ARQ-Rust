@@ -676,12 +676,12 @@ mod tests {
             Result::Ok(mut engine) => {
                 let levels = engine.levels.get_level_mut();
                 let player = levels.characters.get_player_mut();
-                assert_eq!(start_position, player.unwrap().get_position());
+                assert_eq!(start_position, player.unwrap().get_global_position());
 
                 for key in input {
                     engine.handle_input(key).await.unwrap();
                 }
-                assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_position());
+                assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_global_position());
             },
             _ => {
                 panic!("Expected a valid Game Engine instance!")

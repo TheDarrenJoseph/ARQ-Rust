@@ -215,7 +215,7 @@ impl Area {
         }
         positions
     }
-
+    
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -676,6 +676,26 @@ mod tests {
         assert!(!area.contains_position(Position { x: 3, y: 0 }));
         assert!(!area.contains_position(Position { x: 0, y: 3 }));
         assert!(!area.contains_position(Position { x: 3, y: 3 }));
+    }
+
+    #[test]
+    fn test_3x3_offset_invalid_contains() {
+        // GIVEN a 3x3 Area
+        let area = build_square_area(Position { x: 1, y: 1 }, 3);
+        assert_eq!(3, area.size_x);
+        assert_eq!(3, area.size_y);
+        // That starts at position 1,1
+        assert_eq!(1, area.start_position.x);
+        assert_eq!(1, area.start_position.y);
+        // And ends at 3,3
+        assert_eq!(3, area.end_position.x);
+        assert_eq!(3, area.end_position.y);
+
+        // WHEN we call to see if points above it's range are contained
+        // THEN we expect the results to be false
+        assert!(!area.contains_position(Position { x: 4, y: 0 }));
+        assert!(!area.contains_position(Position { x: 0, y: 4 }));
+        assert!(!area.contains_position(Position { x: 4, y: 4 }));
     }
 
     #[test]

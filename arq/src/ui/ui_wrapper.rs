@@ -140,7 +140,7 @@ impl <B : Backend> UIWrapper<B> {
         // The display area is essentially:
         // 1. starting at the map offset of display_area_start
         // 2. ending at display_area_start + the size of the map view area (giving a map co-ord range)
-        let map_display_area = build_rectangular_area(display_area_start, map_view_area.size_x , map_view_area.size_y );
+        let map_display_area = build_rectangular_area(display_area_start, map_view_area.size_x - map_view_area.start_position.x , map_view_area.size_y - map_view_area.start_position.y );
 
         return map_display_area;
     }

@@ -110,7 +110,7 @@ impl Character {
         return self.symbol.colour.clone();
     }
 
-    pub fn get_position(&self) -> Position {
+    pub fn get_global_position(&self) -> Position {
         return self.position.clone();
     }
 
@@ -197,7 +197,7 @@ mod tests {
         assert_eq!("Test Person", character.get_name());
         assert_eq!(100, character.get_health());
         assert_eq!(Colour::Green, character.get_colour());
-        assert_eq!(position, character.get_position());
+        assert_eq!(position, character.get_global_position());
         assert_eq!(0, character.get_inventory_mut().get_contents().len());
     }
 }
