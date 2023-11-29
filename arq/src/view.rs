@@ -11,14 +11,14 @@ use crate::ui::ui::get_input_key;
 
 pub mod framehandler;
 pub mod util;
-pub mod character_info;
-pub mod map;
-pub mod world_container;
-pub mod settings_menu;
-pub mod game_over;
-pub mod combat;
+pub mod character_info_view;
+pub mod map_view;
+pub mod world_container_view;
+pub mod settings_menu_view;
+pub mod game_over_view;
+pub mod combat_view;
 pub mod model;
-pub mod dialog;
+pub mod dialog_view;
 
 /*
     A "View" is:

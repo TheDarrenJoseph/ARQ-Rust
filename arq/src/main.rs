@@ -10,8 +10,8 @@ use tui::backend::TermionBackend;
 
 use crate::engine::game_engine::{build_game_engine, GameEngine};
 use crate::ui::ui::StartMenuChoice::Play;
-use crate::view::game_over::GameOverChoice;
-use crate::view::game_over::GameOverChoice::EXIT;
+use crate::view::game_over_view::GameOverChoice;
+use crate::view::game_over_view::GameOverChoice::EXIT;
 
 mod error;
 mod engine;

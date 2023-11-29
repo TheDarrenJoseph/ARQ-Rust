@@ -11,19 +11,19 @@ use crate::ui::ui::{get_input_key, UI};
 use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::{GenericInputResult, InputResult, View};
 
-pub struct Dialog<'a, B : tui::backend::Backend> {
+pub struct DialogView<'a, B : tui::backend::Backend> {
     message: String,
     ui : &'a mut UI,
     terminal_manager : &'a mut TerminalManager<B>,
 }
 
-impl <B : tui::backend::Backend> Dialog<'_, B> {
-    pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, message: String) -> Dialog<'a, B> {
-        Dialog { ui, terminal_manager, message }
+impl <B : tui::backend::Backend> DialogView<'_, B> {
+    pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, message: String) -> DialogView<'a, B> {
+        DialogView { ui, terminal_manager, message }
     }
 }
 
-impl <'b, B : tui::backend::Backend> View<()> for Dialog<'_, B>  {
+impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<()>, Error> {
         self.draw(None);
         get_input_key();

@@ -59,14 +59,14 @@ use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
 use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
-use crate::view::combat::CombatView;
-use crate::view::dialog::Dialog;
+use crate::view::combat_view::CombatView;
+use crate::view::dialog_view::DialogView;
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::combat::CombatFrameHandler;
-use crate::view::game_over::{build_game_over_menu, GameOver, GameOverChoice};
-use crate::view::settings_menu::SettingsMenu;
+use crate::view::game_over_view::{build_game_over_menu, GameOver, GameOverChoice};
+use crate::view::settings_menu_view::SettingsMenuView;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
@@ -217,7 +217,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                         log::info!("Showing settings..");
 
                         let widgets = build_settings_widgets(&self.settings);
-                        let mut settings_menu = SettingsMenu {
+                        let mut settings_menu = SettingsMenuView {
                             ui: &mut self.ui_wrapper.ui,
                             terminal_manager: &mut self.ui_wrapper.terminal_manager,
                             menu: WidgetMenu {
@@ -418,7 +418,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                 Err(e) => {
                     // Rebuild the engine to reset the seed and try again
                     log::error!("Initialisation failed with error {}. Trying another map seed...", e);
-                    let mut error_dialog = Dialog::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, String::from("Initialisation failed, trying another map seed..."));
+                    let mut error_dialog = DialogView::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, String::from("Initialisation failed, trying another map seed..."));
                     error_dialog.begin();
                     self.rebuild();
                 }

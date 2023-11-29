@@ -18,7 +18,7 @@ use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::{InputResult, View};
-use crate::view::world_container::{WorldContainerView, WorldContainerViewFrameHandlers};
+use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::ui::ui::{get_input_key, UI};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 

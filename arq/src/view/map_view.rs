@@ -18,7 +18,7 @@ use crate::terminal::colour_mapper;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
-use crate::view::character_info::CharacterInfoView;
+use crate::view::character_info_view::CharacterInfoView;
 use crate::view::framehandler::util::tabling::build_paragraph;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 

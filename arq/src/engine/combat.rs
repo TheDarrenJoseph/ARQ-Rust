@@ -1,6 +1,6 @@
 use crate::character::battle::Battle;
 use crate::character::equipment::WeaponSlot;
-use crate::view::combat::{CombatCallbackData, CombatResult, CombatView};
+use crate::view::combat_view::{CombatCallbackData, CombatResult, CombatView};
 use crate::view::util::callback::CallbackHandler;
 
 #[derive(Clone)]

@@ -8,7 +8,7 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
-use crate::view::game_over::GameOverChoice::{EXIT, RESTART};
+use crate::view::game_over_view::GameOverChoice::{EXIT, RESTART};
 use crate::widget::stateful::button_widget::build_button;
 use crate::widget::widgets::WidgetList;
 use crate::widget::{Focusable, StatefulWidgetType};

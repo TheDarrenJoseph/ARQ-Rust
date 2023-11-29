@@ -424,7 +424,7 @@ mod tests {
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
-    use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
     
 
     fn build_test_container() -> Container {

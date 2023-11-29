@@ -14,7 +14,7 @@ use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrame
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
-use crate::view::map::MapView;
+use crate::view::map_view::MapView;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
 

@@ -14,7 +14,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 
 use crate::view::util::callback::Callback;
-use crate::view::character_info::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, EquipItems, MoveItems, MoveToContainerChoice};
 
