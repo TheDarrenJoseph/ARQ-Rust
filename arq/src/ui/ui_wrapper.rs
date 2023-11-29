@@ -115,6 +115,20 @@ impl <B : Backend> UIWrapper<B> {
         return Ok(character_view.get_character());
     }
 
+    fn calculate_map_view_area(&self) -> Option<Area> {
+        if let Some(frame_size) = self.ui.frame_size.clone() {
+            let view_areas = self.ui.get_view_areas(frame_size.to_rect());
+
+            let main_area = view_areas.get_main_area();
+            // Main area does not consider borders, so +1 to start inside those
+            let map_view_start_pos = Position { x: main_area.x + 1, y: main_area.y + 1 };
+            // Build the view area, -1 for remaining border on the other sides
+            let map_view_area = build_rectangular_area(map_view_start_pos, main_area.width - 1, main_area.height - 1);
+            return Some(map_view_area);
+        }
+        return None;
+    }
+
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
         let map = &mut level.get_map_mut().cloned();
         let frame_size_copy = self.ui.frame_size.clone();
@@ -124,16 +138,21 @@ impl <B : Backend> UIWrapper<B> {
                     // Add the UI usage hint to the console buffer
                     self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
+                    // There are 3 map areas to consider:
+                    // 1. Map Area (the position/size of the actual map e.g tiles)
+                    // 2. Map view area (The position/size of the map view relative to the entire terminal frame)
+                    // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
+                    // The map display area is what will move with the character throughout larger maps
+                    let map_view_area = self.calculate_map_view_area();
+
+                    // Setting the display area to the player's position with a -3 offset
                     let mut player_position = level.characters.get_player().unwrap().get_position();
                     let start_position = player_position.offset(-3, -3);
                     let map_display_area = build_square_area(start_position, 6);
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: None, map_display_area };
-                    // Adjust the map view size to fit within our borders / make space for the console
-                    let map_view_start_pos = Position { x : frame_size.start_position.x + 1, y: frame_size.start_position.y + 1};
-                    let map_view_frame_size = Some(build_rectangular_area(map_view_start_pos, frame_size.size_x - 2, frame_size.size_y - 9 ));
+                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
 
                     // Draw the base UI (incl. console) and the map
-                    map_view.draw(map_view_frame_size)?;
+                    map_view.draw(map_view_area)?;
                 }
             },
             None => {}

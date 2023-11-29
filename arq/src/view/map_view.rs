@@ -8,6 +8,7 @@ use tui::buffer::Cell;
 use tui::layout::Rect;
 use tui::style::Color;
 
+use crate::global_flags;
 use crate::character::Character;
 use crate::character::characters::Characters;
 use crate::map::Map;
@@ -36,6 +37,16 @@ pub struct MapView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub view_area : Option<Area>, // Total view area
     pub map_display_area : Area // Possibly reduced display area
+}
+
+
+fn build_blanking_cell() -> Cell {
+    if global_flags::GLOBALS.debugging_map_symbols {
+        // For debugging - this makes the blanked area really obvious by using the block character
+        Cell { symbol: String::from('\u{2588}'), fg: Color::Green, bg: Color::Black, modifier: tui::style::Modifier::empty() }
+    } else {
+        Cell { symbol: String::from(" "), fg: Color::Black, bg: Color::Black, modifier: tui::style::Modifier::empty() }
+    }
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B> {
@@ -191,13 +202,11 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
 
     fn draw_map_tiles(&mut self) -> Result<(), Error> {
         if let Some(view_area) = self.view_area {
+            let blanking_cell : Cell = build_blanking_cell();
             // Clear everything in the view area (entire internal window area)
             for view_area_x in view_area.start_position.x..view_area.end_position.x {
                 for view_area_y in view_area.start_position.y..view_area.end_position.y  {
-                    // For debugging - this makes the blanked area really obvious
-                    //let cell = Cell { symbol: String::from("O"), fg: Color::Yellow, bg: Color::Black, modifier: tui::style::Modifier::empty() };
-                    let cell = Cell { symbol: String::from(" "), fg: Color::Black, bg: Color::Black, modifier: tui::style::Modifier::empty() };
-                    let cell_tup: (u16, u16, &Cell) = (view_area_x, view_area_y, &cell);
+                    let cell_tup: (u16, u16, &Cell) = (view_area_x, view_area_y, &blanking_cell);
                     let updates: Vec<(u16, u16, &Cell)> = vec![cell_tup];
                     self.terminal_manager.terminal.backend_mut().draw(updates.into_iter())?;
                 }
@@ -205,7 +214,8 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
             self.terminal_manager.terminal.backend_mut().flush();
             info!("Map view cleared");
 
-            for view_area_x in 0..view_area.get_size_x() {
+
+            /*for view_area_x in 0..view_area.get_size_x() {
                 for view_area_y in 0..view_area.get_size_y() {
                     let view_position = Position::new(view_area_x, view_area_y);
                     let offset_tile_position = self.apply_map_offset(view_position);
@@ -216,7 +226,7 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
                         }
                     }
                 }
-            }
+            }*/
         }
         self.terminal_manager.terminal.backend_mut().flush();
         Ok(())
@@ -254,10 +264,11 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
         log::info!("Drawing map (tiles)");
         self.draw_map_tiles()?;
-        log::info!("Drawing map (containers)");
-        self.draw_containers()?;
-        log::info!("Drawing map (characters)");
-        self.draw_characters()?;
+        // TODO add back
+        //log::info!("Drawing map (containers)");
+        //self.draw_containers()?;
+        //log::info!("Drawing map (characters)");
+        //self.draw_characters()?;
 
         Ok(())
     }
