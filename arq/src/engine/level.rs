@@ -13,7 +13,7 @@ use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
 use crate::progress::StepProgress;
 
-const MAP_SIZE_X: u16 = 30;
+const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;
 
 #[derive(Default, Clone)]
