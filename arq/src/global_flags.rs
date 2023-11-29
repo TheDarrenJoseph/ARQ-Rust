@@ -3,5 +3,5 @@ pub struct GlobalFlags {
 }
 
 pub const GLOBALS: GlobalFlags = GlobalFlags {
-    debugging_map_symbols: true,
+    debugging_map_symbols: false,
 };
