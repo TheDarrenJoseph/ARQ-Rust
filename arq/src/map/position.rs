@@ -87,11 +87,15 @@ pub struct Area {
     pub size_y : u16
 }
 
-pub fn area_from_rect(rect: Rect) -> Area {
-  build_rectangular_area(Position::from_rect(rect), rect.width,rect.height)
-}
-
 impl Area {
+    pub fn new(start_position: Position, width: u16, height: u16) -> Area {
+        build_rectangular_area(start_position, width,height)
+    }
+
+    pub fn from_rect(rect: Rect) -> Area {
+        build_rectangular_area(Position::from_rect(rect), rect.width,rect.height)
+    }
+
     pub fn to_rect(&self) -> Rect {
         Rect { x: self.start_position.x, y: self.start_position.y, width: self.size_x, height: self.size_y}
     }

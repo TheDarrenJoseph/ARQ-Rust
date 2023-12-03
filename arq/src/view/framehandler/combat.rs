@@ -14,8 +14,14 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::tabling::Column;
 
 pub struct CombatFrameHandler {
-    pub(crate) areas : Option<UIAreas>,
+    pub(crate) areas : Option<CombatViewAreas>,
     pub selection: OptionListSelection<CombatTurnChoice>
+}
+
+pub struct CombatViewAreas {
+    pub main_area : Area,
+    pub console_area : Area,
+    pub minimap_area : Area
 }
 
 pub struct ConsoleWidgets<'a> {
@@ -46,7 +52,7 @@ impl CombatFrameHandler {
     }
 
     fn build_console_widgets(&self) -> ConsoleWidgets {
-        let console_area = self.areas.as_ref().unwrap().get_console_area().unwrap();
+        let console_area = self.areas.as_ref().unwrap().console_area;
         let console_window_block = Block::default()
             .borders(Borders::ALL);
 
@@ -66,13 +72,13 @@ impl CombatFrameHandler {
                 .alignment(Alignment::Left);
 
             let offset_y = i + 1;
-            let text_area = Rect::new(console_area.x.clone() + 1, console_area.y.clone() + offset_y, largest_option_length, 1);
+            let text_area = Rect::new(console_area.start_position.x.clone() + 1, console_area.start_position.y.clone() + offset_y, largest_option_length, 1);
 
             paragraphs.push((paragraph, text_area));
             i += 1;
         }
 
-        return  ConsoleWidgets { window: (console_window_block, console_area), paragraphs };
+        return  ConsoleWidgets { window: (console_window_block, console_area.to_rect()), paragraphs };
     }
 }
 
@@ -103,22 +109,22 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let enemy_equipment = enemy.get_equipment_mut().clone();
         let enemy_name = enemy.get_name();
 
-        let main_area = self.areas.as_ref().unwrap().get_main_area();
+        let main_area = self.areas.as_ref().unwrap().main_area;
 
-        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.width as usize));
+        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.size_x as usize));
         let title_span = Span::from(title);
 
         let main_window_block = Block::default()
             .title(title_span)
             .borders(Borders::ALL);
-        frame.render_widget(main_window_block, main_area);
+        frame.render_widget(main_window_block, main_area.to_rect());
 
         // Split the main window into 2 columns / sides
-        let side_width = (main_area.width - 2) / 2;
-        let side_height= (main_area.height - 2);
+        let side_width = (main_area.size_x - 2) / 2;
+        let side_height= (main_area.size_y - 2);
 
         // Start inside the border (+1)
-        let left_side_start_position = Position { x: main_area.x + 1, y: main_area.y + 1 };
+        let left_side_start_position = Position { x: main_area.start_position.x + 1, y: main_area.start_position.y + 1 };
         let left_side_area = build_rectangular_area(left_side_start_position, side_width, side_height);
         let left_side_block = Block::default()
             .title(Span::styled(player_name, Style::default().add_modifier(Modifier::UNDERLINED)))
@@ -132,7 +138,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let player_equipment_list = list_equipment(player_equipment);
         frame.render_widget(player_equipment_list, player_equipment_area);
 
-        let right_side_start_position = Position { x: left_side_area.end_position.x, y: main_area.y + 1 };
+        let right_side_start_position = Position { x: left_side_area.end_position.x, y: main_area.start_position.y + 1 };
         let right_side_area = build_rectangular_area(right_side_start_position, side_width, side_height);
         let right_side_block = Block::default()
             .title(Span::styled(enemy_name, Style::default().add_modifier(Modifier::UNDERLINED)))

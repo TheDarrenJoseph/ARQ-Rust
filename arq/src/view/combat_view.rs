@@ -2,7 +2,7 @@ use std::io;
 use std::io::Error;
 use log::error;
 use termion::event::Key;
-use tui::layout::Rect;
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Span;
 use tui::widgets::{Block, Borders};
@@ -12,7 +12,7 @@ use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
-use crate::view::framehandler::combat::CombatFrameHandler;
+use crate::view::framehandler::combat::{CombatFrameHandler, CombatViewAreas};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
@@ -88,8 +88,10 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
             let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
 
             if (centered.is_ok()) {
-                let ui_areas = ui.get_view_areas(centered.unwrap());
-                fh.areas = Some(ui_areas);
+                let mut ui_areas = ui.get_view_areas(centered.unwrap());
+
+                let combat_view_areas = build_view_areas(frame_size);
+                fh.areas = Some(combat_view_areas);
                 let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };
                 fh.handle_frame(frame, frame_data);
             } else {
@@ -140,6 +142,38 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
                 return Ok(self.build_input_not_done_result());
             }
         }
+    }
+}
+
+fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
+    // Try to center, or else use the whole frame
+    let frame_centered = center_area(MIN_AREA, frame_size, MIN_AREA);
+    let mut total_area;
+    if let Ok(centered) = frame_centered {
+        total_area = centered;
+    } else {
+        total_area = frame_size;
+    }
+
+    let ui_areas = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(80),
+                Constraint::Percentage(20)
+            ].as_ref()
+        )
+        .split(total_area);
+
+    // To make space for the minimap, remove some of the left-hand side of the console area
+    let mut console_rect = ui_areas[1].clone();
+    console_rect.x += 8;
+    console_rect.width -= 8;
+
+    return CombatViewAreas {
+        main_area: Area::from_rect(ui_areas[0]),
+        console_area: Area::from_rect(console_rect),
+        minimap_area: Area::new(Position::new(0, console_rect.y), 3, 3)
     }
 }
 
