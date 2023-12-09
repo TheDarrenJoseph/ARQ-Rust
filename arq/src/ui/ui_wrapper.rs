@@ -14,6 +14,7 @@ use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrame
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
+use crate::view::framehandler::map_framehandler::MapFrameHandler;
 use crate::view::map_view::MapView;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
@@ -129,24 +130,6 @@ impl <B : Backend> UIWrapper<B> {
         return None;
     }
 
-    // TODO test this logic
-    fn calculate_map_display_area(&self, level: &Level, map_view_area: Area) -> Area {
-
-        let mut player_position = level.characters.get_player().unwrap().get_global_position();
-
-        let half_of_display_area_x : i32 = (map_view_area.size_x / 2) as i32;
-        let half_of_display_area_y : i32 = (map_view_area.size_y / 2) as i32;
-
-        // Calculate the display area, centering on the player's position
-        let display_area_start = player_position.offset(-half_of_display_area_x, -half_of_display_area_y);
-
-        let display_area_size_x = map_view_area.size_x - map_view_area.start_position.x;
-        let display_area_size_y = map_view_area.size_y - map_view_area.start_position.y;
-        let map_display_area = build_rectangular_area(display_area_start, display_area_size_x, display_area_size_y);
-
-        return map_display_area;
-    }
-
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
         let map = &mut level.get_map_mut().cloned();
         let frame_size_copy = self.ui.frame_size.clone();
@@ -162,7 +145,9 @@ impl <B : Backend> UIWrapper<B> {
                     // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
                     // 3.1 The map display area is what will move with the character throughout larger maps
                     let map_view_area = self.calculate_map_view_area();
-                    let map_display_area = self.calculate_map_display_area(level, map_view_area.unwrap());
+
+                    let player_global_position = level.characters.get_player().unwrap().get_global_position();
+                    let map_display_area = MapFrameHandler::calculate_map_display_area(player_global_position, map_view_area.unwrap());
 
                     let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
 
