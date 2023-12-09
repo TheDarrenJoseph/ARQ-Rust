@@ -348,7 +348,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, C
                         }
                     }
                     TabChoice::CHARACTER => {
-                        // TODO future pass-through to character details view??
+                        // Future TODO pass-through to character details view??
                     }
                 }
 

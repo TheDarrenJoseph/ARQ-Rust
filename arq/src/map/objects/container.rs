@@ -325,8 +325,7 @@ impl Container {
     }
 
     pub fn can_open(&self) -> bool {
-        // TODO use is_true_container?
-        self.container_type ==  ContainerType::OBJECT || self.container_type ==  ContainerType::AREA
+        self.is_true_container()
     }
 
     pub fn add_item(&mut self, item : Item) -> Result<(), GenericError> {
@@ -656,5 +655,32 @@ mod tests {
         let count = container.get_total_count();
         // THEN
         assert_eq!(0, count);
+    }
+
+    #[test]
+    fn test_can_open_object() {
+        // GIVEN we have a valid container with the OBJECT type (e.g a bag)
+        let container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        // WHEN we call to check if it can be opened
+        // THEN we expect it to be true
+        assert!(container.can_open());
+    }
+
+    #[test]
+    fn test_can_open_area() {
+        // GIVEN we have a valid container with the AREA type (e.g a chest)
+        let container =  container::build(Uuid::new_v4(), "Test Container".to_owned(), 'X', 1.0, 1,  ContainerType::AREA, 100);
+        // WHEN we call to check if it can be opened
+        // THEN we expect it to be true
+        assert!(container.can_open());
+    }
+
+    #[test]
+    fn test_cannot_open_item() {
+        // GIVEN we have a valid container with the ITEM type (e.g an item and not a container)
+        let container =  container::build(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1.0, 1,  ContainerType::ITEM, 0);
+        // WHEN we call to check if it can be opened
+        // THEN we expect it to be false
+        assert_eq!(false, container.can_open());
     }
 }

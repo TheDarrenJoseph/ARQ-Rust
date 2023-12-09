@@ -448,11 +448,9 @@ impl ListSelection for ItemListSelection {
                 self.select_range(new_index, self.current_index.clone());
             }
             new_index = self.determine_max_selection_index();
-            // TODO redraw list flag?
         } else if self.current_index == 0 {
             new_index = 0;
             self.start_index = 0;
-            // TODO redraw list flag?
         } else {
             new_index = 0;
         }

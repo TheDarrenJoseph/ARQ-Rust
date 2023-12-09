@@ -384,7 +384,6 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
             let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
             commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
-            // TODO inject view area / start pos??
             let map_usage_line = UsageLine::new(commands);
             self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::UsageLine(map_usage_line));
 
@@ -467,7 +466,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
-                        // TODO move to a specific controller instead?
+                        // Future TODO move to a specific controller instead?
                         level_change = self.ui_wrapper.check_room_entry_exits(room, pos);
                         let must_generate_map = levels.must_build_level(level_change.clone());
                         return PlayerMovementResult { must_generate_map, level_change: Some(level_change) };
@@ -478,6 +477,20 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
             _ => {}
         }
         return PlayerMovementResult { must_generate_map: false, level_change: None };
+    }
+
+    fn handle_game_over(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+        let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
+
+        let mut menu = build_game_over_menu(
+            format!("You left the dungeon.\nLoot Total: {}", player_score),
+            &mut self.ui_wrapper.ui,
+            &mut self.ui_wrapper.terminal_manager);
+        let result = menu.begin()?;
+        if let Some(game_over_choice) = result.view_specific_result {
+            return Ok(Some(game_over_choice));
+        }
+        return Ok(None)
     }
 
     async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
@@ -500,16 +513,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                             self.respawn_player(level_change);
                         },
                         LevelChangeResult::OutOfDungeon => {
-                            let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
-
-                            let mut menu = build_game_over_menu(
-                                format!("You left the dungeon.\nLoot Total: {}", player_score),
-                                &mut self.ui_wrapper.ui,
-                                &mut self.ui_wrapper.terminal_manager);
-                            let result = menu.begin()?;
-                            if let Some(game_over_choice) = result.view_specific_result {
-                                return Ok(Some(game_over_choice));
-                            }
+                           return self.handle_game_over();
                         },
                         _ => {}
                     }

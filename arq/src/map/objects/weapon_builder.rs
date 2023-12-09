@@ -34,7 +34,7 @@ impl WeaponBlueprint {
             MaterialType::GOLD => {
                 Ok(10)
             },
-            // TODO potentially allow UNKNOWN types, but we'd need to provide data for it's properties as a weapon
+            // Future TODO potentially allow UNKNOWN types, but we'd need to provide data for it's properties as a weapon
             _ => {
                 Err(GenericError::new(format!("Unsupported material type for a weapon: {:?}", material_type)))
             }
@@ -52,7 +52,7 @@ impl WeaponBlueprint {
                 (density_grams_cm3 * area_cm3) / 1000.0
             },
             _ => {
-                // TODO
+                // Default to 1KG
                 1.0
             }
         };

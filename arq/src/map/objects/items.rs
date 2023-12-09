@@ -119,7 +119,7 @@ pub struct Item {
     pub item_type: ItemType,
     item_form: ItemForm,
     material_type: MaterialType,
-    // TODO add Dimensions once we have standardised item building
+    // Future TODO add Dimensions once we have standardised item building
     name : String,
     pub symbol : Symbol,
     pub weight : f32, // weight in Kilograms

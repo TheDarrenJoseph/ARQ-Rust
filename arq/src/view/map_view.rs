@@ -309,14 +309,12 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         })?;
 
 
-
-        log::info!("Drawing map (tiles)");
         self.clear_map_view()?;
+        log::debug!("Drawing map (tiles)");
         self.draw_map_tiles()?;
-        // TODO add back
-        //log::info!("Drawing map (containers)");
+        log::debug!("Drawing map (containers)");
         self.draw_containers()?;
-        //log::info!("Drawing map (characters)");
+        log::debug!("Drawing map (characters)");
         self.draw_characters()?;
 
         Ok(())

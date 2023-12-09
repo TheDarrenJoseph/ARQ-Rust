@@ -310,14 +310,14 @@ pub fn build_line(start_position : Position, size: u16, side: Side) -> AreaSide 
     AreaSide { area, side }
 }
 
-pub fn build_square_area(start_position : Position, size: u16) -> Area {
+pub const fn build_square_area(start_position : Position, size: u16) -> Area {
     let start_x = start_position.x;
     let start_y = start_position.y;
     let end_position = Position { x : start_x + (size - 1), y: start_y + (size - 1)};
     Area { start_position, end_position, size_x: size, size_y: size }
 }
 
-pub fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u16) -> Area {
+pub const fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u16) -> Area {
     let start_x = start_position.x;
     let start_y = start_position.y;
     let end_position = Position { x : start_x + (size_x - 1), y: start_y + (size_y - 1)};
@@ -326,7 +326,8 @@ pub fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u1
 
 #[cfg(test)]
 mod tests {
-    use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
+    use tui::layout::Rect;
+    use crate::map::position::{Area, build_rectangular_area, build_square_area, Position, Side};
 
     #[test]
     fn test_get_neighbors_top_left() {
@@ -833,5 +834,22 @@ mod tests {
         // THEN we should see x: 0, y: 0 (the lowest possible positive values w/ offset)
         assert_eq!(0, position.x);
         assert_eq!(0, position.y);
+    }
+
+    #[test]
+    fn from_rect() {
+        // GIVEN a Rectangle starting at Pos x:1, y:1 and of size 3x3
+        let rect = Rect::new(1,1,3,3);
+
+        // WHEN we call to build an area from this
+        let area = Area::from_rect(rect);
+
+        // THEN we expect an exact match to the Rect provided
+        assert_eq!(rect.x, area.start_position.x);
+        assert_eq!(rect.y, area.start_position.y);
+        assert_eq!(rect.x + rect.width - 1, area.end_position.x);
+        assert_eq!(rect.y + rect.height - 1, area.end_position.y);
+        assert_eq!(rect.width, area.size_x);
+        assert_eq!(rect.height, area.size_y);
     }
 }

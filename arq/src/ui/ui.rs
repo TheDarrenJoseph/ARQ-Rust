@@ -141,16 +141,13 @@ impl UI {
         3. Stat bars and command usage hints (additional widgets)
      */
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
+        let frame_size = Area::from_rect(frame.size());
+        self.frame_size = Some(frame_size);
+
         let main_block = build_main_block();
-        let frame_size = frame.size();
-        let areas: UIAreas = self.get_view_areas(frame_size);
+        let areas: UIAreas = self.get_view_areas(frame_size.to_rect());
         let main_area = areas.get_main_area();
         frame.render_widget(main_block, main_area.clone());
-
-        let view_start_pos = Position { x : frame_size.x, y: frame_size.y };
-        // TODO double-check this is correct
-        self.frame_size = Some(build_rectangular_area(view_start_pos, frame_size.width, frame_size.height));
-        //self.frame_size = Some(build_rectangular_area(view_start_pos, main_area.width, main_area.height ));
 
         if self.render_additional {
             self.draw_additional_widgets(frame);
@@ -256,4 +253,5 @@ impl Draw for UI {
         }
     }
 }
+
 
