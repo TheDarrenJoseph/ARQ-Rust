@@ -4,7 +4,7 @@ use std::{io, thread};
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::future::Future;
-use std::io::{empty, Error};
+use std::io::{empty, Error, ErrorKind};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -133,15 +133,13 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     // Updates the game to reflect current settings
     fn update_from_settings(&mut self) -> Result<(), io::Error>  {
-        // TODO pass this through
-        let fog_of_war = self.settings.find_bool_setting_value(SETTING_FOG_OF_WAR.to_string()).unwrap();
-
-        let map_seed = self.settings.find_string_setting_value( SETTING_RNG_SEED.to_string()).unwrap();
+        let fog_of_war = self.settings.is_fog_of_war();
+        let map_seed = self.settings.get_rng_seed().ok_or( Error::new(ErrorKind::NotFound, "Failed to retrieve map seed"))?;
         log::info!("Map seed updated to: {}", map_seed);
         let rng = Seeder::from(map_seed).make_rng();
         self.levels.rng = rng;
 
-        let bg_music_volume = self.settings.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).unwrap();
+        let bg_music_volume = self.settings.get_bg_music_volume();
         if let Some(sinks) = &mut self.sound_sinks {
             sinks.get_bg_sink_mut().configure(bg_music_volume);
         }
@@ -483,7 +481,6 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
-        // TODO attempt
         let movement_result : PlayerMovementResult = self.attempt_player_movement(side).await;
 
         // If the player move results in an up/down level movement, handle this
@@ -616,12 +613,9 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
     let ui = build_ui();
     let settings = build_settings();
-    // Grab the randomised seed
-    //let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
-    // Seed override example TODO make this config? env var?
-    let map_seed = String::from("02sZFl3vcYKb");
-    let seed_copy = map_seed.clone();
-    let rng = Seeder::from(map_seed).make_rng();
+    let rng_seed = settings.get_rng_seed().ok_or(Error::new(ErrorKind::NotFound, "Failed to retrieve the RNG seed value!"))?;
+    let seed_copy = rng_seed.clone();
+    let rng = Seeder::from(rng_seed).make_rng();
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 

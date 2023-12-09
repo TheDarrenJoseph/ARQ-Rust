@@ -1,5 +1,6 @@
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
+use crate::global_flags::{GLOBALS, GlobalTestFlags};
 
 pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
@@ -41,6 +42,28 @@ impl Settings {
             return Some(s.value.clone());
         }
         None
+    }
+
+    /*
+    * Either returns the bool value for SETTING_FOG_OF_WAR, or defaults to false
+     */
+    pub fn is_fog_of_war(&self) -> bool {
+        self.find_bool_setting_value(SETTING_FOG_OF_WAR.to_string()).or_else(|| Some(false)).unwrap()
+    }
+
+    pub fn get_rng_seed(&self) -> Option<String> {
+        if let Some(seed_override) = GLOBALS.rng_seed {
+            return Some(String::from(seed_override))
+        } else {
+            return self.find_string_setting_value(SETTING_RNG_SEED.to_string())
+        }
+    }
+
+    /*
+    * Either returns the bool value for SETTING_BG_MUSIC, or defaults to 100%
+     */
+    pub fn get_bg_music_volume(&self) -> u32 {
+        self.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).or_else(|| Some(100)).unwrap()
     }
 }
 
