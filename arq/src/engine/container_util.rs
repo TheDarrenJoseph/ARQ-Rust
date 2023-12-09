@@ -36,37 +36,40 @@ fn add_to_target(source : Container, target: &mut Container, to_add: Vec<Item>) 
 }
 
 pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFrameHandlerInputResult> {
-    // TODO have a find_player function?
-    let player = &mut level.characters.get_player_mut().unwrap();
-    log::info!("Found player: {}", player.get_name());
-    if let Some(pos) = data.position {
-        let mut taken = Vec::new();
-        let mut untaken = Vec::new();
-        for item in data.to_take {
-            if let Some(container_item) = data.source.find(&item) {
-                let inventory = player.get_inventory_mut();
-                if inventory.can_fit_container_item(container_item) {
-                    log::info!("Taking item: {}", item.get_name());
-                    player.get_inventory_mut().add(container_item.clone());
-                    taken.push(container_item.clone());
+    let player_result = level.get_player_mut();
+    if let Some(player) = player_result {
+        log::info!("Found player: {}", player.get_name());
+        if let Some(pos) = data.position {
+            let mut taken = Vec::new();
+            let mut untaken = Vec::new();
+            for item in data.to_take {
+                if let Some(container_item) = data.source.find(&item) {
+                    let inventory = player.get_inventory_mut();
+                    if inventory.can_fit_container_item(container_item) {
+                        log::info!("Taking item: {}", item.get_name());
+                        player.get_inventory_mut().add(container_item.clone());
+                        taken.push(container_item.clone());
+                    } else {
+                        untaken.push(item);
+                    }
                 } else {
                     untaken.push(item);
                 }
-            } else {
-                untaken.push(item);
             }
-        }
-        if !taken.is_empty() || !untaken.is_empty() {
-            let map_container = level.get_map_mut().unwrap().find_container(&data.source, pos);
-            if let Some(source_container) = map_container {
-                source_container.remove_matching_items(taken);
+            if !taken.is_empty() || !untaken.is_empty() {
+                let map_container = level.get_map_mut().unwrap().find_container(&data.source, pos);
+                if let Some(source_container) = map_container {
+                    source_container.remove_matching_items(taken);
+                }
             }
+            log::info!("[take_items] returning TakeItems with {} un-taken items", untaken.len());
+            let data = TakeItemsData { source: data.source.clone(), to_take: untaken, position: data.position };
+            return Some(TakeItems(data));
+        } else {
+            log::error!("[take_items] No map position to take items from!");
         }
-        log::info!("[take_items] returning TakeItems with {} un-taken items", untaken.len());
-        let data = TakeItemsData { source: data.source.clone(), to_take: untaken, position: data.position };
-        return Some(TakeItems(data));
     } else {
-        log::error!("[take_items] No map position to take items from!");
+        log::error!("Failed to find the player in the level.");
     }
     return None
 }

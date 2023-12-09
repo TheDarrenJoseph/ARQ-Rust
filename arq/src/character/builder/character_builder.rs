@@ -196,7 +196,6 @@ mod tests {
         assert_eq!('@', character.symbol.character);
         assert_eq!(Colour::Green, character.symbol.colour);
 
-        // TODO check details
         let details = character.character_details.clone();
         assert_eq!(Race::Human, details.get_race().clone());
         assert_eq!(Class::None, details.get_class().clone());
@@ -233,7 +232,6 @@ mod tests {
         assert_eq!('g', character.symbol.character);
         assert_eq!(Colour::Green, character.symbol.colour);
 
-        // TODO check details
         let details = character.character_details.clone();
         assert_eq!(Race::Goblin, details.get_race().clone());
         assert_eq!(Class::Warrior, details.get_class().clone());

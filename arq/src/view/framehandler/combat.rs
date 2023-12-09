@@ -160,5 +160,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
             frame.render_widget(paragraph_area.0, paragraph_area.1);
         }
         frame.render_widget(console_widgets.window.0, console_widgets.window.1);
+
+
+
     }
 }

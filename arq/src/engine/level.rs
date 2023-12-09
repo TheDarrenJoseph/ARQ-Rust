@@ -179,6 +179,10 @@ impl Level {
         side_position
     }
 
+    pub fn get_player_mut(&mut self) -> Option<&mut Character> {
+        self.characters.get_player_mut()
+    }
+
     pub fn get_map(&self) -> &Option<Map> {
         &self.map
     }
