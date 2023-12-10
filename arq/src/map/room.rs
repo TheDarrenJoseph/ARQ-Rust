@@ -5,7 +5,7 @@ use crate::map::objects::door::Door;
 use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
 use crate::util::utils::{HasUuid, UuidEquals};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Room {
     id: Uuid,
     area: Area,

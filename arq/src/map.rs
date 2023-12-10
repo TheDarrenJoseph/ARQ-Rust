@@ -12,7 +12,7 @@ pub mod position;
 pub mod room;
 pub mod tile;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Map {
     pub area : Area,
     pub tiles : Tiles,
@@ -21,7 +21,7 @@ pub struct Map {
     pub containers : HashMap<Position, Container>
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Tiles {
     pub tiles : Vec<Vec<TileDetails>>
 }

@@ -2,7 +2,7 @@ use crate::character::builder::character_builder::{CharacterBuilder, CharacterPa
 use crate::character::Character;
 use crate::map::position::Position;
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Characters {
     player: Option<Character>,
     npcs : Vec<Character>

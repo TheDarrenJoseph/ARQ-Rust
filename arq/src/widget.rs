@@ -4,6 +4,7 @@ use crate::widget::stateful::button_widget::ButtonState;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
 use crate::widget::stateful::console_input_widget::ConsoleInputState;
 use crate::widget::stateful::dropdown_widget::DropdownInputState;
+use crate::widget::stateful::map_widget::MapWidget;
 use crate::widget::stateful::number_widget::NumberInputState;
 use crate::widget::stateful::text_widget::TextInputState;
 
@@ -30,7 +31,6 @@ pub fn build_buffer(length: i8, input: String) -> String {
 }
 
 
-// For anything that has input / selection state ideally
 #[derive(Debug)]
 pub enum StatefulWidgetType {
     Text(TextInputState),
@@ -38,7 +38,8 @@ pub enum StatefulWidgetType {
     Number(NumberInputState),
     Dropdown(DropdownInputState),
     Button(ButtonState),
-    Boolean(BooleanState)
+    Boolean(BooleanState),
+    Map(MapWidget)
 }
 
 // Non stateful

@@ -4,3 +4,4 @@ pub mod number_widget;
 pub mod boolean_widget;
 pub mod button_widget;
 pub mod console_input_widget;
+pub mod map_widget;

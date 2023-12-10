@@ -1,11 +1,21 @@
 use crate::engine::level::Level;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::widget::stateful::map_widget::MapWidget;
 
 pub struct MapFrameHandler {
 }
 
+pub struct MapFrameHandlerData {
+    pub(crate) level: Level,
+    pub(crate) map_display_area : Area
+}
+
 impl MapFrameHandler {
+    pub const fn new() -> MapFrameHandler {
+        MapFrameHandler {}
+    }
+
     pub(crate) fn calculate_map_display_area(mut center_position: Position, map_view_area: Area) -> Area {
         let half_of_display_area_x : i32 = (map_view_area.size_x / 2) as i32;
         let half_of_display_area_y : i32 = (map_view_area.size_y / 2) as i32;
@@ -21,8 +31,11 @@ impl MapFrameHandler {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Level> for MapFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Level>) {
+impl <B : tui::backend::Backend> FrameHandler<B, MapFrameHandlerData> for MapFrameHandler {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<MapFrameHandlerData>) {
+        let frame_size = data.frame_size;
+        let mut map_widget: MapWidget = MapWidget::new(data.data.level.clone(), data.data.map_display_area.clone());
+        frame.render_stateful_widget(map_widget.clone(), frame_size, &mut map_widget);
     }
 }
 

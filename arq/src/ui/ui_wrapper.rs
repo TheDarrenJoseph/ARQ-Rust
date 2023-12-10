@@ -131,31 +131,25 @@ impl <B : Backend> UIWrapper<B> {
     }
 
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
-        let map = &mut level.get_map_mut().cloned();
         let frame_size_copy = self.ui.frame_size.clone();
-        match map {
-            Some(m) => {
-                if let Some(frame_size) = frame_size_copy {
-                    // Add the UI usage hint to the console buffer
-                    self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
+        if let Some(frame_size) = frame_size_copy {
+            // Add the UI usage hint to the console buffer
+            self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
-                    // There are 3 map areas to consider:
-                    // 1. Map Area (the position/size of the actual map e.g tiles), this should currently always start at 0,0
-                    // 2. Map view area (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
-                    // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
-                    // 3.1 The map display area is what will move with the character throughout larger maps
-                    let map_view_area = self.calculate_map_view_area();
+            // There are 3 map areas to consider:
+            // 1. Map Area (the position/size of the actual map e.g tiles), this should currently always start at 0,0
+            // 2. Map view area (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
+            // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
+            // 3.1 The map display area is what will move with the character throughout larger maps
+            let map_view_area = self.calculate_map_view_area();
 
-                    let player_global_position = level.characters.get_player().unwrap().get_global_position();
-                    let map_display_area = MapFrameHandler::calculate_map_display_area(player_global_position, map_view_area.unwrap());
+            let player_global_position = level.characters.get_player().unwrap().get_global_position();
+            let map_display_area = MapFrameHandler::calculate_map_display_area(player_global_position, map_view_area.unwrap());
 
-                    let mut map_view = MapView { map: m, characters: level.characters.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
+            let mut map_view = MapView { level: level.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
 
-                    // Draw the base UI (incl. console) and the map
-                    map_view.draw(map_view_area)?;
-                }
-            },
-            None => {}
+            // Draw the base UI (incl. console) and the map
+            map_view.draw(map_view_area)?;
         }
         Ok(())
     }

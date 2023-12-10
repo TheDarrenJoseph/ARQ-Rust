@@ -16,7 +16,7 @@ use crate::progress::StepProgress;
 const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Level {
     pub map : Option<Map>,
     pub characters : Characters
