@@ -9,6 +9,7 @@ use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
 use crate::map::tile::TileDetails;
 use crate::terminal::colour_mapper;
+use crate::view::util::cell_builder::CellBuilder;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -78,34 +79,6 @@ impl MapWidget {
         None
     }
 
-
-    fn build_tile_cell(&self, tile_details: &TileDetails) -> Cell {
-        let symbol = tile_details.symbol.character.to_string();
-        let fg = colour_mapper::map_colour(tile_details.symbol.colour);
-        let bg = tui::style::Color::Black;
-        let modifier = tui::style::Modifier::empty();
-        Cell { symbol, fg, bg, modifier }
-    }
-
-    fn build_character_cell(&self, character: &Character) -> Cell {
-        let character_colour = character.get_colour();
-        let symbol = character.get_symbol().to_string();
-        let fg = colour_mapper::map_colour(character_colour);
-        let bg = tui::style::Color::Black;
-        let modifier = tui::style::Modifier::empty();
-        Cell { symbol, fg, bg, modifier }
-    }
-
-    fn build_container_cell(&self, container: &Container) -> Cell {
-        let container_item = container.get_self_item();
-        let symbol = container_item.symbol.character.to_string();
-        let colour = container_item.symbol.colour;
-        let fg = colour_mapper::map_colour(colour);
-        let bg = tui::style::Color::Black;
-        let modifier = tui::style::Modifier::empty();
-        Cell { symbol, fg, bg, modifier }
-    }
-
     fn find_npc(&mut self, global_position: Position) -> Option<Character> {
         let characters = &mut self.level.characters;
         let npcs = characters.get_npcs().clone();
@@ -125,6 +98,35 @@ impl MapWidget {
         }
         None
     }
+
+    fn build_cell_for_position(&mut self, global_position: Position, mut cell_target: &mut Cell) -> Cell {
+        let characters = &mut self.level.characters;
+        let player_mut = characters.get_player_mut().unwrap();
+        let player_position = player_mut.get_global_position();
+        let map = self.level.map.clone().unwrap();
+
+        let mut cell_builder = CellBuilder::new();
+        // Check for the player
+        if global_position == player_position {
+            return cell_builder.from_character(player_mut);
+        } else if let Some(npc) = self.find_npc(global_position) {
+            return cell_builder.from_character(&npc);
+        } else if let Some(container_entry) = self.find_container(global_position) {
+            let container = container_entry.1;
+            return cell_builder.from_container(container);
+        } else {
+            // Otherwise, just draw the tile
+            let tile_result = map.tiles.get_tile(global_position);
+            if let Some(tile) = tile_result {
+                return cell_builder.from_tile(&tile);
+            }
+        }
+
+        // Draw out of range cell
+        cell_target.symbol = String::from('?');
+        cell_target.fg = Color::Red;
+        return cell_target.clone();
+    }
 }
 
 
@@ -132,57 +134,24 @@ impl StatefulWidget for MapWidget {
     type State = MapWidget;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
-
-        let characters = &mut _state.level.characters;
-        let player_mut = characters.get_player_mut().unwrap();
-        let map = self.level.map.clone().unwrap();
-
         // TODO optimise - we should instead go through the items to render
         // and convert global to local positions for better speed
         for x in area.x..area.width {
             for y in area.y..area.height {
-                let cell = buf.get_mut(x, y);
-
                 let local_position = Position::new(x,y);
                 let global_position = self.local_to_global(Area::from_rect(area), local_position).unwrap();
-                if self.is_position_in_map_display_area(global_position) {
-                    // Check for the player
-                    let player_position = player_mut.get_global_position();
-                    if global_position == player_position {
-                        let new_cell = self.build_character_cell(player_mut);
-                        cell.symbol = new_cell.symbol;
-                        cell.fg = new_cell.fg;
-                        cell.bg = new_cell.bg;
-                    } else if let Some(npc) = self.find_npc(global_position) {
-                        let new_cell = self.build_character_cell(&npc);
-                        cell.symbol = new_cell.symbol;
-                        cell.fg = new_cell.fg;
-                        cell.bg = new_cell.bg;
-                    } else if let Some(container_entry) = self.find_container(global_position) {
-                        let container = container_entry.1;
-                        let new_cell = self.build_container_cell(container);
-                        cell.symbol = new_cell.symbol;
-                        cell.fg = new_cell.fg;
-                        cell.bg = new_cell.bg;
-                    } else {
-                        // Otherwise, just draw the tile
-                        let tile_result = map.tiles.get_tile(global_position);
-                        if let Some(tile) = tile_result {
-                            let new_cell = self.build_tile_cell(&tile);
-                            cell.symbol = new_cell.symbol;
-                            cell.fg = new_cell.fg;
-                            cell.bg = new_cell.bg;
-                        }
-                    }
 
-                } else {
-                    // Draw out of range cell
-                    cell.symbol = String::from('?');
-                    cell.fg = Color::Red;
+                let position_in_display_area = self.is_position_in_map_display_area(global_position);
+                if position_in_display_area {
+                    let mut cell = buf.get_mut(x, y);
+                    // Update the cell using the new cell
+                    let new_cell = self.build_cell_for_position(global_position, &mut cell);
+                    cell.symbol = new_cell.symbol;
+                    cell.fg = new_cell.fg;
+                    cell.bg = new_cell.bg;
+                    cell.modifier = new_cell.modifier;
                 }
             }
         }
-
-
     }
 }

@@ -25,6 +25,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_framehandler::{MapFrameHandler, MapFrameHandlerData};
 use crate::view::framehandler::util::tabling::build_paragraph;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::view::util::cell_builder::CellBuilder;
 
 /*
     This view draws the following to the screen:
@@ -40,20 +41,10 @@ pub struct MapView<'a, B : tui::backend::Backend> {
     pub map_display_area : Area // Possibly reduced display area
 }
 
-fn build_blanking_cell() -> Cell {
-    if global_flags::GLOBALS.debugging_map_symbols {
-        // For debugging - this makes the blanked area really obvious by using the block character
-        Cell { symbol: String::from('\u{2588}'), fg: Color::Green, bg: Color::Black, modifier: tui::style::Modifier::empty() }
-    } else {
-        Cell { symbol: String::from(" "), fg: Color::Black, bg: Color::Black, modifier: tui::style::Modifier::empty() }
-    }
-}
-
 impl<B : tui::backend::Backend> MapView<'_, B> {
-
     fn clear_map_view(&mut self) -> Result<(), Error> {
         if let Some(view_area) = self.view_area {
-            let blanking_cell: Cell = build_blanking_cell();
+            let blanking_cell: Cell = CellBuilder::for_blank();
             // Clear everything in the view area (entire internal window area)
             for view_area_x in view_area.start_position.x..view_area.end_position.x {
                 for view_area_y in view_area.start_position.y..view_area.end_position.y {
