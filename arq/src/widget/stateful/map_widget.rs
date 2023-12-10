@@ -81,8 +81,7 @@ impl MapWidget {
 
     fn find_npc(&mut self, global_position: Position) -> Option<Character> {
         let characters = &mut self.level.characters;
-        let npcs = characters.get_npcs().clone();
-        characters.get_npcs().clone().iter().find(|npc| npc.get_global_position().equals(global_position)).cloned()
+        characters.get_npcs().iter().find(|npc| npc.get_global_position().equals(global_position)).cloned()
     }
 
     fn find_container(&self, global_position: Position) -> Option<(&Position, &Container)> {
@@ -102,30 +101,33 @@ impl MapWidget {
     fn build_cell_for_position(&mut self, global_position: Position, mut cell_target: &mut Cell) -> Cell {
         let characters = &mut self.level.characters;
         let player_mut = characters.get_player_mut().unwrap();
-        let player_position = player_mut.get_global_position();
-        let map = self.level.map.clone().unwrap();
 
-        let mut cell_builder = CellBuilder::new();
-        // Check for the player
-        if global_position == player_position {
-            return cell_builder.from_character(player_mut);
-        } else if let Some(npc) = self.find_npc(global_position) {
-            return cell_builder.from_character(&npc);
-        } else if let Some(container_entry) = self.find_container(global_position) {
-            let container = container_entry.1;
-            return cell_builder.from_container(container);
-        } else {
+        if let Some(map) = &self.level.map {
+            let tiles = &map.tiles;
+            let tile_result = tiles.get_tile(global_position);
+
+            // Check for the player
+            if global_position == player_mut.get_global_position() {
+                return CellBuilder::from_character(player_mut);
+            }
+
+            if let Some(npc) = self.find_npc(global_position) {
+                return CellBuilder::from_character(&npc);
+            }
+
+            if let Some(container_entry) = self.find_container(global_position) {
+                let container = container_entry.1;
+                return CellBuilder::from_container(container);
+            }
+
             // Otherwise, just draw the tile
-            let tile_result = map.tiles.get_tile(global_position);
             if let Some(tile) = tile_result {
-                return cell_builder.from_tile(&tile);
+                return CellBuilder::from_tile(&tile);
             }
         }
 
         // Draw out of range cell
-        cell_target.symbol = String::from('?');
-        cell_target.fg = Color::Red;
-        return cell_target.clone();
+        return CellBuilder::for_blank()
     }
 }
 
@@ -134,8 +136,9 @@ impl StatefulWidget for MapWidget {
     type State = MapWidget;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
-        // TODO optimise - we should instead go through the items to render
+        // TODO (THIS IS VERY SLOW) optimise - we should instead go through the items to render
         // and convert global to local positions for better speed
+        // Make need to re-consider the cell builder usage too
         for x in area.x..area.width {
             for y in area.y..area.height {
                 let local_position = Position::new(x,y);

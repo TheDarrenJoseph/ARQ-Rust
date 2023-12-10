@@ -12,11 +12,7 @@ pub struct CellBuilder {
 }
 
 impl CellBuilder {
-    pub(crate) const fn new() -> CellBuilder {
-        CellBuilder { }
-    }
-
-    pub fn from_tile(&mut self, tile_details: &TileDetails) -> Cell {
+    pub fn from_tile(tile_details: &TileDetails) -> Cell {
         let symbol = tile_details.symbol.character.to_string();
         let fg = colour_mapper::map_colour(tile_details.symbol.colour);
         let bg = tui::style::Color::Black;
@@ -24,7 +20,7 @@ impl CellBuilder {
         Cell { symbol, fg, bg, modifier }
     }
 
-    pub fn from_character(&mut self, character: &Character) -> Cell{
+    pub fn from_character(character: &Character) -> Cell{
         let character_colour = character.get_colour();
         let symbol = character.get_symbol().to_string();
         let fg = colour_mapper::map_colour(character_colour);
@@ -33,7 +29,7 @@ impl CellBuilder {
         Cell { symbol, fg, bg, modifier }
     }
 
-    pub fn from_container(&mut self, container: &Container) -> Cell{
+    pub fn from_container(container: &Container) -> Cell{
         let container_item = container.get_self_item();
         let symbol = container_item.symbol.character.to_string();
         let colour = container_item.symbol.colour;
