@@ -11,6 +11,8 @@ use crate::map::objects::container::Container;
 use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
 use crate::map::room::Room;
+use crate::map::tile::TileType;
+use crate::map::tile::TileType::{Corridor, NoTile, Wall, Window};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
 
@@ -36,19 +38,25 @@ fn describe_position_container(c: &Container) -> Result<String, io::Error> {
         return error_result( format!("Unexpected input! Cannot describe position with container of type {}.", container_type));
     }
 
+
     let c_item_name = c.get_self_item().get_name();
-    if item_count > 1 {
-        Ok(format!("There's {} items on the {} here.", item_count, c_item_name))
-    } else if item_count == 1 {
-        let top_item_name = c.get_contents()[0].get_self_item().get_name();
-        Ok(format!("There's a {} on the {} here.", top_item_name, c_item_name))
+    // Only detail the floor if there's items
+    if c_item_name == "Floor" {
+        if item_count > 1 {
+            Ok(format!("There's {} items on the Floor here.", item_count))
+        } else if item_count == 1 {
+            let top_item_name = c.get_contents()[0].get_self_item().get_name();
+            Ok(format!("There's a {} on the {} here.", top_item_name, c_item_name))
+        } else {
+            Ok(format!("The Floor is empty here."))
+        }
     } else {
-        let item_name = c.get_self_item().get_name();
-        Ok(format!("The {} is empty here.", item_name))
+        Ok(format!("There's a {} here.", c_item_name))
     }
 }
 
 fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Error> {
+    let nothing_found: String = "There's nothing here.".to_string();
     if let Some(map) = &level.map {
         if let Some(room) = map.get_rooms().iter().find(|r| r.get_area().contains_position(pos)) {
             log::info!("Position is in a room.");
@@ -58,10 +66,27 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
             }
         }
 
-        return if let Some(c) = map.containers.get(&pos) {
-            describe_position_container(c)
+        return if let Some(tile) = map.tiles.get_tile(pos.clone()) {
+           if (tile.tile_type == NoTile) {
+               Ok(nothing_found)
+           } else if (tile.tile_type == Wall || tile.tile_type == Window) {
+               // We want to describe the tiles for these always, should never have containers
+               return Ok(format!("There's a {} here.", &tile.name));
+            } else {
+               let first_description = if tile.tile_type == TileType::Room {
+                   format!("You're in a room.")
+               } else {
+                   format!("There's a {} here.", &tile.name)
+               };
+
+               if let Some(c) = map.containers.get(&pos) {
+                   Ok(format!("{} {}", first_description, describe_position_container(c)?))
+               } else {
+                   return Ok(first_description);
+               }
+            }
         } else {
-            Ok("There's nothing here.".to_string())
+            Ok(nothing_found)
         }
     } else {
         log::error!("Look usage failure, no map on level!");
@@ -128,14 +153,14 @@ mod tests {
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::{build_room, Room};
-    use crate::map::tile::Tile;
+    use crate::map::tile::TileType;
     use crate::map::Tiles;
 
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
         let map_pos = Position { x: 0, y: 0 };
         let map_area = build_square_area(map_pos, 3);
 
@@ -304,7 +329,7 @@ mod tests {
 
         // THEN we expect
         assert!(prompt.is_ok());
-        assert_eq!("There's 3 items on the Floor here.", prompt.unwrap());
+        assert_eq!("You're in a room. There's 3 items on the Floor here.", prompt.unwrap());
     }
 
     #[test]
@@ -327,7 +352,7 @@ mod tests {
 
         // THEN we expect
         assert!(prompt.is_ok());
-        assert_eq!("There's 3 items on the Floor here.", prompt.unwrap());
+        assert_eq!("You're in a room. There's 3 items on the Floor here.", prompt.unwrap());
     }
 
     #[test]
@@ -347,7 +372,7 @@ mod tests {
 
         // THEN we expect the single item and area to be described
         assert!(prompt.is_ok());
-        assert_eq!("There's a Bag on the Floor here.", prompt.unwrap());
+        assert_eq!("You're in a room. There's a Bag on the Floor here.", prompt.unwrap());
     }
 
     #[test]
@@ -372,7 +397,7 @@ mod tests {
 
         // THEN we expect the single item and area to be described
         assert!(prompt.is_ok());
-        assert_eq!("There's a Chest on the Floor here.", prompt.unwrap());
+        assert_eq!("You're in a room. There's a Chest on the Floor here.", prompt.unwrap());
     }
 
     #[test]
@@ -390,7 +415,7 @@ mod tests {
 
         // THEN we expect the area to be empty
         assert!(prompt.is_ok());
-        assert_eq!("The Floor is empty here.", prompt.unwrap());
+        assert_eq!("You're in a room. The Floor is empty here.", prompt.unwrap());
     }
 
     #[test]
@@ -406,7 +431,7 @@ mod tests {
         let mut level = build_test_level(container_pos, source_container);
 
         // WHEN we call to describe a different position
-        let prompt = describe_position( Position { x: 1, y: 2}, &mut level);
+        let prompt = describe_position( Position { x: 1, y: 3}, &mut level);
 
         // THEN we expect nothing to be there
         assert!(prompt.is_ok());

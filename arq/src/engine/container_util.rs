@@ -275,15 +275,15 @@ mod tests {
     use crate::map::objects::container::{build, Container, ContainerType};
     
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Tile};
+    use crate::map::tile::{TileType};
     use crate::map::Tiles;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MoveItems;
     use crate::view::framehandler::container::MoveItemsData;
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
         let map_pos = Position { x: 0, y: 0 };
         let map_area = build_square_area(map_pos, 3);
 
@@ -309,8 +309,8 @@ mod tests {
 
     fn build_player_test_level() -> Level {
         let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
         let map_pos = Position { x: 0, y: 0 };
         let map_area = build_square_area(map_pos, 3);
         let map = crate::map::Map {

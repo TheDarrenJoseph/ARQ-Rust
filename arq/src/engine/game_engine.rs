@@ -39,7 +39,7 @@ use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeRe
 use crate::map::position::{build_rectangular_area, Position};
 use crate::map::position::Side;
 use crate::map::room::Room;
-use crate::map::tile::Tile::Room as RoomTile;
+use crate::map::tile::TileType::Room as RoomTile;
 use crate::{menu, sound, widget};
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
@@ -552,7 +552,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         let view_battle = battle.clone();
         let mut combat = Combat { battle };
 
-        let mut combat_view = CombatView::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, view_battle);
+        let mut combat_view = CombatView::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, self.levels.get_level_mut().clone(), view_battle);
         combat_view.set_callback(Box::new(|data| {
             combat.handle_callback(data)
         }));
@@ -646,11 +646,11 @@ mod tests {
     use crate::map::{Map, Tiles};
     use crate::map::position::{Position};
     use crate::map::position::{Area, build_square_area};
-    use crate::map::tile::{build_library, Tile, TileDetails};
+    use crate::map::tile::{build_library, TileType, TileDetails};
     use crate::terminal::terminal_manager;
     use crate::view::View;
 
-    fn build_tiles(map_area: Area, tile : Tile) -> Vec<Vec<TileDetails>> {
+    fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {
         let tile_library = build_library();
         let mut map_tiles = Vec::new();
         let mut row;
@@ -712,11 +712,11 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND the middle / bottom middle tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
-        map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
+        map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
@@ -747,10 +747,10 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND only the middle tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
@@ -779,11 +779,11 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND the middle / bottom middle tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
-        map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
+        map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
@@ -812,10 +812,10 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND only the middle end tile is a corridor
-        map_tiles[2] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
@@ -844,11 +844,11 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND the middle / middle left tile is a corridor
-        map_tiles[1] [0] = tile_library[&Tile::Corridor].clone();
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [0] = tile_library[&TileType::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
@@ -877,10 +877,10 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND only the middle end tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
@@ -909,11 +909,11 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND the middle / middle right tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
-        map_tiles[1] [2] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
+        map_tiles[1] [2] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
@@ -942,10 +942,10 @@ mod tests {
         // GIVEN a game engine with a 3x3 grid of tiles
         let tile_library = build_library();
         let map_area = build_square_area(Position { x: 0, y: 0}, 3);
-        let mut map_tiles = build_tiles(map_area.clone(), Tile::NoTile);
+        let mut map_tiles = build_tiles(map_area.clone(), TileType::NoTile);
 
         // AND only the middle end tile is a corridor
-        map_tiles[1] [1] = tile_library[&Tile::Corridor].clone();
+        map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         let map = crate::map::Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},

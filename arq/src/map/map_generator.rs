@@ -19,8 +19,8 @@ use crate::map::objects::door::build_door;
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
-use crate::map::tile::{build_library, Tile, TileDetails};
-use crate::map::tile::Tile::NoTile;
+use crate::map::tile::{build_library, TileType, TileDetails};
+use crate::map::tile::TileType::NoTile;
 use crate::progress::StepProgress;
 
 pub struct MapGenerator<'rng> {
@@ -28,7 +28,7 @@ pub struct MapGenerator<'rng> {
     max_room_size: u16,
     room_area_quota_percentage: u16,
     max_door_count: u16,
-    tile_library :  HashMap<Tile, TileDetails>,
+    tile_library :  HashMap<TileType, TileDetails>,
     map_area : Area,
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>,
@@ -120,7 +120,7 @@ impl <'rng> MapGenerator<'rng> {
                 let mut pos = pos_container.0.clone();
                 let container = pos_container.1.clone();
                 let tile_type = self.map.tiles.get_tile(pos).unwrap().tile_type;
-                if tile_type == Tile::Room {
+                if tile_type == TileType::Room {
                     if let Some(c) = self.map.containers.get_mut(&mut pos) {
                         c.add(container);
                         room_container_count += 1;
@@ -201,7 +201,7 @@ impl <'rng> MapGenerator<'rng> {
     fn path_rooms(&mut self){
         log::info!("Pathing rooms...");
         let tile_library = crate::map::tile::build_library();
-        let corridor_tile = &tile_library[&Tile::Corridor].clone();
+        let corridor_tile = &tile_library[&TileType::Corridor].clone();
         let rooms = self.map.get_rooms().clone();
         for i in 0..rooms.len()-1 {
             let room1 = rooms[i].clone();
@@ -220,7 +220,7 @@ impl <'rng> MapGenerator<'rng> {
                     } else {
                         for position in path {
                             let tile_type = self.map.tiles.get_tile(position).unwrap().tile_type;
-                            if tile_type == Tile::NoTile {
+                            if tile_type == TileType::NoTile {
                                 log::debug!("Adding corridor tile at: {:?}", position);
                                 self.map.tiles.set_tile(position, corridor_tile.clone());
                             } else {
@@ -444,7 +444,7 @@ impl <'rng> MapGenerator<'rng> {
             row = Vec::new();
             for x in self.map_area.start_position.x..=self.map_area.end_position.x {
                 log::debug!("New tile at: {}, {}", x,y);
-                row.push( self.tile_library[&Tile::NoTile].clone());
+                row.push( self.tile_library[&TileType::NoTile].clone());
             }
             map_tiles.push(row);
         }
@@ -473,10 +473,10 @@ impl <'rng> MapGenerator<'rng> {
 
     fn add_room_to_map(&mut self, room: &Room) {
         let tile_library = crate::map::tile::build_library();
-        let room_tile = &tile_library[&Tile::Room].clone();
-        let wall_tile = &tile_library[&Tile::Wall].clone();
-        let entry_tile = &tile_library[&Tile::Entry].clone();
-        let exit_tile = &tile_library[&Tile::Exit].clone();
+        let room_tile = &tile_library[&TileType::Room].clone();
+        let wall_tile = &tile_library[&TileType::Wall].clone();
+        let entry_tile = &tile_library[&TileType::Entry].clone();
+        let exit_tile = &tile_library[&TileType::Exit].clone();
 
         let inside_area = room.get_inside_area();
         let mut inside_positions = inside_area.get_positions().clone();

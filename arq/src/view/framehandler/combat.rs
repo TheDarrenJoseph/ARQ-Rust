@@ -1,5 +1,5 @@
 use tui::Frame;
-use tui::layout::{Alignment, Rect};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph};
@@ -7,15 +7,19 @@ use crate::character::battle::Battle;
 use crate::character::equipment::{Equipment, EquipmentSlot, WeaponSlot};
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::engine::combat::CombatTurnChoice;
+use crate::engine::level::Level;
+use crate::map::map_view_areas::MapViewAreas;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::option_list_selection::{MappedOption, OptionListSelection};
 use crate::ui::ui_areas::UIAreas;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::tabling::Column;
+use crate::widget::stateful::map_widget::MapWidget;
 
 pub struct CombatFrameHandler {
     pub(crate) areas : Option<CombatViewAreas>,
-    pub selection: OptionListSelection<CombatTurnChoice>
+    pub selection: OptionListSelection<CombatTurnChoice>,
+    pub level: Level
 }
 
 pub struct CombatViewAreas {
@@ -30,8 +34,8 @@ pub struct ConsoleWidgets<'a> {
 }
 
 impl CombatFrameHandler {
-    pub fn new() -> CombatFrameHandler {
-        CombatFrameHandler { areas: None, selection: OptionListSelection::new() }
+    pub fn new(level: Level) -> CombatFrameHandler {
+        CombatFrameHandler { areas: None, selection: OptionListSelection::new(), level }
     }
 
     fn build_options(&self, equipment: Equipment) -> Vec<MappedOption<CombatTurnChoice>> {
@@ -155,13 +159,24 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
 
         // Build widget / area tuples
         let console_widgets = self.build_console_widgets();
+        let console_block = console_widgets.window.0;
+        let console_area = console_widgets.window.1;
+        frame.render_widget(console_block, console_area);
         // Unpack these tuples and render them
         for paragraph_area in console_widgets.paragraphs {
             frame.render_widget(paragraph_area.0, paragraph_area.1);
         }
-        frame.render_widget(console_widgets.window.0, console_widgets.window.1);
 
+        let mut minimap_display_area = self.areas.as_ref().unwrap().minimap_area.to_rect();
+        let mut player_global_pos = self.level.characters.get_player_mut().unwrap().get_global_position();
+        let minimap_target_pos = player_global_pos.offset(-1,-1);
+        let minimap_target_area = Area::new(minimap_target_pos, 3,3);
 
-
+        let map_area = self.level.map.as_ref().unwrap().area.clone();
+        let map_view_area = Area::from_rect(minimap_display_area);
+        let map_display_area = minimap_target_area;
+        let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
+        let map_widget = MapWidget::new(map_view_areas);
+        frame.render_stateful_widget(map_widget, minimap_display_area, &mut self.level);
     }
 }

@@ -4,13 +4,14 @@ use room::Room;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
-use crate::map::tile::{Tile, TileDetails};
+use crate::map::tile::{TileType, TileDetails};
 
 pub mod objects;
 pub mod map_generator;
 pub mod position;
 pub mod room;
 pub mod tile;
+pub mod map_view_areas;
 
 #[derive(Debug, Clone)]
 pub struct Map {
@@ -119,7 +120,7 @@ impl Map {
         match self.tiles.get_tile(position) {
             Some(tile) => {
                 // All traversable tile types are paveable, including NoTile
-                if tile.tile_type == Tile::NoTile {
+                if tile.tile_type == TileType::NoTile {
                     true
                 } else {
                     tile.traversable
@@ -163,7 +164,7 @@ mod tests {
 
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::{build_room, Room};
-    use crate::map::tile::Tile;
+    use crate::map::tile::TileType;
     use crate::map::Tiles;
 
     #[test]
@@ -171,8 +172,8 @@ mod tests {
         let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -208,7 +209,7 @@ mod tests {
         let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let wall = tile_library[&Tile::Wall].clone();
+        let wall = tile_library[&TileType::Wall].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);
@@ -236,13 +237,13 @@ mod tests {
         assert_eq!(4, map.tiles.tiles[0].len());
 
         // THEN we expect it to be available at 0,1
-        assert_eq!(crate::map::tile::Tile::Wall, map.tiles.tiles[0][1].tile_type);
+        assert_eq!(crate::map::tile::TileType::Wall, map.tiles.tiles[0][1].tile_type);
 
         // AND WHEN we push an new row to the map
         map.tiles.tiles.push(vec![wall.clone()]);
         // THEN we expect the length to increase
         assert_eq!(1, map.tiles.tiles[1].len());
         // AND the new tile to be available at 1,0
-        assert_eq!(crate::map::tile::Tile::Wall, map.tiles.tiles[1][0].tile_type);
+        assert_eq!(crate::map::tile::TileType::Wall, map.tiles.tiles[1][0].tile_type);
     }
 }

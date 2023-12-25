@@ -420,7 +420,7 @@ mod tests {
     use crate::map::objects::items;
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, Symbol, Tile};
+    use crate::map::tile::{Colour, Symbol, TileType};
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
@@ -452,8 +452,8 @@ mod tests {
 
     fn build_test_level(player: Character) -> Level {
         let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
         let map_pos = Position { x: 0, y: 0 };
         let map_area = build_square_area(map_pos, 3);
 

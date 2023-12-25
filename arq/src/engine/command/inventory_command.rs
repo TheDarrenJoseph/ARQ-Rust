@@ -243,7 +243,7 @@ mod tests {
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, Tile};
+    use crate::map::tile::{Colour, TileType};
     use crate::map::Tiles;
 
 
@@ -276,8 +276,8 @@ mod tests {
 
     fn build_test_level(area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
         let map_pos = Position { x: 0, y: 0 };
         let map_area = build_square_area(map_pos, 3);
 

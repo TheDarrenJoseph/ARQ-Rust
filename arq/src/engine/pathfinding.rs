@@ -154,17 +154,17 @@ mod tests {
     use crate::map;
     use crate::map::position::{build_square_area, Position};
     use crate::map::room::{build_room, Room};
-    use crate::map::tile::Tile;
+    use crate::map::tile::TileType;
     use crate::map::Tiles;
 
     fn build_test_map() -> map::Map {
         let tile_library = crate::map::tile::build_library();
         assert_eq!(9, tile_library.len());
 
-        let non = tile_library[&Tile::NoTile].clone();
-        let rom = tile_library[&Tile::Room].clone();
-        let wall = tile_library[&Tile::Wall].clone();
-        let door = tile_library[&Tile::Door].clone();
+        let non = tile_library[&TileType::NoTile].clone();
+        let rom = tile_library[&TileType::Room].clone();
+        let wall = tile_library[&TileType::Wall].clone();
+        let door = tile_library[&TileType::Door].clone();
 
         let room_pos = Position { x: 0, y: 0 };
         let room_area = build_square_area(room_pos, 3);

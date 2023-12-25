@@ -16,21 +16,23 @@ use crate::view::framehandler::combat::{CombatFrameHandler, CombatViewAreas};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
+use crate::engine::level::Level;
 use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
     ui : &'a mut UI,
     terminal_manager : &'a mut TerminalManager<B>,
+    level: Level,
     battle : Battle,
     frame_handler : CombatFrameHandler,
     callback : Box<dyn FnMut(CombatCallbackData) -> Option<CombatCallbackData> + 'a>
 }
 
 impl <B: tui::backend::Backend> CombatView<'_, B> {
-    pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, battle: Battle) -> CombatView<'a, B> {
-        let frame_handler = CombatFrameHandler::new();
+    pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, level: Level, battle: Battle) -> CombatView<'a, B> {
+        let frame_handler = CombatFrameHandler::new(level.clone());
         let callback = Box::new(|_data| {None});
-        CombatView { ui, terminal_manager, battle, frame_handler, callback }
+        CombatView { ui, terminal_manager, level: level, battle, frame_handler, callback }
     }
 
     fn re_render(&mut self) -> Result<(), io::Error>  {
@@ -155,6 +157,7 @@ fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
         total_area = frame_size;
     }
 
+    // Split the entire view area into main and console
     let ui_areas = Layout::default()
         .direction(Direction::Vertical)
         .constraints(

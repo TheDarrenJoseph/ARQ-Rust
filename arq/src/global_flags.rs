@@ -4,6 +4,6 @@ pub struct GlobalTestFlags {
 }
 
 pub const GLOBALS: GlobalTestFlags = GlobalTestFlags {
-    debugging_map_symbols: false,
+    debugging_map_symbols: true,
     rng_seed: None //Some("02sZFl3vcYKb")
 };

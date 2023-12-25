@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::io;
+use log::info;
 use termion::event::Key;
 use tui::backend::Backend;
 use tui::layout::Rect;
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
+use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
 use crate::map::position::{Area, build_rectangular_area, build_square_area, Position};
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -15,7 +17,7 @@ use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::framehandler::map_framehandler::MapFrameHandler;
-use crate::view::map_view::MapView;
+use crate::view::map_view::{MapView};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::widget::widgets::WidgetList;
 
@@ -135,21 +137,25 @@ impl <B : Backend> UIWrapper<B> {
         if let Some(frame_size) = frame_size_copy {
             // Add the UI usage hint to the console buffer
             self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
+            let map_area = level.map.as_ref().unwrap().area;
 
             // There are 3 map areas to consider:
-            // 1. Map Area (the position/size of the actual map e.g tiles), this should currently always start at 0,0
-            // 2. Map view area (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
-            // 3. Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
+            // 1. (Map based) Map Area (the position/size of the actual map e.g tiles), this should currently always start at 0,0
+            // 2. (Screen based) Map view area (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
+            // 3. (Screen/Map based) Map display area (The position/size of the map 'viewfinder', the area that you can actually see the map through)
             // 3.1 The map display area is what will move with the character throughout larger maps
-            let map_view_area = self.calculate_map_view_area();
+            let map_view_area_result = self.calculate_map_view_area();
+            if let Some(map_view_area) = map_view_area_result {
+                let player_global_position = level.characters.get_player().unwrap().get_global_position();
+                let map_display_area = calculate_map_display_area(player_global_position, map_view_area);
+                info!("(map_display_area) is now: {:?}", map_display_area);
 
-            let player_global_position = level.characters.get_player().unwrap().get_global_position();
-            let map_display_area = MapFrameHandler::calculate_map_display_area(player_global_position, map_view_area.unwrap());
+                let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
+                let mut map_view = MapView { level: level.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, map_view_areas, map_frame_handler_data: None };
 
-            let mut map_view = MapView { level: level.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, view_area: map_view_area, map_display_area };
-
-            // Draw the base UI (incl. console) and the map
-            map_view.draw(map_view_area)?;
+                // Draw the base UI (incl. console) and the map
+                map_view.begin()?;
+            }
         }
         Ok(())
     }
