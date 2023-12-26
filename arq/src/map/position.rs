@@ -100,6 +100,12 @@ impl Area {
         Rect { x: self.start_position.x, y: self.start_position.y, width: self.size_x, height: self.size_y}
     }
 
+    pub fn get_position(&self, x: u16, y: u16) -> Position {
+        let result_x = self.start_position.x + x;
+        let result_y = self.start_position.y + y;
+        return Position::new(result_x, result_y);
+    }
+
     pub fn get_total_area(&self) -> u16 {
         self.size_x * self.size_y
     }
@@ -320,7 +326,22 @@ pub const fn build_square_area(start_position : Position, size: u16) -> Area {
 pub const fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u16) -> Area {
     let start_x = start_position.x;
     let start_y = start_position.y;
-    let end_position = Position { x : start_x + (size_x - 1), y: start_y + (size_y - 1)};
+
+    // Handle 0 sizing
+    let end_x = if size_x > 0 {
+        start_x + size_x - 1
+    } else {
+        0
+    };
+
+    // Handle 0 sizing
+    let end_y = if size_y > 0 {
+        start_y + size_y - 1
+    } else {
+        0
+    };
+
+    let end_position = Position{x: end_x, y: end_y};
     Area { start_position, end_position, size_x, size_y }
 }
 
@@ -415,6 +436,21 @@ mod tests {
         assert_eq!(0, area.start_position.y);
         assert_eq!(5, area.end_position.x);
         assert_eq!(2, area.end_position.y);
+    }
+
+    #[test]
+    fn test_build_rectangular_area_size_0() {
+        // Given a Position starting at 0,0
+        let start_pos = Position { x: 0, y: 0 };
+        // And it's zero sized
+        let area = build_rectangular_area(start_pos, 0,0);
+        // THEN we expect everything to be 0
+        assert_eq!(0, area.size_x);
+        assert_eq!(0, area.size_y);
+        assert_eq!(0, area.start_position.x);
+        assert_eq!(0, area.start_position.y);
+        assert_eq!(0, area.end_position.x);
+        assert_eq!(0, area.end_position.y);
     }
 
     #[test]

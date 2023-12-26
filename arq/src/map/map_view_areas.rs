@@ -23,7 +23,6 @@ impl MapViewAreas {
     }
 
     pub(crate) fn local_to_global(&self, local_position: Position) -> Option<Position> {
-        // Further globalise it with the map display offset to get the true co-ordinate
         let display_area_start = self.map_display_area.start_position;
         let globalised_x = display_area_start.x + local_position.x;
         let globalised_y = display_area_start.y + local_position.y;
@@ -248,6 +247,62 @@ mod tests {
         // THEN we expect it to return as 2,2
         assert_eq!(2, result.unwrap().x);
         assert_eq!(2, result.unwrap().y);
+    }
+
+    #[test]
+    fn test_local_to_global_minimap_bottom_of_screen_start_of_map() {
+        // GIVEN a 12x12 map at pos 0,0 (all maps are currently expected to start at 0,0)
+        let map_area = Area::new(Position::new(0, 0), 12, 12 );
+
+        // AND under the assumption that our screen is 80x24 characters
+        // a view area is 3x3 in the bottom left of the screen
+        let map_view_area = Area::new(Position::new(0, 21), 3, 3 );
+        // AND the map display area is trying to display the start of the map
+        let map_display_area = Area::new(Position::new(0, 0), 3, 3 );
+
+        let map_view_areas = MapViewAreas {
+            map_area,
+            map_view_area,
+            map_display_area
+        };
+
+        // WHEN we call to convert local position 0,0 to a global map position
+        let target_pos = Position::new(0,0);
+        let result = map_view_areas.local_to_global(target_pos);
+        // THEN we expect it to return as 0,0
+        assert_eq!(0, result.unwrap().x);
+        assert_eq!(0, result.unwrap().y);
+    }
+
+    #[test]
+    fn test_local_to_global_minimap_bottom_of_screen_end_of_map() {
+        // GIVEN a 12x12 map at pos 0,0 (all maps are currently expected to start at 0,0)
+        let map_area = Area::new(Position::new(0, 0), 12, 12 );
+
+        // AND under the assumption that our screen is 80x24 characters
+        // a view area is 3x3 in the bottom left of the screen
+        let map_view_area = Area::new(Position::new(0, 21), 3, 3 );
+        // AND the map display area is trying to display the end (bottom right) of the map
+        let map_display_area = Area::new(Position::new(9, 9), 3, 3 );
+
+        let map_view_areas = MapViewAreas {
+            map_area,
+            map_view_area,
+            map_display_area
+        };
+
+        // WHEN we call to convert local positions to global map positions
+
+        // THEN we expect it to return from 9,9 to 11,11
+        let result = map_view_areas.local_to_global(Position::new(0,0));
+        assert_eq!(9, result.unwrap().x);
+        assert_eq!(9, result.unwrap().y);
+        let result = map_view_areas.local_to_global(Position::new(1,1));
+        assert_eq!(10, result.unwrap().x);
+        assert_eq!(10, result.unwrap().y);
+        let result = map_view_areas.local_to_global(Position::new(2,2));
+        assert_eq!(11, result.unwrap().x);
+        assert_eq!(11, result.unwrap().y);
     }
 
     #[test]

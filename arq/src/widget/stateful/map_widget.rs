@@ -1,4 +1,4 @@
-
+use log::info;
 use tui::buffer::{Buffer, Cell};
 use tui::layout::Rect;
 
@@ -82,24 +82,24 @@ impl StatefulWidget for MapWidget {
         // Make need to re-consider the cell builder usage too
 
         let map_view_area = self.map_view_areas.map_view_area;
-        let map_view_area_start = map_view_area.start_position;
-        let map_view_area_end = map_view_area.end_position;
-
-        for x in map_view_area_start.x..map_view_area_end.x {
-            for y in map_view_area_start.y..map_view_area_end.y {
-                // Localise from frame position to a relative co-ordinate e.g [2,2] frame position -> [0, 0]
+        info!("Map view area starts at: x: {}, y:{}", map_view_area.start_position.x, map_view_area.start_position.y);
+        // Local positions should start at 0,0 to size_x-1, size_y-1
+        for x in 0..map_view_area.size_x{
+            for y in 0..map_view_area.size_y {
                 let local_position = Position::new(x,y);
                 let global_position = self.map_view_areas.local_to_global(local_position).unwrap();
-
                 let position_in_display_area = self.map_view_areas.is_position_in_map_display_area(global_position);
                 if position_in_display_area {
-                    let mut cell = buf.get_mut(x, y);
+                    let screen_position = map_view_area.get_position(x,y);
+                    let mut cell = buf.get_mut(screen_position.x, screen_position.y);
                     // Update the cell using the new cell
                     let new_cell = self.build_cell_for_position(_state, global_position,&mut cell);
                     cell.symbol = new_cell.symbol;
                     cell.fg = new_cell.fg;
                     cell.bg = new_cell.bg;
                     cell.modifier = new_cell.modifier;
+                } else {
+                    info!("Global position not in display area: {:?}", global_position);
                 }
             }
         }

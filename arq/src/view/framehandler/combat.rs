@@ -177,6 +177,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let map_display_area = minimap_target_area;
         let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
         let map_widget = MapWidget::new(map_view_areas);
-        frame.render_stateful_widget(map_widget, minimap_display_area, &mut self.level);
+
+        let dummy_area = Area::new(Position::new(0,0),0,0);
+        frame.render_stateful_widget(map_widget, dummy_area.to_rect(), &mut self.level);
     }
 }
