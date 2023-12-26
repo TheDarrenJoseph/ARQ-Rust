@@ -4,7 +4,7 @@ use tui::layout::Rect;
 use tui::style::{Color, Style};
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};
-use crate::error::errors::GenericError;
+
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
@@ -33,9 +33,9 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         })
     }
 
-    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let message = self.message.clone();
-        let ui = &mut self.ui;
+        let _ui = &mut self.ui;
         self.terminal_manager.clear_screen();
         self.terminal_manager.terminal.draw(|frame| {
             let area_result = center_area(MIN_AREA, frame.size(), MIN_AREA);

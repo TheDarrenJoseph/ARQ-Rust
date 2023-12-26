@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use termion::event::Key;
-use crate::character::Character;
+
 use crate::map::position::Position;
 
 #[derive(Eq, Hash, PartialEq)]

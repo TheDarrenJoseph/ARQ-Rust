@@ -1,31 +1,31 @@
-use std::collections::HashMap;
-use std::convert::TryInto;
+
+
 use std::io::Error;
-use log::{info, log};
+use log::{info};
 
 use termion::event::Key;
 use tui::buffer::Cell;
-use tui::layout::Rect;
-use tui::style::Color;
 
-use crate::global_flags;
-use crate::character::Character;
-use crate::character::characters::Characters;
+
+
+
+
+
 use crate::engine::level::Level;
-use crate::map::Map;
+
 use crate::map::map_view_areas::MapViewAreas;
-use crate::map::objects::container::{Container, ContainerType};
-use crate::map::position::{Area, build_rectangular_area, Position};
-use crate::map::tile::TileDetails;
-use crate::terminal::colour_mapper;
+
+use crate::map::position::{Area};
+
+
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
-use crate::view::character_info_view::CharacterInfoView;
+
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_framehandler::{MapFrameHandler, MapFrameHandlerData};
-use crate::view::framehandler::util::tabling::build_paragraph;
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+
+
 use crate::view::util::cell_builder::CellBuilder;
 
 /*
@@ -94,7 +94,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         let ui = &mut self.ui;
 
         // Frame handler data
-        let level = self.level.clone();
+        let _level = self.level.clone();
         let data = self.map_frame_handler_data.as_ref().unwrap().clone();
         terminal.draw(|frame| {
             // First let the UI draw everything else

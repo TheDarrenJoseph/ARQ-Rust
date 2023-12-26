@@ -517,10 +517,10 @@ pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> Ite
 
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
+    
 
     use crate::item_list_selection::{build_list_selection, ListSelection};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::Item;
 
     fn build_item_series_4() -> Vec<Item> {

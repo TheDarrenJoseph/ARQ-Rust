@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::io;
-use std::io::{Error, ErrorKind};
-use log::error;
+use std::io::{Error};
+
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -19,7 +19,7 @@ use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, Mov
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::{InputResult, View};
 use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
-use crate::ui::ui::{get_input_key, UI};
+use crate::ui::ui::{UI};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
@@ -213,7 +213,7 @@ mod tests {
     use crate::engine::level::{Level};
 
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, TileType};

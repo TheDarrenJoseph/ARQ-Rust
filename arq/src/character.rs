@@ -12,7 +12,7 @@ use crate::character::character_details::{build_default_character_details, Chara
 use crate::character::equipment::Equipment;
 use crate::character::stats::attributes::AttributeScore;
 
-use crate::map::objects::container::{build, Container, ContainerType};
+use crate::map::objects::container::{Container};
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};
 

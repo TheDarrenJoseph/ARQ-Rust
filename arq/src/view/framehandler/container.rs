@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::convert::TryInto;
-use std::fmt::format;
+
 use std::io::Error;
-use std::ptr::eq;
+
 
 use termion::event::Key;
 use tui::layout::{Rect};
@@ -16,11 +16,11 @@ use crate::map::objects::items::Item;
 use crate::map::position::Position;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::container_choice::ContainerChoiceCommand;
+
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::view::model::usage_line::{UsageLine};
 
 /*
     This frame handler is meant to display containers (Chests, Floor items, Dead bodies) in a tabular display
@@ -280,7 +280,7 @@ impl ContainerFrameHandler {
         for modified_item in modified {
             // Update the equipment slot of any items we're holding
             if let Some(pos) = contents.iter().position(|c| c.get_self_item().id_equals(&modified_item)) {
-                let mut item = contents.get_mut(pos).unwrap().get_self_item_mut();
+                let item = contents.get_mut(pos).unwrap().get_self_item_mut();
                 item.set_equipment_slot(modified_item.get_equipment_slot());
                 log::info!("Item: {} equipped? : {} : {}", item.get_name(), item.is_equipped(), item.get_equipment_slot().map_or_else(|| String::new(), |s| s.to_string()));
             }
@@ -506,7 +506,7 @@ mod tests {
     use crate::item_list_selection::{ListSelection};
     
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::Item;
     use crate::map::tile::Colour;
     use crate::menu;

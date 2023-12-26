@@ -1,86 +1,86 @@
 use std::convert::TryInto;
-use std::fmt::format;
-use std::{io, thread};
-use std::borrow::BorrowMut;
+
+use std::{io};
+
 use std::collections::HashMap;
 use std::future::Future;
-use std::io::{empty, Error, ErrorKind};
+use std::io::{Error, ErrorKind};
 use std::pin::Pin;
-use std::task::{Context, Poll};
-use std::time::Duration;
-use futures::executor::block_on;
-use futures::future::err;
-use log4rs::config::Logger;
-use log::{error, info, log};
 
-use rand::distributions::Alphanumeric;
+
+
+
+
+use log::{info};
+
+
 use rand::{Rng, thread_rng};
 use rand_seeder::Seeder;
 
 use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
-use tui::layout::Rect;
-use tui::style::Style;
-use tui::widgets::Gauge;
+
+
+
 
 use futures::FutureExt;
 
-use crate::character::Character;
+
 use crate::character::characters::Characters;
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
-use crate::engine::level::LevelChange::NONE;
-use crate::engine::level::{init_level_manager, Level, LevelChange, LevelChangeResult, Levels};
 
-use crate::map::position::{build_rectangular_area, Position};
+use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
+
+
 use crate::map::position::Side;
 use crate::map::room::Room;
-use crate::map::tile::TileType::Room as RoomTile;
-use crate::{menu, sound, widget};
+
+use crate::{menu, widget};
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
 use crate::map::Map;
 use crate::menu::Selection;
-use crate::progress::StepProgress;
-use crate::engine::process;
+
+
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::io_error_utils::error_result;
-use crate::map::tile::Colour;
 
-use crate::settings::{build_settings, Setting, SETTING_BG_MUSIC, SETTING_FOG_OF_WAR, SETTING_RNG_SEED, Settings};
+
+use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
 use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
-use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::{InputHandler, View};
 use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
-use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
-use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
-use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::combat::CombatFrameHandler;
-use crate::view::game_over_view::{build_game_over_menu, GameOver, GameOverChoice};
+
+
+
+
+use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
 use crate::view::settings_menu_view::SettingsMenuView;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::widget_menu::WidgetMenu;
 
-use crate::widget::stateful::boolean_widget::build_boolean_widget;
-use crate::widget::stateful::text_widget::build_text_input;
+
+
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
-use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
+use crate::widget::{StandardWidgetType, StatefulWidgetType};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 use crate::view::util::callback::Callback;
 use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::util::callback::CallbackHandler;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
 
-pub struct GameEngine<B: 'static + tui::backend::Backend>  {
+pub struct GameEngine<B: 'static + Backend>  {
     ui_wrapper : UIWrapper<B>,
     settings: Settings,
     levels: Levels,
@@ -88,7 +88,7 @@ pub struct GameEngine<B: 'static + tui::backend::Backend>  {
     game_running : bool,
 }
 
-impl <B : Backend + std::marker::Send> GameEngine<B> {
+impl <B : Backend + Send> GameEngine<B> {
 
     pub fn rebuild(&mut self) {
         let settings = build_settings();
@@ -102,7 +102,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     // Saves the widget values into the settings
-    fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), io::Error> {
+    fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), Error> {
 
         for widget in widgets.widgets {
             match widget.state_type {
@@ -132,10 +132,10 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
     }
 
     // Updates the game to reflect current settings
-    fn update_from_settings(&mut self) -> Result<(), io::Error>  {
-        let fog_of_war = self.settings.is_fog_of_war();
+    fn update_from_settings(&mut self) -> Result<(), Error>  {
+        let _fog_of_war = self.settings.is_fog_of_war();
         let map_seed = self.settings.get_rng_seed().ok_or( Error::new(ErrorKind::NotFound, "Failed to retrieve map seed"))?;
-        log::info!("Map seed updated to: {}", map_seed);
+        info!("Map seed updated to: {}", map_seed);
         let rng = Seeder::from(map_seed).make_rng();
         self.levels.rng = rng;
 
@@ -146,21 +146,21 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         Ok(())
     }
 
-    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, io::Error> {
+    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, Error> {
         loop {
             let last_selection = self.ui_wrapper.ui.start_menu.selection;
             let key = io::stdin().keys().next().unwrap().unwrap();
             self.ui_wrapper.ui.start_menu.handle_input(key);
             let selection = self.ui_wrapper.ui.start_menu.selection;
-            log::info!("Selection is: {}", selection);
+            info!("Selection is: {}", selection);
             if last_selection != selection {
-                log::info!("Selection changed to: {}", selection);
+                info!("Selection changed to: {}", selection);
                 let _ui = &mut self.ui_wrapper.ui;
                 self.ui_wrapper.draw_start_menu()?;
             }
 
             if self.ui_wrapper.ui.start_menu.exit {
-                log::info!("Menu exited.");
+                info!("Menu exited.");
                 return Ok(StartMenuChoice::Quit);
             }
 
@@ -175,7 +175,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         }
     }
 
-    fn setup_sinks(&mut self) -> Result<(), io::Error> {
+    fn setup_sinks(&mut self) -> Result<(), Error> {
         if self.sound_sinks.is_none() {
             // Start the sound sinks and play bg music
             let mut sinks = build_sound_sinks();
@@ -189,20 +189,20 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
 
     // std::result::Result< rtsp_types::Response<Body>, ClientActionError> > + Send> >
 
-    pub async fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, io::Error> > + '_ >> {
+    pub async fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, Error> > + '_ >> {
         Box::pin(async move {
-            self.setup_sinks();
+            self.setup_sinks()?;
             loop {
                 // Hide additional widgets when paused
                 self.ui_wrapper.ui.render_additional = false;
                 self.ui_wrapper.draw_start_menu()?;
                 let start_choice = if choice.is_some() { choice.clone().unwrap() } else { self.handle_start_menu_selection()? };
-                self.ui_wrapper.clear_screen();
+                self.ui_wrapper.clear_screen()?;
                 match start_choice {
                     StartMenuChoice::Play => {
                         self.ui_wrapper.ui.render_additional = true;
                         if !self.game_running {
-                            log::info!("Starting game..");
+                            info!("Starting game..");
                             if let Some(goc) = self.start_game().await? {
                                 return Ok(Some(goc));
                             }
@@ -212,7 +212,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                         }
                     },
                     StartMenuChoice::Settings => {
-                        log::info!("Showing settings..");
+                        info!("Showing settings..");
 
                         let widgets = build_settings_widgets(&self.settings);
                         let mut settings_menu = SettingsMenuView {
@@ -228,10 +228,10 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                         let widgets = settings_menu.menu.widgets;
                         self.handle_settings_menu_selection(widgets)?;
                         // Ensure we're using any changes to the settings
-                        self.update_from_settings();
+                        self.update_from_settings()?;
                     },
                     StartMenuChoice::Info => {
-                        log::info!("Showing info..");
+                        info!("Showing info..");
                         let _ui = &mut self.ui_wrapper.ui;
                         self.ui_wrapper.draw_info()?;
                         io::stdin().keys().next();
@@ -288,7 +288,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
             non_player_rooms.retain(|r| !r.uuid_equals(player_room.clone()));
 
             if !non_player_rooms.is_empty() {
-                let mut moved = 0;
+                let _moved = 0;
                 for npc in npcs {
                     // Normal thread RNG / non-reproducible!!
                     let mut rng = thread_rng();
@@ -304,7 +304,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         }
     }
 
-    fn initialise_characters(&mut self) -> Result<(), io::Error> {
+    fn initialise_characters(&mut self) -> Result<(), Error> {
         info!("Building player...");
         let player_pattern_result = CharacterPattern::new_player();
         if player_pattern_result.is_err() {
@@ -318,29 +318,29 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         }
         let test_npc = CharacterBuilder::new(npc_pattern_result.unwrap()).build(String::from("Ruggo"));
 
-        let mut characters = Characters::new(Some(player), vec![test_npc]);
+        let characters = Characters::new(Some(player), vec![test_npc]);
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
         let spawn_room = self.respawn_player(LevelChange::DOWN);
-        if let Some(sr) = spawn_room {
+        return if let Some(sr) = spawn_room {
             self.respawn_npcs(sr.clone());
             self.build_testing_inventory();
-            return Ok(());
+            Ok(())
         } else {
-            return error_result(String::from("Player was not properly spawned/no player spawn room returned!"));
+            error_result(String::from("Player was not properly spawned/no player spawn room returned!"))
         }
     }
 
-    async fn generate_map(&mut self) -> Result<Map, io::Error> {
+    async fn generate_map(&mut self) -> Result<Map, Error> {
         let seed = self.levels.get_seed();
         let map_framehandler = MapGenerationFrameHandler { seed: seed.clone() };
 
-        let mut map_generator = self.levels.build_map_generator();
+        let map_generator = self.levels.build_map_generator();
         let size_x = map_generator.map.area.size_x;
         let size_y = map_generator.map.area.size_y;
 
-        let mut progress_display = ProgressDisplay {
+        let progress_display = ProgressDisplay {
             terminal_manager: &mut self.ui_wrapper.terminal_manager,
             frame_handler: map_framehandler
         };
@@ -349,23 +349,23 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
             progress_display
         };
 
-        log::info!("Generating map using RNG seed: {} and size: {}, {}", seed, size_x, size_y);
+        info!("Generating map using RNG seed: {} and size: {}, {}", seed, size_x, size_y);
         level_generator.generate_level().await
     }
 
-    async fn initialise(&mut self) -> Result<(), io::Error> {
+    async fn initialise(&mut self) -> Result<(), Error> {
         self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
         let map = self.generate_map().await.unwrap();
         self.levels.add_level(map);
-        match self.initialise_characters() {
+        return match self.initialise_characters() {
             Err(e) => {
-                return Err(e);
+                Err(e)
             },
             Ok(_) => {
                 info!("Map generated successfully");
-                return Ok(())
+                Ok(())
             },
         }
     }
@@ -380,12 +380,12 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                 player.get_health(),
                 player.get_details(),
                 player.get_inventory_mut().get_loot_value());
-            self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::StatLine(stat_line));
+            self.ui_wrapper.ui.additional_widgets.push(StandardWidgetType::StatLine(stat_line));
 
             let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
             commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
             let map_usage_line = UsageLine::new(commands);
-            self.ui_wrapper.ui.additional_widgets.push(widget::StandardWidgetType::UsageLine(map_usage_line));
+            self.ui_wrapper.ui.additional_widgets.push(StandardWidgetType::UsageLine(map_usage_line));
 
         } else {
             match self.ui_wrapper.ui.additional_widgets.get_mut(0) {
@@ -402,7 +402,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         }
     }
 
-    pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, io::Error>{
+    pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, Error>{
         let mut generated = false;
         while !generated {
             let init_result = self.initialise().await;
@@ -416,7 +416,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                     // Rebuild the engine to reset the seed and try again
                     log::error!("Initialisation failed with error {}. Trying another map seed...", e);
                     let mut error_dialog = DialogView::new(&mut self.ui_wrapper.ui, &mut self.ui_wrapper.terminal_manager, String::from("Initialisation failed, trying another map seed..."));
-                    error_dialog.begin();
+                    error_dialog.begin()?;
                     self.rebuild();
                 }
             }
@@ -479,7 +479,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         return PlayerMovementResult { must_generate_map: false, level_change: None };
     }
 
-    fn handle_game_over(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+    fn handle_game_over(&mut self) -> Result<Option<GameOverChoice>, Error> {
         let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
 
         let mut menu = build_game_over_menu(
@@ -493,7 +493,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         return Ok(None)
     }
 
-    async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, io::Error> {
+    async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, Error> {
         let movement_result : PlayerMovementResult = self.attempt_player_movement(side).await;
 
         // If the player move results in an up/down level movement, handle this
@@ -514,8 +514,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                         },
                         LevelChangeResult::OutOfDungeon => {
                            return self.handle_game_over();
-                        },
-                        _ => {}
+                        }
                     }
                 }
                 _ => {}
@@ -524,7 +523,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         return Ok(None)
     }
 
-    pub async fn menu_command(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+    pub async fn menu_command(&mut self) -> Result<Option<GameOverChoice>, Error> {
         self.ui_wrapper.clear_screen()?;
         self.ui_wrapper.ui.hide_console();
 
@@ -539,7 +538,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         Ok(None)
     }
 
-    fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, io::Error>  {
+    fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, Error>  {
         let level = self.levels.get_level_mut();
 
         let characters = &level.characters;
@@ -556,11 +555,11 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         combat_view.set_callback(Box::new(|data| {
             combat.handle_callback(data)
         }));
-        combat_view.begin();
+        combat_view.begin()?;
         Ok(None)
     }
 
-    pub async fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, io::Error>  {
+    pub async fn handle_input(&mut self, key : Key) -> Result<Option<GameOverChoice>, Error>  {
         let level = self.levels.get_level_mut();
         match key {
             Key::Esc => {
@@ -569,7 +568,7 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
                 }
             },
             Key::Char('c') => {
-                self.begin_combat();
+                self.begin_combat()?;
             },
             Key::Char('i') => {
                 let mut command = InventoryCommand { level, ui: &mut self.ui_wrapper.ui, terminal_manager: &mut self.ui_wrapper.terminal_manager };
@@ -596,25 +595,25 @@ impl <B : Backend + std::marker::Send> GameEngine<B> {
         Ok(None)
     }
 
-    async fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, io::Error> {
+    async fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, Error> {
         let key = get_input_key()?;
         //self.terminal_manager.terminal.clear()?;
         return Ok(self.handle_input(key).await?);
     }
 
-    fn npc_turns(&mut self)  -> Result<(), io::Error> {
+    fn npc_turns(&mut self)  -> Result<(), Error> {
         // TODO NPC movement
         return Ok(());
     }
 
-    async fn game_loop(&mut self) -> Result<Option<GameOverChoice>, io::Error> {
+    async fn game_loop(&mut self) -> Result<Option<GameOverChoice>, Error> {
         let game_over_choice = self.player_turn().await?;
         self.npc_turns()?;
         return Ok(game_over_choice);
     }
 }
 
-pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
+pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, Error> {
     let ui = build_ui();
     let settings = build_settings();
     let rng_seed = settings.get_rng_seed().ok_or(Error::new(ErrorKind::NotFound, "Failed to retrieve the RNG seed value!"))?;
@@ -623,7 +622,7 @@ pub fn build_game_engine<'a, B: tui::backend::Backend>(terminal_manager : Termin
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 
-pub fn build_test_game_engine<'a, B: tui::backend::Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, io::Error> {
+pub fn build_test_game_engine<'a, B: Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, Error> {
     let ui = build_ui();
     let settings = build_settings();
     Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
@@ -641,14 +640,15 @@ mod tests {
     use termion::event::Key;
 
     use crate::character::Character;
-    use crate::character::characters::build_empty_characters;
+    
     use crate::engine::game_engine::*;
+    use crate::engine::level::Level;
     use crate::map::{Map, Tiles};
     use crate::map::position::{Position};
     use crate::map::position::{Area, build_square_area};
     use crate::map::tile::{build_library, TileType, TileDetails};
     use crate::terminal::terminal_manager;
-    use crate::view::View;
+    
 
     fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {
         let tile_library = build_library();
@@ -671,7 +671,7 @@ mod tests {
         let game_engine = build_test_game_engine(levels, terminal_manager);
 
         match game_engine {
-            Result::Ok(mut engine) => {
+            Ok(mut engine) => {
                 let levels = engine.levels.get_level_mut();
                 let player = levels.characters.get_player_mut();
                 assert_eq!(start_position, player.unwrap().get_global_position());
@@ -704,7 +704,7 @@ mod tests {
     #[test]
     fn test_build_game_engine() {
         let terminal_manager = terminal_manager::init_test().unwrap();
-        let game_engine = build_game_engine(terminal_manager);
+        let _game_engine = build_game_engine(terminal_manager);
     }
 
     #[test]
@@ -717,7 +717,7 @@ mod tests {
         // AND the middle / bottom middle tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
@@ -751,7 +751,7 @@ mod tests {
 
         // AND only the middle tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
@@ -784,7 +784,7 @@ mod tests {
         // AND the middle / bottom middle tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles },
             rooms : Vec::new(),
@@ -816,7 +816,7 @@ mod tests {
 
         // AND only the middle end tile is a corridor
         map_tiles[2] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
@@ -849,7 +849,7 @@ mod tests {
         // AND the middle / middle left tile is a corridor
         map_tiles[1] [0] = tile_library[&TileType::Corridor].clone();
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
@@ -881,7 +881,7 @@ mod tests {
 
         // AND only the middle end tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
@@ -914,7 +914,7 @@ mod tests {
         // AND the middle / middle right tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
         map_tiles[1] [2] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),
@@ -946,7 +946,7 @@ mod tests {
 
         // AND only the middle end tile is a corridor
         map_tiles[1] [1] = tile_library[&TileType::Corridor].clone();
-        let map = crate::map::Map {
+        let map = Map {
             area: map_area,
             tiles : Tiles { tiles: map_tiles},
             rooms : Vec::new(),

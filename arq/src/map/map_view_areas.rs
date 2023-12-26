@@ -62,7 +62,7 @@ pub(crate) fn calculate_map_display_area(mut center_position: Position, map_view
 mod tests {
     use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
     use crate::map::position::{Area, Position};
-    use crate::widget::stateful::map_widget::MapWidget;
+    
 
     #[test]
     fn test_calculate_map_display_area() {

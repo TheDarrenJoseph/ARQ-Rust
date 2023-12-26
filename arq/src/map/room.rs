@@ -86,7 +86,7 @@ mod tests {
 
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position, Side};
-    use crate::map::room::{build_room, Room};
+    use crate::map::room::{build_room};
 
     #[test]
     fn test_get_sides() {

@@ -1,13 +1,13 @@
-use std::f32::MIN;
-use std::io;
+
+
 use std::sync::mpsc::Receiver;
-use futures::future::err;
+
 use log::error;
-use termion::input::TermRead;
+
 use tui::layout::Rect;
 use crate::progress::StepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui_util::{center_area, MIN_AREA};
+use crate::ui::ui_util::{center_area};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 
@@ -18,8 +18,8 @@ pub struct ProgressDisplay<'a, B : tui::backend::Backend> {
 
 impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
     pub async fn handle_progress(&mut self, rx : Receiver<StepProgress>, total_steps: u16) {
-        for i in 0..=total_steps {
-            let mut progress = rx.recv();
+        for _i in 0..=total_steps {
+            let progress = rx.recv();
             if let Ok(p) = progress {
                 self.show_progress(p.clone());
                 if p.is_done() {

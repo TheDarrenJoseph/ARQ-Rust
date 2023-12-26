@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
-use crate::map::objects::items::MaterialType::UNKNOWN;
+
 use crate::map::objects::weapon_builder::BladedWeaponType;
 
 use crate::map::tile::{Colour, Symbol};

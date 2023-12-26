@@ -2,7 +2,7 @@ use std::io;
 use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
-use termion::input::TermRead;
+
 
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
@@ -12,7 +12,7 @@ use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
 use crate::map::room::Room;
 use crate::map::tile::TileType;
-use crate::map::tile::TileType::{Corridor, NoTile, Wall, Window};
+use crate::map::tile::TileType::{NoTile, Wall, Window};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
 
@@ -67,9 +67,9 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
         }
 
         return if let Some(tile) = map.tiles.get_tile(pos.clone()) {
-           if (tile.tile_type == NoTile) {
+           if tile.tile_type == NoTile {
                Ok(nothing_found)
-           } else if (tile.tile_type == Wall || tile.tile_type == Window) {
+           } else if tile.tile_type == Wall || tile.tile_type == Window {
                // We want to describe the tiles for these always, should never have containers
                return Ok(format!("There's a {} here.", &tile.name));
             } else {
@@ -122,7 +122,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, command_key: Key) -> Result<(), io::Error> {
+    fn handle(&mut self, _command_key: Key) -> Result<(), io::Error> {
         self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
         let key = get_input_key()?;
@@ -152,7 +152,7 @@ mod tests {
     use crate::map::objects::container::{build, Container, ContainerType};
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::{build_room, Room};
+    use crate::map::room::{build_room};
     use crate::map::tile::TileType;
     use crate::map::Tiles;
 

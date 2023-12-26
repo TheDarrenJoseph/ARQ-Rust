@@ -1,14 +1,14 @@
 use uuid::Uuid;
 use crate::character::{Character, Class, Race};
 use crate::character::builder::character_builder::CharacterType::{GoblinWarrior, NewPlayer};
-use crate::character::character_details::{build_default_character_details, CharacterDetails};
+use crate::character::character_details::{CharacterDetails};
 use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
 use crate::error::errors::GenericError;
-use crate::map::objects::{container, items};
+use crate::map::objects::{container};
 use crate::map::objects::container::{build, Container, ContainerType};
-use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
+use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
 use crate::map::position::Position;
 use crate::map::tile::{Colour, Symbol};

@@ -2,7 +2,7 @@ use std::io::Error;
 use termion::event::Key;
 use tui::layout::{Alignment, Rect};
 use tui::style::Style;
-use tui::text::Span;
+
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -12,7 +12,7 @@ use crate::view::game_over_view::GameOverChoice::{EXIT, RESTART};
 use crate::widget::stateful::button_widget::build_button;
 use crate::widget::widgets::WidgetList;
 use crate::widget::{Focusable, StatefulWidgetType};
-use crate::widget::StatefulWidgetType::Button;
+
 
 /*
     This View handles the "Game Over" screen for when you die/escape the dungeon
@@ -73,7 +73,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
                 half_width -= 7;
             }
 
-            let mut half_height = frame_size.height.clone() / 2;
+            let half_height = frame_size.height.clone() / 2;
             let mut offset = 0;
 
             let frame_size = frame.size();
@@ -115,7 +115,7 @@ impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B
             },
             Key::Char('\n') => {
                 match target_widget {
-                    Some(mut widget) => {
+                    Some(widget) => {
                         match &mut widget.state_type {
                             StatefulWidgetType::Button(button) => {
                                 log::info!("Current widget: {}", button.get_name());

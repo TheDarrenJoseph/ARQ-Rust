@@ -1,16 +1,16 @@
-use std::io::Error;
+
 use tui::Frame;
 use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
-use tui::text::{Span, Text};
+use tui::style::{Color, Style};
+use tui::text::{Span};
 use tui::widgets::{Block, Gauge, Paragraph};
-use crate::map::Map;
-use crate::map::map_generator::MapGenerator;
-use crate::map::position::Area;
+
+
+
 use crate::progress::StepProgress;
-use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::UI;
-use crate::view::{GenericInputResult, InputResult, View};
+
+
+
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 pub struct MapGenerationFrameHandler {

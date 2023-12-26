@@ -2,7 +2,7 @@ use std::io;
 use std::io::Error;
 
 use termion::event::Key;
-use termion::input::TermRead;
+
 use tui::Frame;
 use tui::layout::Rect;
 

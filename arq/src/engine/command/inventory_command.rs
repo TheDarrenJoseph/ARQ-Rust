@@ -1,6 +1,6 @@
 use std::io;
 use std::io::{Error};
-use std::ptr::eq;
+
 
 use termion::event::Key;
 use crate::character::equipment::get_potential_slots;
@@ -9,7 +9,7 @@ use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
-use crate::map::objects::items::{Item, ItemType};
+use crate::map::objects::items::{Item};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 
@@ -45,7 +45,7 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
             for to_equip in items {
                 let result = inventory.find_mut(&to_equip);
                 if let Some(c) = result {
-                    let mut c_copy = c.clone();
+                    let c_copy = c.clone();
                     let result_item = c.get_self_item_mut();
                     // If the item is already equipped / un-equip it
                     if result_item.is_equipped() {
@@ -232,14 +232,14 @@ mod tests {
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
     use crate::character::characters::Characters;
 
-    use crate::character::equipment::EquipmentSlot;
+    
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::engine::command::inventory_command::{CallbackState, equip_items, handle_callback};
     use crate::engine::level::Level;
     
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::{build_square_area, Position};
@@ -249,7 +249,7 @@ mod tests {
 
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::EquipItems;
-    use crate::view::resolve_area;
+    
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -417,7 +417,7 @@ mod tests {
         // GIVEN a valid callback state
         let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
-        let mut player = level.characters.get_player_mut().unwrap();
+        let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY);
 
@@ -427,7 +427,7 @@ mod tests {
         assert_eq!(None, steel_sword.get_equipment_slot());
 
         let to_equip = steel_sword.clone();
-        let mut expected_id = to_equip.get_id().clone();
+        let expected_id = to_equip.get_id().clone();
         player.get_inventory_mut().add_item(steel_sword);
 
         let data = ContainerFrameHandlerInputResult::EquipItems(vec![to_equip]);
@@ -457,7 +457,7 @@ mod tests {
         // GIVEN a valid callback state
         let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
-        let mut player = level.characters.get_player_mut().unwrap();
+        let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY);
 
@@ -467,7 +467,7 @@ mod tests {
         assert_eq!(None, steel_sword.get_equipment_slot());
 
         let to_equip = steel_sword.clone();
-        let mut expected_id = to_equip.get_id().clone();
+        let expected_id = to_equip.get_id().clone();
 
         player.get_inventory_mut().add_item(steel_sword);
 

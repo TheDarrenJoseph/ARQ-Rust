@@ -3,7 +3,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
-use std::time::Duration;
+
 use rand::distributions::Standard;
 use rand::Rng;
 
@@ -13,10 +13,10 @@ use uuid::Uuid;
 use crate::engine::pathfinding::Pathfinding;
 use crate::engine::process::Progressible;
 use crate::map::{Map, Tiles};
-use crate::map::objects::{container, items};
+use crate::map::objects::{container};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
-use crate::map::objects::items::{Item, ItemForm, MaterialType};
+use crate::map::objects::items::{Item, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, TileType, TileDetails};
@@ -88,7 +88,7 @@ fn generate_room_containers(rng: &mut Pcg64, room: Room) -> HashMap<Position, Co
 impl <'rng> Future for MapGenerator<'rng> {
     type Output = Map;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
         return if self.progress.is_done() {
             Poll::Ready(self.map.clone())
         } else {
@@ -551,7 +551,7 @@ mod tests {
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::TileDetails;
-    use crate::progress::StepProgress;
+    
 
     fn build_test_map() -> Map {
         let map_size = 12;
@@ -559,7 +559,7 @@ mod tests {
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
 
-        let (tx, rx) = channel();
+        let (tx, _rx) = channel();
         block_on(generator.generate(tx))
     }
 
@@ -626,14 +626,14 @@ mod tests {
 
     fn build_tile_strings(length: i32, tiles: &Vec<Vec<TileDetails>>) -> Vec<String> {
         let mut tile_strings : Vec<String> = Vec::new();
-        for i in 0..length {
+        for _i in 0..length {
             tile_strings.push("".to_string())
         }
 
         let mut x_idx = 0;
         let mut y_idx = 0;
         for row in tiles {
-            let mut row_text = tile_strings.get_mut(x_idx).unwrap().clone();
+            let _row_text = tile_strings.get_mut(x_idx).unwrap().clone();
             for tile in row {
                 tile_strings[x_idx].push(tile.symbol.character);
                 y_idx += 1;

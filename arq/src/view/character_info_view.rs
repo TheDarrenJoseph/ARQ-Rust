@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 
 use std::io::Error;
@@ -417,7 +417,7 @@ mod tests {
     use crate::character::characters::Characters;
     use crate::engine::level::Level;
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, TileType};

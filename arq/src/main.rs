@@ -1,8 +1,8 @@
 extern crate core;
 
-use std::convert::TryInto;
+
 use std::io;
-use std::io::SeekFrom::Start;
+
 use futures::executor::block_on;
 
 use termion::raw::RawTerminal;
@@ -11,7 +11,7 @@ use tui::backend::TermionBackend;
 use crate::engine::game_engine::{build_game_engine, GameEngine};
 use crate::ui::ui::StartMenuChoice::Play;
 use crate::view::game_over_view::GameOverChoice;
-use crate::view::game_over_view::GameOverChoice::EXIT;
+
 
 mod global_flags;
 mod error;
@@ -32,8 +32,8 @@ mod sound;
 pub mod map;
 
 async fn begin() -> Result<(), io::Error> {
-    let mut game_engine: Result<GameEngine<TermionBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
-    let mut terminal_manager = terminal::terminal_manager::init().unwrap();
+    let game_engine: Result<GameEngine<TermionBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
+    let terminal_manager = terminal::terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
     let mut engine = game_engine.unwrap();
     log::info!("Displaying start menu..");

@@ -1,10 +1,10 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
-use tui::widgets::{StatefulWidget, Widget};
+use tui::widgets::{Widget};
 
 use crate::character::character_details::CharacterDetails;
-use crate::widget::{StatefulWidgetState, StatefulWidgetType};
+
 
 #[derive(Clone)]
 #[derive(Debug)]

@@ -1,5 +1,5 @@
-use std::error::Error;
-use std::fmt::format;
+
+
 use uuid::Uuid;
 use crate::character::equipment::EquipmentSlot;
 use crate::error::errors::GenericError;

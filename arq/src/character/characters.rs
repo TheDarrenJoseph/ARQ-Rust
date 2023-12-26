@@ -1,6 +1,6 @@
-use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
+
 use crate::character::Character;
-use crate::map::position::Position;
+
 
 #[derive(Default, Debug, Clone)]
 pub struct Characters {

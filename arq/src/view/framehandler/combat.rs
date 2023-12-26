@@ -1,19 +1,19 @@
 use tui::Frame;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::layout::{Alignment, Rect};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use crate::character::battle::Battle;
 use crate::character::equipment::{Equipment, EquipmentSlot, WeaponSlot};
-use crate::character::equipment::EquipmentSlot::PRIMARY;
+
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::option_list_selection::{MappedOption, OptionListSelection};
-use crate::ui::ui_areas::UIAreas;
+
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::util::tabling::Column;
+
 use crate::widget::stateful::map_widget::MapWidget;
 
 pub struct CombatFrameHandler {
@@ -97,7 +97,7 @@ fn list_equipment(equipment: Equipment) -> Paragraph<'static> {
 
 impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler {
     fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<Battle>) {
-        let mut battle = data.data;
+        let battle = data.data;
         let mut characters = battle.characters;
         let player = characters.get_player_mut().unwrap();
         let player_equipment = player.get_equipment_mut().clone();
@@ -107,7 +107,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         }
 
         let player_name = player.get_name().clone();
-        let player_equipment_slots = player_equipment.get_slots();
+        let _player_equipment_slots = player_equipment.get_slots();
 
         let enemy = characters.get_npcs_mut().first_mut().unwrap();
         let enemy_equipment = enemy.get_equipment_mut().clone();
@@ -125,7 +125,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
 
         // Split the main window into 2 columns / sides
         let side_width = (main_area.size_x - 2) / 2;
-        let side_height= (main_area.size_y - 2);
+        let side_height= main_area.size_y - 2;
 
         // Start inside the border (+1)
         let left_side_start_position = Position { x: main_area.start_position.x + 1, y: main_area.start_position.y + 1 };
@@ -167,7 +167,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
             frame.render_widget(paragraph_area.0, paragraph_area.1);
         }
 
-        let mut minimap_display_area = self.areas.as_ref().unwrap().minimap_area.to_rect();
+        let minimap_display_area = self.areas.as_ref().unwrap().minimap_area.to_rect();
         let mut player_global_pos = self.level.characters.get_player_mut().unwrap().get_global_position();
         let minimap_target_pos = player_global_pos.offset(-1,-1);
         let minimap_target_area = Area::new(minimap_target_pos, 3,3);

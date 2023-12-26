@@ -163,7 +163,7 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::{build_room, Room};
+    use crate::map::room::{build_room};
     use crate::map::tile::TileType;
     use crate::map::Tiles;
 

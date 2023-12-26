@@ -1,6 +1,6 @@
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
-use crate::global_flags::{GLOBALS, GlobalTestFlags};
+use crate::global_flags::{GLOBALS};
 
 pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";

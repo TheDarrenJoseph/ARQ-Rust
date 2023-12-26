@@ -47,7 +47,7 @@ pub struct Equipment {
 // Slot mapping
 pub fn get_potential_slots(item_type: ItemType) -> Vec<EquipmentSlot> {
     return match item_type {
-        ItemType::WEAPON(w) => {
+        ItemType::WEAPON(_w) => {
             vec![PRIMARY, SECONDARY]
         },
         ItemType::HEADGEAR => {
@@ -114,13 +114,13 @@ impl Equipment {
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::eq;
+    
     use strum::IntoEnumIterator;
     use uuid::Uuid;
     use crate::character::equipment::{Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
     use crate::map::objects::container::{Container, ContainerType};
-    use crate::map::objects::{container, items};
+    use crate::map::objects::{container};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
 
@@ -185,7 +185,7 @@ mod tests {
         let mut equipment = Equipment::new();
 
         // AND an OBJECT type container i.e a Bag
-        let mut wrapped = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
+        let wrapped = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
 
         // WHEN we call to equip this
         let equip_result = equipment.equip(wrapped, PRIMARY);
@@ -208,7 +208,7 @@ mod tests {
         assert_eq!(weapon1.get_id(), equipment.get_item(EquipmentSlot::PRIMARY).unwrap().get_id());
 
         // WHEN we call to equip another item to this slot
-        let weapon2 = build_test_weapon();
+        let _weapon2 = build_test_weapon();
         let wrapped_other = Container::wrap(weapon1.clone());
         equip_result = equipment.equip(wrapped_other, PRIMARY);
         // THEN we expect an error to return

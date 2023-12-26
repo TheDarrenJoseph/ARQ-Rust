@@ -1,5 +1,5 @@
-use std::io::{Error, ErrorKind};
-use futures::future::err;
+use std::io::{Error};
+
 use log::error;
 
 use termion::event::Key;
@@ -9,7 +9,7 @@ use tui::widgets::{Block, Borders};
 use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
 use crate::error::io_error_utils::error_result;
-use crate::ui::ui_util::{center_area, MIN_AREA};
+use crate::ui::ui_util::{center_area};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -95,7 +95,7 @@ impl CharacterFrameHandler {
     }
 
     pub fn draw_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
-        let frame_size = frame.size();
+        let _frame_size = frame.size();
         let widget_count = self.widgets.widgets.len();
         if widget_count > 0 {
             let x_offset = 1;
@@ -151,7 +151,7 @@ impl CharacterFrameHandler {
             _attribute_start -= 1;
         }
         let target_area = Rect::new(frame_size.x + 1, frame_size.y + 1, 50, 10);
-        let mut available_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
+        let available_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
         let attributes_area_result = center_area(target_area, available_area, target_area);
 
         if let Ok(area) = attributes_area_result {

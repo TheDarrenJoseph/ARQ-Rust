@@ -1,7 +1,7 @@
-use std::{fmt, io};
-use std::io::{Error, ErrorKind};
+use std::{io};
+
 use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
+
 
 use termion::event::Key;
 
@@ -10,8 +10,8 @@ use crate::character::characters::Characters;
 use crate::engine::command::input_mapping;
 use crate::map::Map;
 use crate::map::map_generator::{build_generator, MapGenerator};
-use crate::map::position::{build_rectangular_area, build_square_area, Position, Side};
-use crate::progress::StepProgress;
+use crate::map::position::{build_rectangular_area, Position, Side};
+
 
 const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;
@@ -70,7 +70,7 @@ impl Levels {
         build_generator(rng, map_area)
     }
 
-    pub(crate) fn add_level(&mut self, mut map: Map) {
+    pub(crate) fn add_level(&mut self, map: Map) {
         let new_level;
         let map = Some(map);
         let mut player = None;

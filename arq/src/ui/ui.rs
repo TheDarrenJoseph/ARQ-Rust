@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use termion::event::Key;
 use std::io;
-use std::io::{Error, ErrorKind};
+
 use termion::input::TermRead;
 
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -9,15 +9,15 @@ use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
 
-use crate::{menu, ui};
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::{menu};
+use crate::map::position::{Area};
 use crate::menu::{Menu, ToList};
 use crate::ui::ui_areas::UIAreas;
 use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
-use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
+use crate::widget::{StandardWidgetType};
 
 pub struct UI {
     pub start_menu : Menu,
@@ -95,7 +95,7 @@ impl UI {
         If the view is smaller than this, the view will be split as per usual for smaller sizes
      */
     pub fn get_min_area(&self, frame_size: Rect) -> UIAreas {
-        if (frame_size.height >= 80 && frame_size.width >= 24) {
+        if frame_size.height >= 80 && frame_size.width >= 24 {
             let target = Rect::new(0, 0, 80, 24);
             let centered = center_area(target, frame_size, MIN_AREA).unwrap();
             let areas = Layout::default()

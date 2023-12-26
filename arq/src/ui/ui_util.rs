@@ -1,4 +1,4 @@
-use std::cmp::min;
+
 use std::io::{Error, ErrorKind};
 use tui::layout::Rect;
 
@@ -78,9 +78,9 @@ pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Rec
 
 #[cfg(test)]
 mod tests {
-    use std::f32::MIN;
+    
     use tui::layout::Rect;
-    use crate::ui::ui_util::{Alignment, center, center_area, MIN_AREA};
+    use crate::ui::ui_util::{center_area, MIN_AREA};
 
     #[test]
     fn test_center_area_div2_leftalign() {

@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 use std::fmt;
-use std::fmt::format;
+
 use uuid::Uuid;
 use crate::error::errors::GenericError;
 
@@ -380,7 +380,7 @@ mod tests {
 
     use crate::map::objects::container;
     use crate::map::objects::container::{build, Container, ContainerType};
-    use crate::map::objects::items;
+    
     use crate::map::objects::items::{Item, MaterialType};
     use crate::map::tile::Colour;
 

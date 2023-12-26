@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+
 use std::io;
 use log::info;
 use termion::event::Key;
@@ -7,7 +7,7 @@ use tui::layout::Rect;
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
-use crate::map::position::{Area, build_rectangular_area, build_square_area, Position};
+use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, UI};
@@ -16,9 +16,9 @@ use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrame
 use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
-use crate::view::framehandler::map_framehandler::MapFrameHandler;
+
 use crate::view::map_view::{MapView};
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {
@@ -134,7 +134,7 @@ impl <B : Backend> UIWrapper<B> {
 
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
         let frame_size_copy = self.ui.frame_size.clone();
-        if let Some(frame_size) = frame_size_copy {
+        if let Some(_frame_size) = frame_size_copy {
             // Add the UI usage hint to the console buffer
             self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
             let map_area = level.map.as_ref().unwrap().area;

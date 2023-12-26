@@ -1,17 +1,17 @@
-use log::{debug, error, info};
+
 use tui::buffer::{Buffer, Cell};
 use tui::layout::Rect;
-use tui::style::Color;
+
 use tui::widgets::StatefulWidget;
-use crate::character::Character;
+
 use crate::engine::level::Level;
 use crate::map::Map;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::objects::container::Container;
-use crate::map::position::{Area, Position};
-use crate::map::tile::TileDetails;
-use crate::terminal::colour_mapper;
-use crate::view::map_view::{MapView};
+use crate::map::position::{Position};
+
+
+
 use crate::view::util::cell_builder::CellBuilder;
 
 #[derive(Clone)]
@@ -38,7 +38,7 @@ impl MapWidget {
         None
     }
 
-    fn build_cell_for_position(&mut self, level: &mut Level, global_position: Position, mut cell_target: &mut Cell) -> Cell {
+    fn build_cell_for_position(&mut self, level: &mut Level, global_position: Position, _cell_target: &mut Cell) -> Cell {
         let characters = &mut level.characters;
         let player_mut = characters.get_player_mut().unwrap();
 

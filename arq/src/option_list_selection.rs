@@ -1,4 +1,4 @@
-use crate::view::framehandler::util::tabling::Column;
+
 
 pub struct MappedOption<T> {
     pub mapped : T,

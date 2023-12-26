@@ -3,14 +3,14 @@ use std::io::Error;
 use log::error;
 use termion::event::Key;
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::text::Span;
-use tui::widgets::{Block, Borders};
+
+
+
 use crate::character::battle::Battle;
-use crate::character::equipment::{EquipmentSlot, WeaponSlot};
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::character::equipment::{WeaponSlot};
+use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{get_input_key, UI};
+use crate::ui::ui::{UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::framehandler::combat::{CombatFrameHandler, CombatViewAreas};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -61,7 +61,7 @@ impl <B : tui::backend::Backend> CombatView<'_, B> {
 impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<Battle>, Error> {
         // Input / Output loop
-        while(self.battle.in_progress) {
+        while self.battle.in_progress {
             self.draw(None);
 
             let input_result = self.handle_input(None).unwrap();
@@ -76,10 +76,10 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         return Ok(self.build_done_result());
     }
 
-    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let battle = &mut self.battle;
-        let player = battle.characters.get_player_mut();
-        let npcs = battle.characters.get_npcs();
+        let _player = battle.characters.get_player_mut();
+        let _npcs = battle.characters.get_npcs();
 
         let ui = &mut self.ui;
         ui.show_console();
@@ -89,8 +89,8 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
             let frame_size = frame.size();
             let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
 
-            if (centered.is_ok()) {
-                let mut ui_areas = ui.get_view_areas(centered.unwrap());
+            if centered.is_ok() {
+                let _ui_areas = ui.get_view_areas(centered.unwrap());
 
                 let combat_view_areas = build_view_areas(frame_size);
                 fh.areas = Some(combat_view_areas);
@@ -129,7 +129,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
             // Enter key
             Key::Char('\n') => {
                 let selection = &self.frame_handler.selection;
-                let option_chosen = selection.options.get(selection.index as usize).unwrap().clone();
+                let _option_chosen = selection.options.get(selection.index as usize).unwrap().clone();
 
                 let data = CombatCallbackData { choice: CombatTurnChoice::ATTACK(WeaponSlot::PRIMARY), result: None };
                 self.trigger_callback(data);
@@ -150,7 +150,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
 fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
     // Try to center, or else use the whole frame
     let frame_centered = center_area(MIN_AREA, frame_size, MIN_AREA);
-    let mut total_area;
+    let total_area;
     if let Ok(centered) = frame_centered {
         total_area = centered;
     } else {
@@ -208,7 +208,7 @@ impl <'a, B : tui::backend::Backend> Callback <'a, CombatCallbackData> for Comba
         Any information about the result of a battle action callback will be handled here
      */
     fn handle_callback_result(&mut self, data: Option<CombatCallbackData>) {
-        if let Some(data) = data.clone() {
+        if let Some(_data) = data.clone() {
             // TODO pass messages into the framehandler
         }
     }
