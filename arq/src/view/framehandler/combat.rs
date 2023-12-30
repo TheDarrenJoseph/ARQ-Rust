@@ -115,7 +115,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
 
         let main_area = self.areas.as_ref().unwrap().main_area;
 
-        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.size_x as usize));
+        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.width as usize));
         let title_span = Span::from(title);
 
         let main_window_block = Block::default()
@@ -124,8 +124,8 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         frame.render_widget(main_window_block, main_area.to_rect());
 
         // Split the main window into 2 columns / sides
-        let side_width = (main_area.size_x - 2) / 2;
-        let side_height= main_area.size_y - 2;
+        let side_width = (main_area.width - 2) / 2;
+        let side_height= main_area.height - 2;
 
         // Start inside the border (+1)
         let left_side_start_position = Position { x: main_area.start_position.x + 1, y: main_area.start_position.y + 1 };
@@ -169,8 +169,13 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
 
         let minimap_display_area = self.areas.as_ref().unwrap().minimap_area.to_rect();
         let mut player_global_pos = self.level.characters.get_player_mut().unwrap().get_global_position();
-        let minimap_target_pos = player_global_pos.offset(-1,-1);
-        let minimap_target_area = Area::new(minimap_target_pos, 3,3);
+
+
+        // Offset the the player pos by half of the minimap size to center it
+        let half_minimap_width = ( minimap_display_area.width / 2) as i32;
+        let half_minimap_height = ( minimap_display_area.height / 2) as i32;
+        let minimap_target_pos = player_global_pos.offset(-half_minimap_width, -half_minimap_height);
+        let minimap_target_area = Area::new(minimap_target_pos, minimap_display_area.width,minimap_display_area.height);
 
         let map_area = self.level.map.as_ref().unwrap().area.clone();
         let map_view_area = Area::from_rect(minimap_display_area);

@@ -44,14 +44,14 @@ impl MapViewAreas {
 }
 
 pub(crate) fn calculate_map_display_area(mut center_position: Position, map_view_area: Area) -> Area {
-    let half_of_display_area_x : i32 = (map_view_area.size_x / 2) as i32;
-    let half_of_display_area_y : i32 = (map_view_area.size_y / 2) as i32;
+    let half_of_display_area_x : i32 = (map_view_area.width / 2) as i32;
+    let half_of_display_area_y : i32 = (map_view_area.height / 2) as i32;
 
     // Calculate the display area, centering on the player's position
     let display_area_start = center_position.offset(-half_of_display_area_x, -half_of_display_area_y);
 
-    let display_area_size_x = map_view_area.size_x - map_view_area.start_position.x;
-    let display_area_size_y = map_view_area.size_y - map_view_area.start_position.y;
+    let display_area_size_x = map_view_area.width - map_view_area.start_position.x;
+    let display_area_size_y = map_view_area.height - map_view_area.start_position.y;
     let map_display_area = build_rectangular_area(display_area_start, display_area_size_x, display_area_size_y);
 
     return map_display_area;
@@ -78,8 +78,8 @@ mod tests {
         // AND it will be centered on the player
         assert_eq!(MAP_VIEW_POSITION.x, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]
@@ -98,8 +98,8 @@ mod tests {
         // AND it will be centered on the player
         assert_eq!(MAP_VIEW_POSITION.x, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]
@@ -117,8 +117,8 @@ mod tests {
         // AND it will be unable to follow the player (start position will still be 0,0 as the unsigned value will ensure nothing <0)
         assert_eq!(MAP_VIEW_POSITION.x, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]
@@ -136,8 +136,8 @@ mod tests {
         // AND it will be following the player (start position will now be 0,1 to follow while centered the player)
         assert_eq!(MAP_VIEW_POSITION.x, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y + 1, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]
@@ -155,8 +155,8 @@ mod tests {
         // AND it will be unable to follow the player (start position will still be 0,0 as the unsigned value will ensure nothing <0)
         assert_eq!(MAP_VIEW_POSITION.x, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]
@@ -174,8 +174,8 @@ mod tests {
         // AND it will be following the player (start position will move to 1,0 as it can follow the player for anything >0)
         assert_eq!(MAP_VIEW_POSITION.x + 1, map_display_area.start_position.x);
         assert_eq!(MAP_VIEW_POSITION.y, map_display_area.start_position.y);
-        assert_eq!(map_view_area.size_x, map_display_area.size_x);
-        assert_eq!(map_view_area.size_y, map_display_area.size_y);
+        assert_eq!(map_view_area.width, map_display_area.width);
+        assert_eq!(map_view_area.height, map_display_area.height);
     }
 
     #[test]

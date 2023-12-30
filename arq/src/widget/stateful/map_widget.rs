@@ -84,8 +84,8 @@ impl StatefulWidget for MapWidget {
         let map_view_area = self.map_view_areas.map_view_area;
         info!("Map view area starts at: x: {}, y:{}", map_view_area.start_position.x, map_view_area.start_position.y);
         // Local positions should start at 0,0 to size_x-1, size_y-1
-        for x in 0..map_view_area.size_x{
-            for y in 0..map_view_area.size_y {
+        for x in 0..map_view_area.width {
+            for y in 0..map_view_area.height {
                 let local_position = Position::new(x,y);
                 let global_position = self.map_view_areas.local_to_global(local_position).unwrap();
                 let position_in_display_area = self.map_view_areas.is_position_in_map_display_area(global_position);

@@ -168,15 +168,24 @@ fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
         )
         .split(total_area);
 
-    // To make space for the minimap, remove some of the left-hand side of the console area
     let mut console_rect = ui_areas[1].clone();
-    console_rect.x += 8;
-    console_rect.width -= 8;
+    // To make space for the minimap, remove some of the left-hand side of the console area
+
+    let frame_width_float = frame_size.width as f32;
+    // Give 20% of the frame width to the minimap area
+    let minimap_width = (frame_width_float / 100.0 * 20.0) as u16;
+    // Leaving 80% for the console
+    let console_width = (frame_width_float / 100.0 * 80.0) as u16;
+    console_rect.x = minimap_width;
+    console_rect.width = console_width;
+
+    let minimap_position = Position::new(console_rect.x - minimap_width, console_rect.y);
+    let mut minimap_area = Area::new(minimap_position, minimap_width, console_rect.height);
 
     return CombatViewAreas {
         main_area: Area::from_rect(ui_areas[0]),
         console_area: Area::from_rect(console_rect),
-        minimap_area: Area::new(Position::new(0, console_rect.y), 3, 3)
+        minimap_area
     }
 }
 
@@ -211,5 +220,43 @@ impl <'a, B : tui::backend::Backend> Callback <'a, CombatCallbackData> for Comba
         if let Some(_data) = data.clone() {
             // TODO pass messages into the framehandler
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tui::layout::Rect;
+    use crate::view::combat_view::build_view_areas;
+
+    #[test]
+    fn test_build_view_areas() {
+        // GIVEN a frame size of 80x24
+        let frame_size = Rect::new(0,0, 80, 24);
+        // WHEN we call to build view areas
+        let view_areas = build_view_areas(frame_size);
+
+        // THEN we expect
+        // A main area of
+        // the entire width
+        // with 80% of the total height
+        let main_area = view_areas.main_area;
+        assert_eq!(80, main_area.width);
+        // With 80% of the 24 lines (24/100 * 80 = 19.2, rounded down = 19)
+        assert_eq!(19, main_area.height);
+
+        // A console area of y
+        let console_area = view_areas.console_area;
+        // With 80% of the total frame width (80/100 * 80 = 64)
+        assert_eq!(64, console_area.width);
+        // With 20% of the total height of 24 lines (24/100 * 20 = 4.8, rounded up = 5)
+        assert_eq!(5, console_area.height);
+
+        // A minimap area
+        // With 20% of the total frame width (80/100 * 30 = 16)
+        let minimap_area = view_areas.minimap_area;
+        assert_eq!(16, minimap_area.width);
+        // AND the same height as the console width
+        assert_eq!(5, minimap_area.height);
+
     }
 }

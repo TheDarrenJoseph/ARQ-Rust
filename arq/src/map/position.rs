@@ -83,8 +83,8 @@ impl Eq for Position {}
 pub struct Area {
     pub start_position : Position,
     pub end_position : Position,
-    pub size_x : u16,
-    pub size_y : u16
+    pub width: u16,
+    pub height: u16
 }
 
 impl Area {
@@ -97,7 +97,7 @@ impl Area {
     }
 
     pub fn to_rect(&self) -> Rect {
-        Rect { x: self.start_position.x, y: self.start_position.y, width: self.size_x, height: self.size_y}
+        Rect { x: self.start_position.x, y: self.start_position.y, width: self.width, height: self.height }
     }
 
     pub fn get_position(&self, x: u16, y: u16) -> Position {
@@ -107,15 +107,15 @@ impl Area {
     }
 
     pub fn get_total_area(&self) -> u16 {
-        self.size_x * self.size_y
+        self.width * self.height
     }
 
     pub fn get_size_x(&self) -> u16 {
-        self.size_x
+        self.width
     }
 
     pub fn get_size_y(&self) -> u16 {
-        self.size_y
+        self.height
     }
 
     pub fn get_sides(&self) -> Vec<AreaSide> {
@@ -123,9 +123,9 @@ impl Area {
         let mut sides = Vec::new();
         for side in all_sides().iter() {
             if *side == Side::LEFT || *side == Side::RIGHT {
-                sides.push(build_line(start_pos.clone(), self.size_y, side.clone()));
+                sides.push(build_line(start_pos.clone(), self.height, side.clone()));
             } else {
-                sides.push(build_line(start_pos.clone(), self.size_x, side.clone()));
+                sides.push(build_line(start_pos.clone(), self.width, side.clone()));
             }
         }
         sides
@@ -169,7 +169,7 @@ impl Area {
         let start_position = Position { x: start_x, y: start_y };
         let end_position = Position { x: end_x, y: end_y};
 
-        let self_adjusted_area = Area { start_position, end_position, size_x, size_y };
+        let self_adjusted_area = Area { start_position, end_position, width: size_x, height: size_y };
         self_adjusted_area.intersects(area)
     }
 
@@ -202,7 +202,7 @@ impl Area {
         let x= position.x;
         let y = position.y;
         let in_bounds = self.contains_position(position);
-        if in_bounds && size <= self.size_x && size <= self.size_y {
+        if in_bounds && size <= self.width && size <= self.height {
             let end_x = x + size - 1;
             let end_y = y + size - 1;
 
@@ -258,16 +258,16 @@ impl AreaSide {
     pub fn get_mid_point(&self) -> Position {
        match self.side {
            Side::LEFT => {
-               Position { x: self.area.start_position.x, y: self.area.start_position.y + (self.area.size_y - 1) / 2 }
+               Position { x: self.area.start_position.x, y: self.area.start_position.y + (self.area.height - 1) / 2 }
            },
            Side::RIGHT => {
-               Position { x: self.area.end_position.x, y: self.area.start_position.y + (self.area.size_y - 1) / 2 }
+               Position { x: self.area.end_position.x, y: self.area.start_position.y + (self.area.height - 1) / 2 }
            },
            Side::TOP => {
-               Position { x: self.area.start_position.x + (self.area.size_x - 1) / 2, y: self.area.start_position.y}
+               Position { x: self.area.start_position.x + (self.area.width - 1) / 2, y: self.area.start_position.y}
            },
            Side::BOTTOM => {
-               Position { x: self.area.start_position.x + (self.area.size_x - 1) / 2, y: self.area.end_position.y }
+               Position { x: self.area.start_position.x + (self.area.width - 1) / 2, y: self.area.end_position.y }
            }
        }
     }
@@ -312,7 +312,7 @@ pub fn build_line(start_position : Position, size: u16, side: Side) -> AreaSide 
             size_y = 1;
         }
     }
-    let area = Area { start_position, end_position, size_x, size_y };
+    let area = Area { start_position, end_position, width: size_x, height: size_y };
     AreaSide { area, side }
 }
 
@@ -320,7 +320,7 @@ pub const fn build_square_area(start_position : Position, size: u16) -> Area {
     let start_x = start_position.x;
     let start_y = start_position.y;
     let end_position = Position { x : start_x + (size - 1), y: start_y + (size - 1)};
-    Area { start_position, end_position, size_x: size, size_y: size }
+    Area { start_position, end_position, width: size, height: size }
 }
 
 pub const fn build_rectangular_area(start_position : Position, size_x: u16, size_y: u16) -> Area {
@@ -342,7 +342,7 @@ pub const fn build_rectangular_area(start_position : Position, size_x: u16, size
     };
 
     let end_position = Position{x: end_x, y: end_y};
-    Area { start_position, end_position, size_x, size_y }
+    Area { start_position, end_position, width: size_x, height: size_y }
 }
 
 #[cfg(test)]
@@ -418,8 +418,8 @@ mod tests {
     fn test_build_square_area() {
         let start_pos = Position { x: 1, y: 2 };
         let area = build_square_area(start_pos, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(2, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -430,8 +430,8 @@ mod tests {
     fn test_build_rectangular_area() {
         let start_pos = Position { x: 0, y: 0 };
         let area = build_rectangular_area(start_pos, 6, 3);
-        assert_eq!(6, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(6, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(5, area.end_position.x);
@@ -445,8 +445,8 @@ mod tests {
         // And it's zero sized
         let area = build_rectangular_area(start_pos, 0,0);
         // THEN we expect everything to be 0
-        assert_eq!(0, area.size_x);
-        assert_eq!(0, area.size_y);
+        assert_eq!(0, area.width);
+        assert_eq!(0, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(0, area.end_position.x);
@@ -458,8 +458,8 @@ mod tests {
         // GIVEN a valid area
         let start_pos = Position { x: 0, y: 0 };
         let area = build_square_area(start_pos, 4);
-        assert_eq!(4, area.size_x);
-        assert_eq!(4, area.size_y);
+        assert_eq!(4, area.width);
+        assert_eq!(4, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -477,8 +477,8 @@ mod tests {
         // GIVEN a valid area
         let start_pos = Position { x: 0, y: 0 };
         let area = build_square_area(start_pos, 4);
-        assert_eq!(4, area.size_x);
-        assert_eq!(4, area.size_y);
+        assert_eq!(4, area.width);
+        assert_eq!(4, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -519,8 +519,8 @@ mod tests {
         // GIVEN a valid area starting at index 4, 4
         let start_pos = Position { x: 4, y: 4 };
         let area = build_square_area(start_pos, 4);
-        assert_eq!(4, area.size_x);
-        assert_eq!(4, area.size_y);
+        assert_eq!(4, area.width);
+        assert_eq!(4, area.height);
         assert_eq!(4, area.start_position.x);
         assert_eq!(4, area.start_position.y);
         assert_eq!(7, area.end_position.x);
@@ -560,8 +560,8 @@ mod tests {
     fn test_3x3_valid_top_left_intersects() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -577,8 +577,8 @@ mod tests {
     fn test_3x3_valid_top_right_intersects() {
         // GIVEN a 3x3 Area (x)
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -599,8 +599,8 @@ mod tests {
     fn test_3x3_valid_bottom_right_intersects() {
         // GIVEN a 3x3 Area (x)
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -623,8 +623,8 @@ mod tests {
     fn test_3x3_valid_bottom_left_intersects() {
         // GIVEN a 3x3 Area (x)
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -647,8 +647,8 @@ mod tests {
     fn test_3x3_invalid_ends_before_intersects() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -664,8 +664,8 @@ mod tests {
     fn test_3x3_invalid_starts_after_intersects() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
         assert_eq!(3, area.end_position.x);
@@ -681,8 +681,8 @@ mod tests {
     fn test_3x3_valid_contains() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 0, y: 0 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(2, area.end_position.x);
@@ -705,8 +705,8 @@ mod tests {
     fn test_3x3_invalid_contains() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 0, y: 0 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(2, area.end_position.x);
@@ -723,8 +723,8 @@ mod tests {
     fn test_3x3_offset_invalid_contains() {
         // GIVEN a 3x3 Area
         let area = build_square_area(Position { x: 1, y: 1 }, 3);
-        assert_eq!(3, area.size_x);
-        assert_eq!(3, area.size_y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
         // That starts at position 1,1
         assert_eq!(1, area.start_position.x);
         assert_eq!(1, area.start_position.y);
@@ -885,7 +885,7 @@ mod tests {
         assert_eq!(rect.y, area.start_position.y);
         assert_eq!(rect.x + rect.width - 1, area.end_position.x);
         assert_eq!(rect.y + rect.height - 1, area.end_position.y);
-        assert_eq!(rect.width, area.size_x);
-        assert_eq!(rect.height, area.size_y);
+        assert_eq!(rect.width, area.width);
+        assert_eq!(rect.height, area.height);
     }
 }

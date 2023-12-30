@@ -337,8 +337,8 @@ impl <B : Backend + Send> GameEngine<B> {
         let map_framehandler = MapGenerationFrameHandler { seed: seed.clone() };
 
         let map_generator = self.levels.build_map_generator();
-        let size_x = map_generator.map.area.size_x;
-        let size_y = map_generator.map.area.size_y;
+        let size_x = map_generator.map.area.width;
+        let size_y = map_generator.map.area.height;
 
         let progress_display = ProgressDisplay {
             terminal_manager: &mut self.ui_wrapper.terminal_manager,
