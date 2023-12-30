@@ -11,7 +11,7 @@ use crate::character::equipment::{WeaponSlot};
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{UI};
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
 use crate::view::framehandler::combat::{CombatFrameHandler, CombatViewAreas};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
@@ -84,6 +84,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         let ui = &mut self.ui;
         ui.show_console();
         self.terminal_manager.clear_screen();
+        verify_display_size::<B>(self.terminal_manager);
         let fh = &mut self.frame_handler;
         self.terminal_manager.terminal.draw(|frame| {
             let frame_size = frame.size();

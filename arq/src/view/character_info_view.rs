@@ -16,7 +16,7 @@ use crate::item_list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::view::{GenericInputResult, InputResult, resolve_input, View};
+use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
 use crate::view::util::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
@@ -297,6 +297,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
         let character = self.character.clone();
         let ui = &mut self.ui;
 
+        verify_display_size::<B>(self.terminal_manager);
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
             let areas = ui.get_view_areas(frame.size());

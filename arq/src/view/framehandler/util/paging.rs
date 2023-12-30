@@ -3,7 +3,7 @@ use tui::layout::Rect;
 use tui::widgets::Paragraph;
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
-use crate::view::framehandler::util::tabling::build_paragraph;
+use crate::ui::ui_util::build_paragraph;
 
 pub fn build_page_count<'a>(item_list_selection : &ItemListSelection, area: Rect) -> (Paragraph<'a>, Rect, usize) {
     let page_number = item_list_selection.get_page_number();

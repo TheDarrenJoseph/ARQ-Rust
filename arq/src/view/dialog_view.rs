@@ -38,8 +38,10 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         let _ui = &mut self.ui;
         self.terminal_manager.clear_screen();
         self.terminal_manager.terminal.draw(|frame| {
-            let area_result = center_area(MIN_AREA, frame.size(), MIN_AREA);
-            if let Ok(area) = area_result {
+
+            // First check for the minimum space and center the dialog
+            let centered_area_result = center_area(MIN_AREA, frame.size(), MIN_AREA);
+            if let Ok(area) = centered_area_result {
                 let block = Block::default()
                     .borders(Borders::ALL)
                     .style(Style::default().bg(Color::Black));
@@ -53,8 +55,8 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
                 let paragraph = Paragraph::new(Span::from(enter_text.clone()));
                 let message_area = Rect::new((area.width + area.x) / 2 - enter_text.len() as u16, area.height + area.y - 1, enter_text.len() as u16, 1);
                 frame.render_widget(paragraph, message_area);
-            } else {
-                let err = area_result.err().unwrap();
+            }  else {
+                let err = centered_area_result.err().unwrap();
                 error!("{}", err);
                 // TODO update views to be able to return Error
             }

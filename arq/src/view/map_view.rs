@@ -1,15 +1,8 @@
-
-
 use std::io::Error;
 use log::{info};
 
 use termion::event::Key;
 use tui::buffer::Cell;
-
-
-
-
-
 
 use crate::engine::level::Level;
 
@@ -20,7 +13,7 @@ use crate::map::position::{Area};
 
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_framehandler::{MapFrameHandler, MapFrameHandlerData};
@@ -86,7 +79,6 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     // 3. Map display area - Map co-ords (The position/size of the map 'viewfinder', the area that you can actually see the map through)
     // 3.1 The map display area is what will move with the character throughout larger maps
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
-        let terminal = &mut self.terminal_manager.terminal;
         let mut map_framehandler = MapFrameHandler::new();
 
         let map_display_area = self.map_view_areas.map_display_area;
@@ -96,6 +88,9 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         // Frame handler data
         let _level = self.level.clone();
         let data = self.map_frame_handler_data.as_ref().unwrap().clone();
+
+        verify_display_size::<B>(self.terminal_manager);
+        let terminal = &mut self.terminal_manager.terminal;
         terminal.draw(|frame| {
             // First let the UI draw everything else
             ui.render(frame);

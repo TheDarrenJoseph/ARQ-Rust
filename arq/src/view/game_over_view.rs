@@ -48,7 +48,6 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
 
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
-
         let mut input_result = self.handle_input(None)?;
         while !input_result.generic_input_result.done {
             input_result = self.handle_input(None)?;

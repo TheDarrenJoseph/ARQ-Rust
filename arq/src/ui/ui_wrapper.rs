@@ -1,9 +1,12 @@
-
+use std::error::Error as StdError;
 use std::io;
+use std::io::{Error, ErrorKind};
 use log::info;
 use termion::event::Key;
+use termion::input::TermRead;
 use tui::backend::Backend;
 use tui::layout::Rect;
+use crate::build_paragraph;
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
@@ -12,8 +15,9 @@ use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, UI};
 use crate::ui::ui_areas::UIAreas;
+use crate::ui::ui_util::{check_display_size, MIN_AREA};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
-use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 
@@ -71,6 +75,7 @@ impl <B : Backend> UIWrapper<B> {
 
     pub(crate) fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
+        verify_display_size::<B>(&mut self.terminal_manager);
         self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
     }
 
@@ -133,6 +138,7 @@ impl <B : Backend> UIWrapper<B> {
     }
 
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
+        verify_display_size(&mut self.terminal_manager);
         let frame_size_copy = self.ui.frame_size.clone();
         if let Some(_frame_size) = frame_size_copy {
             // Add the UI usage hint to the console buffer

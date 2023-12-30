@@ -1,6 +1,10 @@
 
 use std::io::{Error, ErrorKind};
 use tui::layout::Rect;
+use tui::style::Style;
+use tui::text::{Span, Spans};
+use tui::widgets::Paragraph;
+use crate::map::position::Area;
 
 const MIN_VIEW_SIZE : u16 = 3;
 pub const MIN_AREA: Rect = Rect { x:0, y: 0, width: 80, height: 24};
@@ -8,6 +12,25 @@ pub const MIN_AREA: Rect = Rect { x:0, y: 0, width: 80, height: 24};
 enum Alignment {
     LEFT,
     RIGHT
+}
+
+pub fn build_paragraph_multi<'a>(messages: Vec<String>) -> Paragraph<'a> {
+    let mut spans = Vec::new();
+    for line in messages {
+        spans.push(Spans::from(Span::raw(line.clone())));
+    }
+    let paragraph = Paragraph::new(spans)
+        .style(Style::default())
+        .alignment(tui::layout::Alignment::Left);
+    paragraph
+}
+
+pub fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
+    let spans = vec![Spans::from(Span::raw(text.clone()))];
+    let paragraph = Paragraph::new(spans)
+        .style(Style::default())
+        .alignment(tui::layout::Alignment::Left);
+    paragraph
 }
 
 /*
@@ -73,6 +96,18 @@ pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Rec
     } else {
         // height and width match the target exactly
         return Ok(target);
+    }
+}
+
+pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), std::io::Error> {
+    if let Some(frame_size) = frame_size_result {
+        // Check for 80x24 minimum resolution
+        if frame_size.height < MIN_AREA.height || frame_size.width < MIN_AREA.width {
+            return Err(Error::new(ErrorKind::Other, format!("Sorry, your terminal is below the minimum supported resolution of {}x{}.", MIN_AREA.height, MIN_AREA.width)));
+        }
+        Ok(())
+    } else {
+        return Err(Error::new(ErrorKind::Other, "Something went wrong; no frame size has been set!"));
     }
 }
 

@@ -1,13 +1,19 @@
+use std::error::Error as StdError;
 use std::io;
 use std::io::Error;
+use futures::future::err;
 
 use termion::event::Key;
+use termion::input::TermRead;
 
 use tui::Frame;
 use tui::layout::Rect;
+use crate::build_paragraph;
 
 use crate::map::position::{Area, build_rectangular_area, Position};
-use crate::ui::ui::get_input_key;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::ui::{get_input_key, UI};
+use crate::ui::ui_util::{build_paragraph_multi, check_display_size, MIN_AREA};
 
 pub mod framehandler;
 pub mod util;
@@ -74,3 +80,28 @@ pub fn resolve_input(input : Option<Key>) -> Result<Key, io::Error> {
     }
 
 }
+
+pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut TerminalManager<B>) {
+    loop {
+        let frame_size = terminal_manager.terminal.size().unwrap();
+        let result = check_display_size(Some(Area::from_rect(frame_size)));
+        match result {
+            Err(e) => {
+                terminal_manager.terminal.clear();
+                let error_paragraph = build_paragraph_multi(
+                    vec![String::from(
+                        "Window too small."),
+                         format!("Minimum is {}x{}", MIN_AREA.height, MIN_AREA.width),
+                         String::from("Please resize and hit any key to check again.") ]);
+                terminal_manager.terminal.draw(|frame|{
+                    frame.render_widget(error_paragraph, frame_size);
+                });
+                io::stdin().keys().next().unwrap().unwrap();
+            },
+            _ => {
+                return;
+            }
+        }
+    }
+}
+

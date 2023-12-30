@@ -14,12 +14,13 @@ use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSe
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
+use crate::ui::ui_util::build_paragraph;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
-use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
+use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::model::usage_line::{UsageLine};
 
 /*

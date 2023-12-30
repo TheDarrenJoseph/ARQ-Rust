@@ -1,4 +1,11 @@
+use std::error::Error;
+use std::io;
+use futures::future::err;
+use termion::input::TermRead;
 use tui::layout::Rect;
+use crate::build_paragraph;
+use crate::map::position::Area;
+use crate::ui::ui_util::check_display_size;
 
 pub mod character;
 pub mod console;
@@ -31,4 +38,7 @@ impl <T> FrameData<T> {
     pub fn get_frame_size(&mut self) -> &Rect {
         &self.frame_size
     }
+}
+
+impl<B: tui::backend::Backend, T> FrameHandler<B,T> {
 }

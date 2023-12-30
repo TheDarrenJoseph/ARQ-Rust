@@ -6,9 +6,10 @@ use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
 use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
+use crate::ui::ui_util::build_paragraph;
 
 use crate::view::framehandler::util::paging::build_page_count;
-use crate::view::framehandler::util::tabling::{build_headings, build_paragraph, Column};
+use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
 

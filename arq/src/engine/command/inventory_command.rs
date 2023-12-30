@@ -185,7 +185,6 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
 
-
         let level = &mut self.level;
         let player = &mut level.characters.get_player_mut().unwrap().clone();
         let updated_inventory;

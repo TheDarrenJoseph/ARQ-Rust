@@ -1,15 +1,18 @@
 extern crate core;
 
 
+use std::error::Error;
 use std::io;
 
 use futures::executor::block_on;
+use termion::input::TermRead;
 
 use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
 
 use crate::engine::game_engine::{build_game_engine, GameEngine};
 use crate::ui::ui::StartMenuChoice::Play;
+use crate::ui::ui_util::build_paragraph;
 use crate::view::game_over_view::GameOverChoice;
 
 
@@ -36,21 +39,30 @@ async fn begin() -> Result<(), io::Error> {
     let terminal_manager = terminal::terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
     let mut engine = game_engine.unwrap();
-    log::info!("Displaying start menu..");
 
+    log::info!("Displaying start menu..");
     let mut choice = None;
     let mut game_over = false;
     while !game_over {
-        if let Ok(Some(goc)) = engine.start_menu(choice.clone()).await.await {
-            match goc {
-                GameOverChoice::RESTART => {
+        let result = engine.start_menu(choice.clone()).await.await;
+        match result {
+            Ok(Some(goc)) => {
+                match goc {
+                    GameOverChoice::RESTART => {
                     engine.rebuild();
                     choice = Some(Play);
-                },
-                GameOverChoice::EXIT => {
+                    },
+                    GameOverChoice::EXIT => {
                     game_over = true;
+                    }
                 }
-            }
+            },
+            Err(e) => {
+                println!("Fatal error: {}", e.description());
+                io::stdin().keys().next().unwrap()?;
+                return Ok(())
+            },
+            Ok(None) => {}
         }
     }
     Ok(())
