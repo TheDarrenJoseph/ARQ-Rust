@@ -463,7 +463,12 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     return self.build_move_items_result();
                 },
                 Key::Char('\n') => {
+                    // Start / stop selecting items
                     self.toggle_select();
+                },
+                Key::Char('q') => {
+                    // Clear selected items
+                    self.cancel_selection();
                 },
                 Key::Char(_c) => {},
                 Key::Backspace => {},

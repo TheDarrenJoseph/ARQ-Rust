@@ -91,7 +91,7 @@ pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut Te
                 let error_paragraph = build_paragraph_multi(
                     vec![String::from(
                         "Window too small."),
-                         format!("Minimum is {}x{}", MIN_AREA.height, MIN_AREA.width),
+                         format!("Minimum is {}x{}", MIN_AREA.width, MIN_AREA.height),
                          String::from("Please resize and hit any key to check again.") ]);
                 terminal_manager.terminal.draw(|frame|{
                     frame.render_widget(error_paragraph, frame_size);

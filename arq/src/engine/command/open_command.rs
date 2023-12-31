@@ -28,7 +28,7 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>
 }
 
-const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter - Toggle selection\nEsc - Exit";
+const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
 const NOTHING_ERROR : &str = "There's nothing here to open.";
 
 fn handle_callback<'a>(level : &'a mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
