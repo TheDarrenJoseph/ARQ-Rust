@@ -11,6 +11,7 @@ use crate::engine::level::Level;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::option_list_selection::{MappedOption, OptionListSelection};
+use crate::ui::ui_areas::BorderedArea;
 
 use crate::view::framehandler::{FrameData, FrameHandler};
 
@@ -22,10 +23,13 @@ pub struct CombatFrameHandler {
     pub level: Level
 }
 
+
+#[derive(Clone)]
+#[derive(Debug)]
 pub struct CombatViewAreas {
-    pub main_area : Area,
-    pub console_area : Area,
-    pub minimap_area : Area
+    pub main_area : BorderedArea,
+    pub console_area : BorderedArea,
+    pub minimap_area : BorderedArea
 }
 
 pub struct ConsoleWidgets<'a> {
@@ -56,7 +60,7 @@ impl CombatFrameHandler {
     }
 
     fn build_console_widgets(&self) -> ConsoleWidgets {
-        let console_area = self.areas.as_ref().unwrap().console_area;
+        let console_area = &self.areas.as_ref().unwrap().console_area;
         let console_window_block = Block::default()
             .borders(Borders::ALL);
 
@@ -76,13 +80,13 @@ impl CombatFrameHandler {
                 .alignment(Alignment::Left);
 
             let offset_y = i + 1;
-            let text_area = Rect::new(console_area.start_position.x.clone() + 1, console_area.start_position.y.clone() + offset_y, largest_option_length, 1);
+            let text_area = Rect::new(console_area.inner.start_position.x.clone() + 1, console_area.inner.start_position.y.clone() + offset_y, largest_option_length, 1);
 
             paragraphs.push((paragraph, text_area));
             i += 1;
         }
 
-        return  ConsoleWidgets { window: (console_window_block, console_area.to_rect()), paragraphs };
+        return  ConsoleWidgets { window: (console_window_block, console_area.outer.to_rect()), paragraphs };
     }
 }
 
@@ -113,23 +117,23 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let enemy_equipment = enemy.get_equipment_mut().clone();
         let enemy_name = enemy.get_name();
 
-        let main_area = self.areas.as_ref().unwrap().main_area;
+        let main_area = &self.areas.as_ref().unwrap().main_area;
 
-        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.width as usize));
+        let title = String::from(format!("{:─^width$}", "COMBAT───", width = main_area.outer.width as usize));
         let title_span = Span::from(title);
 
         let main_window_block = Block::default()
             .title(title_span)
             .borders(Borders::ALL);
-        frame.render_widget(main_window_block, main_area.to_rect());
+        frame.render_widget(main_window_block, main_area.outer.to_rect());
 
         // Split the main window into 2 columns / sides
-        let side_width = (main_area.width - 2) / 2;
-        let side_height= main_area.height - 2;
+        let side_width = (main_area.outer.width - 2) / 2;
+        let side_height= main_area.outer.height - 2;
 
         // Start inside the border (+1)
-        let left_side_start_position = Position { x: main_area.start_position.x + 1, y: main_area.start_position.y + 1 };
-        let left_side_area = build_rectangular_area(left_side_start_position, side_width, side_height);
+        let main_area_inner_start_position = main_area.inner.start_position;
+        let left_side_area = build_rectangular_area(main_area_inner_start_position, side_width, side_height);
         let left_side_block = Block::default()
             .title(Span::styled(player_name, Style::default().add_modifier(Modifier::UNDERLINED)))
             .borders(Borders::RIGHT);
@@ -142,7 +146,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
         let player_equipment_list = list_equipment(player_equipment);
         frame.render_widget(player_equipment_list, player_equipment_area);
 
-        let right_side_start_position = Position { x: left_side_area.end_position.x, y: main_area.start_position.y + 1 };
+        let right_side_start_position = Position { x: left_side_area.end_position.x, y: main_area_inner_start_position.y };
         let right_side_area = build_rectangular_area(right_side_start_position, side_width, side_height);
         let right_side_block = Block::default()
             .title(Span::styled(enemy_name, Style::default().add_modifier(Modifier::UNDERLINED)))
@@ -167,22 +171,26 @@ impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler 
             frame.render_widget(paragraph_area.0, paragraph_area.1);
         }
 
-        let minimap_display_area = self.areas.as_ref().unwrap().minimap_area.to_rect();
+        let minimap_area = self.areas.as_ref().unwrap().minimap_area.clone();
         let mut player_global_pos = self.level.characters.get_player_mut().unwrap().get_global_position();
 
-
         // Offset the the player pos by half of the minimap size to center it
-        let half_minimap_width = ( minimap_display_area.width / 2) as i32;
-        let half_minimap_height = ( minimap_display_area.height / 2) as i32;
-        let minimap_target_pos = player_global_pos.offset(-half_minimap_width, -half_minimap_height);
-        let minimap_target_area = Area::new(minimap_target_pos, minimap_display_area.width,minimap_display_area.height);
+        let half_minimap_width = ( minimap_area.inner.width / 2) as i32;
+        let half_minimap_height = ( minimap_area.inner.height / 2) as i32 ;
 
+        // The entire map area
         let map_area = self.level.map.as_ref().unwrap().area.clone();
-        let map_view_area = Area::from_rect(minimap_display_area);
-        let map_display_area = minimap_target_area;
-        let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
-        let map_widget = MapWidget::new(map_view_areas);
+        // The view area is the position/area of the minimap on the screen
+        let map_view_area = minimap_area.inner;
+        // The display area is the part of the map area we're actually displaying
+        let minimap_map_target_pos = player_global_pos.offset(-half_minimap_width, -half_minimap_height);
+        let map_display_area = Area::new(minimap_map_target_pos, minimap_area.inner.width, minimap_area.inner.height);
+        let map_view_areas = MapViewAreas { map_area, map_view_area: map_view_area, map_display_area };
 
+        let minimap_block = Block::default().borders(Borders::ALL);
+        frame.render_widget(minimap_block, minimap_area.outer.to_rect());
+
+        let map_widget = MapWidget::new(map_view_areas);
         let dummy_area = Area::new(Position::new(0,0),0,0);
         frame.render_stateful_widget(map_widget, dummy_area.to_rect(), &mut self.level);
     }

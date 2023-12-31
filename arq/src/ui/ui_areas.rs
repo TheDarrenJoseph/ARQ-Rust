@@ -1,4 +1,6 @@
+use std::io::{Error, ErrorKind};
 use tui::layout::Rect;
+use crate::map::position::{Area, build_rectangular_area, Position};
 
 pub struct UIAreas {
     main_area : Rect,
@@ -28,4 +30,62 @@ impl UIAreas {
     }
 }
 
+// An area with a 1 character wide border on the outer area
+// Inner area is the area inside this border
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct BorderedArea {
+    pub outer: Area,
+    pub inner: Area
+}
+
+impl BorderedArea {
+    pub fn new(start_position: Position, width: u16, height: u16) -> Result<BorderedArea, std::io::Error> {
+        if (width > 2 && height > 2) {
+            let outer_area = build_rectangular_area(start_position, width, height);
+            let inner_start_position = Position::new(start_position.x +1, start_position.y +1);
+            let inner_area = build_rectangular_area(inner_start_position, width - 2, height - 2);
+            Ok(BorderedArea { outer: outer_area, inner: inner_area })
+        } else {
+            Err(Error::new(ErrorKind::Other, String::from("Cannot build a bordered area for anything less than a 3x3 area")))
+        }
+    }
+
+    pub fn from_area(area: Area) -> Result<BorderedArea, std::io::Error> {
+        return BorderedArea::new(area.start_position, area.width, area.height);
+    }
+
+    pub fn from_rect(rect: Rect) -> Result<BorderedArea, std::io::Error> {
+        return BorderedArea::new(Position::new(rect.x, rect.y), rect.width, rect.height);
+    }
+}
+
+#[cfg(test)]
+mod BorderedAreaTests {
+    use crate::map::position::{Area, Position};
+    use crate::ui::ui_areas::BorderedArea;
+
+    #[test]
+    fn test_bordered_area_new() {
+        let start_position = Position::new(0,0);
+        const SIZE: u16 = 3;
+        let result = BorderedArea::new(start_position, SIZE, SIZE).unwrap();
+
+        let outer_area = result.outer;
+        assert_eq!(0, outer_area.start_position.x);
+        assert_eq!(0, outer_area.start_position.y);
+        assert_eq!(3, outer_area.width);
+        assert_eq!(3, outer_area.height);
+        assert_eq!(2, outer_area.end_position.x);
+        assert_eq!(2, outer_area.end_position.y);
+
+        let inner_area = result.inner;
+        assert_eq!(1, inner_area.start_position.x);
+        assert_eq!(1, inner_area.start_position.y);
+        assert_eq!(1, inner_area.width);
+        assert_eq!(1, inner_area.height);
+        assert_eq!(1, inner_area.end_position.x);
+        assert_eq!(1, inner_area.end_position.y);
+    }
+}
 

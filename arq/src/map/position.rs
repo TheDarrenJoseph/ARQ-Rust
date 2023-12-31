@@ -1,6 +1,6 @@
-
+use std::io::{Error, ErrorKind};
 use rand::distributions::{Distribution, Standard};
-use rand::Rng;
+use rand::{Rng};
 
 
 use tui::layout::Rect;
@@ -870,6 +870,19 @@ mod tests {
         // THEN we should see x: 0, y: 0 (the lowest possible positive values w/ offset)
         assert_eq!(0, position.x);
         assert_eq!(0, position.y);
+    }
+
+    #[test]
+    fn test_area_new() {
+        let start_position = Position::new(0,0);
+        const SIZE: u16 = 3;
+        let area = Area::new(start_position, SIZE, SIZE);
+        assert_eq!(0, area.start_position.x);
+        assert_eq!(0, area.start_position.y);
+        assert_eq!(3, area.width);
+        assert_eq!(3, area.height);
+        assert_eq!(2, area.end_position.x);
+        assert_eq!(2, area.end_position.y);
     }
 
     #[test]

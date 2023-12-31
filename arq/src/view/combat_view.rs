@@ -17,6 +17,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
+use crate::ui::ui_areas::BorderedArea;
 use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
@@ -86,6 +87,9 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         self.terminal_manager.clear_screen();
         verify_display_size::<B>(self.terminal_manager);
         let fh = &mut self.frame_handler;
+
+        let frame_size = self.terminal_manager.terminal.get_frame().size();
+        let combat_view_areas = build_view_areas(frame_size)?;
         self.terminal_manager.terminal.draw(|frame| {
             let frame_size = frame.size();
             let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
@@ -93,7 +97,6 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
             if centered.is_ok() {
                 let _ui_areas = ui.get_view_areas(centered.unwrap());
 
-                let combat_view_areas = build_view_areas(frame_size);
                 fh.areas = Some(combat_view_areas);
                 let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };
                 fh.handle_frame(frame, frame_data);
@@ -148,7 +151,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
     }
 }
 
-fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
+fn build_view_areas(frame_size: Rect) -> Result<CombatViewAreas, std::io::Error> {
     // Try to center, or else use the whole frame
     let frame_centered = center_area(MIN_AREA, frame_size, MIN_AREA);
     let total_area;
@@ -181,13 +184,16 @@ fn build_view_areas(frame_size: Rect) -> CombatViewAreas {
     console_rect.width = console_width;
 
     let minimap_position = Position::new(console_rect.x - minimap_width, console_rect.y);
-    let mut minimap_area = Area::new(minimap_position, minimap_width, console_rect.height);
+    let mut minimap_ui_area = Area::new(minimap_position, minimap_width, console_rect.height);
 
-    return CombatViewAreas {
-        main_area: Area::from_rect(ui_areas[0]),
-        console_area: Area::from_rect(console_rect),
+    let main_area = BorderedArea::from_area(Area::from_rect(ui_areas[0]))?;
+    let console_area = BorderedArea::from_rect(console_rect)?;
+    let minimap_area = BorderedArea::from_area(minimap_ui_area)?;
+    return Ok(CombatViewAreas {
+        main_area,
+        console_area,
         minimap_area
-    }
+    })
 }
 
 #[derive(Clone)]
@@ -234,30 +240,30 @@ mod tests {
         // GIVEN a frame size of 80x24
         let frame_size = Rect::new(0,0, 80, 24);
         // WHEN we call to build view areas
-        let view_areas = build_view_areas(frame_size);
+        let view_areas = build_view_areas(frame_size).unwrap();
 
         // THEN we expect
         // A main area of
         // the entire width
         // with 80% of the total height
         let main_area = view_areas.main_area;
-        assert_eq!(80, main_area.width);
+        assert_eq!(80, main_area.outer.width);
         // With 80% of the 24 lines (24/100 * 80 = 19.2, rounded down = 19)
-        assert_eq!(19, main_area.height);
+        assert_eq!(19, main_area.outer.height);
 
         // A console area of y
         let console_area = view_areas.console_area;
         // With 80% of the total frame width (80/100 * 80 = 64)
-        assert_eq!(64, console_area.width);
+        assert_eq!(64, console_area.outer.width);
         // With 20% of the total height of 24 lines (24/100 * 20 = 4.8, rounded up = 5)
-        assert_eq!(5, console_area.height);
+        assert_eq!(5, console_area.outer.height);
 
         // A minimap area
         // With 20% of the total frame width (80/100 * 30 = 16)
         let minimap_area = view_areas.minimap_area;
-        assert_eq!(16, minimap_area.width);
+        assert_eq!(16, minimap_area.outer.width);
         // AND the same height as the console width
-        assert_eq!(5, minimap_area.height);
+        assert_eq!(5, minimap_area.outer.height);
 
     }
 }
