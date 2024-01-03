@@ -82,7 +82,6 @@ impl StatefulWidget for MapWidget {
         // Make need to re-consider the cell builder usage too
 
         let map_view_area = self.map_view_areas.map_view_area;
-        info!("Map view area starts at: x: {}, y:{}", map_view_area.start_position.x, map_view_area.start_position.y);
         // Local positions should start at 0,0 to size_x-1, size_y-1
         for x in 0..map_view_area.width {
             for y in 0..map_view_area.height {
@@ -98,8 +97,6 @@ impl StatefulWidget for MapWidget {
                     cell.fg = new_cell.fg;
                     cell.bg = new_cell.bg;
                     cell.modifier = new_cell.modifier;
-                } else {
-                    info!("Global position not in display area: {:?}", global_position);
                 }
             }
         }

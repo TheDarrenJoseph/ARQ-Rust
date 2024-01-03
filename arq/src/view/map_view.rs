@@ -16,10 +16,9 @@ use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::map_framehandler::{MapFrameHandler, MapFrameHandlerData};
-
 
 use crate::view::util::cell_builder::CellBuilder;
+use crate::widget::stateful::map_widget::MapWidget;
 
 /*
     This view draws the following to the screen:
@@ -35,10 +34,9 @@ use crate::view::util::cell_builder::CellBuilder;
  */
 pub struct MapView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
-    pub level : Level,
+    pub level : &'a mut Level,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub map_view_areas: MapViewAreas,
-    pub map_frame_handler_data : Option<MapFrameHandlerData>
+    pub map_view_areas: MapViewAreas
 }
 
 impl<B : tui::backend::Backend> MapView<'_, B> {
@@ -65,10 +63,6 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     fn begin(&mut self) -> Result<InputResult<bool>, Error> {
         let level = self.level.clone();
         let map_view_areas = self.map_view_areas.clone();
-        if self.map_frame_handler_data.is_none() {
-            self.map_frame_handler_data = Some(MapFrameHandlerData { level, map_view_areas });
-        }
-
         self.draw(None)?;
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
@@ -79,25 +73,23 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     // 3. Map display area - Map co-ords (The position/size of the map 'viewfinder', the area that you can actually see the map through)
     // 3.1 The map display area is what will move with the character throughout larger maps
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
-        let mut map_framehandler = MapFrameHandler::new();
-
         let map_display_area = self.map_view_areas.map_display_area;
         let frame_size = map_display_area.to_rect();
         let ui = &mut self.ui;
 
         // Frame handler data
-        let _level = self.level.clone();
-        let data = self.map_frame_handler_data.as_ref().unwrap().clone();
-
         verify_display_size::<B>(self.terminal_manager);
+
+        let map_view_areas = self.map_view_areas;
+        let level = &mut self.level;
         let terminal = &mut self.terminal_manager.terminal;
         terminal.draw(|frame| {
             // First let the UI draw everything else
             ui.render(frame);
 
             // Then render the map
-            let frame_data = FrameData { frame_size, data };
-            map_framehandler.handle_frame(frame, frame_data);
+            let map_widget: MapWidget = MapWidget::new( map_view_areas );
+            frame.render_stateful_widget(map_widget, frame_size, level);
         });
 
         Ok(())

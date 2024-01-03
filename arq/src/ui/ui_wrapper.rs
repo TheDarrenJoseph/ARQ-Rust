@@ -1,7 +1,8 @@
 use std::error::Error as StdError;
 use std::io;
 use std::io::{Error, ErrorKind};
-use log::info;
+use std::time::Instant;
+use log::{debug, info};
 use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
@@ -138,6 +139,7 @@ impl <B : Backend> UIWrapper<B> {
     }
 
     pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
+        let now = Instant::now();
         verify_display_size(&mut self.terminal_manager);
         let frame_size_copy = self.ui.frame_size.clone();
         if let Some(_frame_size) = frame_size_copy {
@@ -154,15 +156,15 @@ impl <B : Backend> UIWrapper<B> {
             if let Some(map_view_area) = map_view_area_result {
                 let player_global_position = level.characters.get_player().unwrap().get_global_position();
                 let map_display_area = calculate_map_display_area(player_global_position, map_view_area);
-                info!("(map_display_area) is now: {:?}", map_display_area);
-
                 let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
-                let mut map_view = MapView { level: level.clone(), ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, map_view_areas, map_frame_handler_data: None };
+                let mut map_view = MapView { level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, map_view_areas };
 
                 // Draw the base UI (incl. console) and the map
                 map_view.begin()?;
             }
         }
+        let duration = now.elapsed();
+        debug!("Map view draw took: {}ms", duration.as_millis());
         Ok(())
     }
 

@@ -125,9 +125,7 @@ impl Container {
                 item_count += 1;
                 let content_count = c.count_contents();
                 item_count += content_count;
-                log::debug!("Child container {} has {} items.", c.get_self_item().get_name(), item_count);
             }
-            log::debug!("{} has {} items.", self.get_self_item().get_name(), item_count);
         } else {
             return 0;
         }

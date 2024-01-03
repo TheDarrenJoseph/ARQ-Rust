@@ -1,5 +1,6 @@
 use crate::map::position::{Area, build_rectangular_area, Position};
 
+#[derive(Copy)]
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct MapViewAreas {

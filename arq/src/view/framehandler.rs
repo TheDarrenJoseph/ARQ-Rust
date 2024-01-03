@@ -14,7 +14,6 @@ pub mod container_choice;
 pub mod util;
 pub mod map_generation;
 pub mod combat;
-pub mod map_framehandler;
 
 /*
     FrameHandlers are "dumb" views that simply draw their state (T) or other given input to a terminal frame (the screen)
