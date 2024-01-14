@@ -32,7 +32,7 @@ impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
     pub(crate) async fn generate_level(&mut self) -> Result<Map, io::Error> {
         let progress = self.map_generator.get_progress().clone();
         let (tx, rx) = channel();
-        let handling = self.progress_display.handle_progress(rx, progress.step_count);
+        let handling = self.progress_display.handle_progress(rx, progress.step_count());
         tx.send(self.map_generator.get_progress().clone());
         let map = self.map_generator.generate(tx);
 

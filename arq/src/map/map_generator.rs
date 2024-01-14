@@ -21,7 +21,7 @@ use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, TileType, TileDetails};
 use crate::map::tile::TileType::NoTile;
-use crate::progress::StepProgress;
+use crate::progress::{MultiStepProgress, Step};
 
 pub struct MapGenerator<'rng> {
     min_room_size: u16,
@@ -33,12 +33,22 @@ pub struct MapGenerator<'rng> {
     taken_positions : Vec<Position>,
     possible_room_positions : Vec<Position>,
     rng: &'rng mut Pcg64,
-    pub progress: StepProgress,
+    pub progress: MultiStepProgress,
     pub map: Map
 }
 
 pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator<'a> {
-    let progress = StepProgress { step_name: "".to_string(), current_step: 0, step_count: 6};
+    let map_generation_steps: Vec<Step> = vec![
+        Step { id: String::from("mapgen"), description: String::from("Generating map...") },
+        Step { id: String::from("entry/exits"),  description: String::from("Adding entry/exit...") },
+        Step { id: String::from("rooms"), description: String::from("Applying rooms...") },
+        Step { id: String::from("containers"), description: String::from("Generating containers...") },
+        Step { id: String::from("pathfinding"), description: String::from("Pathfinding...") },
+        Step { id: String::from("completed"), description: String::from("DONE! [ any key to start ]") }
+    ];
+
+    let progress = MultiStepProgress::for_steps_not_started(map_generation_steps);
+
     MapGenerator { min_room_size: 3, max_room_size: 6,
         room_area_quota_percentage: 30, max_door_count: 4,
         tile_library: build_library(), map_area, taken_positions: Vec::new(),
@@ -132,38 +142,33 @@ impl <'rng> MapGenerator<'rng> {
         log::info!("Added {} containers to rooms.", room_container_count);
     }
 
-    fn set_step(&mut self, current_step: u16, name: String) {
-        self.progress.current_step = current_step;
-        self.progress.step_name = String::from(name.clone());
-        log::info!("{}", name.to_string());
-    }
-
-    fn send_progress(&mut self, tx: &Sender<StepProgress>) {
+    fn send_progress(&mut self, tx: &Sender<MultiStepProgress>) {
         tx.send(self.progress.clone());
     }
 
-    pub async fn generate(&mut self, tx: Sender<StepProgress>) -> Map {
-        self.set_step(1, String::from("Generating map..."));
+    pub async fn generate(&mut self, tx: Sender<MultiStepProgress>) -> Map {
+        // Generating map...
+        self.progress.next_step();
         self.send_progress(&tx);
         self.build_map();
 
-        self.set_step(2, String::from("Adding entry/exit..."));
+        self.progress.next_step();
         self.send_progress(&tx);
         self.add_entry_and_exit();
 
-        self.set_step(3, String::from("Applying rooms..."));
+        self.progress.next_step();
         self.send_progress(&tx);
         self.add_rooms_to_map();
 
-        self.set_step(4, String::from("Generating containers..."));
+        self.progress.next_step();
         self.send_progress(&tx);
         self.add_containers();
 
-        self.set_step(5, String::from("Pathfinding..."));
+        self.progress.next_step();
         self.send_progress(&tx);
         self.path_rooms();
 
-        self.set_step(6, String::from("DONE! [ any key to start ]"));
+        self.progress.next_step();
         self.send_progress(&tx);
         return self.map.clone();
     }
@@ -537,7 +542,7 @@ impl <'rng> MapGenerator<'rng> {
 }
 
 impl Progressible for MapGenerator<'_> {
-    fn get_progress(&self) -> StepProgress {
+    fn get_progress(&self) -> MultiStepProgress {
         self.progress.clone()
     }
 }
