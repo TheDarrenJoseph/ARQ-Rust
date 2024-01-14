@@ -26,15 +26,17 @@ impl MapWidget {
     }
 
 
-    fn find_container<'a>(&'a self, map: &'a Map, global_position: Position) -> Option<(&Position, &Container)> {
+    fn find_container<'a>(&'a self, map: &'a Map, global_position: Position) -> Option<(Position, &Container)> {
         let containers = &map.containers;
 
-        return containers.iter().find(|container_entry| {
-            let correct_type = container_entry.1.is_true_container();
-            let has_content = container_entry.1.get_total_count() > 0;
-            let position_match = container_entry.0.equals(global_position);
-            return correct_type && has_content && position_match;
-        });
+        if containers.contains_key(&global_position) {
+            let container = containers.get(&global_position).unwrap();
+            let correct_type = container.is_true_container();
+            let has_content = container.get_total_count() > 0;
+            if correct_type && has_content {
+                return Some((global_position.clone(), container));
+            }
+        }
         None
     }
 
@@ -77,10 +79,6 @@ impl StatefulWidget for MapWidget {
     type State = Level;
 
     fn render(mut self, _area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
-        // TODO (THIS IS VERY SLOW) optimise - we should instead go through the items to render
-        // and convert global to local positions for better speed
-        // Make need to re-consider the cell builder usage too
-
         let map_view_area = self.map_view_areas.map_view_area;
         // Local positions should start at 0,0 to size_x-1, size_y-1
         for x in 0..map_view_area.width {
@@ -91,7 +89,6 @@ impl StatefulWidget for MapWidget {
                 if position_in_display_area {
                     let screen_position = map_view_area.get_position(x,y);
                     let mut cell = buf.get_mut(screen_position.x, screen_position.y);
-                    // Update the cell using the new cell
                     let new_cell = self.build_cell_for_position(_state, global_position,&mut cell);
                     cell.symbol = new_cell.symbol;
                     cell.fg = new_cell.fg;
