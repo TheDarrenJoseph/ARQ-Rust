@@ -44,6 +44,8 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
         let widgets = &menu_view.widgets;
         terminal.draw(|frame| {
             let frame_size = frame.size();
+
+
             let mut offset = 0;
             for widget in widgets.widgets.iter() {
                 let widget_area = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);

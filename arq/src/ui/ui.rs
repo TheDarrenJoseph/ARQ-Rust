@@ -93,31 +93,43 @@ impl UI {
     /*
         Tries to build a centered UIAreas based on 80x24 minimum frame size
         If the view is smaller than this, the view will be split as per usual for smaller sizes
-     */
-    pub fn get_min_area(&self, frame_size: Rect) -> UIAreas {
-        if frame_size.height >= 80 && frame_size.width >= 24 {
-            let target = Rect::new(0, 0, 80, 24);
-            let centered = center_area(target, frame_size, MIN_AREA).unwrap();
-            let areas = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(80),
-                        Constraint::Percentage(20)
-                    ].as_ref()
-                )
-                .split(centered);
 
-            UIAreas::new(areas[0], areas.get(1).cloned())
+        TODO - Test this before using it!!
+     */
+    pub fn get_split_centered_view_areas(&self, frame_size: Rect) -> UIAreas {
+        if frame_size.width >= 80 && frame_size.height >= 24 {
+            let centered = self.get_single_centered_view_area(frame_size);
+            return self.split_into_view_areas(centered);
         } else {
-            return self.get_view_areas(frame_size);
+            // TODO we probably want to throw an error / show the new error screen for this case
+            return self.split_into_view_areas(frame_size);
         }
     }
 
+    /*
+        Tries to build a UIAreas based on the available frame size
+     */
+    pub fn get_split_view_areas(&self, frame_size: Rect) -> UIAreas {
+        return self.split_into_view_areas(frame_size);
+    }
+
+    /*
+        Tries to build a single centered Rect based on 80x24 minimum frame size
+        If the view is smaller than this, the view will be split as per usual for smaller sizes
+     */
+    pub fn get_single_centered_view_area(&self, frame_size: Rect) -> Rect {
+        if frame_size.width >= 80 && frame_size.height >= 24 {
+            let target = Rect::new(0, 0, 80, 24);
+            return center_area(target, frame_size, MIN_AREA).unwrap();
+        } else {
+            // TODO we probably want to throw an error / show the new error screen for this case
+            return frame_size;
+        }
+    }
 
     // If the console if visible, splits a frame vertically into the 'main' and lower console areas
     // Otherwise returns the original frame size
-    pub fn get_view_areas(&self, frame_size: Rect) -> UIAreas {
+    fn split_into_view_areas(&self, frame_size: Rect) -> UIAreas {
         let areas: Vec<Rect> = if self.console_visible {
             Layout::default()
                 .direction(Direction::Vertical)
@@ -145,7 +157,7 @@ impl UI {
         self.frame_size = Some(frame_size);
 
         let main_block = build_main_block();
-        let areas: UIAreas = self.get_view_areas(frame_size.to_rect());
+        let areas: UIAreas = self.split_into_view_areas(frame_size.to_rect());
         let main_area = areas.get_main_area();
         frame.render_widget(main_block, main_area.clone());
 
@@ -233,7 +245,7 @@ impl Draw for UI {
         let frame_size = frame.size();
         let max_width = frame_size.width / 2;
         let widget_count = self.additional_widgets.len();
-        let main_area = self.get_view_areas(frame_size).get_main_area();
+        let main_area = self.split_into_view_areas(frame_size).get_main_area();
         if widget_count > 0 {
             let mut _offset = 0;
             for widget in self.additional_widgets.iter_mut() {

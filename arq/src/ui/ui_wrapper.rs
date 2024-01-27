@@ -99,7 +99,7 @@ impl <B : Backend> UIWrapper<B> {
             let ui = &mut self.ui;
             ui.show_console();
             self.terminal_manager.terminal.draw(|frame| {
-                let areas: UIAreas = ui.get_view_areas(frame.size());
+                let areas: UIAreas = ui.get_split_view_areas(frame.size());
                 let mut main_area = areas.get_main_area();
                 main_area.height -= 2;
                 ui.render(frame);
@@ -126,7 +126,7 @@ impl <B : Backend> UIWrapper<B> {
 
     fn calculate_map_view_area(&self) -> Option<Area> {
         if let Some(frame_size) = self.ui.frame_size.clone() {
-            let view_areas = self.ui.get_view_areas(frame_size.to_rect());
+            let view_areas = self.ui.get_split_view_areas(frame_size.to_rect());
 
             let main_area = view_areas.get_main_area();
             // Main area does not consider borders, so +1 to start inside those

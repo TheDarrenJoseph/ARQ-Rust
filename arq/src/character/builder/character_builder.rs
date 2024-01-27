@@ -7,7 +7,7 @@ use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
 use crate::error::errors::GenericError;
 use crate::map::objects::{container};
-use crate::map::objects::container::{build, Container, ContainerType};
+use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
 use crate::map::position::Position;
@@ -28,10 +28,10 @@ pub struct CharacterPattern {
 }
 
 pub fn build_dev_player_inventory() -> Container {
-    let mut container = container::build(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50.0, 1, ContainerType::AREA, 150);
+    let mut container = Container::new(Uuid::new_v4(), "Player's Inventory".to_owned(), '$', 50.0, 1, ContainerType::AREA, 150);
     let bronze_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::BRONZE, ItemForm::BAR, 'X', 1.0, 50);
-    let mut bag = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
-    let mut carton = container::build(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
+    let mut bag = Container::new(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
+    let mut carton = Container::new(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
     let tin_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::TIN, ItemForm::BAR,'X', 1.0, 50);
 
     // +1 weight
@@ -91,7 +91,7 @@ impl CharacterPattern {
         let mut equipment = Equipment::new();
         equipment.equip(equipped_dagger, PRIMARY);
 
-        let mut inventory = build(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let mut inventory = Container::new(Uuid::new_v4(), "A Goblin's dead body".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let add_result = inventory.add_item(dagger);
         if add_result.is_err() {
             return Err(add_result.err().unwrap())

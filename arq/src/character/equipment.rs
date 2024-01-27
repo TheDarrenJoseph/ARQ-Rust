@@ -185,7 +185,7 @@ mod tests {
         let mut equipment = Equipment::new();
 
         // AND an OBJECT type container i.e a Bag
-        let wrapped = container::build(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
+        let wrapped = Container::new(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
 
         // WHEN we call to equip this
         let equip_result = equipment.equip(wrapped, PRIMARY);

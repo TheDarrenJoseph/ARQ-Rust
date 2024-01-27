@@ -56,6 +56,20 @@ pub struct ItemListSelection {
 }
 
 impl ItemListSelection {
+    pub fn new(items : Vec<Item>, item_view_line_count: i32) -> ItemListSelection {
+        let selection_mode = SelectionMode::SelectingItems;
+        let start_index = 0;
+        let current_index = 0;
+        let true_index = 0;
+        let pivot_index = None;
+        let previous_container_index = None;
+        let container_index = None;
+        let selecting_items = false;
+        let selected_indices = VecDeque::new();
+        let selected_items = VecDeque::new();
+        ItemListSelection { selection_mode, start_index, pivot_index, previous_container_index, current_index, true_index, container_index, selecting_items, selected_indices, selected_items, items, page_line_count: item_view_line_count }
+    }
+
     fn reset_selection(&mut self) {
         self.start_index = 0;
         self.current_index = 0;
@@ -501,25 +515,11 @@ impl ListSelection for ItemListSelection {
 
 }
 
-pub fn build_list_selection(items : Vec<Item>, item_view_line_count: i32) -> ItemListSelection {
-    let selection_mode = SelectionMode::SelectingItems;
-    let start_index = 0;
-    let current_index = 0;
-    let true_index = 0;
-    let pivot_index = None;
-    let previous_container_index = None;
-    let container_index = None;
-    let selecting_items = false;
-    let selected_indices = VecDeque::new();
-    let selected_items = VecDeque::new();
-    ItemListSelection { selection_mode, start_index, pivot_index, previous_container_index, current_index, true_index, container_index, selecting_items, selected_indices, selected_items, items, page_line_count: item_view_line_count }
-}
-
 #[cfg(test)]
 mod tests {
     
 
-    use crate::item_list_selection::{build_list_selection, ListSelection};
+    use crate::item_list_selection::{ItemListSelection, ListSelection};
     
     use crate::map::objects::items::Item;
 
@@ -545,12 +545,12 @@ mod tests {
     }
 
     #[test]
-    fn test_build_list_selection() {
+    fn test_ItemListSelection_new(){
         // GIVEN a series of items to select from            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
         let items = build_item_series_4();
 
         // WHEN we call to build a list selection of these items
-        let list_selection = build_list_selection(items.clone(), 4);
+        let list_selection = ItemListSelection::new(items.clone(), 4);
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(1, list_selection.get_total_pages());
 
@@ -577,7 +577,7 @@ mod tests {
         let items = vec! [ item.clone(), item2.clone(), item3.clone(), item4.clone() ];
 
         // WHEN we call to build a list selection of these items with a line count of 2 items per page
-        let list_selection = build_list_selection(items.clone(), 2);
+        let list_selection = ItemListSelection::new(items.clone(), 2);
         // THEN we expect there to be 2 pages
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(2, list_selection.get_total_pages());
@@ -594,7 +594,7 @@ mod tests {
 
         // WHEN we call to build a list selection of these items
         // with a line count of 36 items per page (Which would give us an odd page count of 1.69)
-        let list_selection = build_list_selection(items.clone(), 36);
+        let list_selection = ItemListSelection::new(items.clone(), 36);
         // THEN we expect there to be 2 pages total
         assert_eq!(1, list_selection.get_page_number());
         assert_eq!(2, list_selection.get_total_pages());
@@ -605,7 +605,7 @@ mod tests {
         // GIVEN a selection with a series of items to select from
         let items = build_item_series_4();
 
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND an initial container index of 2
         list_selection.set_current_index(2);
@@ -624,7 +624,7 @@ mod tests {
     fn test_move_down_up_of_list() {
         // GIVEN a selection with a series of items to select from
         let items = build_item_series_4();
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
         // AND an initial container index of 3
         list_selection.set_current_index(3);
 
@@ -644,7 +644,7 @@ mod tests {
     fn test_move_down() {
         // GIVEN a selection with a series of items to select from
         let items = build_item_series_4();
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
         list_selection.set_current_index(0);
 
         // WHEN we call to move down
@@ -661,7 +661,7 @@ mod tests {
     fn test_move_down_end_of_list() {
         // GIVEN a selection with a series of items to select from
         let items = build_item_series_4();
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
         list_selection.set_current_index(0);
 
         // WHEN we move down 3 times
@@ -679,7 +679,7 @@ mod tests {
     #[test]
     fn test_toggle_selection() {
         // GIVEN a list selection
-        let mut list_selection = build_list_selection(Vec::new(), 0);
+        let mut list_selection = ItemListSelection::new(Vec::new(), 0);
         // AND it's currently not selecting anything
         assert!(!list_selection.is_selecting());
         // WHEN we call to toggle selection
@@ -697,7 +697,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // WHEN we call to select a particular index
         list_selection.select(1);
@@ -715,7 +715,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -738,7 +738,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(2);
@@ -764,7 +764,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting above that twice
@@ -798,7 +798,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -821,7 +821,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -847,7 +847,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting the first item in the container
         // AND then selecting below that until we reach the bottom of the container
@@ -885,7 +885,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index (the pivot point)
         // AND then selecting below that twice
@@ -919,7 +919,7 @@ mod tests {
         let items = build_item_series_4();
 
         // AND a valid list selection that has a line count matching our items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -948,7 +948,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index  and ensuring we're selecting items
         list_selection.set_initial_selection(1);
@@ -978,7 +978,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by selecting an index
         list_selection.set_initial_selection(1);
@@ -1015,7 +1015,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by navigating to the correct index and initialising selection
         list_selection.page_down();  // end of first page
@@ -1049,7 +1049,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've begun by navigating to the correct index and initialising selection
         list_selection.page_down();  // end of first page
@@ -1087,7 +1087,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've moved to the 2nd page of the view
         list_selection.page_down();  // end of first page
@@ -1117,7 +1117,7 @@ mod tests {
         let items = build_item_series_8();
 
         // AND a valid list selection that has a line count that fits half of these items
-        let mut list_selection = build_list_selection(items.clone(), 4);
+        let mut list_selection = ItemListSelection::new(items.clone(), 4);
 
         // AND we've moved to the 2nd page of the view
         list_selection.page_down();  // end of first page

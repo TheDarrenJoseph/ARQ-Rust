@@ -95,7 +95,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
             let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
 
             if centered.is_ok() {
-                let _ui_areas = ui.get_view_areas(centered.unwrap());
+                let _ui_areas = ui.get_split_view_areas(centered.unwrap());
 
                 fh.areas = Some(combat_view_areas);
                 let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };

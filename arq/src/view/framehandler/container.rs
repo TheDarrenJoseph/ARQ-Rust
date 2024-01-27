@@ -10,7 +10,7 @@ use tui::style::{Color, Modifier, Style};
 
 use tui::widgets::{Block, Borders};
 
-use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSelection};
+use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
@@ -107,7 +107,7 @@ pub fn build_container_frame_handler(container: Container, usage_line : UsageLin
         container: container.clone(),
         columns,
         row_count: 1,
-        item_list_selection: build_list_selection(items.clone(), 1),
+        item_list_selection: ItemListSelection::new(items.clone(), 1),
         usage_line
     }
 }
@@ -155,11 +155,11 @@ impl ContainerFrameHandler {
     }
 
     pub fn rebuild_selection(&mut self) {
-        self.item_list_selection = build_list_selection(self.container.to_cloned_item_list(), 1);
+        self.item_list_selection = ItemListSelection::new(self.container.to_cloned_item_list(), 1);
     }
 
     pub fn rebuild_selection_from(&mut self, container: &Container) {
-        self.item_list_selection = build_list_selection(container.to_cloned_item_list(), 1);
+        self.item_list_selection = ItemListSelection::new(container.to_cloned_item_list(), 1);
     }
 
     pub fn get_selected_items(&self) -> Vec<Item> {
@@ -501,7 +501,7 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
         container: container.clone(),
         columns,
         row_count: 1,
-        item_list_selection: build_list_selection(items.clone(), 1),
+        item_list_selection: ItemListSelection::new(items.clone(), 1),
         usage_line : UsageLine::new(HashMap::new())
     }
 }
@@ -511,7 +511,7 @@ mod tests {
     use uuid::Uuid;
     use crate::item_list_selection::{ListSelection};
     
-    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::container::{Container, ContainerType};
     
     use crate::map::objects::items::Item;
     use crate::map::tile::Colour;
@@ -521,7 +521,7 @@ mod tests {
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
-        let mut container =  build(id, "Test Container".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let mut container = Container::new(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());

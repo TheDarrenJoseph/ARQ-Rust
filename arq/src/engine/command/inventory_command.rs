@@ -237,7 +237,7 @@ mod tests {
     use crate::engine::level::Level;
     
     use crate::map::objects::container;
-    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::container::{Container, ContainerType};
     
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
@@ -252,7 +252,7 @@ mod tests {
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
-        let mut container =  build(id, "Test Container".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let mut container = Container::new(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
@@ -304,7 +304,7 @@ mod tests {
     #[test]
     fn test_drop_callback() {
         // GIVEN a valid map with an area container to drop items into
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
+        let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback with some of the items in the container
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn test_drop_callback_too_many_items() {
         // GIVEN a valid map with an area container to drop items into
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
+        let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback with too many items to fit in the current area container (3 with space for 2)
@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn test_drop_callback_zero_weightlimit() {
         // GIVEN a valid map with an area container to drop items into (with a zero weightlimit)
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 0);
+        let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 0);
         let mut level = build_test_level(area_container);
 
         // WHEN we call to handle a drop callback
@@ -414,7 +414,7 @@ mod tests {
     #[test]
     fn test_equip_callback() {
         // GIVEN a valid callback state
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
+        let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
@@ -454,7 +454,7 @@ mod tests {
     #[test]
     fn test_equip_items() {
         // GIVEN a valid callback state
-        let area_container = container::build(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0,  ContainerType::AREA, 2);
+        let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
         let mut level = build_test_level(area_container);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot

@@ -4,7 +4,7 @@ use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
-use crate::item_list_selection::{build_list_selection, ItemListSelection, ListSelection};
+use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::ui::ui_util::build_paragraph;
 
@@ -30,7 +30,7 @@ pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
     ContainerChoiceFrameHandler {
         choices: choices.clone(),
         columns: build_default_columns(),
-        item_list_selection: build_list_selection(items.clone(), 1)
+        item_list_selection: ItemListSelection::new(items.clone(), 1)
     }
 }
 

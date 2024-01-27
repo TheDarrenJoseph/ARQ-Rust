@@ -101,7 +101,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
-            let areas = ui.get_view_areas(frame.size());
+            let areas = ui.get_split_view_areas(frame.size());
             let view_area = areas.get_main_area();
             let frame_area = Rect { x : view_area.x + 1, y : view_area.y + 1, width: view_area.width.clone() - 2,  height: view_area.height.clone() - 2};
             let specific_frame_data = WorldContainerViewFrameData { };

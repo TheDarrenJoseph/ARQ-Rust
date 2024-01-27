@@ -178,7 +178,7 @@ mod tests {
     use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::equipment::Equipment;
-    use crate::map::objects::container::ContainerType;
+    use crate::map::objects::container::{Container, ContainerType};
     use crate::map::position::Position;
     use crate::map::tile::{Colour, Symbol};
 
@@ -190,7 +190,7 @@ mod tests {
         let symbol = Symbol { character: '@', colour: Colour::Green };
         let health = 100;
         let position = Position { x: 1, y: 1};
-        let inventory = crate::map::objects::container::build(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 100);
+        let inventory = Container::new(Uuid::new_v4(), "Test Person's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let equipment = Equipment::new();
         let mut character = Character { id, name, character_details, symbol, health, position, inventory, equipment };
 

@@ -212,7 +212,7 @@ mod tests {
     use crate::engine::command::open_command::{handle_callback};
     use crate::engine::level::{Level};
 
-    use crate::map::objects::container::{build, Container, ContainerType};
+    use crate::map::objects::container::{Container, ContainerType};
     
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
@@ -224,7 +224,7 @@ mod tests {
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
-        let mut container = build(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
+        let mut container = Container::new(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
         let container_self_item = container.get_self_item();
         assert_eq!(id, container_self_item.get_id());
         assert_eq!("Test Container", container_self_item.get_name());
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn test_take_callback() {
         // GIVEN a valid level with an player inventory to extract items into
-        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 2);
+        let inventory = Container::new(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
         let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
         let mut level = build_test_level(player);
@@ -310,7 +310,7 @@ mod tests {
     #[test]
     fn test_take_callback_too_many_items() {
         // GIVEN a valid map with an player inventory to extract items into
-        let inventory = build(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1,  ContainerType::OBJECT, 2);
+        let inventory = Container::new(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
         let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
         let mut level = build_test_level(player);
