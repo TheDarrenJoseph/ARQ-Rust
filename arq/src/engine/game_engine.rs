@@ -148,29 +148,31 @@ impl <B : Backend + Send> GameEngine<B> {
 
     fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, Error> {
         loop {
-            let last_selection = self.ui_wrapper.ui.start_menu.selection;
-            let key = io::stdin().keys().next().unwrap().unwrap();
-            self.ui_wrapper.ui.start_menu.handle_input(key);
-            let selection = self.ui_wrapper.ui.start_menu.selection;
-            info!("Selection is: {}", selection);
-            if last_selection != selection {
-                info!("Selection changed to: {}", selection);
-                let _ui = &mut self.ui_wrapper.ui;
-                self.ui_wrapper.draw_start_menu()?;
-            }
+            let ui_wrapper = &mut self.ui_wrapper;
+            let start_menu_mut = ui_wrapper.ui.get_start_menu_mut();
 
-            if self.ui_wrapper.ui.start_menu.exit {
+            let last_selection = start_menu_mut.selection;
+            let key = io::stdin().keys().next().unwrap().unwrap();
+            start_menu_mut.handle_input(key);
+            let selection = start_menu_mut.selection;
+            info!("Selection is: {}", selection);
+            if start_menu_mut.exit {
                 info!("Menu exited.");
                 return Ok(StartMenuChoice::Quit);
             }
 
-            if self.ui_wrapper.ui.start_menu.selected {
-                match self.ui_wrapper.ui.start_menu.selection.try_into() {
+            if start_menu_mut.selected {
+                match start_menu_mut.selection.try_into() {
                     Ok(x) => {
                         return Ok(x);
                     },
                     Err(_) => {}
                 }
+            }
+
+            if last_selection != selection {
+                info!("Selection changed to: {}", selection);
+                ui_wrapper.draw_start_menu()?;
             }
         }
     }
@@ -354,7 +356,6 @@ impl <B : Backend + Send> GameEngine<B> {
     }
 
     async fn initialise(&mut self) -> Result<(), Error> {
-        self.ui_wrapper.ui.start_menu = menu::build_start_menu(true);
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
         let map = self.generate_map().await.unwrap();
@@ -371,7 +372,8 @@ impl <B : Backend + Send> GameEngine<B> {
     }
 
     fn add_or_update_additional_widgets(&mut self) {
-        if self.ui_wrapper.ui.additional_widgets.is_empty() {
+        let additional_widgets = self.ui_wrapper.ui.get_additional_widgets();
+        if additional_widgets.is_empty() {
             let level_number = self.levels.get_current_level() as i32 + 1;
             let level = self.levels.get_level_mut();
             let player = level.characters.get_player_mut().unwrap();
@@ -380,15 +382,16 @@ impl <B : Backend + Send> GameEngine<B> {
                 player.get_health(),
                 player.get_details(),
                 player.get_inventory_mut().get_loot_value());
-            self.ui_wrapper.ui.additional_widgets.push(StandardWidgetType::StatLine(stat_line));
+            self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::StatLine(stat_line));
 
             let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
             commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
             let map_usage_line = UsageLine::new(commands);
-            self.ui_wrapper.ui.additional_widgets.push(StandardWidgetType::UsageLine(map_usage_line));
+            self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::UsageLine(map_usage_line));
 
         } else {
-            match self.ui_wrapper.ui.additional_widgets.get_mut(0) {
+            let widgets_mut = self.ui_wrapper.ui.get_additional_widgets_mut();
+            match widgets_mut.get_mut(0) {
                 Some(StandardWidgetType::StatLine(s)) => {
                     let level_number = self.levels.get_current_level() as i32 + 1;
                     let level = self.levels.get_level_mut();

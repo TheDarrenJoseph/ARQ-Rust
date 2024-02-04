@@ -1,32 +1,35 @@
+use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 use tui::layout::Rect;
+use crate::map::Map;
 use crate::map::position::{Area, build_rectangular_area, Position};
 
+pub const UI_AREA_NAME_MAIN: &str = "main";
+pub const UI_AREA_NAME_CONSOLE: &str = "console";
+
+#[derive(Clone, Debug)]
 pub struct UIAreas {
-    main_area : Rect,
-    console_area: Option<Rect>
+    areas: HashMap<String, UIArea>
+}
+
+#[derive(Clone, Debug)]
+pub struct UIArea {
+    pub name : String,
+    pub area: Rect
 }
 
 impl UIAreas {
 
-    pub const fn new(main_area : Rect, console_area: Option<Rect>) -> UIAreas {
-        UIAreas { main_area, console_area }
+    pub const fn new(areas: HashMap<String, UIArea>) -> UIAreas {
+        UIAreas { areas }
     }
 
-    pub fn get_main_area(&self) -> Rect {
-        self.main_area
+    pub fn get_area(&self, key: &str) -> Option<&UIArea> {
+        self.areas.get(key)
     }
 
-    pub fn set_main_area(&mut self, main_area: Rect) {
-        self.main_area = main_area;
-    }
-
-    pub fn get_console_area(&self) -> Option<Rect> {
-        self.console_area
-    }
-
-    pub fn set_console_area(&mut self, console_area: Option<Rect>) {
-        self.console_area = console_area;
+    pub fn len(&self) -> usize {
+        self.areas.len()
     }
 }
 

@@ -12,7 +12,9 @@ use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
 use crate::{menu};
 use crate::map::position::{Area};
 use crate::menu::{Menu, ToList};
-use crate::ui::ui_areas::UIAreas;
+use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas_builder::UIAreasBuilder;
+use crate::ui::ui_layout::UILayout;
 use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -20,12 +22,13 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::{StandardWidgetType};
 
 pub struct UI {
-    pub start_menu : Menu,
+    start_menu : Menu,
     pub render_additional: bool,
-    pub console_visible: bool,
-    pub additional_widgets: Vec<StandardWidgetType>,
-    pub frame_size : Option<Area>,
-    pub frame_handler: ConsoleFrameHandler
+    console_visible: bool,
+    additional_widgets: Vec<StandardWidgetType>,
+    frame_size : Option<Area>,
+    frame_handler: ConsoleFrameHandler,
+    pub ui_layout: Option<UILayout>
 }
 
 #[derive(Clone)]
@@ -39,7 +42,15 @@ pub enum StartMenuChoice {
 pub fn build_ui() -> UI {
     let start_menu = menu::build_start_menu(false);
     let frame_handler = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
-    UI { start_menu, frame_size : None, render_additional: false, console_visible: false, additional_widgets: Vec::new(), frame_handler }
+    UI {
+        start_menu,
+        frame_size : None,
+        render_additional: false,
+        console_visible: false,
+        additional_widgets: Vec::new(),
+        frame_handler,
+        ui_layout: None
+    }
 }
 
 impl std::convert::TryFrom<usize> for StartMenuChoice {
@@ -89,61 +100,8 @@ fn build_main_block<'a>() -> Block<'a> {
 }
 
 impl UI {
-
-    /*
-        Tries to build a centered UIAreas based on 80x24 minimum frame size
-        If the view is smaller than this, the view will be split as per usual for smaller sizes
-
-        TODO - Test this before using it!!
-     */
-    pub fn get_split_centered_view_areas(&self, frame_size: Rect) -> UIAreas {
-        if frame_size.width >= 80 && frame_size.height >= 24 {
-            let centered = self.get_single_centered_view_area(frame_size);
-            return self.split_into_view_areas(centered);
-        } else {
-            // TODO we probably want to throw an error / show the new error screen for this case
-            return self.split_into_view_areas(frame_size);
-        }
-    }
-
-    /*
-        Tries to build a UIAreas based on the available frame size
-     */
-    pub fn get_split_view_areas(&self, frame_size: Rect) -> UIAreas {
-        return self.split_into_view_areas(frame_size);
-    }
-
-    /*
-        Tries to build a single centered Rect based on 80x24 minimum frame size
-        If the view is smaller than this, the view will be split as per usual for smaller sizes
-     */
-    pub fn get_single_centered_view_area(&self, frame_size: Rect) -> Rect {
-        if frame_size.width >= 80 && frame_size.height >= 24 {
-            let target = Rect::new(0, 0, 80, 24);
-            return center_area(target, frame_size, MIN_AREA).unwrap();
-        } else {
-            // TODO we probably want to throw an error / show the new error screen for this case
-            return frame_size;
-        }
-    }
-
-    // If the console if visible, splits a frame vertically into the 'main' and lower console areas
-    // Otherwise returns the original frame size
-    fn split_into_view_areas(&self, frame_size: Rect) -> UIAreas {
-        let areas: Vec<Rect> = if self.console_visible {
-            Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(80),
-                        Constraint::Percentage(20)
-                    ].as_ref()
-                )
-                .split(frame_size)
-        } else {
-            vec![frame_size.clone()]
-        };
-        UIAreas::new(areas[0], areas.get(1).cloned())
+    pub fn rebuild_start_menu(&mut self, game_started: bool) {
+        self.start_menu = menu::build_start_menu(game_started);
     }
 
     /*
@@ -155,18 +113,30 @@ impl UI {
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let frame_size = Area::from_rect(frame.size());
         self.frame_size = Some(frame_size);
+        if self.ui_layout.is_none() {
+            self.ui_layout = Some(UILayout::new(frame_size));
+        }
 
-        let main_block = build_main_block();
-        let areas: UIAreas = self.split_into_view_areas(frame_size.to_rect());
-        let main_area = areas.get_main_area();
-        frame.render_widget(main_block, main_area.clone());
+        let ui_layout = self.ui_layout.as_mut().unwrap();
+        let areas = ui_layout.get_or_build_areas(frame.size());
+
+        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+            let main_area = main.area;
+            let main_block = build_main_block();
+            {
+                frame.render_widget(main_block, main_area);
+            }
+        }
+
+        if let Some(console) = areas.get_area(UI_AREA_NAME_CONSOLE) {
+            let console_area = console.area;
+            if self.console_visible {
+                self.draw_console(frame, console_area);
+            }
+        }
 
         if self.render_additional {
             self.draw_additional_widgets(frame);
-        }
-
-        if self.console_visible {
-            self.draw_console(frame, areas.get_console_area().unwrap());
         }
     }
 
@@ -187,6 +157,26 @@ impl UI {
 
     pub fn clear_console_buffer(&mut self) {
         self.frame_handler.buffer.content = String::new();
+    }
+
+    pub fn get_start_menu(&self) -> &Menu {
+        &self.start_menu
+    }
+
+    pub fn get_start_menu_mut(&mut self) -> &mut Menu {
+        &mut self.start_menu
+    }
+
+    pub fn is_console_visible(&self) -> bool {
+        self.console_visible
+    }
+
+    pub fn get_additional_widgets(&self) -> &Vec<StandardWidgetType> {
+        &self.additional_widgets
+    }
+
+    pub fn get_additional_widgets_mut(&mut self) -> &mut Vec<StandardWidgetType> {
+        &mut self.additional_widgets
     }
 }
 
@@ -242,25 +232,26 @@ impl Draw for UI {
     }
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
-        let frame_size = frame.size();
-        let max_width = frame_size.width / 2;
         let widget_count = self.additional_widgets.len();
-        let main_area = self.split_into_view_areas(frame_size).get_main_area();
-        if widget_count > 0 {
-            let mut _offset = 0;
-            for widget in self.additional_widgets.iter_mut() {
-                match widget {
-                    StandardWidgetType::StatLine(w) => {
-                        frame.render_widget(w.clone(),
-                                            Rect::new(main_area.x + 1, main_area.y, max_width, 1));
-                    },
-                    StandardWidgetType::UsageLine(w) => {
-                        frame.render_widget(w.clone(),
-                                            Rect::new(main_area.x + 1, main_area.height - 1, main_area.width, 1));
-                    },
-                    _ => {}
+        if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas().get_area(UI_AREA_NAME_MAIN) {
+            let area = main_area.area;
+            let max_width = area.width / 2;
+            if widget_count > 0 {
+                let mut _offset = 0;
+                for widget in self.additional_widgets.iter_mut() {
+                    match widget {
+                        StandardWidgetType::StatLine(w) => {
+                            frame.render_widget(w.clone(),
+                                                Rect::new(area.x + 1, area.y, max_width, 1));
+                        },
+                        StandardWidgetType::UsageLine(w) => {
+                            frame.render_widget(w.clone(),
+                                                Rect::new(area.x + 1, area.height - 1, area.width, 1));
+                        },
+                        _ => {}
+                    }
+                    _offset += 1;
                 }
-                _offset += 1;
             }
         }
     }

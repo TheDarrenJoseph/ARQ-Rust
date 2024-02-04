@@ -7,6 +7,7 @@ use crate::map::objects::container::Container;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
+use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
 use crate::view::util::callback::Callback;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
@@ -99,14 +100,18 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
         let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;
 
-        self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
-            let areas = ui.get_split_view_areas(frame.size());
-            let view_area = areas.get_main_area();
-            let frame_area = Rect { x : view_area.x + 1, y : view_area.y + 1, width: view_area.width.clone() - 2,  height: view_area.height.clone() - 2};
-            let specific_frame_data = WorldContainerViewFrameData { };
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
-        })?;
+        let frame_size = self.terminal_manager.terminal.get_frame().size();
+        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let areas = ui_layout.get_or_build_areas(frame_size);
+        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+            let main_area = main.area;
+            self.terminal_manager.terminal.draw(|frame| {
+                ui.render(frame);
+                let frame_area = Rect { x: main_area.x + 1, y: main_area.y + 1, width: main_area.width.clone() - 2, height: main_area.height.clone() - 2 };
+                let specific_frame_data = WorldContainerViewFrameData {};
+                frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
+            })?;
+        }
         Ok(())
     }
 }

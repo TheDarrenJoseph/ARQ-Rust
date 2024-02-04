@@ -16,6 +16,7 @@ use crate::item_list_selection::ListSelection;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
+use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
 use crate::view::util::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
@@ -298,15 +299,21 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
         let ui = &mut self.ui;
 
         verify_display_size::<B>(self.terminal_manager);
-        self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
-            let areas = ui.get_split_view_areas(frame.size());
-            let view_area = areas.get_main_area();
-            // Sizes for the entire 'Character Info' frame area
-            let frame_area = Rect { x : view_area.x, y : view_area.y +1 , width: view_area.width.clone(),  height: view_area.height.clone() - 1};
-            let specific_frame_data = CharacterInfoViewFrameData { character };
-            frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
-        })?;
+
+        let frame_size = self.terminal_manager.terminal.get_frame().size();
+        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let areas = ui_layout.get_or_build_areas(frame_size);
+
+        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+            let main_area = main.area;
+            self.terminal_manager.terminal.draw(|frame| {
+                ui.render(frame);
+                // Sizes for the entire 'Character Info' frame area
+                let frame_area = Rect { x: main_area.x, y: main_area.y + 1, width: main_area.width.clone(), height: main_area.height.clone() - 1 };
+                let specific_frame_data = CharacterInfoViewFrameData { character };
+                frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
+            })?;
+        }
         Ok(())
     }
 }

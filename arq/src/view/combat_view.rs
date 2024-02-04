@@ -17,7 +17,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
-use crate::ui::ui_areas::BorderedArea;
+use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_MAIN};
 use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
@@ -89,22 +89,28 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         let fh = &mut self.frame_handler;
 
         let frame_size = self.terminal_manager.terminal.get_frame().size();
-        let combat_view_areas = build_view_areas(frame_size)?;
-        self.terminal_manager.terminal.draw(|frame| {
-            let frame_size = frame.size();
-            let centered = center_area(MIN_AREA, frame_size, MIN_AREA);
+        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let areas = ui_layout.get_or_build_areas(frame_size);
 
-            if centered.is_ok() {
-                let _ui_areas = ui.get_split_view_areas(centered.unwrap());
-
-                fh.areas = Some(combat_view_areas);
-                let frame_data = FrameData { frame_size: frame.size(), data: battle.clone() };
-                fh.handle_frame(frame, frame_data);
-            } else {
-                let err = centered.err().unwrap();
-                error!("{}", err)
-            }
-        });
+        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+            let main_area = main.area;
+            // TODO we probably don't want to use the entire frame here
+            // This doesn't respect UILayout
+            // We should reconsider the building of custom areas, or work it into UILayout?
+            let combat_view_areas = build_view_areas(frame_size)?;
+            self.terminal_manager.terminal.draw(|frame| {
+                let centered = center_area(MIN_AREA, main_area, MIN_AREA);
+                if centered.is_ok() {
+                    fh.areas = Some(combat_view_areas);
+                    // TODO using frame_size here is risky and doesn't respect UILayout
+                    let frame_data = FrameData { frame_size: frame_size, data: battle.clone() };
+                    fh.handle_frame(frame, frame_data);
+                } else {
+                    let err = centered.err().unwrap();
+                    error!("{}", err)
+                }
+            });
+        }
 
         return Ok(());
     }

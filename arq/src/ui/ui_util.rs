@@ -1,10 +1,11 @@
 
 use std::io::{Error, ErrorKind};
-use tui::layout::Rect;
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
 use crate::map::position::Area;
+use crate::ui::ui_areas::UIAreas;
 
 const MIN_VIEW_SIZE : u16 = 3;
 pub const MIN_AREA: Rect = Rect { x:0, y: 0, width: 80, height: 24};
