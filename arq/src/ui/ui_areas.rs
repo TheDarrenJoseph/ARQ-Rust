@@ -5,6 +5,9 @@ use crate::map::Map;
 use crate::map::position::{Area, build_rectangular_area, Position};
 
 
+// Total represents the entire available area
+pub const UI_AREA_NAME_TOTAL: &str = "total";
+
 // The 'main' area is always present and is the largest area
 pub const UI_AREA_NAME_MAIN: &str = "main";
 
@@ -37,6 +40,11 @@ impl UIAreas {
 
     pub fn get_area(&self, key: &str) -> Option<&UIArea> {
         self.areas.get(key)
+    }
+
+    pub fn get_bordered_area(&self, key: &str) -> BorderedArea {
+        let area = self.areas.get(key).unwrap().area;
+        BorderedArea::from_area(area).unwrap()
     }
 
     pub fn len(&self) -> usize {

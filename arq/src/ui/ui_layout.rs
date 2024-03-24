@@ -69,7 +69,7 @@ impl UILayout {
     pub fn get_or_build_areas(&mut self, frame_size: Rect, layout_type: LayoutType) -> &UIAreas {
         let current_ui_areas = &self.ui_areas.get(&layout_type);
         if current_ui_areas.is_some()  {
-            if self.ui_areas_builder.needs_rebuilding(frame_size) {
+            if self.ui_areas_builder.needs_rebuilding(Area::from_rect(frame_size)) {
                 return self.rebuild_ui_areas(frame_size, layout_type);
             } else {
                 return &self.ui_areas.get(&layout_type).as_ref().unwrap();

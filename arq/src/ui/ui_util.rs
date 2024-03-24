@@ -132,8 +132,8 @@ mod tests {
         assert!(result.is_ok());
         let result_area = result.unwrap();
 
-        assert_eq!(10, result_area.x);
-        assert_eq!(38, result_area.y);
+        assert_eq!(10, result_area.start_position.x);
+        assert_eq!(38, result_area.start_position.y);
         assert_eq!(24, result_area.height);
         assert_eq!(80, result_area.width);
     }
@@ -151,8 +151,8 @@ mod tests {
         assert!(result.is_ok());
         let result_area = result.unwrap();
 
-        assert_eq!(10, result_area.x);
-        assert_eq!(38, result_area.y);
+        assert_eq!(10, result_area.start_position.x);
+        assert_eq!(38, result_area.start_position.y);
         assert_eq!(24, result_area.height);
         assert_eq!(80, result_area.width);
     }
