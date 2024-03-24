@@ -4,9 +4,20 @@ use tui::layout::Rect;
 use crate::map::Map;
 use crate::map::position::{Area, build_rectangular_area, Position};
 
+
+// The 'main' area is always present and is the largest area
 pub const UI_AREA_NAME_MAIN: &str = "main";
+
+// For the split view, the window is split into 'main' and 'console'
 pub const UI_AREA_NAME_CONSOLE: &str = "console";
 
+// For the combat, the window is split into 'main', 'console', and 'minimap'
+pub const UI_AREA_NAME_MINIMAP: &str = "minimap";
+
+
+/*
+ UIArea entries keyed by ID for easy reference
+ */
 #[derive(Clone, Debug)]
 pub struct UIAreas {
     areas: HashMap<String, UIArea>
@@ -15,7 +26,7 @@ pub struct UIAreas {
 #[derive(Clone, Debug)]
 pub struct UIArea {
     pub name : String,
-    pub area: Rect
+    pub area: Area
 }
 
 impl UIAreas {
@@ -33,8 +44,10 @@ impl UIAreas {
     }
 }
 
-// An area with a 1 character wide border on the outer area
-// Inner area is the area inside this border
+/*
+ An area with a 1 character wide border on the outer area
+ Inner area is the area inside this border
+ */
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct BorderedArea {

@@ -348,7 +348,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
         let frame_size = data.get_frame_size().clone();
-        let container = data.unpack();
+        let container = data.get_data_mut();
 
         let window_block = Block::default()
             .borders(Borders::ALL)

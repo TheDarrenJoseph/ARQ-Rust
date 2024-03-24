@@ -7,15 +7,16 @@ use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
 use tui::layout::Rect;
-use crate::build_paragraph;
+use crate::{build_paragraph, GameOverChoice, menu};
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::map::room::Room;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{Draw, get_input_key, UI};
+use crate::ui::ui::{Draw, get_input_key, StartMenuChoice, UI};
 use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_layout::LayoutType;
 use crate::ui::ui_util::{check_display_size, MIN_AREA};
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
@@ -23,6 +24,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
 
 use crate::view::map_view::{MapView};
+use crate::view::menu_view::MenuView;
 
 use crate::widget::widgets::WidgetList;
 
@@ -74,10 +76,14 @@ impl <B : Backend> UIWrapper<B> {
         Ok(false)
     }
 
-    pub(crate) fn draw_start_menu(&mut self) -> Result<(), io::Error>  {
+    pub(crate) fn draw_start_menu(&mut self) -> Result<InputResult<StartMenuChoice>, Error>  {
         let ui = &mut self.ui;
-        verify_display_size::<B>(&mut self.terminal_manager);
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_start_menu(frame) })
+        let terminal_manager = &mut self.terminal_manager;
+
+        let menu = menu::build_start_menu(false);
+        let mut menu_view = MenuView { ui, terminal_manager, menu };
+
+        Ok(menu_view.begin()?)
     }
 
     pub(crate) fn draw_info(&mut self) -> Result<(), io::Error>  {
@@ -89,7 +95,7 @@ impl <B : Backend> UIWrapper<B> {
     // Shows character creation screen
     // Returns the finished character once input is confirmed
     fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
-        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Rect::new(0, 0, 0, 0)};
+        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Area::new(Position::zero(), 0, 0)};
         // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
         GenericInputResult { done: false, requires_view_refresh: false },
@@ -98,17 +104,17 @@ impl <B : Backend> UIWrapper<B> {
         while !character_creation_result.generic_input_result.done {
             let ui = &mut self.ui;
             ui.show_console();
-
-            self.terminal_manager.terminal.draw(|frame| {
-                let mut ui_layout = ui.ui_layout.as_mut().unwrap();
-                let areas: &UIAreas = ui_layout.get_or_build_areas(frame.size());
-                if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+            let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+            let frame_size = self.terminal_manager.terminal.get_frame().size();
+            let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
+            if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
+                self.terminal_manager.terminal.draw(|frame| {
                     let mut main_area = main.area;
                     main_area.height -= 2;
                     ui.render(frame);
-                    character_view.handle_frame(frame, FrameData { data: base_character.clone(), frame_size: main_area });
-                }
-            })?;
+                    character_view.handle_frame(frame, FrameData { data: base_character.clone(), ui_areas: ui_areas.clone(), frame_area: main_area });
+                })?;
+            }
             ui.hide_console();
 
             let key = get_input_key()?;
@@ -130,10 +136,11 @@ impl <B : Backend> UIWrapper<B> {
 
     fn calculate_map_view_area(&self) -> Option<Area> {
         let ui_layout = self.ui.ui_layout.as_ref().unwrap();
-        if let Some(main) = ui_layout.get_ui_areas().get_area(UI_AREA_NAME_MAIN) {
+        if let Some(main) = ui_layout.get_ui_areas(LayoutType::STANDARD_SPLIT).get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
+            let rect = main_area.to_rect();
             // Main area does not consider borders, so +1 to start inside those
-            let map_view_start_pos = Position { x: main_area.x + 1, y: main_area.y + 1 };
+            let map_view_start_pos = Position { x: rect.x + 1, y: rect.y + 1 };
             // Build the view area, -1 for remaining border on the other sides
             let map_view_area = build_rectangular_area(map_view_start_pos, main_area.width - 1, main_area.height - 1);
             return Some(map_view_area);

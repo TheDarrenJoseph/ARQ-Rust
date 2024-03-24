@@ -16,6 +16,9 @@ impl Position {
     pub fn new(x: u16, y: u16) -> Position {
         Position { x, y }
     }
+    pub fn zero() -> Position {
+        Position { x: 0, y: 0 }
+    }
 
     pub fn from_rect(rect: Rect) -> Position {
         Position { x : rect.x, y: rect.y }

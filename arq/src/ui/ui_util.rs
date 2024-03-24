@@ -4,7 +4,7 @@ use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
-use crate::map::position::Area;
+use crate::map::position::{Area, Position};
 use crate::ui::ui_areas::UIAreas;
 
 const MIN_VIEW_SIZE : u16 = 3;
@@ -68,7 +68,7 @@ fn center(target: u16, available: u16, alignment: Alignment)  -> Result<u16, Err
     }
 }
 
-pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Rect, Error> {
+pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Area, Error> {
     if target.height < min_area.height || target.width < min_area.width {
         return Err(Error::new(ErrorKind::Other,
                        format!("Target size: {}, {} is below the minimum supported range: {}, {}", target.width, target.height, min_area.width, min_area.height)))
@@ -93,10 +93,12 @@ pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Rec
             y = center(target_height, frame_height, Alignment::LEFT)?;
             y += frame_size.y;
         }
-        return Ok(Rect::new(x, y, target_width, target_height))
+
+        let start_position = Position::new(x,y);
+        return Ok(Area::new(start_position, target_width, target_height))
     } else {
         // height and width match the target exactly
-        return Ok(target);
+        return Ok(Area::from_rect(target));
     }
 }
 

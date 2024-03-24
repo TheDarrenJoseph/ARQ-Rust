@@ -146,37 +146,6 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(())
     }
 
-    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, Error> {
-        loop {
-            let ui_wrapper = &mut self.ui_wrapper;
-            let start_menu_mut = ui_wrapper.ui.get_start_menu_mut();
-
-            let last_selection = start_menu_mut.selection;
-            let key = io::stdin().keys().next().unwrap().unwrap();
-            start_menu_mut.handle_input(key);
-            let selection = start_menu_mut.selection;
-            info!("Selection is: {}", selection);
-            if start_menu_mut.exit {
-                info!("Menu exited.");
-                return Ok(StartMenuChoice::Quit);
-            }
-
-            if start_menu_mut.selected {
-                match start_menu_mut.selection.try_into() {
-                    Ok(x) => {
-                        return Ok(x);
-                    },
-                    Err(_) => {}
-                }
-            }
-
-            if last_selection != selection {
-                info!("Selection changed to: {}", selection);
-                ui_wrapper.draw_start_menu()?;
-            }
-        }
-    }
-
     fn setup_sinks(&mut self) -> Result<(), Error> {
         if self.sound_sinks.is_none() {
             // Start the sound sinks and play bg music
@@ -189,63 +158,80 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(())
     }
 
-    // std::result::Result< rtsp_types::Response<Body>, ClientActionError> > + Send> >
+    pub fn init(&mut self) -> Result<(), Error> {
+        self.setup_sinks()?;
+
+        let ui_wrapper = &mut self.ui_wrapper;
+        let ui = &mut ui_wrapper.ui;
+        let terminal_manager = &mut ui_wrapper.terminal_manager;
+
+        terminal_manager.terminal.draw(|frame| {
+            ui.init(frame);
+        })?;
+
+        let ui_layout = &mut ui.ui_layout;
+        let ui_layout = ui_layout.as_mut().ok_or("Failed to get ui_layout, has it been initialised?").unwrap();
+        terminal_manager.terminal.draw(|frame| {
+            ui_layout.init_areas(frame.size());
+        })?;
+
+        Ok(())
+    }
 
     pub async fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, Error> > + '_ >> {
         Box::pin(async move {
-            self.setup_sinks()?;
-            loop {
-                // Hide additional widgets when paused
-                self.ui_wrapper.ui.render_additional = false;
-                self.ui_wrapper.draw_start_menu()?;
-                let start_choice = if choice.is_some() { choice.clone().unwrap() } else { self.handle_start_menu_selection()? };
-                self.ui_wrapper.clear_screen()?;
-                match start_choice {
-                    StartMenuChoice::Play => {
-                        self.ui_wrapper.ui.render_additional = true;
-                        if !self.game_running {
-                            info!("Starting game..");
-                            if let Some(goc) = self.start_game().await? {
-                                return Ok(Some(goc));
-                            }
-                            break;
-                        } else {
-                            return Ok(None);
-                        }
-                    },
-                    StartMenuChoice::Settings => {
-                        info!("Showing settings..");
+            let ui_wrapper = &mut self.ui_wrapper;
+            ui_wrapper.clear_screen()?;
 
-                        let widgets = build_settings_widgets(&self.settings);
-                        let mut settings_menu = SettingsMenuView {
-                            ui: &mut self.ui_wrapper.ui,
-                            terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                            menu: WidgetMenu {
-                                selected_widget: Some(0),
-                                widgets: WidgetList { widgets, widget_index: Some(0) }
-                            }
-                        };
-
-                        settings_menu.begin()?;
-                        let widgets = settings_menu.menu.widgets;
-                        self.handle_settings_menu_selection(widgets)?;
-                        // Ensure we're using any changes to the settings
-                        self.update_from_settings()?;
-                    },
-                    StartMenuChoice::Info => {
-                        info!("Showing info..");
-                        let _ui = &mut self.ui_wrapper.ui;
-                        self.ui_wrapper.draw_info()?;
-                        io::stdin().keys().next();
-                    },
-                    StartMenuChoice::Quit => {
-                        if self.game_running {
-                            self.game_running = false;
+            // Hide additional widgets when paused
+            self.ui_wrapper.ui.render_additional = false;
+            let start_choice = self.ui_wrapper.draw_start_menu()?.view_specific_result.unwrap();
+            match start_choice {
+                StartMenuChoice::Play => {
+                    self.ui_wrapper.ui.render_additional = true;
+                    if !self.game_running {
+                        info!("Starting game..");
+                        if let Some(goc) = self.start_game().await? {
+                            return Ok(Some(goc));
                         }
-                        return Ok(Some(GameOverChoice::EXIT));
+                        return Ok(None);
+                    } else {
+                        return Ok(None);
                     }
+                },
+                StartMenuChoice::Settings => {
+                    info!("Showing settings..");
+
+                    let widgets = build_settings_widgets(&self.settings);
+                    let mut settings_menu = SettingsMenuView {
+                        ui: &mut self.ui_wrapper.ui,
+                        terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                        menu: crate::view::util::widget_menu::WidgetMenu {
+                            selected_widget: Some(0),
+                            widgets: WidgetList { widgets, widget_index: Some(0) }
+                        }
+                    };
+
+                    settings_menu.begin()?;
+                    let widgets = settings_menu.menu.widgets;
+                    self.handle_settings_menu_selection(widgets)?;
+                    // Ensure we're using any changes to the settings
+                    self.update_from_settings()?;
+                },
+                StartMenuChoice::Info => {
+                    info!("Showing info..");
+                    let _ui = &mut self.ui_wrapper.ui;
+                    self.ui_wrapper.draw_info()?;
+                    io::stdin().keys().next();
+                },
+                StartMenuChoice::Quit => {
+                    if self.game_running {
+                        self.game_running = false;
+                    }
+                    return Ok(Some(GameOverChoice::EXIT));
                 }
             }
+
             return Ok(None)
         })
     }

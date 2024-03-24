@@ -90,7 +90,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
             // Then render the map
             let map_widget: MapWidget = MapWidget::new( map_view_areas );
             frame.render_stateful_widget(map_widget, frame_size, level);
-        });
+        })?;
 
         Ok(())
     }

@@ -5,7 +5,7 @@ use tui::style::{Color, Style};
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};
 
-use crate::map::position::Area;
+use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
 use crate::ui::ui_util::{center_area, MIN_AREA};
@@ -45,16 +45,28 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
                 let block = Block::default()
                     .borders(Borders::ALL)
                     .style(Style::default().bg(Color::Black));
-                frame.render_widget(block, area);
+                frame.render_widget(block, area.to_rect());
 
                 let paragraph = Paragraph::new(Span::from(message.clone()));
-                let message_area = Rect::new(area.x + 2,area.y + 2, frame.size().width / 2, 1);
-                frame.render_widget(paragraph, message_area);
+
+                let message_area = Area::new(
+                    Position::new(area.start_position.x + 2, area.start_position.y + 2),
+                    1,
+                    area.width / 2
+                );
+                frame.render_widget(paragraph, message_area.to_rect());
 
                 let enter_text = String::from("[Enter]");
                 let paragraph = Paragraph::new(Span::from(enter_text.clone()));
-                let message_area = Rect::new((area.width + area.x) / 2 - enter_text.len() as u16, area.height + area.y - 1, enter_text.len() as u16, 1);
-                frame.render_widget(paragraph, message_area);
+
+                let message_start_x = (area.width + area.start_position.x) / 2 - enter_text.len() as u16;
+                let message_start_y =  area.height + area.start_position.y - 1;
+                let message_area = Area::new(
+                    Position::new(message_start_x, message_start_y),
+                    enter_text.len() as u16,
+                    1
+                );
+                frame.render_widget(paragraph, message_area.to_rect());
             }  else {
                 let err = centered_area_result.err().unwrap();
                 error!("{}", err);

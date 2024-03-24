@@ -5,8 +5,12 @@ use log::error;
 use termion::input::TermRead;
 
 use tui::layout::Rect;
+use crate::map::position::Area;
 use crate::progress::MultiStepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas_builder::UIAreasBuilder;
+use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED};
 use crate::ui::ui_util::{center_area};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
@@ -38,14 +42,12 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
             log::info!("Showing progress: {}/{}", step_number, step_count);
             let fh = &mut self.frame_handler;
             self.terminal_manager.terminal.draw(|frame| {
-                let target_area = Rect::new(0, 0, 45, 6);
-                let area_result = center_area(target_area, frame.size(), target_area);
+                let ui_areas= UIAreasBuilder::new(Area::from_rect(frame.size()))
+                    .layout_type(SINGLE_MAIN_WINDOW_CENTERED)
+                    .build().1;
 
-                if let Ok(area) = area_result {
-                    fh.handle_frame(frame, FrameData { data: progress.clone(), frame_size: area })
-                } else {
-                    error!("{}", area_result.err().unwrap());
-                }
+                let main_area = ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap();
+                fh.handle_frame(frame, FrameData { data: progress.clone(), ui_areas: ui_areas.clone(), frame_area: main_area.area })
             });
         }
     }

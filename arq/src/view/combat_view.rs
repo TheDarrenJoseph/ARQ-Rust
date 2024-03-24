@@ -12,12 +12,13 @@ use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
-use crate::view::framehandler::combat::{CombatFrameHandler, CombatViewAreas};
+use crate::view::framehandler::combat::{CombatFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
 use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_MAIN};
+use crate::ui::ui_layout::LayoutType;
 use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
@@ -88,29 +89,17 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         verify_display_size::<B>(self.terminal_manager);
         let fh = &mut self.frame_handler;
 
-        let frame_size = self.terminal_manager.terminal.get_frame().size();
+        let frame_area = Area::from_rect(self.terminal_manager.terminal.get_frame().size());
         let mut ui_layout = ui.ui_layout.as_mut().unwrap();
-        let areas = ui_layout.get_or_build_areas(frame_size);
+        let ui_areas = ui_layout.get_or_build_areas(frame_area.to_rect(), LayoutType::COMBAT_VIEW);
 
-        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
-            let main_area = main.area;
-            // TODO we probably don't want to use the entire frame here
-            // This doesn't respect UILayout
-            // We should reconsider the building of custom areas, or work it into UILayout?
-            let combat_view_areas = build_view_areas(frame_size)?;
-            self.terminal_manager.terminal.draw(|frame| {
-                let centered = center_area(MIN_AREA, main_area, MIN_AREA);
-                if centered.is_ok() {
-                    fh.areas = Some(combat_view_areas);
-                    // TODO using frame_size here is risky and doesn't respect UILayout
-                    let frame_data = FrameData { frame_size: frame_size, data: battle.clone() };
-                    fh.handle_frame(frame, frame_data);
-                } else {
-                    let err = centered.err().unwrap();
-                    error!("{}", err)
-                }
-            });
-        }
+        // TODO get the view areas and pass them to the FrameHandler
+        self.terminal_manager.terminal.draw(|frame| {
+                // TODO using frame_size here is risky and doesn't respect UILayout
+                let frame_data = FrameData { frame_area: frame_area, data: battle.clone(), ui_areas: ui_areas.clone() };
+                fh.handle_frame(frame, frame_data);
+        });
+
 
         return Ok(());
     }
@@ -155,51 +144,6 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
             }
         }
     }
-}
-
-fn build_view_areas(frame_size: Rect) -> Result<CombatViewAreas, std::io::Error> {
-    // Try to center, or else use the whole frame
-    let frame_centered = center_area(MIN_AREA, frame_size, MIN_AREA);
-    let total_area;
-    if let Ok(centered) = frame_centered {
-        total_area = centered;
-    } else {
-        total_area = frame_size;
-    }
-
-    // Split the entire view area into main and console
-    let ui_areas = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage(80),
-                Constraint::Percentage(20)
-            ].as_ref()
-        )
-        .split(total_area);
-
-    let mut console_rect = ui_areas[1].clone();
-    // To make space for the minimap, remove some of the left-hand side of the console area
-
-    let frame_width_float = frame_size.width as f32;
-    // Give 20% of the frame width to the minimap area
-    let minimap_width = (frame_width_float / 100.0 * 20.0) as u16;
-    // Leaving 80% for the console
-    let console_width = (frame_width_float / 100.0 * 80.0) as u16;
-    console_rect.x = minimap_width;
-    console_rect.width = console_width;
-
-    let minimap_position = Position::new(console_rect.x - minimap_width, console_rect.y);
-    let mut minimap_ui_area = Area::new(minimap_position, minimap_width, console_rect.height);
-
-    let main_area = BorderedArea::from_area(Area::from_rect(ui_areas[0]))?;
-    let console_area = BorderedArea::from_rect(console_rect)?;
-    let minimap_area = BorderedArea::from_area(minimap_ui_area)?;
-    return Ok(CombatViewAreas {
-        main_area,
-        console_area,
-        minimap_area
-    })
 }
 
 #[derive(Clone)]

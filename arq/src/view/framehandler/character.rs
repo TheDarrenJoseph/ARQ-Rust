@@ -9,6 +9,7 @@ use tui::widgets::{Block, Borders};
 use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
 use crate::error::io_error_utils::error_result;
+use crate::map::position::Area;
 use crate::ui::ui_util::{center_area};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
@@ -33,7 +34,7 @@ pub struct CharacterFrameHandler {
     pub character : Character,
     pub widgets : WidgetList,
     pub view_mode : ViewMode,
-    pub attributes_area: Rect
+    pub attributes_area: Area
 }
 
 pub enum CharacterFrameHandlerInputResult {
@@ -101,8 +102,7 @@ impl CharacterFrameHandler {
             let x_offset = 1;
             let mut y_offset = 1;
             for widget in self.widgets.widgets.iter_mut() {
-                //let widget_size = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
-                let widget_area = Rect::new(self.attributes_area.x + x_offset, self.attributes_area.y + y_offset, self.attributes_area.width.clone() / 2, 1);
+                let widget_area = Rect::new(self.attributes_area.start_position.x + x_offset, self.attributes_area.start_position.y + y_offset, self.attributes_area.width.clone() / 2, 1);
                 match &mut widget.state_type {
                     StatefulWidgetType::Text(w) => {
                         frame.render_stateful_widget(w.clone(), widget_area, &mut w.clone());
@@ -135,7 +135,7 @@ impl CharacterFrameHandler {
             .title(title);
         frame.render_widget(window_block, window_area);
 
-        let character = data.unpack();
+        let character = data.get_data_mut();
         if self.widgets.widgets.is_empty() {
             log::info!("Building input widgets...");
             self.build_widgets(character);
@@ -156,7 +156,7 @@ impl CharacterFrameHandler {
 
         if let Ok(area) = attributes_area_result {
             self.attributes_area = area;
-            frame.render_widget(attributes_block, area);
+            frame.render_widget(attributes_block, area.to_rect());
             self.draw_widgets(frame);
         } else {
             error!("{}", attributes_area_result.err().unwrap())
@@ -171,7 +171,7 @@ impl CharacterFrameHandler {
 
     pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data:  FrameData<Character>) {
         log::info!("Drawing character details...");
-        let name = data.unpack().get_name().clone();
+        let name = data.get_data_mut().get_name().clone();
         self.draw_character_details(frame, data,name);
     }
 

@@ -14,7 +14,7 @@ use crate::map::position::{Area};
 use crate::menu::{Menu, ToList};
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_areas_builder::UIAreasBuilder;
-use crate::ui::ui_layout::UILayout;
+use crate::ui::ui_layout::{LayoutType, UILayout};
 use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -22,7 +22,6 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::{StandardWidgetType};
 
 pub struct UI {
-    start_menu : Menu,
     pub render_additional: bool,
     console_visible: bool,
     additional_widgets: Vec<StandardWidgetType>,
@@ -40,10 +39,8 @@ pub enum StartMenuChoice {
 }
 
 pub fn build_ui() -> UI {
-    let start_menu = menu::build_start_menu(false);
     let frame_handler = ConsoleFrameHandler { buffer: ConsoleBuffer { content: String::from("") } };
     UI {
-        start_menu,
         frame_size : None,
         render_additional: false,
         console_visible: false,
@@ -86,9 +83,8 @@ impl std::convert::TryFrom<usize> for SettingsMenuChoice {
 
 
 pub trait Draw {
-    fn draw_start_menu<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>, area: Rect);
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>);
 }
 
@@ -100,8 +96,13 @@ fn build_main_block<'a>() -> Block<'a> {
 }
 
 impl UI {
-    pub fn rebuild_start_menu(&mut self, game_started: bool) {
-        self.start_menu = menu::build_start_menu(game_started);
+
+    pub fn init<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
+        let frame_size = Area::from_rect(frame.size());
+        self.frame_size = Some(frame_size);
+        if self.ui_layout.is_none() {
+            self.ui_layout = Some(UILayout::new(frame_size));
+        }
     }
 
     /*
@@ -111,28 +112,18 @@ impl UI {
         3. Stat bars and command usage hints (additional widgets)
      */
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        let frame_size = Area::from_rect(frame.size());
-        self.frame_size = Some(frame_size);
-        if self.ui_layout.is_none() {
-            self.ui_layout = Some(UILayout::new(frame_size));
-        }
-
-        let ui_layout = self.ui_layout.as_mut().unwrap();
-        let areas = ui_layout.get_or_build_areas(frame.size());
-
+        let ui_layout =  self.ui_layout.as_mut().ok_or("Failed to get ui_layout, has it been initialised?").unwrap();
+        let areas = ui_layout.get_or_build_areas(frame.size(), LayoutType::STANDARD_SPLIT);
         if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             let main_block = build_main_block();
             {
-                frame.render_widget(main_block, main_area);
+                frame.render_widget(main_block, main_area.to_rect());
             }
         }
 
-        if let Some(console) = areas.get_area(UI_AREA_NAME_CONSOLE) {
-            let console_area = console.area;
-            if self.console_visible {
-                self.draw_console(frame, console_area);
-            }
+        if self.console_visible {
+            self.draw_console(frame);
         }
 
         if self.render_additional {
@@ -159,14 +150,6 @@ impl UI {
         self.frame_handler.buffer.content = String::new();
     }
 
-    pub fn get_start_menu(&self) -> &Menu {
-        &self.start_menu
-    }
-
-    pub fn get_start_menu_mut(&mut self) -> &mut Menu {
-        &mut self.start_menu
-    }
-
     pub fn is_console_visible(&self) -> bool {
         self.console_visible
     }
@@ -184,22 +167,7 @@ pub fn get_input_key() -> Result<Key, io::Error> {
     Ok(io::stdin().keys().next().unwrap()?)
 }
 
-fn draw_menu<B: tui::backend::Backend>(frame: &mut tui::terminal::Frame<'_, B>, menu : &mut  Menu) {
-    let mut menu_list_state = ListState::default();
-    menu_list_state.select(Some(menu.selection.try_into().unwrap()));
-
-    let frame_size = frame.size();
-    let menu_size = Rect::new(4, 4, frame_size.width / 2, menu.menu_titles.len().try_into().unwrap());
-    let menu_list = menu.to_list();
-    frame.render_stateful_widget(menu_list, menu_size, &mut menu_list_state);
-}
-
 impl Draw for UI {
-
-    fn draw_start_menu<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        self.render(frame);
-        draw_menu(frame, &mut self.start_menu);
-    }
 
     fn draw_info<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         self.render(frame);
@@ -226,15 +194,18 @@ impl Draw for UI {
         frame.render_widget(paragraph, paragraph_size);
     }
 
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, area: Rect) {
-        let frame_data = FrameData { frame_size: area, data: ConsoleBuffer { content: self.frame_handler.buffer.content.clone() } };
+    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+        let ui_areas = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::STANDARD_SPLIT);
+        let console_area = ui_areas.get_area(UI_AREA_NAME_CONSOLE).unwrap().area;
+        let frame_data = FrameData { frame_area: console_area, ui_areas: ui_areas.clone(), data: ConsoleBuffer { content: self.frame_handler.buffer.content.clone() } };
         self.frame_handler.handle_frame(frame, frame_data);
     }
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let widget_count = self.additional_widgets.len();
-        if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas().get_area(UI_AREA_NAME_MAIN) {
+        if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::STANDARD_SPLIT).get_area(UI_AREA_NAME_MAIN) {
             let area = main_area.area;
+            let rect = area.to_rect();
             let max_width = area.width / 2;
             if widget_count > 0 {
                 let mut _offset = 0;
@@ -242,11 +213,11 @@ impl Draw for UI {
                     match widget {
                         StandardWidgetType::StatLine(w) => {
                             frame.render_widget(w.clone(),
-                                                Rect::new(area.x + 1, area.y, max_width, 1));
+                                                Rect::new(rect.x + 1, rect.y, max_width, 1));
                         },
                         StandardWidgetType::UsageLine(w) => {
                             frame.render_widget(w.clone(),
-                                                Rect::new(area.x + 1, area.height - 1, area.width, 1));
+                                                Rect::new(rect.x + 1, rect.height - 1, rect.width, 1));
                         },
                         _ => {}
                     }

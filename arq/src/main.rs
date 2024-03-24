@@ -44,6 +44,8 @@ async fn begin() -> Result<(), io::Error> {
     let mut choice = None;
     let mut game_over = false;
     while !game_over {
+        engine.init()?;
+
         let result = engine.start_menu(choice.clone()).await.await;
         match result {
             Ok(Some(goc)) => {

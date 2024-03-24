@@ -1,17 +1,124 @@
 use std::collections::HashMap;
+use futures::future::err;
+use log::error;
+
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use crate::map::position::Area;
-use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIArea, UIAreas};
+use tui::style::{Modifier, Style};
+use tui::text::Span;
+use tui::widgets::{Block, Borders};
+
+use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIArea, UIAreas};
+use crate::ui::ui_layout::LayoutType;
+use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
 use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct UIAreasBuilder {
     frame_size: Area,
-    layout_type: LayoutType
+    pub(crate) layout_type: LayoutType
 }
 
-pub enum LayoutType {
-    STANDARD_SPLIT,
-    SINGLE_MAIN_WINDOW
+/*
+    Tries to build a single centered Rect based on 80x24 minimum frame size
+    If the view is smaller than this, the view will be split as per usual for smaller sizes
+ */
+fn build_single_main_window_centered_areas(frame_size: Rect) -> HashMap::<String, UIArea> {
+    let mut areas = HashMap::<String, UIArea>::new();
+
+    // TODO add/use resolution settings
+    if frame_size.width >= 80 && frame_size.height >= 24 {
+        let target = Rect::new(0, 0, 80, 24);
+        let area = center_area(target, frame_size, MIN_AREA).unwrap();
+        areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area });
+
+    } else {
+        // TODO we probably want to throw an error / show the new error screen for this case
+        error!("Screen resolution not supported, cannot build UI areas..");
+    }
+    areas
+}
+
+pub(crate) fn build_single_main_window_areas(frame_size: Rect) -> HashMap::<String, UIArea>   {
+    let mut areas = HashMap::<String, UIArea>::new();
+    areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area: Area::from_rect(frame_size) });
+    areas
+}
+
+fn build_split_areas(frame_size: Rect) -> HashMap::<String, UIArea> {
+    let rects = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(80),
+                Constraint::Percentage(20)
+            ].as_ref()
+        )
+        .split(frame_size);
+
+    let mut areas = HashMap::<String, UIArea>::new();
+    let main_area = Area::from_rect(rects[0]);
+    let console_area = Area::from_rect(rects[1]);
+    areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area: main_area });
+    areas.insert(UI_AREA_NAME_CONSOLE.to_string(), UIArea { name: UI_AREA_NAME_CONSOLE.to_string(), area: console_area });
+    areas
+}
+
+/*
+ The combat view uses a special UI layout consisting of:
+ 1. The 'main area' which is the top 80% vertical of the screen, this is the same as normal except it's split into left/right columns
+ 2. The 'console area' which is an area below the main area with left-offset to allow for the minimap
+ 2. The 'minimap area' which is an area to the left of the console area
+
+pub main_area : BorderedArea,
+pub console_area : BorderedArea,
+pub minimap_area : BorderedArea
+ */
+fn build_combat_view_areas(frame_size: Rect) -> HashMap::<String, UIArea>  {
+
+    // Try to center, or else use the whole frame
+    let frame_centered = center_area(MIN_AREA, frame_size, MIN_AREA);
+    let total_area;
+    if let Ok(centered) = frame_centered {
+        total_area = centered;
+    } else {
+        total_area = Area::from_rect(frame_size);
+    }
+
+    // Split the entire view area into main and console
+    let ui_areas = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(80),
+                Constraint::Percentage(20)
+            ].as_ref()
+        )
+        .split(total_area.to_rect());
+
+    let mut console_rect = ui_areas[1].clone();
+
+    // To make space for the minimap, remove some of the left-hand side of the console area
+    let frame_width_float = frame_size.width as f32;
+    // Give 20% of the frame width to the minimap area
+    let minimap_width = (frame_width_float / 100.0 * 20.0) as u16;
+    // Leaving 80% for the console
+    let console_width = (frame_width_float / 100.0 * 80.0) as u16;
+    console_rect.x = minimap_width;
+    console_rect.width = console_width;
+
+    let minimap_position = Position::new(console_rect.x - minimap_width, console_rect.y);
+    let minimap_ui_area = Area::new(minimap_position, minimap_width, console_rect.height);
+
+    let main_area = BorderedArea::from_area(Area::from_rect(ui_areas[0])).unwrap();
+    let console_area = BorderedArea::from_rect(console_rect).unwrap();
+    let minimap_area = BorderedArea::from_area(minimap_ui_area).unwrap();
+
+    let mut areas = HashMap::<String, UIArea>::new();
+    areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area: main_area.outer });
+    areas.insert(UI_AREA_NAME_CONSOLE.to_string(), UIArea { name: UI_AREA_NAME_CONSOLE.to_string(), area: console_area.outer });
+    areas.insert(UI_AREA_NAME_MINIMAP.to_string(), UIArea { name: UI_AREA_NAME_MINIMAP.to_string(), area: minimap_area.outer });
+
+    areas
 }
 
 impl UIAreasBuilder {
@@ -19,8 +126,6 @@ impl UIAreasBuilder {
     pub fn new(frame_size: Area) -> UIAreasBuilder {
         UIAreasBuilder { frame_size, layout_type: LayoutType::STANDARD_SPLIT }
     }
-
-
 
     pub fn needs_rebuilding(&self, frame_size: Rect) -> bool {
         let builder_frame_size = self.frame_size.to_rect();
@@ -33,47 +138,28 @@ impl UIAreasBuilder {
         }
     }
 
-    /*
-        Tries to build a single centered Rect based on 80x24 minimum frame size
-        If the view is smaller than this, the view will be split as per usual for smaller sizes
-     */
-    fn get_single_centered_view_area(&self, frame_size: Rect) -> Rect {
-        if frame_size.width >= 80 && frame_size.height >= 24 {
-            let target = Rect::new(0, 0, 80, 24);
-            return center_area(target, frame_size, MIN_AREA).unwrap();
-        } else {
-            // TODO we probably want to throw an error / show the new error screen for this case
-            return frame_size;
-        }
-    }
-
     // If the console if visible, splits a frame vertically into the 'main' and lower console areas
     // Otherwise returns the original frame size
-    pub fn build(&self) -> UIAreas {
-        let frame_size_rect : Rect = self.frame_size.to_rect();
-        let rects: Vec<Rect> = match self.layout_type {
+    pub fn build(&self) -> (LayoutType, UIAreas) {
+        let frame_size : Rect = self.frame_size.to_rect();
+        match self.layout_type {
             LayoutType::STANDARD_SPLIT => {
-                Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(
-                        [
-                            Constraint::Percentage(80),
-                            Constraint::Percentage(20)
-                        ].as_ref()
-                    )
-                    .split(frame_size_rect)
+                let areas = build_split_areas(frame_size);
+                return (STANDARD_SPLIT, UIAreas::new(areas))
             },
             LayoutType::SINGLE_MAIN_WINDOW => {
-                vec![frame_size_rect]
+                let areas= build_single_main_window_areas(frame_size);
+                return (SINGLE_MAIN_WINDOW, UIAreas::new(areas))
+            },
+            LayoutType::SINGLE_MAIN_WINDOW_CENTERED => {
+                let areas = build_single_main_window_centered_areas(frame_size);
+                return (SINGLE_MAIN_WINDOW_CENTERED, UIAreas::new(areas))
+            },
+            COMBAT_VIEW => {
+                let areas = build_combat_view_areas(frame_size);
+                return (COMBAT_VIEW, UIAreas::new(areas))
             }
         };
-
-        let mut areas = HashMap::<String, UIArea>::new();
-        areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area: rects[0] });
-        if rects.len() == 2 {
-            areas.insert(UI_AREA_NAME_CONSOLE.to_string(), UIArea { name: UI_AREA_NAME_CONSOLE.to_string(), area: rects[1] });
-        }
-        UIAreas::new(areas)
     }
 
     pub fn set_frame_size(&mut self, frame_size: Area) {
@@ -88,11 +174,10 @@ impl UIAreasBuilder {
 
 #[cfg(test)]
 mod tests {
-    use tui::layout::Rect;
-    use crate::main;
     use crate::map::position::{Area, Position};
-    use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIArea, UIAreas};
-    use crate::ui::ui_areas_builder::{LayoutType, UIAreasBuilder};
+    use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIArea};
+    use crate::ui::ui_areas_builder::UIAreasBuilder;
+    use crate::ui::ui_layout::LayoutType;
 
     fn assert_area(ui_area: &UIArea, x: u16, y: u16, width: u16, height: u16) {
         assert_eq!(x, ui_area.area.x);
@@ -107,8 +192,11 @@ mod tests {
         let frame_size =  Area::new(Position::new(0,0), 80, 24);
         // WHEN we call to build the standard split areas (default)
         let builder = UIAreasBuilder::new(frame_size);
-        let areas = builder.build();
+        let result = builder.build();
+        let areas = result.1;
+
         // THEN we expect 2 areas split 80/30% vertically
+        assert_eq!(LayoutType::STANDARD_SPLIT, result.0);
         assert_eq!(areas.len(), 2);
 
         let main_area_result = areas.get_area(UI_AREA_NAME_MAIN);
@@ -132,11 +220,14 @@ mod tests {
         // GIVEN a frame size of 80x24
         let frame_size =  Area::new(Position::new(0,0), 80, 24);
         // WHEN we call to build the a single main window
-        let areas = UIAreasBuilder::new(frame_size)
+        let result = UIAreasBuilder::new(frame_size)
             .layout_type(LayoutType::SINGLE_MAIN_WINDOW)
             .build();
 
+        let areas = result.1;
+
         // THEN we expect a single area using 100% of the available space
+        assert_eq!(LayoutType::SINGLE_MAIN_WINDOW, result.0);
         assert_eq!(1, areas.len());
 
         let main_area_result = areas.get_area(UI_AREA_NAME_MAIN);

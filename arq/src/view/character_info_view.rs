@@ -13,10 +13,11 @@ use tui::widgets::{Block, Borders, Tabs};
 
 use crate::character::{Character};
 use crate::item_list_selection::ListSelection;
-use crate::map::position::Area;
+use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
+use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
 use crate::view::util::callback::Callback;
 use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
@@ -76,7 +77,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
-        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW, attributes_area: Rect::new(0, 0, 0, 0) };
+        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW, attributes_area: Area::new(Position::zero(), 0, 0) };
         self.frame_handler.character_view = Some(character_view);
     }
 
@@ -300,18 +301,20 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
 
         verify_display_size::<B>(self.terminal_manager);
 
-        let frame_size = self.terminal_manager.terminal.get_frame().size();
         let mut ui_layout = ui.ui_layout.as_mut().unwrap();
-        let areas = ui_layout.get_or_build_areas(frame_size);
+        let frame_size = self.terminal_manager.terminal.get_frame().size();
+        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
 
-        if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
+        if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             self.terminal_manager.terminal.draw(|frame| {
                 ui.render(frame);
                 // Sizes for the entire 'Character Info' frame area
-                let frame_area = Rect { x: main_area.x, y: main_area.y + 1, width: main_area.width.clone(), height: main_area.height.clone() - 1 };
+
+                let rect = Rect { x: main_area.start_position.x, y: main_area.start_position.y + 1, width: main_area.width.clone(), height: main_area.height.clone() - 1 };
+                let area = Area::from_rect(rect);
                 let specific_frame_data = CharacterInfoViewFrameData { character };
-                frame_handler.handle_frame(frame, FrameData { frame_size: frame_area, data: specific_frame_data });
+                frame_handler.handle_frame(frame, FrameData { frame_area: area, ui_areas: ui_areas.clone(), data: specific_frame_data });
             })?;
         }
         Ok(())
@@ -384,28 +387,41 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             .divider(VERTICAL)
             .select(selection_index as usize);
 
-        let frame_size = data.frame_size;
-        let heading_area = Rect::new(frame_size.x + 1, frame_size.y, frame_size.width - 2, 3);
-        frame.render_widget(tabs, heading_area);
+        let frame_size = data.frame_area;
+        let heading_area = Area::new(
+            Position::new(frame_size.start_position.x + 1, frame_size.start_position.y),
+            frame_size.width - 2,
+            3
+        );
+        frame.render_widget(tabs, heading_area.to_rect());
 
+        let ui_areas  = data.ui_areas;
         let character = data.data.character;
         match self.tab_choice {
             TabChoice::INVENTORY => {
+                let inventory_area = Area::new(
+                    Position::new(frame_size.start_position.x + 1, frame_size.start_position.y + 2),
+                    frame_size.width - 2,
+                    frame_size.height - 3
+                );
+
                 if let Some(cfh) = &mut self.choice_frame_handler {
-                    let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
-                    let frame_data = FrameData { data: Vec::new(), frame_size: inventory_area};
+                    let frame_data = FrameData { data: Vec::new(), ui_areas, frame_area: inventory_area};
                     cfh.handle_frame(frame, frame_data);
                 } else if let Some(topmost_view) = self.container_frame_handlers.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
-                    let inventory_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
-                    topmost_view.handle_frame(frame, FrameData { frame_size: inventory_area, data: &mut frame_inventory });
+                    topmost_view.handle_frame(frame, FrameData { data: &mut frame_inventory, ui_areas, frame_area: inventory_area });
                 }
             },
             TabChoice::CHARACTER => {
                 match &mut self.character_view {
                     Some(char_view) => {
-                        let character_area = Rect::new(frame_size.x + 1, frame_size.y + 2, frame_size.width - 2, frame_size.height - 3);
-                        char_view.handle_frame(frame,  FrameData { frame_size: character_area, data: character.clone() } );
+                        let character_area = Area::new(
+                            Position::new(frame_size.start_position.x + 1, frame_size.start_position.y + 2),
+                            frame_size.width - 2,
+                            frame_size.height - 3
+                        );
+                        char_view.handle_frame(frame,  FrameData { data: character.clone(), ui_areas, frame_area: character_area } );
                     },
                     _ => {}
                 }

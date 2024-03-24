@@ -42,8 +42,8 @@ impl <B : tui::backend::Backend> FrameHandler<B,MultiStepProgress> for MapGenera
     fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<MultiStepProgress>) {
         let gauge_result = build_gauge(data.data);
         if let Some(gauge) = gauge_result {
-            let area = data.frame_size;
-            frame.render_widget(gauge, area);
+            let area = data.frame_area;
+            frame.render_widget(gauge, area.to_rect());
 
             let seed = Span::from(String::from(format!("Map Seed: {}", self.seed)));
             let seed_area = Rect::new(0, 0, frame.size().width, 1);

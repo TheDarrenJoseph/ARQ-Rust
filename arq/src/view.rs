@@ -25,6 +25,7 @@ pub mod game_over_view;
 pub mod combat_view;
 pub mod model;
 pub mod dialog_view;
+pub mod menu_view;
 
 /*
     A "View" is:
