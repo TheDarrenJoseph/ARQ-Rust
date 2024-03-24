@@ -124,6 +124,13 @@ impl <B : Backend + Send> GameEngine<B> {
                         s.value = t.get_input() as u32;
                     }
                 },
+                StatefulWidgetType::Dropdown(mut t) => {
+                    // Update the setting value from the widget
+                    let setting = self.settings.dropdown_settings.iter_mut().find(|x| x.name == t.get_name());
+                    if let Some(s) = setting {
+                        s.value.chosen_option = t.get_selection();
+                    }
+                },
                 _ => {}
             }
         }

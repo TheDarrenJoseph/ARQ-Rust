@@ -11,11 +11,8 @@ use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
 
 use crate::{menu};
 use crate::map::position::{Area};
-use crate::menu::{Menu, ToList};
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIAreas};
-use crate::ui::ui_areas_builder::UIAreasBuilder;
 use crate::ui::ui_layout::{LayoutType, UILayout};
-use crate::ui::ui_util::{center_area, MIN_AREA};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 

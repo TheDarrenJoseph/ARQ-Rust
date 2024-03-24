@@ -25,7 +25,7 @@ pub struct UIAreasBuilder {
 fn build_single_main_window_centered_areas(total_area: Area) -> HashMap::<String, UIArea> {
     let mut areas = HashMap::<String, UIArea>::new();
     let target = Rect::new(0, 0, 80, 24);
-    let area = center_area(target, total_area.to_rect(), MIN_AREA).unwrap();
+    let area = center_area(target, total_area.to_rect(), MIN_AREA.to_rect()).unwrap();
     areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area });
     areas
 }

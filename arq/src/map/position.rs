@@ -16,7 +16,7 @@ impl Position {
     pub fn new(x: u16, y: u16) -> Position {
         Position { x, y }
     }
-    pub fn zero() -> Position {
+    pub const fn zero() -> Position {
         Position { x: 0, y: 0 }
     }
 
@@ -91,7 +91,7 @@ pub struct Area {
 }
 
 impl Area {
-    pub fn new(start_position: Position, width: u16, height: u16) -> Area {
+    pub const fn new(start_position: Position, width: u16, height: u16) -> Area {
         build_rectangular_area(start_position, width,height)
     }
 
@@ -227,6 +227,10 @@ impl Area {
             }
         }
         positions
+    }
+
+    pub fn get_description(&self) -> String {
+        format!("{}x{}", self.width, self.height)
     }
 
 }

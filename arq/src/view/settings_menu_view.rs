@@ -59,6 +59,9 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
                     StatefulWidgetType::Number(number_state) => {
                         frame.render_stateful_widget(number_state.clone(), widget_area, &mut number_state.clone());
                     },
+                    StatefulWidgetType::Dropdown(dropdown_state) => {
+                        frame.render_stateful_widget(dropdown_state.clone(), widget_area, &mut dropdown_state.clone());
+                    },
                     _ => {}
                     }
                 offset += 1;

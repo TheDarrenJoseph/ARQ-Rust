@@ -40,7 +40,7 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         self.terminal_manager.terminal.draw(|frame| {
 
             // First check for the minimum space and center the dialog
-            let centered_area_result = center_area(MIN_AREA, frame.size(), MIN_AREA);
+            let centered_area_result = center_area(MIN_AREA.to_rect(), frame.size(), MIN_AREA.to_rect());
             if let Ok(area) = centered_area_result {
                 let block = Block::default()
                     .borders(Borders::ALL)

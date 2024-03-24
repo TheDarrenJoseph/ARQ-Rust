@@ -1,6 +1,7 @@
 use crate::settings::Settings;
 use crate::widget::{Focusable, StatefulWidgetState};
 use crate::widget::stateful::boolean_widget::build_boolean_widget;
+use crate::widget::stateful::dropdown_widget::build_dropdown;
 use crate::widget::stateful::number_widget::build_number_input_with_value;
 use crate::widget::stateful::text_widget::build_text_input;
 
@@ -43,6 +44,7 @@ pub fn build_settings_widgets(settings : &Settings) -> Vec<StatefulWidgetState> 
     for setting in &settings.bool_settings {
         widgets.push(build_boolean_widget(15, setting.name.clone(), setting.value))
     }
+
     for setting in &settings.string_settings {
         widgets.push(build_text_input(15, setting.name.clone(), setting.value.clone(), 1))
     }
@@ -50,5 +52,9 @@ pub fn build_settings_widgets(settings : &Settings) -> Vec<StatefulWidgetState> 
         widgets.push(build_number_input_with_value(true, setting.value.clone() as i32,15, setting.name.clone(), 1));
     }
 
+    for setting in &settings.dropdown_settings {
+        let dropdown = build_dropdown(setting.name.clone(), true, setting.value.options.clone());
+        widgets.push(dropdown)
+    }
     widgets
 }

@@ -8,7 +8,7 @@ use crate::map::position::{Area, Position};
 use crate::ui::ui_areas::UIAreas;
 
 const MIN_VIEW_SIZE : u16 = 3;
-pub const MIN_AREA: Rect = Rect { x:0, y: 0, width: 80, height: 24};
+pub const MIN_AREA: Area = Area::new(Position::zero(), 80, 24);
 
 enum Alignment {
     LEFT,
@@ -127,7 +127,7 @@ mod tests {
         let target = Rect::new(0,0, 80,24);
 
         // WHEN we call to center for the target
-        let result = center_area(target, available, MIN_AREA);
+        let result = center_area(target, available, MIN_AREA.to_rect());
         // THEN we expect a perfectly centered result
         assert!(result.is_ok());
         let result_area = result.unwrap();
@@ -146,7 +146,7 @@ mod tests {
         let target = Rect::new(0,0, 80,24);
 
         // WHEN we call to center for the target
-        let result = center_area(target, available, MIN_AREA);
+        let result = center_area(target, available, MIN_AREA.to_rect());
         // THEN we expect a left-aligned result
         assert!(result.is_ok());
         let result_area = result.unwrap();

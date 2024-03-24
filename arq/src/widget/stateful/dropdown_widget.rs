@@ -1,6 +1,6 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::{Modifier, Style};
+use tui::style::{Color, Modifier, Style};
 use tui::widgets::StatefulWidget;
 
 use crate::widget::{StatefulWidgetState, StatefulWidgetType};
@@ -15,6 +15,11 @@ pub struct DropdownInputState {
     options : Vec<String>,
     selected_index: i8,
     chosen_option : String
+}
+
+pub struct DropdownSetting {
+    pub(crate) options : Vec<String>,
+    pub(crate) chosen_option : String
 }
 
 impl DropdownInputState {
@@ -59,7 +64,16 @@ impl DropdownInputState {
 }
 
 pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> StatefulWidgetState {
-    let state = StatefulWidgetType::Dropdown( DropdownInputState { selected: false, editable, show_options: false, name, selected_index: 0, chosen_option: options[0].to_string(), options});
+    let input_state = DropdownInputState {
+        selected: false,
+        editable,
+        show_options: false, // TODO re-enable once the dropdown widget is fixed
+        name,
+        selected_index: 0,
+        chosen_option: options[0].to_string(),
+        options};
+
+    let state = StatefulWidgetType::Dropdown(input_state);
     StatefulWidgetState { state_type: state}
 }
 
@@ -85,10 +99,15 @@ impl StatefulWidget for DropdownInputState {
                     index += 1;
                 }
             } else {
-                buf.set_string(input_offset, area.top() + index.clone(), self.chosen_option.clone(), Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
+                let style = Style::default()
+                    .fg(Color::DarkGray)
+                    .add_modifier(Modifier::REVERSED | Modifier::UNDERLINED);
+                buf.set_string(input_offset, area.top() + index.clone(), self.chosen_option.clone(), style);
             }
         } else {
-            buf.set_string(input_offset, area.top() + index.clone(),self.chosen_option.clone(), Style::default());
+            let style = Style::default()
+                .fg(Color::DarkGray);
+            buf.set_string(input_offset, area.top() + index.clone(),self.chosen_option.clone(), style);
         }
 
     }
