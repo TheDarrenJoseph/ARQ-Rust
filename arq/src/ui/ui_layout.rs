@@ -62,6 +62,12 @@ impl UILayout {
         }
     }
 
+    pub fn rebuild_areas(&mut self, frame_size: Rect) {
+        for layout_type in Self::layout_types() {
+            self.rebuild_ui_areas(frame_size, *layout_type);
+        }
+    }
+
     /*
         This tries to either:
          1. Unwrap and return the current ui_areas

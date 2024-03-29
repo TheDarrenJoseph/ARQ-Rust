@@ -11,7 +11,7 @@ use std::pin::Pin;
 
 
 
-use log::{info};
+use log::{error, info};
 
 
 use rand::{Rng, thread_rng};
@@ -135,7 +135,10 @@ impl <B : Backend + Send> GameEngine<B> {
                         let res_options = get_resolution_dropdown_options();
                         let resolution_option_chosen = res_options.iter().find(|opt| opt.display_name == t.get_selection());
                         if let Some(resolution_option) = resolution_option_chosen {
+                            info!("Resolution selected: {:?}", resolution_option.display_name);
                             s.value.chosen_option = resolution_option.clone();
+                        } else {
+                            error!("No resolution selected!")
                         }
 
                     }
@@ -158,6 +161,17 @@ impl <B : Backend + Send> GameEngine<B> {
         let bg_music_volume = self.settings.get_bg_music_volume();
         if let Some(sinks) = &mut self.sound_sinks {
             sinks.get_bg_sink_mut().configure(bg_music_volume);
+        }
+
+        let resolution = self.settings.get_resolution();
+        if let Some(res) = resolution.value {
+            info!("Re-init UI with resolution: {:?}", res);
+            self.ui_wrapper.ui.re_init::<B>(Area::from_resolution(res));
+        } else {
+            // Get the current terminal size and use that for the fullscreen size
+            let resolution = Resolution::from_rect(self.ui_wrapper.terminal_manager.terminal.get_frame().size());
+            info!("Re-init UI with fullscreen resolution: {:?}", resolution);
+            self.ui_wrapper.ui.re_init::<B>(Area::from_resolution(resolution));
         }
         Ok(())
     }

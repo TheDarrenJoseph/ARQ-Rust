@@ -45,7 +45,6 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
         terminal.draw(|frame| {
             let frame_size = frame.size();
 
-
             let mut offset = 0;
             for widget in widgets.widgets.iter() {
                 let widget_area = Rect::new(5, 5 + offset.clone(), frame_size.width.clone() / 2, 1);
@@ -85,9 +84,39 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_, CO
 
         match key {
             Key::Down => {
+                // Check for anything currently busy with focus
+                match target_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            StatefulWidgetType::Dropdown(state) => {
+                                if state.is_showing_options() {
+                                    state.select_next();
+                                    return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
+                                }
+                            }
+                            _ => {}
+                        }
+                    },
+                    None => {}
+                }
                 menu_view.widgets.next_widget();
             },
             Key::Up => {
+                // Check for anything currently busy with focus
+                match target_widget {
+                    Some(widget) => {
+                        match &mut widget.state_type {
+                            StatefulWidgetType::Dropdown(state) => {
+                                if state.is_showing_options() {
+                                    state.select_previous();
+                                    return Ok(InputResult { generic_input_result: GenericInputResult { done: false, requires_view_refresh: false }, view_specific_result: None});
+                                }
+                            }
+                            _ => {}
+                        }
+                    },
+                    None => {}
+                }
                 menu_view.widgets.previous_widget();
             },
             Key::Char('\n') => {
@@ -96,6 +125,9 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_, CO
                         match &mut widget.state_type {
                             StatefulWidgetType::Boolean(state) => {
                                 state.value = !state.value;
+                            },
+                            StatefulWidgetType::Dropdown(state) => {
+                                state.toggle_show();
                             }
                             _ => {}
                         }

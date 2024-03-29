@@ -12,6 +12,9 @@ impl Resolution {
     pub const fn new(width: u16, height: u16) -> Resolution {
         Resolution { width, height }
     }
+    pub const fn from_rect(rect: Rect) -> Resolution {
+        Resolution { width: rect.width, height: rect.height }
+    }
 
     pub fn to_rect(&self) -> Rect {
         Rect {

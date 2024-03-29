@@ -1,3 +1,4 @@
+use log::info;
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
@@ -84,7 +85,7 @@ pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> Sta
     let input_state = DropdownInputState {
         selected: false,
         editable,
-        show_options: false, // TODO re-enable once the dropdown widget is fixed
+        show_options: editable,
         name,
         selected_index: 0,
         chosen_option: options[0].to_string(),
@@ -110,9 +111,12 @@ impl StatefulWidget for DropdownInputState {
                     if opt == selected_option {
                         let selected_input_row = Rect::new(input_offset.clone(), area.top() + index.clone(), 12, 1);
                         log::info!("Selecting dropdown {} row {} : {}", self.name, index, self.chosen_option.clone());
-                        buf.set_style(selected_input_row.clone(), Style::default().add_modifier(Modifier::REVERSED | Modifier::UNDERLINED));
+                        buf.set_style(selected_input_row.clone(), Style::default().add_modifier(Modifier::UNDERLINED));
                     }
-                    buf.set_string(input_offset, area.top() + index.clone(), opt.clone(), Style::default());
+                    let x = input_offset;
+                    let y = area.top() + index.clone();
+                    info!("Drawing option at: {}, {}", x, y);
+                    buf.set_string(x, y, opt.clone(), Style::default());
                     index += 1;
                 }
             } else {
@@ -122,8 +126,7 @@ impl StatefulWidget for DropdownInputState {
                 buf.set_string(input_offset, area.top() + index.clone(), self.chosen_option.clone(), style);
             }
         } else {
-            let style = Style::default()
-                .fg(Color::DarkGray);
+            let style = Style::default();
             buf.set_string(input_offset, area.top() + index.clone(),self.chosen_option.clone(), style);
         }
 

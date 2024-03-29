@@ -101,8 +101,16 @@ impl UI {
         let resolution = Resolution::new(frame_area.width, frame_area.height);
         self.frame_size = Some(frame_area);
         if self.ui_layout.is_none() {
-            self.ui_layout = Some(UILayout::new(resolution));
+          self.ui_layout = Some(UILayout::new(resolution));
         }
+    }
+
+    pub fn re_init<B: tui::backend::Backend>(&mut self, frame_area: Area) {
+        let resolution = Resolution::new(frame_area.width, frame_area.height);
+        self.frame_size = Some(frame_area);
+        let mut ui_layout = UILayout::new(resolution);
+        ui_layout.rebuild_areas(frame_area.to_rect());
+        self.ui_layout = Some(ui_layout);
     }
 
     /*

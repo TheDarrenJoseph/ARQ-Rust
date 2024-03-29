@@ -135,7 +135,7 @@ impl UIAreasBuilder {
     // Otherwise returns the original frame size
     pub fn build(&self) -> (LayoutType, UIAreas) {
         let total_area = self.build_total_area();
-        info!("Building layout of type: {:?}", self.layout_type);
+        info!("Building layout of type: {:?} with total area: {:?}", self.layout_type, total_area);
         match self.layout_type {
             STANDARD_SPLIT => {
                 let areas = build_split_areas(total_area);

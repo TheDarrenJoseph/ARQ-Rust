@@ -1,7 +1,8 @@
 use crate::settings::Settings;
+use crate::ui::resolution::Resolution;
 use crate::widget::{Focusable, StatefulWidgetState};
 use crate::widget::stateful::boolean_widget::build_boolean_widget;
-use crate::widget::stateful::dropdown_widget::build_dropdown;
+use crate::widget::stateful::dropdown_widget::{build_dropdown, DropdownOption};
 use crate::widget::stateful::number_widget::build_number_input_with_value;
 use crate::widget::stateful::text_widget::build_text_input;
 
@@ -54,7 +55,11 @@ pub fn build_settings_widgets(settings : &Settings) -> Vec<StatefulWidgetState> 
 
     for setting in &settings.dropdown_settings {
         let mut options : Vec<String> = Vec::new();
-        for option in &setting.value.options {
+
+        let chosen_option_name = String::from(setting.value.chosen_option.display_name);
+        options.push(chosen_option_name.clone());
+        let other_options : Vec<DropdownOption<Resolution>> = setting.value.options.iter().filter(|o| String::from(o.display_name) != chosen_option_name ).map(|o| o.clone()).collect();
+        for option in &other_options {
             options.push(String::from(option.display_name.clone()))
         }
         let dropdown = build_dropdown(setting.name.clone(), true, options);

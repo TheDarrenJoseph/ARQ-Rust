@@ -78,6 +78,10 @@ impl Settings {
     pub fn get_bg_music_volume(&self) -> u32 {
         self.find_u32_setting_value(SETTING_BG_MUSIC.to_string()).or_else(|| Some(100)).unwrap()
     }
+
+    pub fn get_resolution(&self) -> DropdownOption<Resolution> {
+        self.find_dropdown_setting_value(SETTING_RESOLUTION.to_string()).unwrap()
+    }
 }
 
 pub fn build_settings() -> Settings {
@@ -93,12 +97,10 @@ pub fn build_settings() -> Settings {
 
 
     let resolution_options = get_resolution_dropdown_options();
-    let default_option = resolution_options.first().unwrap().clone();
-    let resolution_dropdown_setting = DropdownSetting {
-        options: vec![
-            default_option.clone(),
-        ],
-        chosen_option: default_option
+    let initial_option = resolution_options.first().clone().unwrap();
+    let resolution_dropdown_setting : DropdownSetting<DropdownOption<Resolution>> = DropdownSetting {
+        options: resolution_options.clone(),
+        chosen_option: initial_option.clone()
     };
     let resolution : Setting<DropdownSetting<DropdownOption<Resolution>>> = Setting { name: SETTING_RESOLUTION.to_string(), value: resolution_dropdown_setting };
     Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed], u32_settings: vec![bg_music_volume], dropdown_settings: vec![resolution]}
