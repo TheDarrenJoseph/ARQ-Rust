@@ -4,6 +4,7 @@ use rand::{Rng};
 
 
 use tui::layout::Rect;
+use crate::ui::resolution::Resolution;
 
 #[derive(Copy, Clone, std::cmp::PartialEq, Hash, Debug)]
 pub struct Position {
@@ -93,6 +94,10 @@ pub struct Area {
 impl Area {
     pub const fn new(start_position: Position, width: u16, height: u16) -> Area {
         build_rectangular_area(start_position, width,height)
+    }
+
+    pub const fn from_resolution(resolution: Resolution) -> Area {
+        build_rectangular_area(Position::zero(), resolution.width, resolution.height)
     }
 
     pub fn from_rect(rect: Rect) -> Area {

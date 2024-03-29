@@ -37,7 +37,7 @@ use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 
 
-use crate::map::position::Side;
+use crate::map::position::{Area, Side};
 use crate::map::room::Room;
 
 use crate::{menu, widget};
@@ -52,10 +52,13 @@ use crate::engine::process::map_generation::MapGeneration;
 use crate::error::io_error_utils::error_result;
 
 
-use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RNG_SEED, Settings};
+use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::resolution::Resolution;
 use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice};
+use crate::ui::ui_areas_builder::UIAreasBuilder;
+use crate::ui::ui_layout::LayoutType::SINGLE_MAIN_WINDOW_CENTERED;
 use crate::ui::ui_wrapper::UIWrapper;
 use crate::util::utils::UuidEquals;
 use crate::view::{InputHandler, View};
@@ -79,6 +82,7 @@ use crate::view::util::callback::Callback;
 use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::util::callback::CallbackHandler;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
+use crate::widget::stateful::dropdown_widget::get_resolution_dropdown_options;
 
 pub struct GameEngine<B: 'static + Backend>  {
     ui_wrapper : UIWrapper<B>,
@@ -128,7 +132,12 @@ impl <B : Backend + Send> GameEngine<B> {
                     // Update the setting value from the widget
                     let setting = self.settings.dropdown_settings.iter_mut().find(|x| x.name == t.get_name());
                     if let Some(s) = setting {
-                        s.value.chosen_option = t.get_selection();
+                        let res_options = get_resolution_dropdown_options();
+                        let resolution_option_chosen = res_options.iter().find(|opt| opt.display_name == t.get_selection());
+                        if let Some(resolution_option) = resolution_option_chosen {
+                            s.value.chosen_option = resolution_option.clone();
+                        }
+
                     }
                 },
                 _ => {}
@@ -172,8 +181,20 @@ impl <B : Backend + Send> GameEngine<B> {
         let ui = &mut ui_wrapper.ui;
         let terminal_manager = &mut ui_wrapper.terminal_manager;
 
+        let resolution_option = self.settings.find_dropdown_setting_value(SETTING_RESOLUTION.to_string()).unwrap();
+
+        let resolution_value = resolution_option.value.clone();
         terminal_manager.terminal.draw(|frame| {
-            ui.init(frame);
+            let mut frame_area: Area;
+            if resolution_option.display_name == "FULLSCREEN" {
+                info!("FULLSCREEN resolution selected. Using frame size: {:?}", frame.size());
+                frame_area = Area::from_rect(frame.size());
+            } else {
+                let res_value = resolution_value.unwrap();
+                info!("resolution selected. Using resolution: {:?}", res_value);
+                frame_area = Area::from_resolution(res_value)
+            }
+            ui.init::<B>(frame_area);
         })?;
 
         let ui_layout = &mut ui.ui_layout;

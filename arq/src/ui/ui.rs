@@ -11,8 +11,11 @@ use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
 
 use crate::{menu};
 use crate::map::position::{Area};
+use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas_builder::UIAreasBuilder;
 use crate::ui::ui_layout::{LayoutType, UILayout};
+use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 
@@ -94,11 +97,11 @@ fn build_main_block<'a>() -> Block<'a> {
 
 impl UI {
 
-    pub fn init<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
-        let frame_size = Area::from_rect(frame.size());
-        self.frame_size = Some(frame_size);
+    pub fn init<B: tui::backend::Backend>(&mut self, frame_area: Area) {
+        let resolution = Resolution::new(frame_area.width, frame_area.height);
+        self.frame_size = Some(frame_area);
         if self.ui_layout.is_none() {
-            self.ui_layout = Some(UILayout::new(frame_size));
+            self.ui_layout = Some(UILayout::new(resolution));
         }
     }
 

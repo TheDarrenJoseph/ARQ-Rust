@@ -13,7 +13,9 @@ use crate::build_paragraph;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
-use crate::ui::ui_util::{build_paragraph_multi, check_display_size, MIN_AREA};
+use crate::ui::ui_util::{build_paragraph_multi, check_display_size};
+
+pub use crate::ui::resolution::MIN_RESOLUTION;
 
 pub mod framehandler;
 pub mod util;
@@ -92,7 +94,7 @@ pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut Te
                 let error_paragraph = build_paragraph_multi(
                     vec![String::from(
                         "Window too small."),
-                         format!("Minimum is {}x{}", MIN_AREA.width, MIN_AREA.height),
+                         format!("Minimum is {}x{}", MIN_RESOLUTION.width, MIN_RESOLUTION.height),
                          String::from("Please resize and hit any key to check again.") ]);
                 terminal_manager.terminal.draw(|frame|{
                     frame.render_widget(error_paragraph, frame_size);

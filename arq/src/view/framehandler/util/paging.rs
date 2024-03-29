@@ -42,8 +42,9 @@ mod tests {
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType};
     use crate::map::position::{Area, Position};
-    use crate::ui::ui_util::MIN_AREA;
     use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
+
+    pub use crate::ui::resolution::MIN_RESOLUTION;
 
     fn extract_buffer_line(buffer: &Buffer, line_index: u16) -> String {
         let mut line = String::new();

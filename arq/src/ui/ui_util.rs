@@ -5,10 +5,11 @@ use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
 use crate::map::position::{Area, Position};
-use crate::ui::ui_areas::UIAreas;
+use crate::ui::resolution::{Resolution};
+
+pub use crate::ui::resolution::MIN_RESOLUTION;
 
 const MIN_VIEW_SIZE : u16 = 3;
-pub const MIN_AREA: Area = Area::new(Position::zero(), 80, 24);
 
 enum Alignment {
     LEFT,
@@ -68,15 +69,15 @@ fn center(target: u16, available: u16, alignment: Alignment)  -> Result<u16, Err
     }
 }
 
-pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Area, Error> {
-    if target.height < min_area.height || target.width < min_area.width {
+pub fn center_area(target: Rect, frame_size: Rect, min_resolution: Resolution) -> Result<Area, Error> {
+    if target.height < min_resolution.height || target.width < min_resolution.width {
         return Err(Error::new(ErrorKind::Other,
-                       format!("Target size: {}, {} is below the minimum supported range: {}, {}", target.width, target.height, min_area.width, min_area.height)))
+                       format!("Target size: {}, {} is below the minimum supported range: {}, {}", target.width, target.height, min_resolution.width, min_resolution.height)))
     }
 
     if target.height > frame_size.height && target.width > frame_size.width {
         Err(Error::new(ErrorKind::Other,
-                       format!("Target size: {}, {} is above the available range: {}, {}", target.width, target.height, min_area.width, min_area.height)))
+                       format!("Target size: {}, {} is above the available range: {}, {}", target.width, target.height, min_resolution.width, min_resolution.height)))
     } else if target.height < frame_size.height || target.width < frame_size.width {
         let target_width = target.width;
         let mut x = target.x;
@@ -105,8 +106,8 @@ pub fn center_area(target: Rect, frame_size: Rect, min_area: Rect) -> Result<Are
 pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), std::io::Error> {
     if let Some(frame_size) = frame_size_result {
         // Check for 80x24 minimum resolution
-        if frame_size.height < MIN_AREA.height || frame_size.width < MIN_AREA.width {
-            return Err(Error::new(ErrorKind::Other, format!("Sorry, your terminal is below the minimum supported resolution of {}x{}.", MIN_AREA.height, MIN_AREA.width)));
+        if frame_size.height < MIN_RESOLUTION.height || frame_size.width < MIN_RESOLUTION.width {
+            return Err(Error::new(ErrorKind::Other, format!("Sorry, your terminal is below the minimum supported resolution of {}x{}.", MIN_RESOLUTION.height, MIN_RESOLUTION.width)));
         }
         Ok(())
     } else {
@@ -118,7 +119,8 @@ pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), 
 mod tests {
     
     use tui::layout::Rect;
-    use crate::ui::ui_util::{center_area, MIN_AREA};
+    use crate::ui::resolution::MIN_RESOLUTION;
+    use crate::ui::ui_util::{center_area};
 
     #[test]
     fn test_center_area_div2_leftalign() {
@@ -127,7 +129,7 @@ mod tests {
         let target = Rect::new(0,0, 80,24);
 
         // WHEN we call to center for the target
-        let result = center_area(target, available, MIN_AREA.to_rect());
+        let result = center_area(target, available, MIN_RESOLUTION);
         // THEN we expect a perfectly centered result
         assert!(result.is_ok());
         let result_area = result.unwrap();
@@ -146,7 +148,7 @@ mod tests {
         let target = Rect::new(0,0, 80,24);
 
         // WHEN we call to center for the target
-        let result = center_area(target, available, MIN_AREA.to_rect());
+        let result = center_area(target, available, MIN_RESOLUTION);
         // THEN we expect a left-aligned result
         assert!(result.is_ok());
         let result_area = result.unwrap();

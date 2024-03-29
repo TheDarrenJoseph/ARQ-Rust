@@ -17,9 +17,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
-use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
-use crate::ui::ui_util::{center_area, MIN_AREA};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
     ui : &'a mut UI,

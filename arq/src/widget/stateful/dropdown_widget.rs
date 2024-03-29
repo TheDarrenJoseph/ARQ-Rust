@@ -2,6 +2,8 @@ use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::StatefulWidget;
+use crate::ui::resolution::{Resolution};
+use crate::view::MIN_RESOLUTION;
 
 use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
@@ -17,9 +19,24 @@ pub struct DropdownInputState {
     chosen_option : String
 }
 
-pub struct DropdownSetting {
-    pub(crate) options : Vec<String>,
-    pub(crate) chosen_option : String
+#[derive(Clone)]
+pub struct DropdownOption<T> {
+    pub display_name : &'static str,
+    pub value: Option<T>
+}
+
+pub fn get_resolution_dropdown_options() -> Vec<DropdownOption<Resolution>> {
+    let min_resolution_dropdown_option: DropdownOption<Resolution> = DropdownOption { display_name: "80x24", value: Some(MIN_RESOLUTION) };
+    let fullscreen_dropdown_option: DropdownOption<Resolution> = DropdownOption { display_name: "FULLSCREEN", value: None };
+    vec! [
+        fullscreen_dropdown_option,
+        min_resolution_dropdown_option
+    ]
+}
+
+pub struct DropdownSetting<T> {
+    pub(crate) options : Vec<T>,
+    pub(crate) chosen_option : T
 }
 
 impl DropdownInputState {

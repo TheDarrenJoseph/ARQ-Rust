@@ -53,7 +53,11 @@ pub fn build_settings_widgets(settings : &Settings) -> Vec<StatefulWidgetState> 
     }
 
     for setting in &settings.dropdown_settings {
-        let dropdown = build_dropdown(setting.name.clone(), true, setting.value.options.clone());
+        let mut options : Vec<String> = Vec::new();
+        for option in &setting.value.options {
+            options.push(String::from(option.display_name.clone()))
+        }
+        let dropdown = build_dropdown(setting.name.clone(), true, options);
         widgets.push(dropdown)
     }
     widgets

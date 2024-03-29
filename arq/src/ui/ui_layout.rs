@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::slice::Iter;
 use tui::layout::Rect;
 use crate::map::position::Area;
+use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::UIAreas;
 use crate::ui::ui_areas_builder::{UIAreasBuilder};
 use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
@@ -31,7 +32,8 @@ impl UILayout {
         LAYOUT_TYPES.iter()
     }
 
-    pub fn new(frame_size: Area) -> UILayout {
+    pub fn new(resolution: Resolution) -> UILayout {
+        let frame_size= Area::from_resolution(resolution);
         UILayout { ui_areas: HashMap::new(), ui_areas_builder: UIAreasBuilder::new(frame_size) }
     }
 

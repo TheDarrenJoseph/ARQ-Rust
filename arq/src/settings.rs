@@ -1,8 +1,8 @@
 use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
 use crate::global_flags::{GLOBALS};
-use crate::ui::ui_util::MIN_AREA;
-use crate::widget::stateful::dropdown_widget::{DropdownSetting};
+use crate::ui::resolution::{Resolution};
+use crate::widget::stateful::dropdown_widget::{DropdownOption, DropdownSetting, get_resolution_dropdown_options};
 
 pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
@@ -20,7 +20,7 @@ pub struct Settings {
     pub bool_settings : Vec<Setting<bool>>,
     pub u32_settings : Vec<Setting<u32>>,
     pub string_settings : Vec<Setting<String>>,
-    pub dropdown_settings : Vec<Setting<DropdownSetting>>
+    pub dropdown_settings : Vec<Setting<DropdownSetting<DropdownOption<Resolution>>>>
 }
 
 impl Settings {
@@ -47,6 +47,15 @@ impl Settings {
         }
         None
     }
+
+    pub fn find_dropdown_setting_value(&self, name : String) -> Option<DropdownOption<Resolution>> {
+        let setting = self.dropdown_settings.iter().find(|setting| setting.name == name);
+        if let Some(s) = setting {
+            return Some(s.value.chosen_option.clone());
+        }
+        None
+    }
+
 
     /*
     * Either returns the bool value for SETTING_FOG_OF_WAR, or defaults to false
@@ -82,14 +91,16 @@ pub fn build_settings() -> Settings {
     let map_seed : Setting<String> = Setting { name: SETTING_RNG_SEED.to_string(), value: random_seed };
     let bg_music_volume : Setting<u32> = Setting { name: SETTING_BG_MUSIC.to_string(), value: SETTING_BG_MUSIC_VOLUME_DEFAULT };
 
+
+    let resolution_options = get_resolution_dropdown_options();
+    let default_option = resolution_options.first().unwrap().clone();
     let resolution_dropdown_setting = DropdownSetting {
         options: vec![
-            MIN_AREA.get_description(),
-            String::from("Fullscreen")
+            default_option.clone(),
         ],
-        chosen_option: MIN_AREA.get_description()
+        chosen_option: default_option
     };
-    let resolution : Setting<DropdownSetting> = Setting { name: SETTING_RESOLUTION.to_string(), value: resolution_dropdown_setting };
+    let resolution : Setting<DropdownSetting<DropdownOption<Resolution>>> = Setting { name: SETTING_RESOLUTION.to_string(), value: resolution_dropdown_setting };
     Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed], u32_settings: vec![bg_music_volume], dropdown_settings: vec![resolution]}
 }
 

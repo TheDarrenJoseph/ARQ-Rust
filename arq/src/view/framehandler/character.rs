@@ -10,6 +10,7 @@ use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
 use crate::error::io_error_utils::error_result;
 use crate::map::position::Area;
+use crate::ui::resolution::Resolution;
 use crate::ui::ui_util::{center_area};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
@@ -152,7 +153,8 @@ impl CharacterFrameHandler {
         }
         let target_area = Rect::new(frame_size.x + 1, frame_size.y + 1, 50, 10);
         let available_area = Rect::new(frame_size.x + 1, frame_size.y + 1, frame_width - 2, frame_height - 2);
-        let attributes_area_result = center_area(target_area, available_area, target_area);
+        let resolution = Resolution::new(target_area.width, target_area.height);
+        let attributes_area_result = center_area(target_area, available_area, resolution);
 
         if let Ok(area) = attributes_area_result {
             self.attributes_area = area;

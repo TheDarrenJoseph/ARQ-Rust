@@ -8,7 +8,7 @@ use tui::widgets::{Block, Borders, Paragraph};
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{get_input_key, UI};
-use crate::ui::ui_util::{center_area, MIN_AREA};
+use crate::ui::ui_util::{center_area, MIN_RESOLUTION};
 use crate::view::{GenericInputResult, InputResult, View};
 
 pub struct DialogView<'a, B : tui::backend::Backend> {
@@ -40,7 +40,7 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         self.terminal_manager.terminal.draw(|frame| {
 
             // First check for the minimum space and center the dialog
-            let centered_area_result = center_area(MIN_AREA.to_rect(), frame.size(), MIN_AREA.to_rect());
+            let centered_area_result = center_area(MIN_RESOLUTION.to_rect(), frame.size(), MIN_RESOLUTION);
             if let Ok(area) = centered_area_result {
                 let block = Block::default()
                     .borders(Borders::ALL)

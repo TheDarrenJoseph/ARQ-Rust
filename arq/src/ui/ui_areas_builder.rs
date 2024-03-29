@@ -1,17 +1,14 @@
 use std::collections::HashMap;
-use futures::future::err;
-use log::error;
+use log::info;
 
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Modifier, Style};
-use tui::text::Span;
-use tui::widgets::{Block, Borders};
 
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::map::position::{Area, Position};
 use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UI_AREA_NAME_TOTAL, UIArea, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
-use crate::ui::ui_util::{center_area, MIN_AREA};
+use crate::ui::ui_util::{center_area};
+use crate::view::MIN_RESOLUTION;
 
 pub struct UIAreasBuilder {
     frame_size: Area,
@@ -24,8 +21,8 @@ pub struct UIAreasBuilder {
  */
 fn build_single_main_window_centered_areas(total_area: Area) -> HashMap::<String, UIArea> {
     let mut areas = HashMap::<String, UIArea>::new();
-    let target = Rect::new(0, 0, 80, 24);
-    let area = center_area(target, total_area.to_rect(), MIN_AREA.to_rect()).unwrap();
+    let target = Rect::new(0, 0, MIN_RESOLUTION.width, MIN_RESOLUTION.height);
+    let area = center_area(target, total_area.to_rect(), MIN_RESOLUTION).unwrap();
     areas.insert(UI_AREA_NAME_MAIN.to_string(), UIArea { name: UI_AREA_NAME_MAIN.to_string(), area });
     areas
 }
@@ -127,7 +124,7 @@ impl UIAreasBuilder {
     fn build_total_area(&self) -> Area {
         let frame_size : Rect = self.frame_size.to_rect();
         if frame_size.width >= 80 && frame_size.height >= 24 {
-            return Area::new(Position::zero(), 80, 24);
+            return Area::new(Position::zero(), frame_size.width, frame_size.height);
         } else {
             // TODO we probably want to throw an error / show the new error screen for this case
             panic!("Screen resolution not supported, cannot build UI areas..");
@@ -138,6 +135,7 @@ impl UIAreasBuilder {
     // Otherwise returns the original frame size
     pub fn build(&self) -> (LayoutType, UIAreas) {
         let total_area = self.build_total_area();
+        info!("Building layout of type: {:?}", self.layout_type);
         match self.layout_type {
             STANDARD_SPLIT => {
                 let areas = build_split_areas(total_area);
