@@ -15,7 +15,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 
-use crate::view::framehandler::{FrameData, FrameHandler};
+
 
 use crate::view::util::cell_builder::CellBuilder;
 use crate::widget::stateful::map_widget::MapWidget;
@@ -61,8 +61,8 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
 impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
     fn begin(&mut self) -> Result<InputResult<bool>, Error> {
-        let level = self.level.clone();
-        let map_view_areas = self.map_view_areas.clone();
+        let _level = self.level.clone();
+        let _map_view_areas = self.map_view_areas.clone();
         self.draw(None)?;
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }

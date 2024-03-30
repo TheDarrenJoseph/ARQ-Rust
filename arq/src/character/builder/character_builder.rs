@@ -6,7 +6,7 @@ use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
 use crate::error::errors::GenericError;
-use crate::map::objects::{container};
+
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};

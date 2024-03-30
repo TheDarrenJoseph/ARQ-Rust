@@ -1,7 +1,7 @@
 use std::io::Error;
 
 use termion::event::Key;
-use tui::layout::Rect;
+
 use crate::map::objects::container::Container;
 
 use crate::map::position::{Area, Position};
@@ -101,7 +101,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
         let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;
 
-        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let ui_layout = ui.ui_layout.as_mut().unwrap();
         let frame_size = self.terminal_manager.terminal.get_frame().size();
         let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
 

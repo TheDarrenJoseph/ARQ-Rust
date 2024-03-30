@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+
 use log::error;
-use tui::widgets::List;
+
 
 #[derive(Clone)]
 pub struct MultiStepProgress {
@@ -38,12 +38,12 @@ impl MultiStepProgress {
         if let Some(index) = self.current_step_index {
             let next_index = index+1;
             let step_count = self.steps.len();
-            if (step_count > next_index) {
+            if step_count > next_index {
                 self.current_step_index = Some(next_index);
             } else {
                 error!("Cannot set next step, next stop would be: {} which is beyond the size of the steps: {}", index, step_count);
             }
-        } else if (self.steps.len() > 0) {
+        } else if self.steps.len() > 0 {
             // Start at the first step
             self.current_step_index = Some(0);
         }

@@ -1,47 +1,47 @@
-use std::convert::TryInto;
 
-use std::{io};
+
+
 
 use std::collections::HashMap;
-use std::future::Future;
+
 use std::io::{Error, ErrorKind};
-use std::pin::Pin;
 
 
 
 
 
-use log::{error, info};
 
-use rand::{Rng, thread_rng};
+use log::{info};
+
+
 use rand_seeder::Seeder;
 
 use termion::event::Key;
-use termion::input::TermRead;
+
 use tui::backend::Backend;
 
 use futures::FutureExt;
 
 use crate::character::characters::Characters;
-use crate::engine::command::command::Command;
-use crate::engine::command::input_mapping;
-use crate::engine::command::inventory_command::InventoryCommand;
-use crate::engine::command::look_command::LookCommand;
-use crate::engine::command::open_command::OpenCommand;
+
+
+
+
+
 
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 
 use crate::map::position::{Area, Side};
-use crate::map::room::Room;
 
-use crate::{menu, widget};
+
+
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
 use crate::engine::engine_helpers::game_loop::game_loop;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::map::Map;
-use crate::menu::Selection;
+
 
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::io_error_utils::error_result;
@@ -50,30 +50,30 @@ use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETT
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::resolution::Resolution;
-use crate::ui::ui::{build_ui, get_input_key, StartMenuChoice, UI};
-use crate::ui::ui_areas_builder::UIAreasBuilder;
-use crate::ui::ui_layout::LayoutType::SINGLE_MAIN_WINDOW_CENTERED;
+use crate::ui::ui::{build_ui};
+
+
 use crate::ui::ui_wrapper::UIWrapper;
-use crate::util::utils::UuidEquals;
-use crate::view::{InputHandler, View};
+
+use crate::view::{View};
 use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
 
 use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
-use crate::view::settings_menu_view::SettingsMenuView;
+
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
-use crate::view::util::widget_menu::WidgetMenu;
 
 
 
-use crate::widget::widgets::{build_settings_widgets, WidgetList};
-use crate::widget::{StandardWidgetType, StatefulWidgetType};
+
+
+use crate::widget::{StandardWidgetType};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 use crate::view::util::callback::Callback;
 use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::util::callback::CallbackHandler;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
-use crate::widget::stateful::dropdown_widget::get_resolution_dropdown_options;
+
 
 pub struct GameEngine<B: 'static + Backend>  {
     pub ui_wrapper : UIWrapper<B>,
@@ -153,7 +153,7 @@ impl <B : Backend + Send> GameEngine<B> {
 
         let resolution_value = resolution_option.value.clone();
         terminal_manager.terminal.draw(|frame| {
-            let mut frame_area: Area;
+            let frame_area: Area;
             if resolution_option.display_name == "FULLSCREEN" {
                 info!("FULLSCREEN resolution selected. Using frame size: {:?}", frame.size());
                 frame_area = Area::from_rect(frame.size());

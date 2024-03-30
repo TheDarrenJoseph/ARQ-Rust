@@ -1,13 +1,13 @@
-use std::error::Error as StdError;
+
 use std::io;
-use std::io::{Error, ErrorKind};
+use std::io::{Error};
 use std::time::Instant;
-use log::{debug, info};
+use log::{debug};
 use termion::event::Key;
-use termion::input::TermRead;
+
 use tui::backend::Backend;
-use tui::layout::Rect;
-use crate::{build_paragraph, GameOverChoice, menu};
+
+use crate::{menu};
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
@@ -17,7 +17,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, StartMenuChoice, UI};
 use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
-use crate::ui::ui_util::{check_display_size};
+
 use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -104,7 +104,7 @@ impl <B : Backend> UIWrapper<B> {
         while !character_creation_result.generic_input_result.done {
             let ui = &mut self.ui;
             ui.show_console();
-            let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+            let ui_layout = ui.ui_layout.as_mut().unwrap();
             let frame_size = self.terminal_manager.terminal.get_frame().size();
             let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
             if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {

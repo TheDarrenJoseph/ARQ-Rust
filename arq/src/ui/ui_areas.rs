@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 use tui::layout::Rect;
-use crate::map::Map;
+
 use crate::map::position::{Area, build_rectangular_area, Position};
 
 
@@ -65,7 +65,7 @@ pub struct BorderedArea {
 
 impl BorderedArea {
     pub fn new(start_position: Position, width: u16, height: u16) -> Result<BorderedArea, std::io::Error> {
-        if (width > 2 && height > 2) {
+        if width > 2 && height > 2 {
             let outer_area = build_rectangular_area(start_position, width, height);
             let inner_start_position = Position::new(start_position.x +1, start_position.y +1);
             let inner_area = build_rectangular_area(inner_start_position, width - 2, height - 2);
@@ -86,7 +86,7 @@ impl BorderedArea {
 
 #[cfg(test)]
 mod BorderedAreaTests {
-    use crate::map::position::{Area, Position};
+    use crate::map::position::{Position};
     use crate::ui::ui_areas::BorderedArea;
 
     #[test]

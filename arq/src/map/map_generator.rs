@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::engine::pathfinding::Pathfinding;
 use crate::engine::process::Progressible;
 use crate::map::{Map, Tiles};
-use crate::map::objects::{container};
+
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
 use crate::map::objects::items::{Item, MaterialType};

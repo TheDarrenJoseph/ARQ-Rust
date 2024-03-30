@@ -236,7 +236,7 @@ mod tests {
     use crate::engine::command::inventory_command::{CallbackState, equip_items, handle_callback};
     use crate::engine::level::Level;
     
-    use crate::map::objects::container;
+    
     use crate::map::objects::container::{Container, ContainerType};
     
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};

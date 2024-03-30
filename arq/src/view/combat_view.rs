@@ -1,14 +1,14 @@
 use std::io;
 use std::io::Error;
-use log::error;
+
 use termion::event::Key;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+
 
 
 
 use crate::character::battle::Battle;
 use crate::character::equipment::{WeaponSlot};
-use crate::map::position::{Area, Position};
+use crate::map::position::{Area};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{UI};
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
@@ -88,7 +88,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         let fh = &mut self.frame_handler;
 
         let frame_area = Area::from_rect(self.terminal_manager.terminal.get_frame().size());
-        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let ui_layout = ui.ui_layout.as_mut().unwrap();
         let ui_areas = ui_layout.get_or_build_areas(frame_area.to_rect(), LayoutType::COMBAT_VIEW);
 
         // TODO get the view areas and pass them to the FrameHandler

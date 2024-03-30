@@ -376,7 +376,7 @@ impl Container {
 mod tests {
     use uuid::Uuid;
 
-    use crate::map::objects::container;
+    
     use crate::map::objects::container::{Container, ContainerType};
     
     use crate::map::objects::items::{Item, MaterialType};

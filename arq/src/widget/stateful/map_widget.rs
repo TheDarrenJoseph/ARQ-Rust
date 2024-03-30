@@ -1,4 +1,4 @@
-use log::info;
+
 use tui::buffer::{Buffer, Cell};
 use tui::layout::Rect;
 

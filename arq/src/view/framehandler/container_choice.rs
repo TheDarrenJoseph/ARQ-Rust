@@ -71,7 +71,7 @@ impl ContainerChoiceFrameHandler {
 impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerChoiceFrameHandler {
 
     // TODO tidy this up / reduce duplication
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Vec<Container>>) {
+    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Vec<Container>>) {
         let frame_size = data.get_frame_size().clone();
         let containers = &self.choices;
 

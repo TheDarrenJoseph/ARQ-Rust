@@ -1,17 +1,17 @@
 use std::io;
 use std::sync::mpsc::Receiver;
 
-use log::error;
+
 use termion::input::TermRead;
 
-use tui::layout::Rect;
+
 use crate::map::position::Area;
 use crate::progress::MultiStepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas::{UI_AREA_NAME_MAIN};
 use crate::ui::ui_areas_builder::UIAreasBuilder;
-use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED};
-use crate::ui::ui_util::{center_area};
+use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW_CENTERED};
+
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 

@@ -15,7 +15,7 @@ async fn player_turn<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>
     return Ok(handle_input(engine, key).await?);
 }
 
-fn npc_turns<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>)  -> Result<(), Error> {
+fn npc_turns<B: tui::backend::Backend + Send>(_engine: &mut GameEngine<B>)  -> Result<(), Error> {
     // TODO NPC movement
     return Ok(());
 }

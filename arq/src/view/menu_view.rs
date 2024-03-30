@@ -5,17 +5,17 @@ use log::info;
 use termion::input::TermRead;
 use tui::layout::Rect;
 use tui::widgets::ListState;
-use crate::GameOverChoice;
+
 use crate::map::position::Area;
 use crate::menu::{Menu, Selection, ToList};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{Draw, StartMenuChoice, UI};
+use crate::ui::ui::{StartMenuChoice, UI};
 use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, verify_display_size, View};
-use crate::view::settings_menu_view::SettingsMenuView;
-use crate::view::util::widget_menu::WidgetMenu;
-use crate::widget::widgets::{build_settings_widgets, WidgetList};
+
+
+
 
 pub struct MenuView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
@@ -73,7 +73,7 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
         }
     }
 
-    fn draw(&mut self, area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let ui = &mut self.ui;
         verify_display_size::<B>(&mut self.terminal_manager);
 

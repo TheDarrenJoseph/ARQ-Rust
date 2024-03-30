@@ -4,7 +4,7 @@ use log::info;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::map::position::{Area, Position};
-use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UI_AREA_NAME_TOTAL, UIArea, UIAreas};
+use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIArea, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
 use crate::ui::ui_util::{center_area};
@@ -168,7 +168,7 @@ impl UIAreasBuilder {
 
 #[cfg(test)]
 mod tests {
-    use tui::layout::Rect;
+    
     use crate::map::position::{Area, Position};
     use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIArea};
     use crate::ui::ui_areas_builder::UIAreasBuilder;

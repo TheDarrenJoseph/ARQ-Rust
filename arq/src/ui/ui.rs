@@ -1,21 +1,21 @@
-use std::convert::TryInto;
+
 use termion::event::Key;
 use std::io;
 
 use termion::input::TermRead;
 
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::layout::{Alignment, Rect};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, ListState, Paragraph, Widget, Wrap};
+use tui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
 
-use crate::{menu};
+
 use crate::map::position::{Area};
 use crate::ui::resolution::Resolution;
-use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UIAreas};
-use crate::ui::ui_areas_builder::UIAreasBuilder;
+use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN};
+
 use crate::ui::ui_layout::{LayoutType, UILayout};
-use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
+
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
 

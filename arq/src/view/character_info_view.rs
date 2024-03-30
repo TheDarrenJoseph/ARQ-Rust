@@ -301,7 +301,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
 
         verify_display_size::<B>(self.terminal_manager);
 
-        let mut ui_layout = ui.ui_layout.as_mut().unwrap();
+        let ui_layout = ui.ui_layout.as_mut().unwrap();
         let frame_size = self.terminal_manager.terminal.get_frame().size();
         let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
 

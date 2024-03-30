@@ -26,7 +26,7 @@ impl ConsoleFrameHandler {
 }
 
 impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrameHandler {
-    fn handle_frame(&mut self, frame: &mut Frame<B>, mut data: FrameData<ConsoleBuffer>) {
+    fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<ConsoleBuffer>) {
         let frame_size : Rect = data.get_frame_size().clone();
         let window_block = Block::default()
             .borders(Borders::ALL);

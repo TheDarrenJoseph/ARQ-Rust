@@ -32,10 +32,10 @@ pub fn build_weight_limit<'a>(container : &Container, area: Rect, x_offset: usiz
 
 #[cfg(test)]
 mod tests {
-    use std::i8::MIN;
-    use log::info;
+    
+    
     use tui::buffer::Buffer;
-    use tui::layout::Rect;
+    
     use tui::widgets::Widget;
     use uuid::Uuid;
     use crate::item_list_selection::ItemListSelection;
@@ -64,7 +64,7 @@ mod tests {
         // AND we have a enough items to fill 2 pages of content
         let bronze_bar = Item::new_with_form(Uuid::new_v4(), "".to_owned(), MaterialType::BRONZE, ItemForm::BAR, 'X', 1.0, 50);
         let mut items = Vec::new();
-        for i in 0..40 {
+        for _i in 0..40 {
             items.push(bronze_bar.clone());
         }
         let item_list_selection = ItemListSelection::new(items, HEIGHT);
@@ -83,7 +83,7 @@ mod tests {
         assert_eq!(paragraph_rect.width, 13);
         assert_eq!(paragraph_rect.height, 1);
         // Finally, check the actual buffer
-        let mut last_line = extract_buffer_line(&buffer, 19);
+        let last_line = extract_buffer_line(&buffer, 19);
         assert_eq!(last_line, "       Page 1/2 (40)")
     }
 
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(paragraph_rect.width, 7);
         assert_eq!(paragraph_rect.height, 1);
         // Finally, check the actual buffer
-        let mut last_line = extract_buffer_line(&buffer, 19);
+        let last_line = extract_buffer_line(&buffer, 19);
         assert_eq!(last_line, "            0/100Kg ")
     }
 

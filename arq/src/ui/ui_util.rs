@@ -1,6 +1,6 @@
 
 use std::io::{Error, ErrorKind};
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;

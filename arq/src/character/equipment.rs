@@ -120,7 +120,7 @@ mod tests {
     use crate::character::equipment::{Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
     use crate::map::objects::container::{Container, ContainerType};
-    use crate::map::objects::{container};
+    
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
 
