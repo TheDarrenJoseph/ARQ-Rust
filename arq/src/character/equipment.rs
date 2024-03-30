@@ -2,14 +2,12 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 
-use strum_macros::EnumIter;
-
-use crate::character::equipment::EquipmentSlot::{HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
+use crate::character::equipment::EquipmentSlot::{FEET, HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
 use crate::error::io_error_utils::error_result;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemType};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, EnumIter)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum EquipmentSlot {
     HEAD,
     TORSO,
@@ -17,6 +15,17 @@ pub enum EquipmentSlot {
     FEET,
     PRIMARY,
     SECONDARY,
+}
+
+pub fn all_equipment_slots() -> Vec<EquipmentSlot> {
+    vec![
+        HEAD,
+        TORSO,
+        LEGS,
+        FEET,
+        PRIMARY,
+        SECONDARY,
+    ]
 }
 
 #[derive(Clone)]
@@ -115,10 +124,9 @@ impl Equipment {
 
 #[cfg(test)]
 mod tests {
-    use strum::IntoEnumIterator;
     use uuid::Uuid;
 
-    use crate::character::equipment::{Equipment, EquipmentSlot};
+    use crate::character::equipment::{all_equipment_slots, Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
@@ -133,7 +141,7 @@ mod tests {
         // GIVEN a default Equipment
         let equipment = Equipment::new();
         // AND any given inventory slot
-        for es in EquipmentSlot::iter() {
+        for es in all_equipment_slots() {
             // WHEN we check is_slot_filled
             // THEN we we expect everything to be false
             assert!(!equipment.is_slot_filled(es));
@@ -151,7 +159,7 @@ mod tests {
         assert!(equip_result.is_ok());
 
         // AND any given inventory slot
-        for es in EquipmentSlot::iter() {
+        for es in all_equipment_slots(){
             // WHEN we check is_slot_filled
             // THEN we expect only the PRIMARY slot to be filled
             let expected = if es == PRIMARY {

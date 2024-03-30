@@ -11,10 +11,7 @@ log = "0.4.14"
 log4rs = "1.0.0"
 tui = "0.12"
 termion = "1.5"
-enum-map = "0.6.3"
 uuid = { version = "0.4", features = ["serde", "v4"] }
 rodio = "0.16.0"
-strum = "0.24"
-strum_macros = "0.24"
 futures = "0.3"
 tokio = { version = "1", features = ["full"] }
