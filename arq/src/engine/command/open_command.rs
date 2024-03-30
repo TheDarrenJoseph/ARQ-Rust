@@ -101,7 +101,6 @@ fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a m
 
 impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 
-    // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {

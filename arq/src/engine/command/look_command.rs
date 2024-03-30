@@ -95,7 +95,6 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
 }
 
 impl <B: tui::backend::Backend> LookCommand<'_, B> {
-    // TODO refactor alongside other commands / engine func
     fn re_render(&mut self) -> Result<(), io::Error> {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
