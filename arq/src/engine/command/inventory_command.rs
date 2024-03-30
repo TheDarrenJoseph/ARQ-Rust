@@ -457,7 +457,7 @@ mod tests {
         let to_equip = steel_sword.clone();
         let expected_id = to_equip.get_id().clone();
 
-        player.get_inventory_mut().add_item(steel_sword).expect("Failed to add item!");;
+        player.get_inventory_mut().add_item(steel_sword).expect("Failed to add item!");
 
         // WHEN we call to equip that item (Steel Sword)
         let state = CallbackState { level: &mut level, container: None, data: ContainerFrameHandlerInputResult::None };

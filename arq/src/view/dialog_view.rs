@@ -25,8 +25,8 @@ impl <B : tui::backend::Backend> DialogView<'_, B> {
 
 impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<()>, Error> {
-        self.draw(None);
-        get_input_key();
+        self.draw(None).expect("The dialog view should have been drawn.");
+        get_input_key().expect("Keyboard input key should have been captured");
         Ok(InputResult {
             generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
             view_specific_result: None
@@ -36,7 +36,7 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
     fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
         let message = self.message.clone();
         let _ui = &mut self.ui;
-        self.terminal_manager.clear_screen();
+        self.terminal_manager.clear_screen().expect("The screen should have been cleared");
         self.terminal_manager.terminal.draw(|frame| {
 
             // First check for the minimum space and center the dialog
@@ -72,7 +72,7 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
                 error!("{}", err);
                 // TODO update views to be able to return Error
             }
-        });
+        }).expect("The dialog view should have been drawn!");
         Ok(())
     }
 }

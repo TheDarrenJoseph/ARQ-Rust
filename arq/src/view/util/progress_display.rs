@@ -25,7 +25,7 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
                 self.show_progress(p.clone());
                 if p.is_done() {
                     // Wait for confirmation
-                    io::stdin().keys().next().unwrap();
+                    io::stdin().keys().next().unwrap().expect("The next keyboard key should have been captured");
                     return;
                 }
             }
@@ -45,7 +45,7 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
 
                 let main_area = ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap();
                 fh.handle_frame(frame, FrameData { data: progress.clone(), ui_areas: ui_areas.clone(), frame_area: main_area.area })
-            });
+            }).expect("The progress display should have been drawn.");
         }
     }
 }

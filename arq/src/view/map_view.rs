@@ -45,7 +45,7 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
                 self.terminal_manager.terminal.backend_mut().draw(updates.into_iter())?;
             }
         }
-        self.terminal_manager.terminal.backend_mut().flush();
+        self.terminal_manager.terminal.backend_mut().flush().expect("The terminal should have been flushed.");
         info!("Map view cleared");
         Ok(())
     }

@@ -130,7 +130,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
             self.re_render()?;
             let prompt =  describe_position(p, &mut self.level)?;
             self.print(prompt)?;
-            get_input_key();
+            get_input_key().expect("The next keyboard key should have been captured.");
         }
         Ok(())
     }

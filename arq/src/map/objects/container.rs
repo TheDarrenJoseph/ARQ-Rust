@@ -372,7 +372,7 @@ impl Container {
 
     pub fn add_items(&mut self, items : Vec<Item>) {
         for i in items {
-            self.add_item(i);
+            self.add_item(i).expect("Item should have been added!");
         }
     }
 
@@ -421,7 +421,7 @@ mod tests {
 
         // WHEN we call to add a new item
         let item = Item::with_defaults("Test Item".to_owned(), 1.0, 1);
-        container.add_item(item);
+        container.add_item(item).expect("Test Item should have been added");
 
         // THEN we expect it's contents size to increase
         assert_eq!(1, container.get_contents().len());
@@ -434,11 +434,13 @@ mod tests {
         // AND it has no items in it's contents
         assert_eq!(0, container.get_contents().len());
 
-        // WHEN we try to add more items than the supported weight limit
-        let item = Item::with_defaults("Test Item".to_owned(), 100.0, 1);
-        let item2 = Item::with_defaults( "Test Item".to_owned(),1.0, 1);
-        container.add_item(item);
-        container.add_item(item2);
+        // WHEN we try to add more items than the supported weight limit of 100
+        // 1 Weight is fine
+        let item = Item::with_defaults("Test Item 1".to_owned(), 1.0, 1);
+        // 100 weight would give us 101 > 100
+        let item2 = Item::with_defaults("Test Item 2".to_owned(),100.0, 1);
+        container.add_item(item).expect("Test Item should have been added");
+        container.add_item(item2).expect_err("Expected Test Item 2 to fail to add");
 
         // THEN we expect only the first item to be added
         assert_eq!(1, container.get_contents().len());
@@ -453,7 +455,7 @@ mod tests {
 
         // WHEN we call to add a new item that's of CONTAINER type
         let item = Item::container_item(Uuid::new_v4(), "Test Item".to_owned(), 'X', 1.0, 1);
-        container.add_item(item);
+        container.add_item(item).expect_err("Expected Test Item not to be added to Test Container as the container has the wrong container type.");
 
         // THEN we expect nothing to happen as it's an unsupported type
         assert_eq!(0, container.get_contents().len());
@@ -540,10 +542,10 @@ mod tests {
 
         // AND we've added 2 items with different values
         let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 100);
-        container.add_item(gold_bar);
+        container.add_item(gold_bar).expect("Gold Bar should have been added to Test Container");
 
         let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 50);
-        container.add_item(silver_bar);
+        container.add_item(silver_bar).expect("Silver Bar should have been added to Test Container");
         assert_eq!(2, container.get_contents().len());
 
         // WHEN we call to get their total value
@@ -559,9 +561,9 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
         let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 100);
-        container.add_item(gold_bar);
+        container.add_item(gold_bar).expect("Gold Bar should have been added to Test Container");
         let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1.0, 50);
-        container.add_item(silver_bar);
+        container.add_item(silver_bar).expect("Silver Bar should have been added to Test Container");
         assert_eq!(2, container.get_contents().len());
 
         // WHEN we call to get the content count
@@ -577,9 +579,9 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
         let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 100);
-        container.add_item(gold_bar);
+        container.add_item(gold_bar).expect("Gold Bar should have been added to Test Container");
         let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1.0, 50);
-        container.add_item(silver_bar);
+        container.add_item(silver_bar).expect("Silver Bar should have been added to Test Container");
 
         // AND we've added a container with it's own series of items
         let mut bag =  Container::new(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 20);
@@ -616,9 +618,9 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
         let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 100);
-        container.add_item(gold_bar);
+        container.add_item(gold_bar).expect("Gold Bar should have been added to Test Container");
         let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1.0, 50);
-        container.add_item(silver_bar);
+        container.add_item(silver_bar).expect("Silver Bar should have been added to Test Container");
         assert_eq!(2, container.get_contents().len());
 
         // WHEN we call to get the item count
@@ -634,9 +636,9 @@ mod tests {
         assert_eq!(0, container.get_contents().len());
         // AND we've added 2 items with different values
         let gold_bar = Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD,'X', 1.0, 100);
-        container.add_item(gold_bar);
+        container.add_item(gold_bar).expect("Gold Bar should have been added to Test Container");
         let silver_bar = Item::new(Uuid::new_v4(), "Silver Bar".to_owned(), MaterialType::SILVER,'X', 1.0, 50);
-        container.add_item(silver_bar);
+        container.add_item(silver_bar).expect("Silver Bar should have been added to Test Container");
 
         // AND we've added a container with it's own series of items
         let mut bag =  Container::new(Uuid::new_v4(), "Bag".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 20);
