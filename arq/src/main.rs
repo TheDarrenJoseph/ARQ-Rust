@@ -11,6 +11,7 @@ use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
 
 use crate::engine::game_engine::{build_game_engine, GameEngine};
+use crate::engine::menu::start_menu;
 use crate::ui::ui::StartMenuChoice::Play;
 use crate::ui::ui_util::build_paragraph;
 use crate::view::game_over_view::GameOverChoice;
@@ -46,7 +47,7 @@ async fn begin() -> Result<(), io::Error> {
     while !game_over {
         engine.init()?;
 
-        let result = engine.start_menu(choice.clone()).await.await;
+        let result = start_menu(&mut engine, choice.clone()).await.await;
         match result {
             Ok(Some(goc)) => {
                 match goc {

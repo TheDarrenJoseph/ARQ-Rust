@@ -45,6 +45,7 @@ use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
 use crate::engine::input_handler::handle_input;
+use crate::engine::menu::start_menu;
 use crate::map::Map;
 use crate::menu::Selection;
 
@@ -87,13 +88,21 @@ use crate::widget::stateful::dropdown_widget::get_resolution_dropdown_options;
 
 pub struct GameEngine<B: 'static + Backend>  {
     pub ui_wrapper : UIWrapper<B>,
-    settings: Settings,
+    pub(crate) settings: Settings,
     pub levels: Levels,
     sound_sinks: Option<SoundSinks>,
     game_running : bool,
 }
 
 impl <B : Backend + Send> GameEngine<B> {
+    pub fn is_game_running(&self) -> bool {
+        self.game_running
+    }
+
+    pub fn stop_game(&mut self) {
+        self.game_running = false
+    }
+
     pub fn rebuild(&mut self) {
         let settings = build_settings();
         // Grab the randomised seed
@@ -105,53 +114,9 @@ impl <B : Backend + Send> GameEngine<B> {
         self.settings = settings;
     }
 
-    // Saves the widget values into the settings
-    fn handle_settings_menu_selection(&mut self, widgets: WidgetList) -> Result<(), Error> {
-
-        for widget in widgets.widgets {
-            match widget.state_type {
-                StatefulWidgetType::Boolean(mut b) => {
-                    let setting = self.settings.bool_settings.iter_mut().find(|x| x.name == b.get_name());
-                    if let Some(s) = setting {
-                        s.value = b.value;
-                    }
-                },
-                StatefulWidgetType::Text(mut t) => {
-                    let setting = self.settings.string_settings.iter_mut().find(|x| x.name == t.get_name());
-                    if let Some(s) = setting {
-                        s.value = t.get_input();
-                    }
-                },
-                StatefulWidgetType::Number(mut t) => {
-                    let setting = self.settings.u32_settings.iter_mut().find(|x| x.name == t.get_name());
-                    if let Some(s) = setting {
-                        s.value = t.get_input() as u32;
-                    }
-                },
-                StatefulWidgetType::Dropdown(mut t) => {
-                    // Update the setting value from the widget
-                    let setting = self.settings.dropdown_settings.iter_mut().find(|x| x.name == t.get_name());
-                    if let Some(s) = setting {
-                        let res_options = get_resolution_dropdown_options();
-                        let resolution_option_chosen = res_options.iter().find(|opt| opt.display_name == t.get_selection());
-                        if let Some(resolution_option) = resolution_option_chosen {
-                            info!("Resolution selected: {:?}", resolution_option.display_name);
-                            s.value.chosen_option = resolution_option.clone();
-                        } else {
-                            error!("No resolution selected!")
-                        }
-
-                    }
-                },
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
 
     // Updates the game to reflect current settings
-    fn update_from_settings(&mut self) -> Result<(), Error>  {
+    pub(crate) fn update_from_settings(&mut self) -> Result<(), Error>  {
         let _fog_of_war = self.settings.is_fog_of_war();
         let map_seed = self.settings.get_rng_seed().ok_or( Error::new(ErrorKind::NotFound, "Failed to retrieve map seed"))?;
         info!("Map seed updated to: {}", map_seed);
@@ -220,63 +185,7 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(())
     }
 
-    pub async fn start_menu(&mut self, choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, Error> > + '_ >> {
-        Box::pin(async move {
-            let ui_wrapper = &mut self.ui_wrapper;
-            ui_wrapper.clear_screen()?;
 
-            // Hide additional widgets when paused
-            self.ui_wrapper.ui.render_additional = false;
-            let start_choice = self.ui_wrapper.draw_start_menu()?.view_specific_result.unwrap();
-            match start_choice {
-                StartMenuChoice::Play => {
-                    self.ui_wrapper.ui.render_additional = true;
-                    if !self.game_running {
-                        info!("Starting game..");
-                        if let Some(goc) = self.start_game().await? {
-                            return Ok(Some(goc));
-                        }
-                        return Ok(None);
-                    } else {
-                        return Ok(None);
-                    }
-                },
-                StartMenuChoice::Settings => {
-                    info!("Showing settings..");
-
-                    let widgets = build_settings_widgets(&self.settings);
-                    let mut settings_menu = SettingsMenuView {
-                        ui: &mut self.ui_wrapper.ui,
-                        terminal_manager: &mut self.ui_wrapper.terminal_manager,
-                        menu: crate::view::util::widget_menu::WidgetMenu {
-                            selected_widget: Some(0),
-                            widgets: WidgetList { widgets, widget_index: Some(0) }
-                        }
-                    };
-
-                    settings_menu.begin()?;
-                    let widgets = settings_menu.menu.widgets;
-                    self.handle_settings_menu_selection(widgets)?;
-                    // Ensure we're using any changes to the settings
-                    self.update_from_settings()?;
-                },
-                StartMenuChoice::Info => {
-                    info!("Showing info..");
-                    let _ui = &mut self.ui_wrapper.ui;
-                    self.ui_wrapper.draw_info()?;
-                    io::stdin().keys().next();
-                },
-                StartMenuChoice::Quit => {
-                    if self.game_running {
-                        self.game_running = false;
-                    }
-                    return Ok(Some(GameOverChoice::EXIT));
-                }
-            }
-
-            return Ok(None)
-        })
-    }
 
     /*
      * Finds the first entry or exit containing room depending on the direction
@@ -558,7 +467,7 @@ impl <B : Backend + Send> GameEngine<B> {
         self.ui_wrapper.clear_screen()?;
         self.ui_wrapper.ui.hide_console();
 
-        if let Some(goc) = self.start_menu(None).await.await? {
+        if let Some(goc) = start_menu(self, None).await.await? {
             self.ui_wrapper.ui.show_console();
             self.ui_wrapper.clear_screen()?;
             return Ok(Some(goc));
