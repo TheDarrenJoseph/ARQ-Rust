@@ -37,7 +37,7 @@ TODO (Not in any specific order)
     - [X] Room generation
     - [X] Pathfinding
     - [X] Level traversal (Exit/Entry, next level/previous level)
-- [ ] Overworld
+- [ ] Overworld (TBC)
 - [ ] Items (valuables, potions, scrolls, etc)
     - [X] Basic valuables
     - [ ] Usable items
@@ -45,15 +45,15 @@ TODO (Not in any specific order)
     - [X] Containers / Container spawning
     - [X] World container view / handling (i.e Floor, Chests)
         - [X] Dropping items / multiple items in one spot
-        - [X] Taking items
-        - [X] Moving items inplace
-        - [X] Moving between containers
+        - [X] Taking items from a container
+        - [X] Moving items in-place (within a single container)
+        - [X] Moving items/containers between containers
     - [ ] Inventory Tab (Character Info View)
         - [X] Dropping items
         - [X] Moving items in-place
         - [X] Moving between containers
-        - [ ]  'Use' for items (Nothing usable yet)
-        - [ ]  'Equip' for items (Nothing equippable yet)
+        - [ ] 'Use' for items (Nothing usable yet)
+        - [ ] 'Equip' for items (Nothing equippable yet)
 - [ ] Character Stats (For player and NPCs)
     - [X] Character creation
     - [ ] NPC Character creation
@@ -68,6 +68,10 @@ TODO (Not in any specific order)
     - [ ] Combat turns
     - [ ] Level bosses
 - [X] Settings Menu
+  - [X] RNG Seed choosing / reproducibility
+  - [X] Music volume
+  - [ ] Fog of war (TODO feature) 
+  - [X] Terminal resolution adjustment (Currently only 80x24 and FULLSCREEN are supported)
 - [X] Ending Screen (Game Over / Dungeon escape)
 - [ ] Leaderboard / Graveyard
 - [ ] (Optional) Export / Load game/item maps from files
