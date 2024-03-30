@@ -6,6 +6,7 @@ use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::game_engine::GameEngine;
+use crate::engine::menu::menu_command;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, Error>  {
@@ -14,7 +15,7 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
     let ui_wrapper = &mut engine.ui_wrapper;
     match key {
         Key::Esc => {
-            if let Some(goc) = engine.menu_command().await? {
+            if let Some(goc) = menu_command(engine).await? {
                 return Ok(Some(goc));
             }
         },

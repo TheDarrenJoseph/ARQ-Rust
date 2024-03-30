@@ -72,6 +72,23 @@ pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine
     })
 }
 
+pub async fn menu_command<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, Error> {
+    engine.ui_wrapper.clear_screen()?;
+    engine.ui_wrapper.ui.hide_console();
+
+    if let Some(goc) = start_menu(engine, None).await.await? {
+        engine.ui_wrapper.ui.show_console();
+        engine.ui_wrapper.clear_screen()?;
+        return Ok(Some(goc));
+    }
+
+    engine.ui_wrapper.ui.show_console();
+    engine.ui_wrapper.clear_screen()?;
+    Ok(None)
+}
+
+
+
 // Saves the widget values into the settings
 fn handle_settings_menu_selection(settings: &mut Settings, widgets: WidgetList) -> Result<(), Error> {
 
@@ -116,3 +133,4 @@ fn handle_settings_menu_selection(settings: &mut Settings, widgets: WidgetList) 
 
     Ok(())
 }
+

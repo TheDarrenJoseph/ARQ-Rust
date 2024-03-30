@@ -44,6 +44,7 @@ use crate::{menu, widget};
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
+use crate::engine::game_loop::game_loop;
 use crate::engine::input_handler::handle_input;
 use crate::engine::menu::start_menu;
 use crate::map::Map;
@@ -51,6 +52,7 @@ use crate::menu::Selection;
 
 
 use crate::engine::process::map_generation::MapGeneration;
+use crate::engine::spawning::{respawn_npcs, respawn_player};
 use crate::error::io_error_utils::error_result;
 
 
@@ -186,63 +188,7 @@ impl <B : Backend + Send> GameEngine<B> {
     }
 
 
-
-    /*
-     * Finds the first entry or exit containing room depending on the direction
-     * Sets the player position to match that
-     * Returns the room the player has been moved to (for further spawning decisions)
-     */
-    fn respawn_player(&mut self, change: LevelChange) -> Option<Room> {
-        let level = self.levels.get_level_mut();
-        let player = level.characters.get_player_mut().unwrap();
-
-        // Grab the first room and set the player's position there
-        if let Some(map) = &level.map {
-            match change {
-                LevelChange::UP => {
-                    let exit_room = map.rooms.iter().find(|room| room.get_exit().is_some()).unwrap();
-                    player.set_position(exit_room.get_exit().unwrap());
-                    return Some(exit_room.clone());
-                },
-                LevelChange::DOWN => {
-                    let entry_room = map.rooms.iter().find(|room| room.get_entry().is_some());
-                    if let Some(er) = entry_room {
-                        player.set_position(er.get_entry().unwrap());
-                        return Some(er.clone());
-                    }
-                },
-                _ => { }
-            }
-        } else {
-            log::error!("Cannot respawn player, Map was None!");
-        }
-        return None;
-    }
-
-    fn respawn_npcs(&mut self, player_room: Room) {
-        let level = self.levels.get_level_mut();
-        let npcs = level.characters.get_npcs_mut();
-        if let Some(map) = &level.map {
-            let mut non_player_rooms : Vec<Room> = map.rooms.clone();
-            non_player_rooms.retain(|r| !r.uuid_equals(player_room.clone()));
-
-            if !non_player_rooms.is_empty() {
-                let _moved = 0;
-                for npc in npcs {
-                    // Normal thread RNG / non-reproducible!!
-                    let mut rng = thread_rng();
-                    let random_room_idx = rng.gen_range(0..non_player_rooms.len() - 1);
-                    let chosen_room = non_player_rooms.get(random_room_idx).unwrap();
-                    npc.set_position(chosen_room.random_inside_pos(&mut rng));
-                }
-            } else {
-                log::error!("Cannot respawn NPCs, Cannot find any non player containing rooms.");
-            }
-        } else {
-            log::error!("Cannot respawn NPCs, Map was None!");
-        }
-    }
-
+    // TODO remove testing/dev characters
     fn initialise_characters(&mut self) -> Result<(), Error> {
         info!("Building player...");
         let player_pattern_result = CharacterPattern::new_player();
@@ -261,9 +207,9 @@ impl <B : Backend + Send> GameEngine<B> {
         // Uncomment to use character creation
         //let mut updated_character = self.show_character_creation(characters.get(0).unwrap().clone())?;
         self.levels.get_level_mut().characters = characters;
-        let spawn_room = self.respawn_player(LevelChange::DOWN);
+        let spawn_room = respawn_player(self, LevelChange::DOWN);
         return if let Some(sr) = spawn_room {
-            self.respawn_npcs(sr.clone());
+            respawn_npcs(self, sr.clone());
             self.build_testing_inventory();
             Ok(())
         } else {
@@ -377,7 +323,7 @@ impl <B : Backend + Send> GameEngine<B> {
                 }
             }
 
-            let result = self.game_loop().await?;
+            let result = game_loop(self).await?;
             if result.is_some() {
                 return Ok(result);
             }
@@ -450,7 +396,7 @@ impl <B : Backend + Send> GameEngine<B> {
                 Ok(result) => {
                     match result {
                         LevelChangeResult::LevelChanged => {
-                            self.respawn_player(level_change);
+                            respawn_player(self, level_change);
                         },
                         LevelChangeResult::OutOfDungeon => {
                            return self.handle_game_over();
@@ -461,21 +407,6 @@ impl <B : Backend + Send> GameEngine<B> {
             }
         }
         return Ok(None)
-    }
-
-    pub async fn menu_command(&mut self) -> Result<Option<GameOverChoice>, Error> {
-        self.ui_wrapper.clear_screen()?;
-        self.ui_wrapper.ui.hide_console();
-
-        if let Some(goc) = start_menu(self, None).await.await? {
-            self.ui_wrapper.ui.show_console();
-            self.ui_wrapper.clear_screen()?;
-            return Ok(Some(goc));
-        }
-
-        self.ui_wrapper.ui.show_console();
-        self.ui_wrapper.clear_screen()?;
-        Ok(None)
     }
 
     pub(crate) fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, Error>  {
@@ -499,22 +430,8 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(None)
     }
 
-    async fn player_turn(&mut self)  -> Result<Option<GameOverChoice>, Error> {
-        let key = get_input_key()?;
-        //self.terminal_manager.terminal.clear()?;
-        return Ok(handle_input(self, key).await?);
-    }
 
-    fn npc_turns(&mut self)  -> Result<(), Error> {
-        // TODO NPC movement
-        return Ok(());
-    }
 
-    async fn game_loop(&mut self) -> Result<Option<GameOverChoice>, Error> {
-        let game_over_choice = self.player_turn().await?;
-        self.npc_turns()?;
-        return Ok(game_over_choice);
-    }
 }
 
 pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, Error> {

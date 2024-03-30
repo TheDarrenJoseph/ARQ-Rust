@@ -8,3 +8,5 @@ pub mod combat;
 pub mod menu;
 
 mod input_handler;
+mod game_loop;
+mod spawning;
