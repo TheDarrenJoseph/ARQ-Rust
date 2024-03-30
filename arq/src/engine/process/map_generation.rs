@@ -1,23 +1,11 @@
-use std::{io};
-
-use std::sync::mpsc::{channel};
-
-
-
-
-
-
+use std::io;
+use std::sync::mpsc::channel;
 
 use tokio::join;
-use crate::engine::process::Progressible;
 
+use crate::engine::process::Progressible;
 use crate::map::Map;
 use crate::map::map_generator::MapGenerator;
-
-
-
-
-
 use crate::view::util::progress_display::ProgressDisplay;
 
 /*
@@ -33,7 +21,7 @@ impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
         let progress = self.map_generator.get_progress().clone();
         let (tx, rx) = channel();
         let handling = self.progress_display.handle_progress(rx, progress.step_count());
-        tx.send(self.map_generator.get_progress().clone());
+        tx.send(self.map_generator.get_progress().clone()).expect("Map generator progress should have been sent to the tx channel!");
         let map = self.map_generator.generate(tx);
 
         let result = join!(map, handling);

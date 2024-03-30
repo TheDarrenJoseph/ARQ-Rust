@@ -153,7 +153,7 @@ mod tests {
     use crate::engine::pathfinding::{ManhattanPathCosting, Node, Pathfinding};
     use crate::map;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::{build_room};
+    use crate::map::room::build_room;
     use crate::map::tile::TileType;
     use crate::map::Tiles;
 

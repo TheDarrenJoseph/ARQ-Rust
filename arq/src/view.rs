@@ -1,21 +1,16 @@
-
 use std::io;
 use std::io::Error;
 
-
 use termion::event::Key;
 use termion::input::TermRead;
-
 use tui::Frame;
 use tui::layout::Rect;
 
-
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::map::position::{Area};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{get_input_key};
-use crate::ui::ui_util::{build_paragraph_multi, check_display_size};
-
 pub use crate::ui::resolution::MIN_RESOLUTION;
+use crate::ui::ui::get_input_key;
+use crate::ui::ui_util::{build_paragraph_multi, check_display_size};
 
 pub mod framehandler;
 pub mod util;
@@ -60,11 +55,6 @@ pub struct InputResult<T> {
     pub(crate) view_specific_result : Option<T>
 }
 
-fn map_rect_to_area(rect: Rect) -> Area {
-    let start_position = Position { x: rect.x.clone(), y : rect.y.clone()};
-    build_rectangular_area(start_position, rect.width.clone(), rect.height.clone())
-}
-
 pub fn resolve_area<B : tui::backend::Backend>(area: Option<Rect>, frame: &Frame<B>) -> Rect {
     return match area {
         Some(a) => { a },
@@ -90,7 +80,7 @@ pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut Te
         let result = check_display_size(Some(Area::from_rect(frame_size)));
         match result {
             Err(_e) => {
-                terminal_manager.terminal.clear();
+                terminal_manager.terminal.clear().expect("Terminal failed to clear!");
                 let error_paragraph = build_paragraph_multi(
                     vec![String::from(
                         "Window too small."),
@@ -98,7 +88,7 @@ pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut Te
                          String::from("Please resize and hit any key to check again.") ]);
                 terminal_manager.terminal.draw(|frame|{
                     frame.render_widget(error_paragraph, frame_size);
-                });
+                }).expect("Failed to draw the frame!");
                 io::stdin().keys().next().unwrap().unwrap();
             },
             _ => {

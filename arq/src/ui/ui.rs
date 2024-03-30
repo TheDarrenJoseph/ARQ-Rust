@@ -1,25 +1,19 @@
-
-use termion::event::Key;
 use std::io;
 
+use termion::event::Key;
 use termion::input::TermRead;
-
 use tui::layout::{Alignment, Rect};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
+use tui::widgets::{Block, Borders, Paragraph, Wrap};
 
-
-use crate::map::position::{Area};
+use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN};
-
 use crate::ui::ui_layout::{LayoutType, UILayout};
-
-use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
-
-use crate::widget::{StandardWidgetType};
+use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+use crate::widget::StandardWidgetType;
 
 pub struct UI {
     pub render_additional: bool,
@@ -121,7 +115,7 @@ impl UI {
      */
     pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
         let ui_layout =  self.ui_layout.as_mut().ok_or("Failed to get ui_layout, has it been initialised?").unwrap();
-        let areas = ui_layout.get_or_build_areas(frame.size(), LayoutType::STANDARD_SPLIT);
+        let areas = ui_layout.get_or_build_areas(frame.size(), LayoutType::StandardSplit);
         if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             let main_block = build_main_block();
@@ -156,10 +150,6 @@ impl UI {
 
     pub fn clear_console_buffer(&mut self) {
         self.frame_handler.buffer.content = String::new();
-    }
-
-    pub fn is_console_visible(&self) -> bool {
-        self.console_visible
     }
 
     pub fn get_additional_widgets(&self) -> &Vec<StandardWidgetType> {
@@ -203,7 +193,7 @@ impl Draw for UI {
     }
 
     fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
-        let ui_areas = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::STANDARD_SPLIT);
+        let ui_areas = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::StandardSplit);
         let console_area = ui_areas.get_area(UI_AREA_NAME_CONSOLE).unwrap().area;
         let frame_data = FrameData { frame_area: console_area, ui_areas: ui_areas.clone(), data: ConsoleBuffer { content: self.frame_handler.buffer.content.clone() } };
         self.frame_handler.handle_frame(frame, frame_data);
@@ -211,7 +201,7 @@ impl Draw for UI {
 
     fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
         let widget_count = self.additional_widgets.len();
-        if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::STANDARD_SPLIT).get_area(UI_AREA_NAME_MAIN) {
+        if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::StandardSplit).get_area(UI_AREA_NAME_MAIN) {
             let area = main_area.area;
             let rect = area.to_rect();
             let max_width = area.width / 2;
@@ -226,8 +216,7 @@ impl Draw for UI {
                         StandardWidgetType::UsageLine(w) => {
                             frame.render_widget(w.clone(),
                                                 Rect::new(rect.x + 1, rect.height - 1, rect.width, 1));
-                        },
-                        _ => {}
+                        }
                     }
                     _offset += 1;
                 }

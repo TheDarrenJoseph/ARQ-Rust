@@ -1,12 +1,7 @@
-
-
-
-
 use tui::layout::Rect;
 
 use crate::map::position::Area;
 use crate::ui::ui_areas::UIAreas;
-
 
 pub mod character;
 pub mod console;

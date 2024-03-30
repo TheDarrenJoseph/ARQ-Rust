@@ -1,13 +1,10 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::convert::TryInto;
-
 use std::io::Error;
 
-
 use termion::event::Key;
-use tui::layout::{Rect};
+use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
-
 use tui::widgets::{Block, Borders};
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
@@ -17,11 +14,9 @@ use crate::map::position::Position;
 use crate::ui::ui_util::build_paragraph;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::{FrameData, FrameHandler};
-
-
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
-use crate::view::model::usage_line::{UsageLine};
+use crate::view::model::usage_line::UsageLine;
 
 /*
     This frame handler is meant to display containers (Chests, Floor items, Dead bodies) in a tabular display
@@ -141,13 +136,6 @@ impl ContainerFrameHandler {
             return Some(focused_item.clone());
         }
         None
-    }
-
-    fn replace_focused_container(&mut self, updated: Container) {
-        if let Some(mut focused) = self.find_focused_container()
-        {
-            focused.replace_container(updated);
-        }
     }
 
     pub fn cancel_selection(&mut self) {
@@ -509,14 +497,12 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
-    use crate::item_list_selection::{ListSelection};
-    
+
+    use crate::item_list_selection::ListSelection;
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::objects::items::Item;
     use crate::map::tile::Colour;
     use crate::menu;
-
     use crate::view::framehandler::container::{build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
 
     fn build_test_container() -> Container {
@@ -532,7 +518,7 @@ mod tests {
 
         for i in 1..=4 {
             let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item);
+            container.add_item(test_item).expect("Failed to add a test item to the test container!");
         }
 
         assert_eq!(ContainerType::OBJECT, container.container_type);
@@ -631,7 +617,7 @@ mod tests {
         let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents_mut();
+        let contents = view.container.get_contents_mut();
         assert_eq!(4, contents.len());
         // with a series of items
         assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
@@ -643,7 +629,6 @@ mod tests {
         // AND we've selected the entire first page
         view.toggle_select();
         view.page_down();
-        contents = &mut Vec::new();
 
         // WHEN we call to handle a DropItems callback with a retained item
         let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);
@@ -661,7 +646,7 @@ mod tests {
         let mut view: ContainerFrameHandler = build_default_container_view(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
-        let mut contents = view.container.get_contents_mut();
+        let contents = view.container.get_contents_mut();
         assert_eq!(4, contents.len());
         // with a series of items
         assert_eq!("Test Item 1", contents[0].get_self_item().get_name());
@@ -673,7 +658,6 @@ mod tests {
         // AND we've selected the entire first page
         view.toggle_select();
         view.page_down();
-        contents = &mut Vec::new();
 
         // WHEN we call to handle a DropItems callback with a retained item
         let result = ContainerFrameHandlerInputResult::DropItems(vec![retained_item]);

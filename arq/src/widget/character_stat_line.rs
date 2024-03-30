@@ -1,10 +1,9 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
-use tui::widgets::{Widget};
+use tui::widgets::Widget;
 
 use crate::character::character_details::CharacterDetails;
-
 
 #[derive(Clone)]
 #[derive(Debug)]

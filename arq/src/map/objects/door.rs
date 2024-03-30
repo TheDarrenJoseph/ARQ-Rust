@@ -1,6 +1,6 @@
 use crate::map;
 use crate::map::position::Position;
-use crate::map::tile::{TileType, TileDetails};
+use crate::map::tile::{TileDetails, TileType};
 
 #[derive(Debug, Clone)]
 pub struct Door {

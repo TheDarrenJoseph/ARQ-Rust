@@ -22,6 +22,7 @@ mod text_dropdown {
             // WHEN we call to get the initial selection
             // THEN we expect it to be "A"
             assert_eq!("A".to_string(),  state.get_selection());
+            // AND be default we don't show options until we've tried to access the dropdown
             assert_eq!(false,  state.is_showing_options());
         });
     }
@@ -34,7 +35,7 @@ mod text_dropdown {
         assert_for_dropdown_widget(dropdown.state_type,  &|mut state: DropdownInputState| {
             // WHEN we call to toggle showing of options
             state.toggle_show();
-            // THEN we expect it to be set to true
+            // THEN we expect it to be set to true (i.e the dropdown list should be shown)
             assert_eq!(true,  state.is_showing_options());
         });
     }

@@ -4,6 +4,7 @@
  * Returns the room the player has been moved to (for further spawning decisions)
  */
 use rand::{Rng, thread_rng};
+
 use crate::engine::game_engine::GameEngine;
 use crate::engine::level::LevelChange;
 use crate::map::room::Room;

@@ -1,5 +1,5 @@
-use std::error::Error;
 use std::io;
+
 use crate::character::Character;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
@@ -195,7 +195,6 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
         if let Some(pos) = data.position {
             if let Some(map) = &mut level.map {
                 let source : Option<&mut Container>;
-                let source_item ;
                 let mut pos_containers = map.find_containers_mut(pos);
 
                 if pos_containers.len() > 0 {
@@ -206,10 +205,8 @@ pub fn move_items(data: MoveItemsData, level : &mut Level) -> Option<ContainerFr
                     let target_in_source = data.target_container.as_ref().map_or_else(|| false, |c| data.source.find(c.get_self_item()).is_some());
                     if source_is_root || target_root || !target_in_source {
                         source = Some(pos_containers.get_mut(0).unwrap());
-                        source_item = Some(data.source.get_self_item().clone());
                     } else {
                         source = map.find_container(&data.source, pos);
-                        source_item = source.as_ref().map(|s| s.get_self_item().clone());
                     }
 
                     return move_to_container(source.unwrap(),data.source.get_self_item().clone(), data);
@@ -267,15 +264,14 @@ mod tests {
     use std::collections::HashMap;
 
     use uuid::Uuid;
+
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
     use crate::character::characters::Characters;
-
     use crate::engine::container_util::{move_items, move_player_items};
     use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{TileType};
+    use crate::map::tile::TileType;
     use crate::map::Tiles;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::MoveItems;
     use crate::view::framehandler::container::MoveItemsData;
@@ -636,6 +632,7 @@ mod tests {
         assert!(false);
     }
 
+    #[test]
     fn test_move_split_items() {
         // GIVEN a valid map
         // that holds a source container containing 6 containers (Each with a unique name)
@@ -649,16 +646,17 @@ mod tests {
 
         // Clone everything before moving
         let to_move = vec![container1.get_self_item().clone(), container6.get_self_item().clone()];
-        source_container.push(vec![container1, container2, container3,  container4,  container5, container6], );
-        let source_copy = source_container.clone();
+        source_container.push(vec![container1.clone(), container2.clone(), container3.clone(), container4.clone(), container5.clone(), container6.clone()], );
+        //let source_container_copy = source_container.clone();
         assert_eq!(6, source_container.get_total_count());
 
-        // WHEN we call to move container 1 and 6 to container 2's location (index 1)
+        // WHEN we call to move "Test Container 1" and "Test Container 6" to container 2's location (index 1)
         let source = source_container.clone();
         let container_pos =  Position { x: 1, y: 1};
+        // Target is "Test Container 2"
         let target_item = source_container.get(1).get_self_item().clone();
         let _expected_target = target_item.clone();
-        let mut level = build_test_level(container_pos, source_container);
+        let mut level = build_test_level(container_pos, source_container.clone());
         let data = MoveItemsData { source, to_move, target_container: None, target_item: Some(target_item), position: Some(container_pos) };
         let data_expected = data.clone();
         let result = move_items(data, &mut level);
@@ -676,12 +674,19 @@ mod tests {
                     if let Some(c) = map_container {
                         assert_eq!(6, c.get_total_count());
                         let contents = c.get_contents();
-                        assert_eq!(source_copy.get(0).get_self_item().get_name(), contents[0].get_self_item().get_name());
-                        assert_eq!(source_copy.get(5).get_self_item().get_name(), contents[1].get_self_item().get_name());
-                        assert_eq!(source_copy.get(1).get_self_item().get_name(), contents[2].get_self_item().get_name());
-                        assert_eq!(source_copy.get(2).get_self_item().get_name(), contents[3].get_self_item().get_name());
-                        assert_eq!(source_copy.get(3).get_self_item().get_name(), contents[4].get_self_item().get_name());
-                        assert_eq!(source_copy.get(4).get_self_item().get_name(), contents[5].get_self_item().get_name());
+                        // AND the order should now match our expectations
+                        // Test Container 2
+                        assert_eq!(container2.get_self_item().get_name(), contents[0].get_self_item().get_name());
+                        // Test Container 1
+                        assert_eq!(container1.get_self_item().get_name(), contents[1].get_self_item().get_name());
+                        // Test Container 6
+                        assert_eq!(container6.get_self_item().get_name(), contents[2].get_self_item().get_name());
+                        // Test Container 3
+                        assert_eq!(container3.get_self_item().get_name(), contents[3].get_self_item().get_name());
+                        // Test Container 4
+                        assert_eq!(container4.get_self_item().get_name(), contents[4].get_self_item().get_name());
+                        // Test Container 5
+                        assert_eq!(container5.get_self_item().get_name(), contents[5].get_self_item().get_name());
                         return; // pass
                     }
                 },

@@ -1,17 +1,14 @@
 use std::io;
 use std::sync::mpsc::Receiver;
 
-
 use termion::input::TermRead;
-
 
 use crate::map::position::Area;
 use crate::progress::MultiStepProgress;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui_areas::{UI_AREA_NAME_MAIN};
+use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_areas_builder::UIAreasBuilder;
-use crate::ui::ui_layout::LayoutType::{SINGLE_MAIN_WINDOW_CENTERED};
-
+use crate::ui::ui_layout::LayoutType::SingleMainWindowCentered;
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 
@@ -43,7 +40,7 @@ impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
             let fh = &mut self.frame_handler;
             self.terminal_manager.terminal.draw(|frame| {
                 let ui_areas= UIAreasBuilder::new(Area::from_rect(frame.size()))
-                    .layout_type(SINGLE_MAIN_WINDOW_CENTERED)
+                    .layout_type(SingleMainWindowCentered)
                     .build().1;
 
                 let main_area = ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap();

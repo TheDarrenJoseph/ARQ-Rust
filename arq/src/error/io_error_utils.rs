@@ -1,6 +1,5 @@
 use std::io::{Error, ErrorKind};
 
-
 pub fn error(msg: String) -> std::io::Error {
     return Error::new(ErrorKind::Other, msg);
 }

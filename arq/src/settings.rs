@@ -1,7 +1,8 @@
-use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
-use crate::global_flags::{GLOBALS};
-use crate::ui::resolution::{Resolution};
+use rand::distributions::Alphanumeric;
+
+use crate::global_flags::GLOBALS;
+use crate::ui::resolution::Resolution;
 use crate::widget::stateful::dropdown_widget::{DropdownOption, DropdownSetting, get_resolution_dropdown_options};
 
 pub const SETTING_FOG_OF_WAR : &str = "Fog of War";

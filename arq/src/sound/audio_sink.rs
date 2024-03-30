@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+
 use rodio::{OutputStream, Sink};
 
 pub struct AudioSink {
@@ -9,10 +10,6 @@ pub struct AudioSink {
 impl AudioSink {
     pub fn new() -> AudioSink {
         AudioSink { os:None, sink: None }
-    }
-
-    pub fn get_os(&self) -> &Option<Arc<OutputStream>> {
-        &self.os
     }
 
     pub fn get_sink(&self) -> &Option<Arc<RwLock<Sink>>> {

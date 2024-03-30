@@ -1,8 +1,6 @@
-use std::{io};
+use std::io;
 
 use rand_pcg::Pcg64;
-
-
 use termion::event::Key;
 
 use crate::character::Character;
@@ -11,7 +9,6 @@ use crate::engine::command::input_mapping;
 use crate::map::Map;
 use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, Position, Side};
-
 
 const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;

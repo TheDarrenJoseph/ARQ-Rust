@@ -1,5 +1,7 @@
 use std::io::Error;
+
 use termion::event::Key;
+
 use crate::engine::command::command::Command;
 use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
@@ -62,20 +64,20 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use rand_seeder::Seeder;
     use termion::event::Key;
-    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
 
+    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
     use crate::character::Character;
     use crate::character::characters::Characters;
     use crate::engine::engine_helpers::input_handler::handle_input;
-
     use crate::engine::game_engine::*;
     use crate::engine::level::{init_level_manager, Level, Levels};
     use crate::map::{Map, Tiles};
-    use crate::map::position::{Position};
     use crate::map::position::{Area, build_square_area};
-    use crate::map::tile::{build_library, TileType, TileDetails};
+    use crate::map::position::Position;
+    use crate::map::tile::{build_library, TileDetails, TileType};
     use crate::terminal::terminal_manager;
 
     fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {
@@ -264,7 +266,7 @@ mod tests {
         let input = vec![Key::Up];
         // THEN we expect the player's position to remain unchanged
         let expected_end_position = Position{x:1, y: 2};
-        test_movement_input(levels, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position).await;
     }
 
     #[tokio::test]
@@ -297,7 +299,7 @@ mod tests {
         let input = vec![Key::Left];
         // THEN we expect the player's position to be updated to the other corridor tile
         let expected_end_position = Position{x:0, y: 1};
-        test_movement_input(levels, start_position, input, expected_end_position);
+        test_movement_input(levels, start_position, input, expected_end_position).await;
     }
 
     #[tokio::test]

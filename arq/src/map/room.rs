@@ -1,6 +1,7 @@
 use rand::Rng;
 use rand::rngs::ThreadRng;
 use uuid::Uuid;
+
 use crate::map::objects::door::Door;
 use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
 use crate::util::utils::{HasUuid, UuidEquals};
@@ -82,11 +83,9 @@ impl Room {
 
 #[cfg(test)]
 mod tests {
-    
-
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position, Side};
-    use crate::map::room::{build_room};
+    use crate::map::room::build_room;
 
     #[test]
     fn test_get_sides() {

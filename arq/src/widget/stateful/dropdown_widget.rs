@@ -3,9 +3,9 @@ use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::StatefulWidget;
-use crate::ui::resolution::{Resolution};
-use crate::view::MIN_RESOLUTION;
 
+use crate::ui::resolution::Resolution;
+use crate::view::MIN_RESOLUTION;
 use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
 #[derive(Clone)]
@@ -85,7 +85,7 @@ pub fn build_dropdown(name: String, editable: bool, options: Vec<String>) -> Sta
     let input_state = DropdownInputState {
         selected: false,
         editable,
-        show_options: editable,
+        show_options: false,
         name,
         selected_index: 0,
         chosen_option: options[0].to_string(),

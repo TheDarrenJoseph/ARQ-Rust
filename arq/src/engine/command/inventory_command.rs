@@ -1,23 +1,20 @@
 use std::io;
-use std::io::{Error};
-
+use std::io::Error;
 
 use termion::event::Key;
-use crate::character::equipment::get_potential_slots;
 
+use crate::character::equipment::get_potential_slots;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
-use crate::map::objects::items::{Item};
+use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-
-use crate::view::util::callback::Callback;
 use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, EquipItems, MoveItems, MoveToContainerChoice};
-
+use crate::view::util::callback::Callback;
 use crate::view::View;
 
 const UI_USAGE_HINT: &str = "Up/Down - Move, Enter/q - Toggle/clear selection\nTab - Change tab, Esc - Exit";
@@ -50,20 +47,18 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
                     // If the item is already equipped / un-equip it
                     if result_item.is_equipped() {
                         let equipped_slot = result_item.get_equipment_slot().unwrap();
-                        equipment_snapshot.unequip(equipped_slot.clone());
+                        equipment_snapshot.unequip(equipped_slot.clone()).expect("Failed to un-equip item!");
                         result_item.unequip();
                         modified.push(result_item.clone());
                         log::info!("Un-equipped item {} from slot: {}", result_item.get_name(), equipped_slot);
                     } else {
                         // Otherwise try the potential slots for it
                         let potential_slots = get_potential_slots(result_item.item_type.clone());
-                        let mut success = false;
                         let mut equip_result = Ok(());
                         let mut chosen_slot = None;
                         for slot in potential_slots {
                             equip_result = equipment_snapshot.equip(c_copy.clone(), slot.clone());
                             if equip_result.is_ok() {
-                                success = true;
                                 chosen_slot = Some(slot);
                                 result_item.set_equipment_slot(chosen_slot.clone());
                                 modified.push(result_item.clone());
@@ -227,28 +222,22 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use uuid::Uuid;
+
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
     use crate::character::characters::Characters;
-
-    
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::engine::command::inventory_command::{CallbackState, equip_items, handle_callback};
     use crate::engine::level::Level;
-    
-    
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, TileType};
     use crate::map::Tiles;
-
-
-    use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::EquipItems;
-    
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -263,7 +252,7 @@ mod tests {
 
         for i in 1..=4 {
             let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item);
+            container.add_item(test_item).expect("Failed to add item!");
         }
 
         assert_eq!(ContainerType::OBJECT, container.container_type);
@@ -418,7 +407,7 @@ mod tests {
         let mut level = build_test_level(area_container);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
-        player.get_equipment_mut().unequip(PRIMARY);
+        player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");
 
         // AND an item that can be equipped that's inside the player's inventory
         let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 10 });
@@ -427,7 +416,7 @@ mod tests {
 
         let to_equip = steel_sword.clone();
         let expected_id = to_equip.get_id().clone();
-        player.get_inventory_mut().add_item(steel_sword);
+        player.get_inventory_mut().add_item(steel_sword).expect("Failed to add item!");
 
         let data = ContainerFrameHandlerInputResult::EquipItems(vec![to_equip]);
 
@@ -458,7 +447,7 @@ mod tests {
         let mut level = build_test_level(area_container);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
-        player.get_equipment_mut().unequip(PRIMARY);
+        player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");
 
         // AND an item that can be equipped that's inside the player's inventory
         let steel_sword = Item::weapon(Uuid::new_v4(), "".to_owned(), ItemForm::BLADED(BladedWeaponType::ARMING), MaterialType::STEEL, 'X', 3.0, 50, Weapon { damage: 20 });
@@ -468,7 +457,7 @@ mod tests {
         let to_equip = steel_sword.clone();
         let expected_id = to_equip.get_id().clone();
 
-        player.get_inventory_mut().add_item(steel_sword);
+        player.get_inventory_mut().add_item(steel_sword).expect("Failed to add item!");;
 
         // WHEN we call to equip that item (Steel Sword)
         let state = CallbackState { level: &mut level, container: None, data: ContainerFrameHandlerInputResult::None };

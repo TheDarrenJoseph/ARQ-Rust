@@ -1,12 +1,12 @@
 use uuid::Uuid;
+
 use crate::character::{Character, Class, Race};
 use crate::character::builder::character_builder::CharacterType::{GoblinWarrior, NewPlayer};
-use crate::character::character_details::{CharacterDetails};
+use crate::character::character_details::CharacterDetails;
 use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
 use crate::error::errors::GenericError;
-
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
@@ -168,8 +168,8 @@ impl CharacterBuilder {
 
 #[cfg(test)]
 mod tests {
-    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern, DEFAULT_POSITION};
     use crate::character::{Class, Race};
+    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern, DEFAULT_POSITION};
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::character::stats::attributes::{AttributeScore, AttributeScores};
     use crate::map::tile::Colour;

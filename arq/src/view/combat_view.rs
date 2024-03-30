@@ -3,21 +3,18 @@ use std::io::Error;
 
 use termion::event::Key;
 
-
-
-
 use crate::character::battle::Battle;
-use crate::character::equipment::{WeaponSlot};
-use crate::map::position::{Area};
-use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{UI};
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
-use crate::view::framehandler::combat::{CombatFrameHandler};
-use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::util::callback::Callback;
+use crate::character::equipment::WeaponSlot;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
+use crate::map::position::Area;
+use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
+use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
+use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::framehandler::combat::CombatFrameHandler;
+use crate::view::util::callback::Callback;
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
     ui : &'a mut UI,
@@ -62,7 +59,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<Battle>, Error> {
         // Input / Output loop
         while self.battle.in_progress {
-            self.draw(None);
+            self.draw(None).expect("Combat view should have been drawn.");
 
             let input_result = self.handle_input(None).unwrap();
             if input_result.generic_input_result.done {
@@ -83,20 +80,20 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
 
         let ui = &mut self.ui;
         ui.show_console();
-        self.terminal_manager.clear_screen();
+        self.terminal_manager.clear_screen().expect("Screen should have been cleared");
         verify_display_size::<B>(self.terminal_manager);
         let fh = &mut self.frame_handler;
 
         let frame_area = Area::from_rect(self.terminal_manager.terminal.get_frame().size());
         let ui_layout = ui.ui_layout.as_mut().unwrap();
-        let ui_areas = ui_layout.get_or_build_areas(frame_area.to_rect(), LayoutType::COMBAT_VIEW);
+        let ui_areas = ui_layout.get_or_build_areas(frame_area.to_rect(), LayoutType::CombatView);
 
         // TODO get the view areas and pass them to the FrameHandler
         self.terminal_manager.terminal.draw(|frame| {
                 // TODO using frame_size here is risky and doesn't respect UILayout
                 let frame_data = FrameData { frame_area: frame_area, data: battle.clone(), ui_areas: ui_areas.clone() };
                 fh.handle_frame(frame, frame_data);
-        });
+        }).expect("Frame should have been drawn.");
 
 
         return Ok(());

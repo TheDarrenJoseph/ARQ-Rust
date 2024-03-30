@@ -2,8 +2,10 @@ use std::future::Future;
 use std::io;
 use std::io::Error;
 use std::pin::Pin;
+
 use log::{error, info};
 use termion::input::TermRead;
+
 use crate::engine::game_engine::GameEngine;
 use crate::settings::Settings;
 use crate::ui::ui::StartMenuChoice;

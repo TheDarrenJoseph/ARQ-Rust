@@ -1,16 +1,12 @@
 use std::convert::TryInto;
+
 use tui::Frame;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
-use tui::text::{Span};
+use tui::text::Span;
 use tui::widgets::{Block, Gauge, Paragraph};
 
-
-
 use crate::progress::{MultiStepProgress, Step};
-
-
-
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 pub struct MapGenerationFrameHandler {

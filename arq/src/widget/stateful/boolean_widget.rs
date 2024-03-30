@@ -5,7 +5,6 @@ use tui::widgets::StatefulWidget;
 
 use crate::widget::{StatefulWidgetState, StatefulWidgetType};
 
-
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct BooleanState {

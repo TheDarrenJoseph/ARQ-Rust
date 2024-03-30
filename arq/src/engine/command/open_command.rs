@@ -1,7 +1,6 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::io;
-use std::io::{Error};
-
+use std::io::Error;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -13,14 +12,14 @@ use crate::error::io_error_utils::error_result;
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::view::util::callback::Callback;
+use crate::ui::ui::UI;
+use crate::view::{InputResult, View};
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
-use crate::view::{InputResult, View};
-use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
-use crate::ui::ui::{UI};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::view::util::callback::Callback;
+use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -191,7 +190,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                 self.open_container(p.clone(), &c)?;
             } else {
                 self.ui.set_console_buffer(message);
-                self.re_render();
+                self.re_render()?;
                 io::stdin().keys().next().unwrap()?;
             }
         }
@@ -203,22 +202,19 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use uuid::Uuid;
 
     use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::characters::Characters;
-    use crate::engine::command::open_command::{handle_callback};
-    use crate::engine::level::{Level};
-
+    use crate::engine::command::open_command::handle_callback;
+    use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, TileType};
     use crate::map::Tiles;
-
-
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
 
     fn build_test_container() -> Container {
@@ -234,7 +230,7 @@ mod tests {
 
         for i in 1..=4 {
             let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item);
+            container.add_item(test_item).expect(format!("Test Item {} should have been added to the test container!", i).as_str());
         }
 
         assert_eq!(ContainerType::OBJECT, container.container_type);

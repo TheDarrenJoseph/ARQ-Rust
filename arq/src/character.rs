@@ -1,20 +1,20 @@
+use std::fmt::{Debug, Display, Formatter, Result};
+
+use uuid::Uuid;
+
+use crate::character::character_details::{build_default_character_details, CharacterDetails};
+use crate::character::equipment::Equipment;
+use crate::character::stats::attributes::AttributeScore;
+use crate::map::objects::container::Container;
+use crate::map::position::Position;
+use crate::map::tile::{Colour, Symbol};
+
 pub mod characters;
 pub mod character_details;
 pub mod stats;
 pub mod equipment;
 pub mod battle;
 pub mod builder;
-
-use std::fmt::{Debug, Display, Formatter, Result};
-
-use uuid::Uuid;
-use crate::character::character_details::{build_default_character_details, CharacterDetails};
-use crate::character::equipment::Equipment;
-use crate::character::stats::attributes::AttributeScore;
-
-use crate::map::objects::container::{Container};
-use crate::map::position::Position;
-use crate::map::tile::{Colour, Symbol};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Race {Human,Goblin}

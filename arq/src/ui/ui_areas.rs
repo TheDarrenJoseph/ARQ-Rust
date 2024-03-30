@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
+
 use tui::layout::Rect;
 
 use crate::map::position::{Area, build_rectangular_area, Position};
-
 
 // Total represents the entire available area
 pub const UI_AREA_NAME_TOTAL: &str = "total";
@@ -85,8 +85,8 @@ impl BorderedArea {
 }
 
 #[cfg(test)]
-mod BorderedAreaTests {
-    use crate::map::position::{Position};
+mod bordered_area_tests {
+    use crate::map::position::Position;
     use crate::ui::ui_areas::BorderedArea;
 
     #[test]

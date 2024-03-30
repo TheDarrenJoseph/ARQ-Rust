@@ -1,15 +1,13 @@
-
 use std::io::{Error, ErrorKind};
-use tui::layout::{Rect};
+
+use tui::layout::Rect;
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
+
 use crate::map::position::{Area, Position};
-use crate::ui::resolution::{Resolution};
-
 pub use crate::ui::resolution::MIN_RESOLUTION;
-
-const MIN_VIEW_SIZE : u16 = 3;
+use crate::ui::resolution::Resolution;
 
 enum Alignment {
     LEFT,
@@ -117,10 +115,10 @@ pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    
     use tui::layout::Rect;
+
     use crate::ui::resolution::MIN_RESOLUTION;
-    use crate::ui::ui_util::{center_area};
+    use crate::ui::ui_util::center_area;
 
     #[test]
     fn test_center_area_div2_leftalign() {

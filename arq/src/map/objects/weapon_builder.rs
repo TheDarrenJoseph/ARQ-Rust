@@ -1,6 +1,5 @@
-
-
 use uuid::Uuid;
+
 use crate::character::equipment::EquipmentSlot;
 use crate::error::errors::GenericError;
 use crate::map::objects::items::{Dimensions, Item, ItemForm, ItemType, MaterialType, Weapon};

@@ -1,9 +1,7 @@
-
 use rand::distributions::{Distribution, Standard};
-use rand::{Rng};
-
-
+use rand::Rng;
 use tui::layout::Rect;
+
 use crate::ui::resolution::Resolution;
 
 #[derive(Copy, Clone, std::cmp::PartialEq, Hash, Debug)]
@@ -360,6 +358,7 @@ pub const fn build_rectangular_area(start_position : Position, size_x: u16, size
 #[cfg(test)]
 mod tests {
     use tui::layout::Rect;
+
     use crate::map::position::{Area, build_rectangular_area, build_square_area, Position, Side};
 
     #[test]

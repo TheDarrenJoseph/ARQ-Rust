@@ -3,9 +3,8 @@ use std::io::BufReader;
 use std::sync::{Arc, RwLock};
 use std::thread;
 
-
-
 use rodio::{Decoder, OutputStream, Sink};
+
 use crate::sound::audio_sink::AudioSink;
 
 pub const RESOURCE_MUSIC_BACKGROUND : &str = "resources/alexander-nakarada-tavern-loop-one.mp3";

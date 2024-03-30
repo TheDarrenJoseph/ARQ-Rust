@@ -6,20 +6,18 @@ use std::task::{Context, Poll};
 
 use rand::distributions::Standard;
 use rand::Rng;
-
 use rand_pcg::Pcg64;
 use uuid::Uuid;
 
 use crate::engine::pathfinding::Pathfinding;
 use crate::engine::process::Progressible;
 use crate::map::{Map, Tiles};
-
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
 use crate::map::objects::items::{Item, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
-use crate::map::tile::{build_library, TileType, TileDetails};
+use crate::map::tile::{build_library, TileDetails, TileType};
 use crate::map::tile::TileType::NoTile;
 use crate::progress::{MultiStepProgress, Step};
 
@@ -59,19 +57,22 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
 }
 
 pub fn build_dev_chest() -> Container {
-    let mut container = Container::new(Uuid::new_v4(), "Chest".to_owned(), '$', 50.0, 1, ContainerType::OBJECT, 100);
+    let mut container = Container::new(Uuid::new_v4(), "Chest".to_owned(), '$', 50.0, 1, ContainerType::AREA, 100);
 
+    // Items totalling 7 weight
     let bronze_bar = Item::new(Uuid::new_v4(), "Bronze Bar".to_owned(), MaterialType::BRONZE, 'X', 1.0, 50);
     let mut bag = Container::new(Uuid::new_v4(), "Bag".to_owned(), '$', 5.0, 50, ContainerType::OBJECT, 50);
     let mut carton = Container::new(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
     let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), MaterialType::TIN, 'X', 1.0, 50);
-    carton.add_item(tin_bar);
+    carton.add_item(tin_bar).expect("Tin bar should have been added to the carton!");
     bag.add(carton);
-    bag.add_item(bronze_bar);
+    bag.add_item(bronze_bar).expect("Bronze bar should have been added to the bag!");
     container.add(bag);
+
+    // 60 extra weight
     for i in 1..=60 {
         let test_item = Item::new(Uuid::new_v4(), format!("Test Item {}", i), MaterialType::UNKNOWN, '$', 1.0, 100);
-        container.add_item(test_item);
+        container.add_item(test_item).expect(format!("Test Item {} should have been added to the container", i).as_str());
     }
     return container;
 }
@@ -143,7 +144,7 @@ impl <'rng> MapGenerator<'rng> {
     }
 
     fn send_progress(&mut self, tx: &Sender<MultiStepProgress>) {
-        tx.send(self.progress.clone());
+        tx.send(self.progress.clone()).expect("Progress should have been send to the tx channel");
     }
 
     pub async fn generate(&mut self, tx: Sender<MultiStepProgress>) -> Map {
@@ -256,11 +257,7 @@ impl <'rng> MapGenerator<'rng> {
                 let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
                 match container_type {
                     // Area containers (Floor) should be fine
-                    _AREA => {},
-                    _ => {
-                        log::info!("Potential Exit point has a container in the way..");
-                        continue;
-                    }
+                    _area => {}
                 }
 
                 target = Some(possible_target);
@@ -293,11 +290,7 @@ impl <'rng> MapGenerator<'rng> {
                 let container_type =  self.map.containers.get(&possible_target).map(|c| c.container_type.clone());
                 match container_type {
                     // Area containers (Floor) should be fine
-                    _area => {},
-                    _ => {
-                        log::info!("Potential Exit point has a container in the way..");
-                        continue;
-                    }
+                    _area => {}
                 }
 
                 target = Some(possible_target);
@@ -550,13 +543,14 @@ impl Progressible for MapGenerator<'_> {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc::channel;
+
     use rand_seeder::Seeder;
+
     use crate::block_on;
     use crate::map::Map;
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::TileDetails;
-    
 
     fn build_test_map() -> Map {
         let map_size = 12;
@@ -636,12 +630,10 @@ mod tests {
         }
 
         let mut x_idx = 0;
-        let mut y_idx = 0;
         for row in tiles {
             let _row_text = tile_strings.get_mut(x_idx).unwrap().clone();
             for tile in row {
                 tile_strings[x_idx].push(tile.symbol.character);
-                y_idx += 1;
             }
             x_idx += 1;
         }

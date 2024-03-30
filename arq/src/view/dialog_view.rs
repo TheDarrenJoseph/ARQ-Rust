@@ -1,6 +1,6 @@
 use std::io::Error;
-use log::error;
 
+use log::error;
 use tui::style::{Color, Style};
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};

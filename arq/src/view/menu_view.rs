@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use std::io;
 use std::io::Error;
+
 use log::info;
 use termion::input::TermRead;
 use tui::layout::Rect;
@@ -13,9 +14,6 @@ use crate::ui::ui::{StartMenuChoice, UI};
 use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, verify_display_size, View};
-
-
-
 
 pub struct MenuView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,
@@ -33,12 +31,6 @@ impl<B : tui::backend::Backend> MenuView<'_, B> {
             start_menu_mut.handle_input(key);
             let selection = start_menu_mut.selection;
             info!("Selected menu item: {}", selection);
-
-            /**
-            if start_menu_mut.exit {
-                info!("Menu exited.");
-                return Ok(StartMenuChoice::Quit);
-            }**/
 
             if start_menu_mut.selected {
                 match start_menu_mut.selection.try_into() {
@@ -78,7 +70,7 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
         verify_display_size::<B>(&mut self.terminal_manager);
 
         // TODO hookup a full-screen area for this
-        let ui_areas = ui.ui_layout.as_mut().unwrap().get_ui_areas(LayoutType::SINGLE_MAIN_WINDOW);
+        let ui_areas = ui.ui_layout.as_mut().unwrap().get_ui_areas(LayoutType::SingleMainWindow);
         let main_area_result = ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap();
 
         let menu = &self.menu;

@@ -1,13 +1,13 @@
 use std::collections::HashMap;
-use log::info;
 
+use log::info;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::map::position::{Area, Position};
 use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIArea, UIAreas};
 use crate::ui::ui_layout::LayoutType;
-use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
-use crate::ui::ui_util::{center_area};
+use crate::ui::ui_layout::LayoutType::{CombatView, SingleMainWindow, SingleMainWindowCentered, StandardSplit};
+use crate::ui::ui_util::center_area;
 use crate::view::MIN_RESOLUTION;
 
 pub struct UIAreasBuilder {
@@ -103,7 +103,7 @@ fn build_combat_view_areas(total_area: Area) -> HashMap::<String, UIArea>  {
 impl UIAreasBuilder {
 
     pub fn new(frame_size: Area) -> UIAreasBuilder {
-        UIAreasBuilder { frame_size, layout_type: LayoutType::STANDARD_SPLIT }
+        UIAreasBuilder { frame_size, layout_type: LayoutType::StandardSplit }
     }
 
     pub fn needs_rebuilding(&self, total_area: Area) -> bool {
@@ -137,21 +137,21 @@ impl UIAreasBuilder {
         let total_area = self.build_total_area();
         info!("Building layout of type: {:?} with total area: {:?}", self.layout_type, total_area);
         match self.layout_type {
-            STANDARD_SPLIT => {
+            StandardSplit => {
                 let areas = build_split_areas(total_area);
-                return (STANDARD_SPLIT, UIAreas::new(areas))
+                return (StandardSplit, UIAreas::new(areas))
             },
-            SINGLE_MAIN_WINDOW => {
+            SingleMainWindow => {
                 let areas= build_single_main_window_areas(total_area);
-                return (SINGLE_MAIN_WINDOW, UIAreas::new(areas))
+                return (SingleMainWindow, UIAreas::new(areas))
             },
-            SINGLE_MAIN_WINDOW_CENTERED => {
+            SingleMainWindowCentered => {
                 let areas = build_single_main_window_centered_areas(total_area);
-                return (SINGLE_MAIN_WINDOW_CENTERED, UIAreas::new(areas))
+                return (SingleMainWindowCentered, UIAreas::new(areas))
             },
-            COMBAT_VIEW => {
+            CombatView => {
                 let areas = build_combat_view_areas(total_area);
-                return (COMBAT_VIEW, UIAreas::new(areas))
+                return (CombatView, UIAreas::new(areas))
             }
         };
     }
@@ -168,7 +168,6 @@ impl UIAreasBuilder {
 
 #[cfg(test)]
 mod tests {
-    
     use crate::map::position::{Area, Position};
     use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIArea};
     use crate::ui::ui_areas_builder::UIAreasBuilder;
@@ -191,7 +190,7 @@ mod tests {
         let areas = result.1;
 
         // THEN we expect 2 areas split 80/30% vertically
-        assert_eq!(LayoutType::STANDARD_SPLIT, result.0);
+        assert_eq!(LayoutType::StandardSplit, result.0);
         assert_eq!(areas.len(), 2);
 
         let main_area_result = areas.get_area(UI_AREA_NAME_MAIN);
@@ -216,13 +215,13 @@ mod tests {
         let frame_size =  Area::new(Position::new(0,0), 80, 24);
         // WHEN we call to build the a single main window
         let result = UIAreasBuilder::new(frame_size)
-            .layout_type(LayoutType::SINGLE_MAIN_WINDOW)
+            .layout_type(LayoutType::SingleMainWindow)
             .build();
 
         let areas = result.1;
 
         // THEN we expect a single area using 100% of the available space
-        assert_eq!(LayoutType::SINGLE_MAIN_WINDOW, result.0);
+        assert_eq!(LayoutType::SingleMainWindow, result.0);
         assert_eq!(1, areas.len());
 
         let main_area_result = areas.get_area(UI_AREA_NAME_MAIN);
@@ -238,7 +237,7 @@ mod tests {
         let frame_size =  Area::new(Position::new(0,0), 80, 24);
         // WHEN we call to build view areas
         let result = UIAreasBuilder::new(frame_size)
-            .layout_type(LayoutType::COMBAT_VIEW)
+            .layout_type(LayoutType::CombatView)
             .build().1;
 
         // THEN we expect

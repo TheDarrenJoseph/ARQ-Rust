@@ -1,31 +1,27 @@
-
 use std::io;
-use std::io::{Error};
+use std::io::Error;
 use std::time::Instant;
-use log::{debug};
-use termion::event::Key;
 
+use log::debug;
+use termion::event::Key;
 use tui::backend::Backend;
 
-use crate::{menu};
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::map::room::Room;
+use crate::menu;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{Draw, get_input_key, StartMenuChoice, UI};
 use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
-
-use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
 use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
-
-use crate::view::map_view::{MapView};
+use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;
-
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {
@@ -62,8 +58,8 @@ impl <B : Backend> UIWrapper<B> {
                 Key::Char('y') | Key::Char('Y') => {
                     if let Some(message) = confirm_message {
                         let final_message = format!("{} (any key to continue)", message);
-                        self.print_and_re_render(final_message);
-                        get_input_key();
+                        self.print_and_re_render(final_message)?;
+                        get_input_key()?;
                     }
                     return Ok(true);
                 },
@@ -73,7 +69,6 @@ impl <B : Backend> UIWrapper<B> {
                 _ => {}
             }
         }
-        Ok(false)
     }
 
     pub(crate) fn draw_start_menu(&mut self) -> Result<InputResult<StartMenuChoice>, Error>  {
@@ -106,7 +101,7 @@ impl <B : Backend> UIWrapper<B> {
             ui.show_console();
             let ui_layout = ui.ui_layout.as_mut().unwrap();
             let frame_size = self.terminal_manager.terminal.get_frame().size();
-            let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
+            let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit).clone();
             if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
                 self.terminal_manager.terminal.draw(|frame| {
                     let mut main_area = main.area;
@@ -136,7 +131,7 @@ impl <B : Backend> UIWrapper<B> {
 
     fn calculate_map_view_area(&self) -> Option<Area> {
         let ui_layout = self.ui.ui_layout.as_ref().unwrap();
-        if let Some(main) = ui_layout.get_ui_areas(LayoutType::STANDARD_SPLIT).get_area(UI_AREA_NAME_MAIN) {
+        if let Some(main) = ui_layout.get_ui_areas(LayoutType::StandardSplit).get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             let rect = main_area.to_rect();
             // Main area does not consider borders, so +1 to start inside those

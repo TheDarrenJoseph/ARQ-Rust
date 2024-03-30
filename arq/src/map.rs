@@ -4,7 +4,7 @@ use room::Room;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
-use crate::map::tile::{TileType, TileDetails};
+use crate::map::tile::{TileDetails, TileType};
 
 pub mod objects;
 pub mod map_generator;
@@ -163,7 +163,7 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::{build_room};
+    use crate::map::room::build_room;
     use crate::map::tile::TileType;
     use crate::map::Tiles;
 

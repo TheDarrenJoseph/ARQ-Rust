@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::slice::Iter;
+
 use tui::layout::Rect;
+
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::UIAreas;
-use crate::ui::ui_areas_builder::{UIAreasBuilder};
-use crate::ui::ui_layout::LayoutType::{COMBAT_VIEW, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, STANDARD_SPLIT};
+use crate::ui::ui_areas_builder::UIAreasBuilder;
+use crate::ui::ui_layout::LayoutType::{CombatView, SingleMainWindow, SingleMainWindowCentered, StandardSplit};
 
 /*
  * This is essentially a wrapper around UIAreasBuilder that caches the current UIAreas
@@ -17,18 +19,18 @@ pub struct UILayout {
 
 #[derive(Eq, Hash, PartialEq, Debug, Clone, Copy)]
 pub enum LayoutType {
-    STANDARD_SPLIT,
-    SINGLE_MAIN_WINDOW,
+    StandardSplit,
+    SingleMainWindow,
     // N.B this could probably be removed if we add support for centering in all layout types in future
     // This is currently just used for popups/dialogs
-    SINGLE_MAIN_WINDOW_CENTERED,
-    COMBAT_VIEW
+    SingleMainWindowCentered,
+    CombatView
 }
 
 impl UILayout {
 
     fn layout_types() -> Iter<'static, LayoutType> {
-        static LAYOUT_TYPES: [LayoutType; 4] = [ STANDARD_SPLIT, SINGLE_MAIN_WINDOW, SINGLE_MAIN_WINDOW_CENTERED, COMBAT_VIEW ];
+        static LAYOUT_TYPES: [LayoutType; 4] = [StandardSplit, SingleMainWindow, SingleMainWindowCentered, CombatView];
         LAYOUT_TYPES.iter()
     }
 
@@ -76,14 +78,14 @@ impl UILayout {
      */
     pub fn get_or_build_areas(&mut self, frame_size: Rect, layout_type: LayoutType) -> &UIAreas {
         let current_ui_areas = &self.ui_areas.get(&layout_type);
-        if current_ui_areas.is_some()  {
+        return if current_ui_areas.is_some() {
             if self.ui_areas_builder.needs_rebuilding(Area::from_rect(frame_size)) {
-                return self.rebuild_ui_areas(frame_size, layout_type);
+                self.rebuild_ui_areas(frame_size, layout_type)
             } else {
-                return &self.ui_areas.get(&layout_type).as_ref().unwrap();
+                &self.ui_areas.get(&layout_type).as_ref().unwrap()
             }
         } else {
-            return self.rebuild_ui_areas(frame_size, layout_type);
+            self.rebuild_ui_areas(frame_size, layout_type)
         }
     }
 }

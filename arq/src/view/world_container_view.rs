@@ -3,18 +3,17 @@ use std::io::Error;
 use termion::event::Key;
 
 use crate::map::objects::container::Container;
-
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, resolve_input, View};
-use crate::view::util::callback::Callback;
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::InputHandler;
+use crate::view::util::callback::Callback;
 
 /*
     This View is responsible for displaying/interacting with containers in the world (i.e chests, dropped items, dead bodies)
@@ -36,18 +35,6 @@ pub struct WorldContainerViewFrameHandlers {
 }
 
 impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
-    fn clone_selected_container_items(&mut self) -> Vec<Container> {
-        let mut items = Vec::new();
-        if let Some(parent_view) = self.frame_handlers.container_frame_handlers.last_mut() {
-            let selected_items = parent_view.get_selected_items();
-            for item in selected_items {
-                if let Some(found) = parent_view.container.find(&item) {
-                    items.push(found.clone());
-                }
-            }
-        }
-        items
-    }
 
     /*
     * TODO (DUPLICATION) make choice and generic input flows generic / shared between views i.e world_container and character_info?
@@ -103,7 +90,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
         let ui_layout = ui.ui_layout.as_mut().unwrap();
         let frame_size = self.terminal_manager.terminal.get_frame().size();
-        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
+        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit).clone();
 
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;

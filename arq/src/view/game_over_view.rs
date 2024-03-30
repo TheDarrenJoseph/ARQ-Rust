@@ -1,18 +1,18 @@
 use std::io::Error;
+
 use termion::event::Key;
 use tui::layout::{Alignment, Rect};
 use tui::style::Style;
-
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
+
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::game_over_view::GameOverChoice::{EXIT, RESTART};
+use crate::widget::{Focusable, StatefulWidgetType};
 use crate::widget::stateful::button_widget::build_button;
 use crate::widget::widgets::WidgetList;
-use crate::widget::{Focusable, StatefulWidgetType};
-
 
 /*
     This View handles the "Game Over" screen for when you die/escape the dungeon

@@ -1,8 +1,3 @@
-
-
-
-
-
 use crate::widget::widgets::WidgetList;
 
 pub struct WidgetMenu {

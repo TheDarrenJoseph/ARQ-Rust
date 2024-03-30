@@ -1,21 +1,16 @@
 extern crate core;
 
-
-use std::error::Error;
 use std::io;
 
 use futures::executor::block_on;
 use termion::input::TermRead;
-
 use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
-use crate::engine::engine_helpers::menu::start_menu;
 
+use crate::engine::engine_helpers::menu::start_menu;
 use crate::engine::game_engine::{build_game_engine, GameEngine};
 use crate::ui::ui::StartMenuChoice::Play;
-
 use crate::view::game_over_view::GameOverChoice;
-
 
 mod global_flags;
 mod error;
@@ -61,7 +56,7 @@ async fn begin() -> Result<(), io::Error> {
                 }
             },
             Err(e) => {
-                println!("Fatal error: {}", e.description());
+                println!("Fatal error: {}", e);
                 io::stdin().keys().next().unwrap()?;
                 return Ok(())
             },
@@ -74,5 +69,5 @@ async fn begin() -> Result<(), io::Error> {
 #[tokio::main(worker_threads = 2)]
 async fn main<>() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    block_on(begin());
+    block_on(begin()).expect("Failure in main thread!");
 }

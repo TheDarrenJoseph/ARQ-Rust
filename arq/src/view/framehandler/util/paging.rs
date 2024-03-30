@@ -1,6 +1,8 @@
 use std::convert::TryInto;
+
 use tui::layout::Rect;
 use tui::widgets::Paragraph;
+
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::ui::ui_util::build_paragraph;
@@ -32,19 +34,15 @@ pub fn build_weight_limit<'a>(container : &Container, area: Rect, x_offset: usiz
 
 #[cfg(test)]
 mod tests {
-    
-    
     use tui::buffer::Buffer;
-    
     use tui::widgets::Widget;
     use uuid::Uuid;
+
     use crate::item_list_selection::ItemListSelection;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType};
     use crate::map::position::{Area, Position};
     use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
-
-    pub use crate::ui::resolution::MIN_RESOLUTION;
 
     fn extract_buffer_line(buffer: &Buffer, line_index: u16) -> String {
         let mut line = String::new();

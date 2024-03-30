@@ -1,8 +1,7 @@
 use uuid::Uuid;
+
 use crate::character::equipment::EquipmentSlot;
-
 use crate::map::objects::weapon_builder::BladedWeaponType;
-
 use crate::map::tile::{Colour, Symbol};
 
 const DEFAULT_SYMBOL: Symbol = Symbol { character: 'X',  colour: Colour::White};
@@ -94,7 +93,7 @@ impl ItemForm {
         return match self {
             ItemForm::COIN => { String::from("Coin") }
             ItemForm::BAR => { String::from("Bar") }
-            ItemForm::BLADED(_swordType) => { String::from("Sword") }
+            ItemForm::BLADED(_sword_type) => { String::from("Sword") }
             ItemForm::OTHER(description) => { description }
         }
     }

@@ -2,8 +2,8 @@ use std::convert::TryInto;
 use std::fmt;
 
 use uuid::Uuid;
-use crate::error::errors::GenericError;
 
+use crate::error::errors::GenericError;
 use crate::map::objects::items::{Item, ItemType};
 
 #[derive(Clone)]
@@ -12,7 +12,7 @@ use crate::map::objects::items::{Item, ItemType};
 pub enum ContainerType {
     ITEM, // No storage, just a wrapped Item
     OBJECT, // Movable container i.e Bags
-    AREA // Fixed container i.e Floor, Player's inventory
+    AREA // Fixed container i.e Floor, Chest, or a Player's inventory, these do not count towards weight totals are they are never "part" of another container
 }
 
 impl fmt::Display for ContainerType {
@@ -338,10 +338,23 @@ impl Container {
                 Err(GenericError::new(String::from("Cannot add an item of type CONTAINER to another container.")))
             },
             _ => {
-                let weight_total: f32 = self.get_weight_total();
-                let item_weight: f32 = item.weight;
                 let weight_limit: f32 = self.weight_limit as f32;
-                if weight_total + item_weight < weight_limit {
+                let weight_total = match self.container_type {
+                    ContainerType::OBJECT => {
+                        let current_weight_total: f32 = self.get_weight_total();
+                        let item_weight: f32 = item.weight;
+                        current_weight_total + item_weight
+                    },
+                    ContainerType::AREA => {
+                        // Only consider the weight of the item to be added
+                        item.weight
+                    },
+                    ContainerType::ITEM => {
+                        return Err(GenericError::new(String::from("Cannot add item. An item cannot be added to an ITEM ContainerType!")))
+                    }
+                };
+
+                if weight_total <= weight_limit {
                     let container = Container::wrap(item.clone());
                     self.contents.push(container);
                     return Ok(())
@@ -349,7 +362,7 @@ impl Container {
                     return Err(GenericError::new(
                         String::from(
                             format!("Cannot add item. Not enough free weight space in this container. Current weight total: {}, item weight: {}, weight limit: {}",
-                                    weight_total, item_weight, weight_limit)
+                                    self.get_weight_total(), item.weight, weight_limit)
                         )
                     ))
                 }
@@ -376,9 +389,7 @@ impl Container {
 mod tests {
     use uuid::Uuid;
 
-    
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::objects::items::{Item, MaterialType};
     use crate::map::tile::Colour;
 

@@ -3,18 +3,16 @@ use tui::layout::{Alignment, Rect};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph};
+
 use crate::character::battle::Battle;
 use crate::character::equipment::{Equipment, EquipmentSlot, WeaponSlot};
-
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::option_list_selection::{MappedOption, OptionListSelection};
 use crate::ui::ui_areas::{BorderedArea, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP, UIAreas};
-
 use crate::view::framehandler::{FrameData, FrameHandler};
-
 use crate::widget::stateful::map_widget::MapWidget;
 
 pub struct CombatFrameHandler {

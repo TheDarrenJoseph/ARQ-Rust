@@ -1,79 +1,39 @@
-
-
-
-
 use std::collections::HashMap;
-
 use std::io::{Error, ErrorKind};
 
-
-
-
-
-
-use log::{info};
-
-
+use log::info;
 use rand_seeder::Seeder;
-
 use termion::event::Key;
-
 use tui::backend::Backend;
-
-use futures::FutureExt;
-
-use crate::character::characters::Characters;
-
-
-
-
-
-
-use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
-
-use crate::map::position::{Area, Side};
-
-
 
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
+use crate::character::characters::Characters;
 use crate::engine::combat::Combat;
 use crate::engine::engine_helpers::game_loop::game_loop;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
-use crate::map::Map;
-
-
+use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::io_error_utils::error_result;
-
+use crate::map::Map;
+use crate::map::position::{Area, Side};
 use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::resolution::Resolution;
-use crate::ui::ui::{build_ui};
-
-
+use crate::ui::ui::build_ui;
 use crate::ui::ui_wrapper::UIWrapper;
-
-use crate::view::{View};
 use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
-
-use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
-
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
-
-
-
-
-
-use crate::widget::{StandardWidgetType};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
+use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
+use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
-use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::util::callback::CallbackHandler;
+use crate::view::util::progress_display::ProgressDisplay;
+use crate::view::View;
 use crate::widget::character_stat_line::CharacterStatLineWidget;
-
+use crate::widget::StandardWidgetType;
 
 pub struct GameEngine<B: 'static + Backend>  {
     pub ui_wrapper : UIWrapper<B>,

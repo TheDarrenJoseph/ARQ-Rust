@@ -1,4 +1,4 @@
-use tui::layout::{Alignment};
+use tui::layout::Alignment;
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
@@ -39,8 +39,8 @@ pub fn build_headings<'a>(columns : Vec<Column>) -> Paragraph<'a> {
 #[test]
 fn test_build_headings() {
     use tui::buffer::{Buffer, Cell};
-    use tui::layout::{Rect};
-    use tui::widgets::{Widget};
+    use tui::layout::Rect;
+    use tui::widgets::Widget;
 
     // GIVEN a view with a series of columns configured
     let columns = vec![

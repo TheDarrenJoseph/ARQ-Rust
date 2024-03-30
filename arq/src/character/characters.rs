@@ -1,15 +1,9 @@
-
 use crate::character::Character;
-
 
 #[derive(Default, Debug, Clone)]
 pub struct Characters {
     player: Option<Character>,
     npcs : Vec<Character>
-}
-
-pub fn build_empty_characters() -> Characters {
-    return Characters { player: None, npcs: Vec::new() };
 }
 
 impl Characters {

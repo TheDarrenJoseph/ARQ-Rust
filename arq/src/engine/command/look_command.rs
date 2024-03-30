@@ -3,7 +3,6 @@ use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 
-
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
 use crate::error::io_error_utils::error_result;
@@ -140,21 +139,19 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    
 
     use uuid::Uuid;
+
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
     use crate::character::characters::Characters;
-
     use crate::engine::command::look_command::{describe_position, describe_position_container, describe_position_in_room};
     use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::door::build_door;
     use crate::map::position::{build_square_area, Position};
-    use crate::map::room::{build_room};
+    use crate::map::room::build_room;
     use crate::map::tile::TileType;
     use crate::map::Tiles;
-
 
     fn build_test_level(container_position: Position, area_container: Container) -> Level {
         let tile_library = crate::map::tile::build_library();

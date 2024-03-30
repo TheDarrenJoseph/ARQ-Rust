@@ -1,31 +1,28 @@
-use std::collections::{HashMap};
-
-
+use std::collections::HashMap;
 use std::io::Error;
 use std::slice::Iter;
-use termion::event::Key;
 
+use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::symbols::line::VERTICAL;
 use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
-use crate::character::{Character};
-use crate::item_list_selection::ListSelection;
+use crate::character::Character;
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
-use crate::view::util::callback::Callback;
-use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
+use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::view::util::callback::Callback;
 use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -303,7 +300,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
 
         let ui_layout = ui.ui_layout.as_mut().unwrap();
         let frame_size = self.terminal_manager.terminal.get_frame().size();
-        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::STANDARD_SPLIT).clone();
+        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit).clone();
 
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
@@ -441,7 +438,6 @@ mod tests {
     use crate::character::characters::Characters;
     use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
-    
     use crate::map::objects::items::Item;
     use crate::map::position::{build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, TileType};
@@ -449,7 +445,6 @@ mod tests {
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
     use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
-    
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -464,7 +459,7 @@ mod tests {
 
         for i in 1..=4 {
             let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item);
+            container.add_item(test_item).expect("Failed to add item");
         }
 
         assert_eq!(ContainerType::OBJECT, container.container_type);

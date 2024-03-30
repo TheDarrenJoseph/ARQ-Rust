@@ -1,6 +1,4 @@
-
 use log::error;
-
 
 #[derive(Clone)]
 pub struct MultiStepProgress {
