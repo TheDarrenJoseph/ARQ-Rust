@@ -5,8 +5,8 @@ use crate::engine::command::input_mapping;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
+use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::game_engine::GameEngine;
-use crate::engine::menu::menu_command;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, Error>  {
@@ -68,9 +68,9 @@ mod tests {
 
     use crate::character::Character;
     use crate::character::characters::Characters;
+    use crate::engine::engine_helpers::input_handler::handle_input;
 
     use crate::engine::game_engine::*;
-    use crate::engine::input_handler::handle_input;
     use crate::engine::level::{init_level_manager, Level, Levels};
     use crate::map::{Map, Tiles};
     use crate::map::position::{Position};

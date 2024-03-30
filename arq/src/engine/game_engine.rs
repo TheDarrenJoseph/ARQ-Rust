@@ -13,7 +13,6 @@ use std::pin::Pin;
 
 use log::{error, info};
 
-
 use rand::{Rng, thread_rng};
 use rand_seeder::Seeder;
 
@@ -21,11 +20,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 use tui::backend::Backend;
 
-
-
-
 use futures::FutureExt;
-
 
 use crate::character::characters::Characters;
 use crate::engine::command::command::Command;
@@ -36,7 +31,6 @@ use crate::engine::command::open_command::OpenCommand;
 
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 
-
 use crate::map::position::{Area, Side};
 use crate::map::room::Room;
 
@@ -44,17 +38,13 @@ use crate::{menu, widget};
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::engine::combat::Combat;
-use crate::engine::game_loop::game_loop;
-use crate::engine::input_handler::handle_input;
-use crate::engine::menu::start_menu;
+use crate::engine::engine_helpers::game_loop::game_loop;
+use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::map::Map;
 use crate::menu::Selection;
 
-
 use crate::engine::process::map_generation::MapGeneration;
-use crate::engine::spawning::{respawn_npcs, respawn_player};
 use crate::error::io_error_utils::error_result;
-
 
 use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED, Settings};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
@@ -68,9 +58,6 @@ use crate::util::utils::UuidEquals;
 use crate::view::{InputHandler, View};
 use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
-
-
-
 
 use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
 use crate::view::settings_menu_view::SettingsMenuView;

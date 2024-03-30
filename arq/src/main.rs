@@ -9,9 +9,9 @@ use termion::input::TermRead;
 
 use termion::raw::RawTerminal;
 use tui::backend::TermionBackend;
+use crate::engine::engine_helpers::menu::start_menu;
 
 use crate::engine::game_engine::{build_game_engine, GameEngine};
-use crate::engine::menu::start_menu;
 use crate::ui::ui::StartMenuChoice::Play;
 use crate::ui::ui_util::build_paragraph;
 use crate::view::game_over_view::GameOverChoice;

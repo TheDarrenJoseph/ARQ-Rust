@@ -1,6 +1,6 @@
 use std::io::Error;
+use crate::engine::engine_helpers::input_handler::handle_input;
 use crate::engine::game_engine::GameEngine;
-use crate::engine::input_handler::handle_input;
 use crate::ui::ui::get_input_key;
 use crate::view::game_over_view::GameOverChoice;
 
@@ -12,7 +12,6 @@ pub async fn game_loop<B: tui::backend::Backend + Send>(engine: &mut GameEngine<
 
 async fn player_turn<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>)  -> Result<Option<GameOverChoice>, Error> {
     let key = get_input_key()?;
-    //self.terminal_manager.terminal.clear()?;
     return Ok(handle_input(engine, key).await?);
 }
 
