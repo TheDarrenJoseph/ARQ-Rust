@@ -1,10 +1,12 @@
 use std::convert::TryInto;
 use std::fmt;
+use std::io::{Error, ErrorKind};
 
 use uuid::Uuid;
 
 use crate::error::errors::GenericError;
 use crate::map::objects::items::{Item, ItemType};
+use crate::view::MIN_RESOLUTION;
 
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -307,9 +309,39 @@ impl Container {
         loot_total
     }
 
+    // Adds an AREA container to this container without any validation
+    // This is only to be used for map generation / bootstrapping of containers
+    // TODO potentially rework Floor/Chest usage to only ever have 1 AREA container at a time and swap them out when needed
+    pub fn add_area(&mut self, container : Container) -> Result<(), Error> {
+        return if self.is_true_container() {
+            match container.container_type {
+                ContainerType::AREA => {
+                    let total_weight = self.get_contents_weight_total();
+                    let adding_weight_limit = container.weight_limit as f32;
+                    let max_weight_limit = total_weight + adding_weight_limit;
+
+                    let within_potential_weight_limit = max_weight_limit <= self.weight_limit as f32;
+                    let potential_weight = total_weight.clone() + container.get_weight_total();
+                    return if within_potential_weight_limit && potential_weight <= self.weight_limit as f32 {
+                        self.contents.push(container);
+                        Ok(())
+                    } else {
+                        Err(Error::new(ErrorKind::Other, format!("Cannot add the container to this container as above the weight limit. Potential weight: {}, Weight limit: {}", potential_weight, self.weight_limit)))
+                    }
+                },
+                _ => {
+                    Err(Error::new(ErrorKind::Other, "Cannot add the container to this container, as the container is not an AREA ContainerType."))
+                }
+            }
+        } else {
+            Err(Error::new(ErrorKind::Other, "Cannot add the container to this container, as this container is not a true container."))
+        }
+    }
+
+
     // Adds a container to this one only if this is a true container and the adding Container is a storable/movable type (ITEM or OBJECT)
-    pub fn add(&mut self, container : Container) {
-        if self.is_true_container() {
+    pub fn add(&mut self, container : Container) -> Result<(), Error> {
+        return if self.is_true_container() {
             match container.container_type {
                 ContainerType::ITEM | ContainerType::OBJECT => {
                     let total_weight = self.get_contents_weight_total();
@@ -318,12 +350,19 @@ impl Container {
 
                     let within_potential_weight_limit = max_weight_limit <= self.weight_limit as f32;
                     let potential_weight = total_weight.clone() + container.get_weight_total();
-                    if within_potential_weight_limit && potential_weight <= self.weight_limit as f32 {
+                    return if within_potential_weight_limit && potential_weight <= self.weight_limit as f32 {
                         self.contents.push(container);
+                        Ok(())
+                    } else {
+                        Err(Error::new(ErrorKind::Other, format!("Cannot add the container to this container as above the weight limit. Potential weight: {}, Weight limit: {}", potential_weight, self.weight_limit)))
                     }
                 },
-                _ => {}
+                _ => {
+                    Err(Error::new(ErrorKind::Other, "Cannot add the container to this container, as the container is not an ITEM or OBJECT ContainerType."))
+                }
             }
+        } else {
+            Err(Error::new(ErrorKind::Other, "Cannot add the container to this container, as this container is not a true container."))
         }
     }
 

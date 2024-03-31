@@ -27,7 +27,7 @@ lcov --remove ./target/coverage/lcov.info -o ./target/coverage/lcov.info\
     'src/test'
 
 # Generate the HTML version of the report for development usage
-genhtml -o ./target/coverage/ --show-details --highlight --ignore-errors source --legend ./target/coverage/lcov.info
+genhtml --ignore-errors unmapped -o ./target/coverage/ --show-details --highlight --ignore-errors source --legend ./target/coverage/lcov.info
 
 # Generate the total line coverage % badge
 BADGE_PERCENTAGE=$(analyse_totals)

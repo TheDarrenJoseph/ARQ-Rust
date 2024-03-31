@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 use std::future::Future;
+use std::io::Error;
 use std::pin::Pin;
 use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
+use futures::future::err;
+use log::error;
 
 use rand::distributions::Standard;
 use rand::Rng;
@@ -18,7 +21,7 @@ use crate::map::objects::items::{Item, MaterialType};
 use crate::map::position::{Area, build_square_area, Position, Side};
 use crate::map::room::{build_room, Room};
 use crate::map::tile::{build_library, TileDetails, TileType};
-use crate::map::tile::TileType::NoTile;
+use crate::map::tile::TileType::{Door, Entry, Exit, NoTile, Wall};
 use crate::progress::{MultiStepProgress, Step};
 
 pub struct MapGenerator<'rng> {
@@ -40,8 +43,8 @@ pub fn build_generator<'a>(rng : &'a mut Pcg64, map_area : Area) -> MapGenerator
         Step { id: String::from("mapgen"), description: String::from("Generating map...") },
         Step { id: String::from("entry/exits"),  description: String::from("Adding entry/exit...") },
         Step { id: String::from("rooms"), description: String::from("Applying rooms...") },
-        Step { id: String::from("containers"), description: String::from("Generating containers...") },
         Step { id: String::from("pathfinding"), description: String::from("Pathfinding...") },
+        Step { id: String::from("containers"), description: String::from("Generating containers...") },
         Step { id: String::from("completed"), description: String::from("DONE! [ any key to start ]") }
     ];
 
@@ -110,20 +113,24 @@ impl <'rng> Future for MapGenerator<'rng> {
 
 impl <'rng> MapGenerator<'rng> {
 
-    // Need to run after tile additions
-    pub fn add_containers(&mut self) {
+    pub fn add_area_containers(&mut self) {
         let mut area_container_count = 0;
         let area_containers = self.build_area_containers();
         for pos_container in area_containers {
             let pos = pos_container.0.clone();
             let container = pos_container.1.clone();
-            self.map.containers.insert( pos, container);
+            self.map.containers.insert(pos, container);
             area_container_count += 1;
         }
         log::info!("Added {} general area containers to the map.", area_container_count);
+    }
+
+
+    // Need to run after tile additions
+    pub fn add_containers(&mut self) {
+        self.add_area_containers();
 
         let mut room_container_count = 0;
-
         let rooms = &mut self.map.rooms;
         for room in rooms.iter_mut() {
             let room_containers = generate_room_containers(&mut self.rng, room.clone());
@@ -133,8 +140,15 @@ impl <'rng> MapGenerator<'rng> {
                 let tile_type = self.map.tiles.get_tile(pos).unwrap().tile_type;
                 if tile_type == TileType::Room {
                     if let Some(c) = self.map.containers.get_mut(&mut pos) {
-                        c.add(container);
-                        room_container_count += 1;
+                        // Use the custom add_area to add the custom AREA container an existing AREA (The floor)
+                        match c.add_area(container) {
+                            Ok(_) => {
+                                room_container_count += 1;
+                            }
+                            Err(e) => {
+                                error!("Failed to add room container: {}", e)
+                            }
+                        }
                     }
                 }
             }
@@ -148,27 +162,32 @@ impl <'rng> MapGenerator<'rng> {
     }
 
     pub async fn generate(&mut self, tx: Sender<MultiStepProgress>) -> Map {
-        // Generating map...
+        // 1. mapgen
         self.progress.next_step();
         self.send_progress(&tx);
         self.build_map();
 
+        // 2. entry/exits
         self.progress.next_step();
         self.send_progress(&tx);
         self.add_entry_and_exit();
 
+        // 3. rooms
         self.progress.next_step();
         self.send_progress(&tx);
         self.add_rooms_to_map();
 
-        self.progress.next_step();
-        self.send_progress(&tx);
-        self.add_containers();
-
+        // 4. pathfinding
         self.progress.next_step();
         self.send_progress(&tx);
         self.path_rooms();
 
+        // 5. containers
+        self.progress.next_step();
+        self.send_progress(&tx);
+        self.add_containers();
+
+        // 6. completed
         self.progress.next_step();
         self.send_progress(&tx);
         return self.map.clone();
@@ -456,7 +475,7 @@ impl <'rng> MapGenerator<'rng> {
                 let position = Position { x, y };
                 match self.map.tiles.get_tile(position) {
                     Some(td) => {
-                        if td.tile_type != NoTile {
+                        if td.tile_type != NoTile && td.tile_type != Wall && td.tile_type != Door && td.tile_type != Entry && td.tile_type != Exit {
                             log::debug!("New AREA container at: {}, {}", x,y);
                             let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 999999);
                             area_containers.insert(position, area_container);
@@ -543,19 +562,18 @@ impl Progressible for MapGenerator<'_> {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc::channel;
+    use rand::SeedableRng;
+    use rand_pcg::Pcg64;
 
     use rand_seeder::Seeder;
 
     use crate::block_on;
     use crate::map::Map;
     use crate::map::map_generator::build_generator;
-    use crate::map::position::{build_square_area, Position};
+    use crate::map::position::{Area, build_square_area, Position};
     use crate::map::tile::TileDetails;
 
-    fn build_test_map() -> Map {
-        let map_size = 12;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng = &mut Seeder::from("test".to_string()).make_rng();
+    fn build_test_map(rng: &mut Pcg64, map_area: Area) -> Map {
         let mut generator = build_generator(rng, map_area);
 
         let (tx, _rx) = channel();
@@ -640,23 +658,54 @@ mod tests {
         tile_strings
     }
 
+    // Builds Strings using the tile string base and adding the container symbols
+    fn build_container_strings(length: i32, tiles: &Vec<Vec<TileDetails>>, map: &Map) -> Vec<String> {
+        let mut tile_strings : Vec<String> = Vec::new();
+        for _i in 0..length {
+            tile_strings.push("".to_string())
+        }
+
+        for y in 0..length {
+            for x in 0..length {
+                let tile_pos = Position::new(x as u16, y as u16);
+                let container = map.containers.get(&tile_pos);
+                if let Some(c) = container {
+                    let container_symbol = c.get_self_item().symbol.character;
+                    tile_strings[y as usize].push(c.get_self_item().symbol.character);
+                } else {
+                    let tile = tiles.get(y as usize).expect("Expected index y to be valid").get(x as usize).expect("Expected a tile to be present.");
+                    tile_strings[y as usize].push(tile.symbol.character);
+                }
+            }
+        }
+        tile_strings
+    }
+
     #[test]
     fn test_generate() {
-        let map = build_test_map();
+        // GIVEN a fixed RNG seed and map size
+        let map_size = 12;
+        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
+        let rng : &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
+        // WHEN we call to generate the map
+        let map = build_test_map(rng, map_area);
 
+        // WHEN we expect a map of the given area to be generated
         let area = map.area;
         assert_eq!(0, area.start_position.x);
         assert_eq!(0, area.start_position.y);
         assert_eq!(11, area.end_position.x);
         assert_eq!(11, area.end_position.y);
 
-        let tiles = map.tiles.tiles;
+        // AND we should have a 12x12 tile grid
+        let tiles = map.tiles.tiles.clone();
         assert_eq!(12, tiles.len());
         for row in &tiles {
             assert_eq!(12, row.len());
         }
 
-        let rooms = map.rooms;
+        // AND all rooms should be with the tile grid range
+        let rooms = map.rooms.clone();
         assert_ne!(0, rooms.len());
         for room in rooms {
             let area = room.get_area();
@@ -666,6 +715,79 @@ mod tests {
             assert!(end_pos.x <= 12 && end_pos.y < 12, "Expected room end position < 12 for x,y, but was: {}, {}", end_pos.x, end_pos.y);
         }
 
+        // AND the tiles should match our expected display pattern
+        let expected_tiles : Vec<String>  = vec![
+            "            ".to_string(),
+            "            ".to_string(),
+            "            ".to_string(),
+            " #####      ".to_string(),
+            " #---#      ".to_string(),
+            " #-^-=-     ".to_string(),
+            " #---#-     ".to_string(),
+            " #####---#=#".to_string(),
+            "        -=^#".to_string(),
+            "         #=#".to_string(),
+            "            ".to_string(),
+            "            ".to_string()
+        ];
+        let actual_tiles = build_tile_strings(12, &tiles);
+        assert_string_vecs(expected_tiles, actual_tiles.clone());
+
+        let actual_tiles_and_containers = build_container_strings(map_size.into(),  &tiles, &map);
+
+        // AND we should be able to see all general AREA containers that represent the Floor (Both room and path tiles have area containers)
+        let expected_tiles_with_containers : Vec<String>  = vec![
+            "            ".to_string(),
+            "            ".to_string(),
+            "            ".to_string(),
+            " #####      ".to_string(),
+            " #$$$#      ".to_string(),
+            " #$^$=$     ".to_string(),
+            " #$$$#$     ".to_string(),
+            " #####$$$#=#".to_string(),
+            "        $=^#".to_string(),
+            "         #=#".to_string(),
+            "            ".to_string(),
+            "            ".to_string()
+        ];
+        assert_string_vecs(expected_tiles_with_containers, actual_tiles_and_containers.clone());
+    }
+
+    #[test]
+    fn test_generate_with_containers() {
+        // GIVEN a fixed RNG seed and map size
+        let map_size = 24;
+        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
+        let rng : &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
+        // WHEN we call to generate the map
+        let map = build_test_map(rng, map_area);
+
+        // WHEN we expect a map of the given area to be generated
+        let area = map.area;
+        assert_eq!(0, area.start_position.x);
+        assert_eq!(0, area.start_position.y);
+        assert_eq!(23, area.end_position.x);
+        assert_eq!(23, area.end_position.y);
+
+        // AND we should have a 24x24 tile grid
+        let tiles = map.tiles.tiles;
+        assert_eq!(24, tiles.len());
+        for row in &tiles {
+            assert_eq!(24, row.len());
+        }
+
+        // AND all rooms should be with the tile grid range
+        let rooms = map.rooms;
+        assert_ne!(0, rooms.len());
+        for room in rooms {
+            let area = room.get_area();
+            let start_pos = area.start_position;
+            assert!(start_pos.x <= 24 && start_pos.y < 24, "Expected room start position < 12 for x,y, but was: {}, {}", start_pos.x, start_pos.y);
+            let end_pos = area.end_position;
+            assert!(end_pos.x <= 24 && end_pos.y < 24, "Expected room end position < 12 for x,y, but was: {}, {}", end_pos.x, end_pos.y);
+        }
+
+        // AND the tiles should match our expected display pattern
         let expected_tiles : Vec<String>  = vec![
             "            ".to_string(),
             "            ".to_string(),
@@ -681,7 +803,7 @@ mod tests {
             "            ".to_string()
         ];
 
-        let actual_tiles = build_tile_strings(12, &tiles);
+        let actual_tiles = build_tile_strings(24, &tiles);
         assert_string_vecs(expected_tiles, actual_tiles);
     }
 }
