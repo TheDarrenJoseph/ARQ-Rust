@@ -5,7 +5,7 @@ use std::io;
 use futures::executor::block_on;
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
-use tui::backend::TermionBackend;
+use tui::backend::CrosstermBackend;
 
 use crate::engine::engine_helpers::menu::start_menu;
 use crate::engine::game_engine::{build_game_engine, GameEngine};
@@ -31,7 +31,7 @@ mod sound;
 pub mod map;
 
 async fn begin() -> Result<(), io::Error> {
-    let game_engine: Result<GameEngine<TermionBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
+    let game_engine: Result<GameEngine<CrosstermBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
     let terminal_manager = terminal::terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
     let mut engine = game_engine.unwrap();

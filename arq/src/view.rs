@@ -5,6 +5,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 use tui::Frame;
 use tui::layout::Rect;
+use tui::terminal::CompletedFrame;
 
 use crate::map::position::{Area};
 use crate::terminal::terminal_manager::TerminalManager;
@@ -36,9 +37,9 @@ pub mod menu_view;
      * UI (ARQ's base UI, window areas, and it's elements (widgets))
      * The terminal manager (from tui-rs) which is what allows us access to each frame via draw() which is then passed to each framehandler, this also allows direct access to the terminal display (character printing etc)
  */
-pub trait View<T>  {
+pub trait View<T> {
     fn begin(&mut self) -> Result<InputResult<T>, Error>;
-    fn draw(&mut self, area : Option<Area>) -> Result<(), Error>;
+    fn draw(&mut self, area: Option<Area>) -> Result<CompletedFrame, Error>;
 }
 
 pub trait InputHandler<T> {

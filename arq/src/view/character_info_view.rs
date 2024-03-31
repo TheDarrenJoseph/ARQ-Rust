@@ -1,11 +1,12 @@
 use std::collections::HashMap;
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::slice::Iter;
 
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Modifier, Style};
 use tui::symbols::line::VERTICAL;
+use tui::terminal::CompletedFrame;
 use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
@@ -291,7 +292,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
@@ -304,7 +305,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
 
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
-            self.terminal_manager.terminal.draw(|frame| {
+            return Ok(self.terminal_manager.terminal.draw(|frame| {
                 ui.render(frame);
                 // Sizes for the entire 'Character Info' frame area
 
@@ -312,9 +313,9 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
                 let area = Area::from_rect(rect);
                 let specific_frame_data = CharacterInfoViewFrameData { character };
                 frame_handler.handle_frame(frame, FrameData { frame_area: area, ui_areas: ui_areas.clone(), data: specific_frame_data });
-            })?;
+            })?);
         }
-        Ok(())
+        Err(Error::new(ErrorKind::Other, String::from("Failed to draw character info view")))
     }
 }
 

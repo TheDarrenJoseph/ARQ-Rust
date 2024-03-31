@@ -5,6 +5,7 @@ use std::time::Instant;
 use log::debug;
 use termion::event::Key;
 use tui::backend::Backend;
+use tui::terminal::CompletedFrame;
 
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
@@ -81,9 +82,9 @@ impl <B : Backend> UIWrapper<B> {
         Ok(menu_view.begin()?)
     }
 
-    pub(crate) fn draw_info(&mut self) -> Result<(), io::Error>  {
+    pub(crate) fn draw_info(&mut self) -> std::io::Result<CompletedFrame> {
         let ui = &mut self.ui;
-        self.terminal_manager.terminal.draw(|frame| { ui.draw_info(frame) })
+        self.terminal_manager.terminal.draw(move |frame| { ui.draw_info(frame) })
     }
 
     // TODO this should live in it's own view likely

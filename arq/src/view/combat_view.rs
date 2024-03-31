@@ -2,6 +2,7 @@ use std::io;
 use std::io::Error;
 
 use termion::event::Key;
+use tui::terminal::CompletedFrame;
 
 use crate::character::battle::Battle;
 use crate::character::equipment::WeaponSlot;
@@ -73,7 +74,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         return Ok(self.build_done_result());
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let battle = &mut self.battle;
         let _player = battle.characters.get_player_mut();
         let _npcs = battle.characters.get_npcs();
@@ -89,14 +90,11 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         let ui_areas = ui_layout.get_or_build_areas(frame_area.to_rect(), LayoutType::CombatView);
 
         // TODO get the view areas and pass them to the FrameHandler
-        self.terminal_manager.terminal.draw(|frame| {
-                // TODO using frame_size here is risky and doesn't respect UILayout
-                let frame_data = FrameData { frame_area: frame_area, data: battle.clone(), ui_areas: ui_areas.clone() };
-                fh.handle_frame(frame, frame_data);
-        }).expect("Frame should have been drawn.");
-
-
-        return Ok(());
+        return Ok(self.terminal_manager.terminal.draw(|frame| {
+            // TODO using frame_size here is risky and doesn't respect UILayout
+            let frame_data = FrameData { frame_area: frame_area, data: battle.clone(), ui_areas: ui_areas.clone() };
+            fh.handle_frame(frame, frame_data);
+        }).expect("Frame should have been drawn."));
     }
 }
 

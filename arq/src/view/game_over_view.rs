@@ -1,8 +1,9 @@
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 use tui::layout::{Alignment, Rect};
 use tui::style::Style;
+use tui::terminal::CompletedFrame;
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
 
 use crate::map::position::Area;
@@ -56,14 +57,14 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
         return Ok(input_result);
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let paragraph = Paragraph::new(self.message.clone())
             .block(Block::default().borders(Borders::NONE))
             .style(Style::default()).alignment(Alignment::Center).wrap(Wrap { trim: true });
 
         let terminal = &mut self.terminal_manager.terminal;
         let widgets = &self.widgets;
-        terminal.draw(|frame| {
+        return Ok(terminal.draw(|frame| {
             let frame_size = frame.size();
             let mut half_width = frame_size.width.clone() / 2;
 
@@ -89,8 +90,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
                 }
                 offset += 1;
             }
-        })?;
-        Ok(())
+        })?);
     }
 }
 

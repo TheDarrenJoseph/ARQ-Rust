@@ -5,6 +5,7 @@ use std::io::Error;
 use log::info;
 use termion::input::TermRead;
 use tui::layout::Rect;
+use tui::terminal::CompletedFrame;
 use tui::widgets::ListState;
 
 use crate::map::position::Area;
@@ -65,7 +66,7 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
         }
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let ui = &mut self.ui;
         verify_display_size::<B>(&mut self.terminal_manager);
 
@@ -75,7 +76,7 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
 
         let menu = &self.menu;
         let menu_selection = self.menu.selection;
-        self.terminal_manager.terminal.draw(|frame| {
+        self.terminal_manager.terminal.draw(move |frame| {
             let mut menu_list_state = ListState::default();
             menu_list_state.select(Some(menu_selection.try_into().unwrap()));
             let area = main_area_result.area;

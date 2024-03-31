@@ -1,6 +1,7 @@
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
+use tui::terminal::CompletedFrame;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
@@ -84,7 +85,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;
 
@@ -94,7 +95,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
-            self.terminal_manager.terminal.draw(|frame| {
+            return Ok(self.terminal_manager.terminal.draw(|frame| {
                 ui.render(frame);
                 let frame_area = Area::new(
                     Position::new(main_area.start_position.x + 1, main_area.start_position.y + 1),
@@ -103,9 +104,9 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
                 );
                 let specific_frame_data = WorldContainerViewFrameData {};
                 frame_handler.handle_frame(frame, FrameData { frame_area: frame_area, data: specific_frame_data, ui_areas: ui_areas.clone() });
-            })?;
+            })?);
         }
-        Ok(())
+        Err(Error::new(ErrorKind::Other, String::from("Failed to draw world container view")))
     }
 }
 

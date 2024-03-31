@@ -1,7 +1,7 @@
 use std::io;
 
 use termion::raw::{IntoRawMode, RawTerminal};
-use tui::backend::{TermionBackend, TestBackend};
+use tui::backend::{Backend, CrosstermBackend, TestBackend};
 use tui::Terminal;
 
 pub struct TerminalManager<B : tui::backend::Backend> {
@@ -14,11 +14,11 @@ impl <B : tui::backend::Backend>  TerminalManager<B> {
     }
 }
 
-pub fn init() -> Result<TerminalManager<TermionBackend<RawTerminal<io::Stdout>>>, io::Error> {
+pub fn init() -> Result<TerminalManager<CrosstermBackend<RawTerminal<io::Stdout>>>, io::Error> {
     let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
+    let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
-    let manager = TerminalManager::<TermionBackend<RawTerminal<io::Stdout>>> { terminal };
+    let manager = TerminalManager::<CrosstermBackend<RawTerminal<io::Stdout>>> { terminal };
 
     log::info!("Terminal initialised.");
     return Ok(manager);

@@ -1,8 +1,9 @@
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 
 use log::info;
 use termion::event::Key;
 use tui::buffer::Cell;
+use tui::terminal::CompletedFrame;
 
 use crate::engine::level::Level;
 use crate::map::map_view_areas::MapViewAreas;
@@ -65,7 +66,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     // 2. Map view area - View co-ords (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
     // 3. Map display area - Map co-ords (The position/size of the map 'viewfinder', the area that you can actually see the map through)
     // 3.1 The map display area is what will move with the character throughout larger maps
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let map_display_area = self.map_view_areas.map_display_area;
         let frame_size = map_display_area.to_rect();
         let ui = &mut self.ui;
@@ -76,16 +77,14 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
         let map_view_areas = self.map_view_areas;
         let level = &mut self.level;
         let terminal = &mut self.terminal_manager.terminal;
-        terminal.draw(|frame| {
+        return Ok(terminal.draw(|frame| {
             // First let the UI draw everything else
             ui.render(frame);
 
             // Then render the map
-            let map_widget: MapWidget = MapWidget::new( map_view_areas );
+            let map_widget: MapWidget = MapWidget::new(map_view_areas);
             frame.render_stateful_widget(map_widget, frame_size, level);
-        })?;
-
-        Ok(())
+        })?);
     }
 
 

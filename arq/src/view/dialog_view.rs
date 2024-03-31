@@ -2,6 +2,7 @@ use std::io::Error;
 
 use log::error;
 use tui::style::{Color, Style};
+use tui::terminal::CompletedFrame;
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};
 
@@ -33,11 +34,11 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         })
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<(), Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
         let message = self.message.clone();
         let _ui = &mut self.ui;
         self.terminal_manager.clear_screen().expect("The screen should have been cleared");
-        self.terminal_manager.terminal.draw(|frame| {
+        return Ok(self.terminal_manager.terminal.draw(|frame| {
 
             // First check for the minimum space and center the dialog
             let centered_area_result = center_area(MIN_RESOLUTION.to_rect(), frame.size(), MIN_RESOLUTION);
@@ -60,19 +61,18 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
                 let paragraph = Paragraph::new(Span::from(enter_text.clone()));
 
                 let message_start_x = (area.width + area.start_position.x) / 2 - enter_text.len() as u16;
-                let message_start_y =  area.height + area.start_position.y - 1;
+                let message_start_y = area.height + area.start_position.y - 1;
                 let message_area = Area::new(
                     Position::new(message_start_x, message_start_y),
                     enter_text.len() as u16,
                     1
                 );
                 frame.render_widget(paragraph, message_area.to_rect());
-            }  else {
+            } else {
                 let err = centered_area_result.err().unwrap();
                 error!("{}", err);
                 // TODO update views to be able to return Error
             }
-        }).expect("The dialog view should have been drawn!");
-        Ok(())
+        }).expect("The dialog view should have been drawn!"));
     }
 }
