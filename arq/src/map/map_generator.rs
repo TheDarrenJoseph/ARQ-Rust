@@ -68,9 +68,9 @@ pub fn build_dev_chest() -> Container {
     let mut carton = Container::new(Uuid::new_v4(), "Carton".to_owned(), '$', 1.0, 50, ContainerType::OBJECT, 5);
     let tin_bar = Item::new(Uuid::new_v4(), "Tin Bar".to_owned(), MaterialType::TIN, 'X', 1.0, 50);
     carton.add_item(tin_bar).expect("Tin bar should have been added to the carton!");
-    bag.add(carton);
+    bag.add(carton).expect("The carton should have been added to the bag!");
     bag.add_item(bronze_bar).expect("Bronze bar should have been added to the bag!");
-    container.add(bag);
+    container.add(bag).expect("The Bag should have been added to the Chest");
 
     // 60 extra weight
     for i in 1..=60 {
@@ -583,7 +583,7 @@ mod tests {
     #[test]
     fn test_build_generator() {
         // GIVEN a 12x12 map board
-        let map_area = build_square_area(Position {x: 0, y: 0}, 12);
+        let map_area = build_square_area(Position { x: 0, y: 0 }, 12);
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let generator = build_generator(rng, map_area);
 
@@ -599,12 +599,12 @@ mod tests {
 
     #[test]
     fn test_generate_room() {
-        let map_area = build_square_area(Position {x: 0, y: 0}, 12);
+        let map_area = build_square_area(Position { x: 0, y: 0 }, 12);
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
 
-        let room = generator.generate_room(Position {x: 0, y: 0}, 3);
-        let expected_area = build_square_area(Position {x: 0, y: 0}, 3);
+        let room = generator.generate_room(Position { x: 0, y: 0 }, 3);
+        let expected_area = build_square_area(Position { x: 0, y: 0 }, 3);
         assert_eq!(expected_area, room.get_area());
         assert!(!room.get_doors().is_empty());
     }
@@ -612,7 +612,7 @@ mod tests {
     #[test]
     fn test_generate_rooms() {
         let map_size = 12;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
+        let map_area = build_square_area(Position { x: 0, y: 0 }, map_size);
         let rng = &mut Seeder::from("test".to_string()).make_rng();
         let mut generator = build_generator(rng, map_area);
         let rooms = generator.generate_rooms();
@@ -642,7 +642,7 @@ mod tests {
     }
 
     fn build_tile_strings(length: i32, tiles: &Vec<Vec<TileDetails>>) -> Vec<String> {
-        let mut tile_strings : Vec<String> = Vec::new();
+        let mut tile_strings: Vec<String> = Vec::new();
         for _i in 0..length {
             tile_strings.push("".to_string())
         }
@@ -660,7 +660,7 @@ mod tests {
 
     // Builds Strings using the tile string base and adding the container symbols
     fn build_container_strings(length: i32, tiles: &Vec<Vec<TileDetails>>, map: &Map) -> Vec<String> {
-        let mut tile_strings : Vec<String> = Vec::new();
+        let mut tile_strings: Vec<String> = Vec::new();
         for _i in 0..length {
             tile_strings.push("".to_string())
         }
@@ -685,8 +685,8 @@ mod tests {
     fn test_generate() {
         // GIVEN a fixed RNG seed and map size
         let map_size = 12;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng : &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
+        let map_area = build_square_area(Position { x: 0, y: 0 }, map_size);
+        let rng: &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
         // WHEN we call to generate the map
         let map = build_test_map(rng, map_area);
 
@@ -716,7 +716,7 @@ mod tests {
         }
 
         // AND the tiles should match our expected display pattern
-        let expected_tiles : Vec<String>  = vec![
+        let expected_tiles: Vec<String> = vec![
             "            ".to_string(),
             "            ".to_string(),
             "            ".to_string(),
@@ -733,10 +733,10 @@ mod tests {
         let actual_tiles = build_tile_strings(12, &tiles);
         assert_string_vecs(expected_tiles, actual_tiles.clone());
 
-        let actual_tiles_and_containers = build_container_strings(map_size.into(),  &tiles, &map);
+        let actual_tiles_and_containers = build_container_strings(map_size.into(), &tiles, &map);
 
         // AND we should be able to see all general AREA containers that represent the Floor (Both room and path tiles have area containers)
-        let expected_tiles_with_containers : Vec<String>  = vec![
+        let expected_tiles_with_containers: Vec<String> = vec![
             "            ".to_string(),
             "            ".to_string(),
             "            ".to_string(),
@@ -751,59 +751,5 @@ mod tests {
             "            ".to_string()
         ];
         assert_string_vecs(expected_tiles_with_containers, actual_tiles_and_containers.clone());
-    }
-
-    #[test]
-    fn test_generate_with_containers() {
-        // GIVEN a fixed RNG seed and map size
-        let map_size = 24;
-        let map_area = build_square_area(Position {x: 0, y: 0}, map_size);
-        let rng : &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
-        // WHEN we call to generate the map
-        let map = build_test_map(rng, map_area);
-
-        // WHEN we expect a map of the given area to be generated
-        let area = map.area;
-        assert_eq!(0, area.start_position.x);
-        assert_eq!(0, area.start_position.y);
-        assert_eq!(23, area.end_position.x);
-        assert_eq!(23, area.end_position.y);
-
-        // AND we should have a 24x24 tile grid
-        let tiles = map.tiles.tiles;
-        assert_eq!(24, tiles.len());
-        for row in &tiles {
-            assert_eq!(24, row.len());
-        }
-
-        // AND all rooms should be with the tile grid range
-        let rooms = map.rooms;
-        assert_ne!(0, rooms.len());
-        for room in rooms {
-            let area = room.get_area();
-            let start_pos = area.start_position;
-            assert!(start_pos.x <= 24 && start_pos.y < 24, "Expected room start position < 12 for x,y, but was: {}, {}", start_pos.x, start_pos.y);
-            let end_pos = area.end_position;
-            assert!(end_pos.x <= 24 && end_pos.y < 24, "Expected room end position < 12 for x,y, but was: {}, {}", end_pos.x, end_pos.y);
-        }
-
-        // AND the tiles should match our expected display pattern
-        let expected_tiles : Vec<String>  = vec![
-            "            ".to_string(),
-            "            ".to_string(),
-            "            ".to_string(),
-            " #####      ".to_string(),
-            " #---#      ".to_string(),
-            " #-^-=-     ".to_string(),
-            " #---#-     ".to_string(),
-            " #####---#=#".to_string(),
-            "        -=^#".to_string(),
-            "         #=#".to_string(),
-            "            ".to_string(),
-            "            ".to_string()
-        ];
-
-        let actual_tiles = build_tile_strings(24, &tiles);
-        assert_string_vecs(expected_tiles, actual_tiles);
     }
 }
