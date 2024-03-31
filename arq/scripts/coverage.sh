@@ -6,6 +6,8 @@ export LLVM_PROFILE_FILE="target/coverage/%p-%m.profraw"
 cargo test
 
 grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o ./target/coverage/lcov.info
+lcov --remove ./target/coverage/lcov.info -o ./target/coverage/lcov.info\
+    'src/test'
 
 genhtml -o ./target/coverage/ --show-details --highlight --ignore-errors source --legend ./target/coverage/lcov.info
 
@@ -18,4 +20,4 @@ TOTAL_LINE_COVERAGE_PERCENTAGE=$(echo "scale=6; $TOTAL_LINES_HIT / $TOTAL_LINES_
 BADGE_PERCENTAGE=$(echo $TOTAL_LINE_COVERAGE_PERCENTAGE | grep -Eo "[0-9]*\.[0-9]{2}")
 echo "Total lines covered (percentage): $BADGE_PERCENTAGE"
 
-wget https://img.shields.io/badge/Line_Coverage-$BADGE_PERCENTAGE%-green > badge.png -O ../images/badge.svg
+wget https://img.shields.io/badge/Line_Coverage-$BADGE_PERCENTAGE%-green -O ../images/badge.svg
