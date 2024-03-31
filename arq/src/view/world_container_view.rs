@@ -99,7 +99,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
                 ui.render(frame);
                 let frame_area = Area::new(
                     Position::new(main_area.start_position.x + 1, main_area.start_position.y + 1),
-                    main_area.width.clone(),
+                    main_area.width.clone() - 1,
                     main_area.height.clone() - 2
                 );
                 let specific_frame_data = WorldContainerViewFrameData {};
@@ -281,5 +281,75 @@ impl WorldContainerViewFrameHandlers {
 
             self.choice_frame_handler = Some(cfh);
         }
+    }
+}
+
+#[cfg(test)]
+
+mod tests {
+    use std::collections::HashMap;
+    use rand_seeder::Seeder;
+    use termion::event::Key;
+    use crate::character::Character;
+    use crate::character::characters::Characters;
+    use crate::engine::level::{init_level_manager, Level, Levels};
+    use crate::map::Map;
+    use crate::map::map_generator::build_dev_chest;
+    use crate::map::position::Area;
+    use crate::terminal;
+    use crate::ui::resolution::Resolution;
+    use crate::ui::ui::build_ui;
+    use crate::ui::ui_layout::UILayout;
+    use crate::view::framehandler::container;
+    use crate::view::model::usage_line::{UsageCommand, UsageLine};
+    use crate::view::util::callback::Callback;
+    use crate::view::{MIN_RESOLUTION, View};
+    use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
+
+    fn build_test_levels(map: Map, player: Character) -> Levels {
+        let level = Level {
+            map: Some(map.clone()),
+            characters: Characters::new(Some(player), Vec::new())
+        };
+
+        let seed = "test".to_string();
+        let seed_copy = seed.clone();
+        let rng = Seeder::from(seed).make_rng();
+        let mut levels = init_level_manager(seed_copy, rng);
+        levels.add_level_directly(level);
+        levels
+    }
+
+    #[test]
+    fn test_draw() {
+        let container = build_dev_chest();
+        let subview_container = container.clone();
+        let view_container = container.clone();
+
+        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
+        commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
+        commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
+        let usage_line = UsageLine::new(commands);
+        let container_view = container::build_container_frame_handler(subview_container, usage_line);
+
+        // GIVEN a UI and terminal manager representing a 80x24 (MIN_RESOLUTION) screen
+        let mut ui = build_ui();
+        let resolution = Resolution::new(MIN_RESOLUTION.width, MIN_RESOLUTION.height);
+        let ui_layout = UILayout::new(resolution);
+        ui.ui_layout = Some(ui_layout);
+        let mut terminal_manager = terminal::terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+
+        // AND we've created a WorldContainerView to view a dev testing Chest container
+        let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
+        let mut world_container_view = WorldContainerView {
+            ui: &mut ui,
+            terminal_manager: &mut terminal_manager,
+            frame_handlers: frame_handler,
+            container: view_container,
+            callback: Box::new(|_data| {None})
+        };
+
+        // WHEN we call to draw the world container view, it should complete successfully
+        world_container_view.draw(None).expect("World container view should have been drawn");
     }
 }

@@ -79,6 +79,7 @@ mod tests {
     use crate::map::position::Position;
     use crate::map::tile::{build_library, TileDetails, TileType};
     use crate::terminal::terminal_manager;
+    use crate::view::MIN_RESOLUTION;
 
     fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {
         let tile_library = build_library();
@@ -97,7 +98,7 @@ mod tests {
     async fn test_movement_input(levels: Levels, start_position: Position, input: Vec<Key>, expected_end_position : Position) {
         // GIVEN a game engine with a 3x3 grid of tiles
         let _tile_library = build_library();
-        let terminal_manager = terminal_manager::init_test().unwrap();
+        let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
         let game_engine = build_test_game_engine(levels, terminal_manager);
 
         match game_engine {
@@ -133,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_build_game_engine() {
-        let terminal_manager = terminal_manager::init_test().unwrap();
+        let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
         let _game_engine = build_game_engine(terminal_manager);
     }
 

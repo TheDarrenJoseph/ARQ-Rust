@@ -3,6 +3,7 @@ use std::io;
 use termion::raw::{IntoRawMode, RawTerminal};
 use tui::backend::{Backend, CrosstermBackend, TestBackend};
 use tui::Terminal;
+use crate::ui::resolution::Resolution;
 
 pub struct TerminalManager<B : tui::backend::Backend> {
     pub terminal : tui::Terminal<B>,
@@ -24,8 +25,8 @@ pub fn init() -> Result<TerminalManager<CrosstermBackend<RawTerminal<io::Stdout>
     return Ok(manager);
 }
 
-pub fn init_test() -> Result<TerminalManager<TestBackend>, io::Error> {
-    let backend = TestBackend::new(10,10);
+pub fn init_test(resolution : Resolution) -> Result<TerminalManager<TestBackend>, io::Error> {
+    let backend = TestBackend::new(resolution.width,resolution.height);
     let terminal = Terminal::new(backend)?;
     let manager = TerminalManager::<TestBackend> { terminal };
 

@@ -446,6 +446,7 @@ mod tests {
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
     use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+    use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -500,7 +501,7 @@ mod tests {
         let mut level = build_test_level(player);
 
         let mut ui = build_ui();
-        let mut terminal_manager = terminal_manager::init_test().unwrap();
+        let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
         let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
         let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut().unwrap(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|_data| {None}) };
 
