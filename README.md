@@ -6,6 +6,7 @@ Based on my original learner project https://github.com/TheDarrenJoseph/ARQ (whi
 
 
 ![Build Status](https://github.com/TheDarrenJoseph/ARQ-Rust/actions/workflows/main-build.yml/badge.svg)
+![Coverage Percentage (Lines Covered)](images/badge.svg)
 
 INSPIRATION
 =======

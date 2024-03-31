@@ -98,7 +98,7 @@ fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFra
 
     if let Some(m) = state.level.get_map_mut() {
         if let Some(pos_container) = m.find_container_mut(position) {
-            for item in &items {
+            for item in items {
                 // Find the "container" wrappper matching the item returned
                 if let Some(ref mut container) = state.container {
                     if let Some(container_item) = &mut container.find_mut(&item) {
@@ -370,7 +370,6 @@ mod tests {
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 0);
         let mut level = build_test_level(area_container);
 
-        // WHEN we call to handle a drop callback
         let mut container = build_test_container();
         let mut selected_container_items = Vec::new();
         for i in 0..=1 {
@@ -380,6 +379,7 @@ mod tests {
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let view_result = ContainerFrameHandlerInputResult::DropItems(selected_container_items);
+        // WHEN we call to handle a drop callback
         let undropped = handle_callback(CallbackState { level: &mut level, container: Some(&mut container), data: view_result }).unwrap();
 
         // THEN we expect a DropItems returned with 2 un-dropped items

@@ -15,3 +15,4 @@ uuid = { version = "0.4", features = ["serde", "v4"] }
 rodio = "0.16.0"
 futures = "0.3"
 tokio = { version = "1", features = ["full"] }
+lcov = "0.8.1"

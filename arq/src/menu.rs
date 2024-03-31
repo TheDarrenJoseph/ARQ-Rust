@@ -72,7 +72,7 @@ impl Selection for Menu {
                 self.selected = true;
             }
             _ => {
-                log::info!("Unknown");
+                log::info!("{}", format!("Unknown input: {:?}", key));
             }
         }
     }
