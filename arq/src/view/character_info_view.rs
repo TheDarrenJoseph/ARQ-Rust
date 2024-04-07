@@ -433,7 +433,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
             },
             TabChoice::EQUIPMENT => {
                 let frame_data = FrameData { data: character.get_equipment().clone(), ui_areas, frame_area: inner_window_area};
-                let mut equipment_frame_handler = CharacterEquipmentFrameHandler {};
+                let mut equipment_frame_handler = CharacterEquipmentFrameHandler::new();
                 equipment_frame_handler.handle_frame(frame, frame_data);
             }
         }
