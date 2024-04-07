@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
-use std::slice::Iter;
 
 use termion::event::Key;
 use tui::layout::Rect;
@@ -18,9 +17,11 @@ use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
-use crate::view::framehandler::character::{CharacterFrameHandler, ViewMode};
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult};
-use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
+use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
+use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
+use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, ViewMode};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
@@ -29,12 +30,28 @@ use crate::widget::widgets::WidgetList;
 #[derive(PartialEq, Clone, Debug)]
 pub enum TabChoice {
     INVENTORY,
+    EQUIPMENT,
     CHARACTER
 }
 
-impl TabChoice {
-    pub fn iterator() -> Iter<'static, TabChoice> {
-        [TabChoice::INVENTORY, TabChoice::CHARACTER].iter()
+#[derive(Clone)]
+pub struct Tab {
+    tab_choice: TabChoice,
+    title: String
+}
+
+impl Tab {
+    // Returns the 1st tab
+    pub fn first() -> Tab {
+        Tab { tab_choice: TabChoice::INVENTORY, title: String::from("Inventory") }
+    }
+
+    // Returns all possible tabs in order
+    pub fn values() -> Vec<Tab> {
+        let inventory_tab = Tab { tab_choice: TabChoice::INVENTORY, title: String::from("Inventory") };
+        let equipment_tab = Tab { tab_choice: TabChoice::EQUIPMENT, title: String::from("Equipment") };
+        let character_tab = Tab { tab_choice: TabChoice::CHARACTER, title: String::from("Character") };
+        vec![inventory_tab, equipment_tab, character_tab]
     }
 }
 
@@ -50,18 +67,8 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub character : &'a mut Character,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub frame_handler: CharacterInfoViewFrameHandler,
+    pub frame_handler: CharacterInfoFrameHandler,
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
-}
-
-/*
-    This is responsible for properly displaying the tabbed screen, and each individual tab / frame handler
- */
-pub struct CharacterInfoViewFrameHandler {
-    pub tab_choice : TabChoice,
-    pub container_frame_handlers: Vec<ContainerFrameHandler>,
-    pub choice_frame_handler: Option<ContainerChoiceFrameHandler>,
-    pub character_view : Option<CharacterFrameHandler>
 }
 
 impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
@@ -75,7 +82,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);
 
-        let character_view = CharacterFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW, attributes_area: Area::new(Position::zero(), 0, 0) };
+        let character_view = CharacterStatsFrameHandler { character: self.character.clone(), widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::VIEW, attributes_area: Area::new(Position::zero(), 0, 0) };
         self.frame_handler.character_view = Some(character_view);
     }
 
@@ -89,18 +96,16 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 
     fn next_tab(&mut self)  {
-        let tab_iter = TabChoice::iterator();
+        let tab_iter = Tab::values().into_iter();
         if let Some(max_index) = tab_iter.size_hint().1 {
             let mut index = 0;
             let mut target_index = None;
-            for tab_choice in tab_iter {
+            for tab in tab_iter {
                 let current_choice = self.frame_handler.tab_choice.clone();
-                if *tab_choice == current_choice && index == max_index - 1 {
+                if tab.tab_choice == current_choice && index == max_index - 1 {
                     // Swap back to the first option
-                    if let Some(choice) = TabChoice::iterator().next() {
-                        self.frame_handler.tab_choice = choice.clone();
-                    }
-                } else if *tab_choice == current_choice {
+                    self.frame_handler.tab_choice = Tab::first().tab_choice.clone();
+                } else if tab.tab_choice == current_choice {
                     target_index = Some(index.clone() + 1);
                 }
                 index += 1;
@@ -108,8 +113,8 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
 
             // Select the target tab choice otherwise
             if let Some(idx) = target_index {
-                if let Some(tab_choice) = TabChoice::iterator().nth(idx) {
-                    self.frame_handler.tab_choice = tab_choice.clone();
+                if let Some(tab) = Tab::values().iter().nth(idx) {
+                    self.frame_handler.tab_choice = tab.tab_choice.clone();
                 }
             }
         }
@@ -358,6 +363,9 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, C
                     }
                     TabChoice::CHARACTER => {
                         // Future TODO pass-through to character details view??
+                    },
+                    TabChoice::EQUIPMENT => {
+                        // TODO input pass-through to equipment view?
                     }
                 }
 
@@ -374,9 +382,10 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, C
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoViewFrameHandler {
+impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoFrameHandler {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<CharacterInfoViewFrameData>) {
-        let titles =  ["Inventory", "Character"].iter().cloned().map(Spans::from).collect();
+        let tabs = Tab::values();
+        let titles = tabs.iter().map(|t| t.title.clone()).map(Spans::from).collect();
         let selection_index = self.tab_choice.clone() as i32;
         let tabs = Tabs::new(titles)
             .block(Block::default().title("Character Info").borders(Borders::NONE))
@@ -394,35 +403,38 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
         frame.render_widget(tabs, heading_area.to_rect());
 
         let ui_areas  = data.ui_areas;
-        let character = data.data.character;
+        let mut character = data.data.character;
+
+        // TODO we shouldn't define this area ourselves and instead use ui_areas ??
+        // This specifically needs to be a portion of the inner window avoiding the tabs
+        let inner_window_area =  Area::new(
+            Position::new(frame_size.start_position.x + 1, frame_size.start_position.y + 2),
+            frame_size.width - 2,
+            frame_size.height - 3
+        );
+
         match self.tab_choice {
             TabChoice::INVENTORY => {
-                let inventory_area = Area::new(
-                    Position::new(frame_size.start_position.x + 1, frame_size.start_position.y + 2),
-                    frame_size.width - 2,
-                    frame_size.height - 3
-                );
-
                 if let Some(cfh) = &mut self.choice_frame_handler {
-                    let frame_data = FrameData { data: Vec::new(), ui_areas, frame_area: inventory_area};
+                    let frame_data = FrameData { data: Vec::new(), ui_areas, frame_area: inner_window_area};
                     cfh.handle_frame(frame, frame_data);
                 } else if let Some(topmost_view) = self.container_frame_handlers.last_mut() {
                     let mut frame_inventory = topmost_view.container.clone();
-                    topmost_view.handle_frame(frame, FrameData { data: &mut frame_inventory, ui_areas, frame_area: inventory_area });
+                    topmost_view.handle_frame(frame, FrameData { data: &mut frame_inventory, ui_areas, frame_area: inner_window_area });
                 }
             },
             TabChoice::CHARACTER => {
                 match &mut self.character_view {
                     Some(char_view) => {
-                        let character_area = Area::new(
-                            Position::new(frame_size.start_position.x + 1, frame_size.start_position.y + 2),
-                            frame_size.width - 2,
-                            frame_size.height - 3
-                        );
-                        char_view.handle_frame(frame,  FrameData { data: character.clone(), ui_areas, frame_area: character_area } );
+                        char_view.handle_frame(frame,  FrameData { data: character.clone(), ui_areas, frame_area: inner_window_area } );
                     },
                     _ => {}
                 }
+            },
+            TabChoice::EQUIPMENT => {
+                let frame_data = FrameData { data: character.get_equipment().clone(), ui_areas, frame_area: inner_window_area};
+                let mut equipment_frame_handler = CharacterEquipmentFrameHandler {};
+                equipment_frame_handler.handle_frame(frame, frame_data);
             }
         }
     }
@@ -445,7 +457,7 @@ mod tests {
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
-    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoFrameHandler, TabChoice};
     use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {
@@ -502,7 +514,7 @@ mod tests {
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
+        let frame_handler = CharacterInfoFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
         let mut character_info_view = CharacterInfoView { character: level.characters.get_player_mut().unwrap(), ui: &mut ui, terminal_manager: &mut terminal_manager, frame_handler, callback: Box::new(|_data| {None}) };
 
         // WHEN we call to initialise

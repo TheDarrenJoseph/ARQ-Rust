@@ -58,6 +58,7 @@ impl CharacterPattern {
     pub fn new_player() -> Result<CharacterPattern, GenericError> {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
 
+        // Builds a "Steel Arming Sword" for the player to wield as PRIMARY
         let blueprint = WeaponBlueprint::new(MaterialType::STEEL, ItemForm::BLADED(BladedWeaponType::ARMING)).unwrap();
         let weapon_builder = WeaponBuilder::new(blueprint);
         let sword = weapon_builder.build();
@@ -70,7 +71,6 @@ impl CharacterPattern {
         if add_result.is_err() {
             return Err(add_result.err().unwrap())
         }
-
 
         let blueprint = CharacterBlueprint {
             details : CharacterDetails::new(Race::Human, Class::None, 0, 6, 6, attributes),

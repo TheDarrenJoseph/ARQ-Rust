@@ -19,8 +19,8 @@ use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::character::{CharacterFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
-use crate::view::framehandler::character::CharacterFrameHandlerInputResult::VALIDATION;
+use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
+use crate::view::framehandler::character_stats::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;
 use crate::widget::widgets::WidgetList;
@@ -91,7 +91,7 @@ impl <B : Backend> UIWrapper<B> {
     // Shows character creation screen
     // Returns the finished character once input is confirmed
     fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
-        let mut character_view = CharacterFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Area::new(Position::zero(), 0, 0)};
+        let mut character_view = CharacterStatsFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Area::new(Position::zero(), 0, 0)};
         // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
         GenericInputResult { done: false, requires_view_refresh: false },

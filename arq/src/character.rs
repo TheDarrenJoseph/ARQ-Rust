@@ -130,6 +130,10 @@ impl Character {
         self.equipment = equipment
     }
 
+    pub fn get_equipment(&mut self) -> &Equipment {
+        return &self.equipment;
+    }
+
     pub fn get_equipment_mut(&mut self) -> &mut Equipment {
         return &mut self.equipment;
     }

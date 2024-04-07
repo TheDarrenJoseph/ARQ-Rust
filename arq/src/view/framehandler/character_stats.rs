@@ -13,7 +13,7 @@ use crate::ui::resolution::Resolution;
 use crate::ui::ui_util::center_area;
 use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::character::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
+use crate::view::framehandler::character_stats::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
 use crate::widget::{Focusable, Named, StatefulWidgetState, StatefulWidgetType};
 use crate::widget::stateful::button_widget::build_button;
 use crate::widget::stateful::dropdown_widget::build_dropdown;
@@ -30,7 +30,7 @@ pub enum ViewMode {
 /*
     This Frame handler displays the current player attributes / stats
  */
-pub struct CharacterFrameHandler {
+pub struct CharacterStatsFrameHandler {
     pub character : Character,
     pub widgets : WidgetList,
     pub view_mode : ViewMode,
@@ -42,7 +42,7 @@ pub enum CharacterFrameHandlerInputResult {
     VALIDATION(String)
 }
 
-impl CharacterFrameHandler {
+impl CharacterStatsFrameHandler {
 
     fn build_attribute_inputs(&mut self, character: &mut Character) {
         let mut scores = character.get_attribute_scores();
@@ -170,8 +170,8 @@ impl CharacterFrameHandler {
         self.draw_character_details(frame, data, "Character Creation".to_string());
     }
 
-    pub fn draw_character_info<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data:  FrameData<Character>) {
-        log::info!("Drawing character details...");
+    pub fn draw_stats_window<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data:  FrameData<Character>) {
+        log::info!("Drawing character stats window...");
         let name = data.get_data_mut().get_name().clone();
         self.draw_character_details(frame, data,name);
     }
@@ -265,20 +265,20 @@ impl CharacterFrameHandler {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterFrameHandler {
+impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterStatsFrameHandler {
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
                 self.draw_character_creation(frame, data);
             },
             ViewMode::VIEW => {
-                self.draw_character_info(frame, data)
+                self.draw_stats_window(frame, data)
             }
         }
     }
 }
 
-impl InputHandler<CharacterFrameHandlerInputResult> for CharacterFrameHandler {
+impl InputHandler<CharacterFrameHandlerInputResult> for CharacterStatsFrameHandler {
     fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterFrameHandlerInputResult>, Error> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets.widgets;

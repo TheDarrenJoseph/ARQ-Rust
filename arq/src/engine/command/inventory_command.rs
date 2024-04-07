@@ -11,7 +11,8 @@ use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::view::character_info_view::{CharacterInfoView, CharacterInfoViewFrameHandler, TabChoice};
+use crate::view::character_info_view::{CharacterInfoView, TabChoice};
+use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, EquipItems, MoveItems, MoveToContainerChoice};
 use crate::view::util::callback::Callback;
@@ -178,7 +179,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         let c = self.level.characters.get_player_mut().unwrap().get_inventory_mut();
         let mut callback_container: Container = c.clone();
 
-        let frame_handler = CharacterInfoViewFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
+        let frame_handler = CharacterInfoFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
 
         let level = &mut self.level;
         let player = &mut level.characters.get_player_mut().unwrap().clone();

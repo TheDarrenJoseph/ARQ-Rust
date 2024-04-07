@@ -66,7 +66,7 @@ impl Settings {
     }
 
     pub fn get_rng_seed(&self) -> Option<String> {
-        if let Some(seed_override) = GLOBALS.rng_seed {
+        if let Some(seed_override) = GLOBALS.rng_seed_override {
             return Some(String::from(seed_override))
         } else {
             return self.find_string_setting_value(SETTING_RNG_SEED.to_string())
