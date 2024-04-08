@@ -177,7 +177,11 @@ impl Draw for UI {
                          Spans::from(Span::raw("Tavern Loop One by Alexander Nakarada | https://www.serpentsoundstudios.com")),
                          Spans::from(Span::raw("Music promoted by https://www.free-stock-music.com")),
                          Spans::from(Span::raw("Attribution 4.0 International (CC BY 4.0)")),
-                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/"))
+                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
+                         Spans::from(Span::raw("")),
+                         Spans::from(Span::raw("Celtic Ambiance by Alexander Nakarada (www.creatorchords.com)")),
+                         Spans::from(Span::raw("Licensed under Creative Commons BY Attribution 4.0 License")),
+                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
         ];
 
         let spans_len = spans.len() as u16;

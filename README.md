@@ -28,6 +28,10 @@ Tavern Loop One by Alexander Nakarada | https://www.serpentsoundstudios.com
 Music promoted by https://www.free-stock-music.com
 Attribution 4.0 International (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
+
+Celtic Ambiance by Alexander Nakarada (www.creatorchords.com)
+Licensed under Creative Commons BY Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
 ```
 
 ![Main map dev screenshot](images/map-view-80-25-example.png)
