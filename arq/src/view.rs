@@ -7,7 +7,7 @@ use tui::Frame;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
 
-use crate::map::position::{Area};
+use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 pub use crate::ui::resolution::MIN_RESOLUTION;
 use crate::ui::ui::get_input_key;

@@ -3,6 +3,7 @@ use std::io;
 use termion::raw::{IntoRawMode, RawTerminal};
 use tui::backend::{Backend, CrosstermBackend, TestBackend};
 use tui::Terminal;
+
 use crate::ui::resolution::Resolution;
 
 pub struct TerminalManager<B : tui::backend::Backend> {

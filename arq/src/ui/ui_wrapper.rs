@@ -19,7 +19,7 @@ use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, CharacterFrameHandlerInputResult, ViewMode};
+use crate::view::framehandler::character_stats::{CharacterFrameHandlerInputResult, CharacterStatsFrameHandler, ViewMode};
 use crate::view::framehandler::character_stats::CharacterFrameHandlerInputResult::VALIDATION;
 use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;

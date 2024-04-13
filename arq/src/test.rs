@@ -1,9 +1,8 @@
-use std::fmt::format;
 use std::fs::File;
-use std::io;
 use std::io::Read;
+
 use tui::buffer::Buffer;
-use tui::style::{Modifier, Style};
+
 use crate::map::position::Area;
 
 mod text_widget_tests;

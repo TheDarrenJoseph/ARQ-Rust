@@ -20,7 +20,7 @@ use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
 use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
 use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, ViewMode};
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult};
+use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandlerInputResult};
 use crate::view::InputHandler;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
@@ -459,7 +459,7 @@ mod tests {
     use crate::map::Tiles;
     use crate::terminal::terminal_manager;
     use crate::ui::ui::build_ui;
-    use crate::view::character_info_view::{CharacterInfoView, CharacterInfoFrameHandler, TabChoice};
+    use crate::view::character_info_view::{CharacterInfoFrameHandler, CharacterInfoView, TabChoice};
     use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {

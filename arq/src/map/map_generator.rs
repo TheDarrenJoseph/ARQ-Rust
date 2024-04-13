@@ -4,9 +4,9 @@ use std::io::Error;
 use std::pin::Pin;
 use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
+
 use futures::future::err;
 use log::error;
-
 use rand::distributions::Standard;
 use rand::Rng;
 use rand_pcg::Pcg64;
@@ -562,9 +562,8 @@ impl Progressible for MapGenerator<'_> {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc::channel;
-    use rand::SeedableRng;
-    use rand_pcg::Pcg64;
 
+    use rand_pcg::Pcg64;
     use rand_seeder::Seeder;
 
     use crate::block_on;

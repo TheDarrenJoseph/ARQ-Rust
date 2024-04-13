@@ -288,22 +288,22 @@ impl WorldContainerViewFrameHandlers {
 
 mod tests {
     use std::collections::HashMap;
+
     use rand_seeder::Seeder;
     use termion::event::Key;
+
     use crate::character::Character;
     use crate::character::characters::Characters;
     use crate::engine::level::{init_level_manager, Level, Levels};
     use crate::map::Map;
     use crate::map::map_generator::build_dev_chest;
-    use crate::map::position::Area;
     use crate::terminal;
     use crate::ui::resolution::Resolution;
     use crate::ui::ui::build_ui;
     use crate::ui::ui_layout::UILayout;
+    use crate::view::{MIN_RESOLUTION, View};
     use crate::view::framehandler::container;
     use crate::view::model::usage_line::{UsageCommand, UsageLine};
-    use crate::view::util::callback::Callback;
-    use crate::view::{MIN_RESOLUTION, View};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
 
     fn build_test_levels(map: Map, player: Character) -> Levels {

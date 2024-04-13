@@ -504,11 +504,7 @@ pub fn build_testing_container_frame_handler<'a>(container: Container) -> Contai
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::fs::File;
-    use std::i8::MIN;
-    use std::io::Read;
-    use termion::input::TermRead;
-    use tui::buffer::Buffer;
+
     use tui::layout::Rect;
     use tui::style::{Modifier, Style};
     use uuid::Uuid;
@@ -522,8 +518,8 @@ mod tests {
     use crate::terminal::terminal_manager::init_test;
     use crate::test::read_expected_buffer_file;
     use crate::ui::ui_areas::UIAreas;
-    use crate::view::framehandler::container::{build_testing_container_frame_handler, ContainerFrameHandler, ContainerFrameHandlerInputResult};
     use crate::view::framehandler::{FrameData, FrameHandler};
+    use crate::view::framehandler::container::{build_testing_container_frame_handler, ContainerFrameHandler, ContainerFrameHandlerInputResult};
     use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {

@@ -1,14 +1,14 @@
+use std::{fs, thread};
 use std::fs::{File, ReadDir};
 use std::io::{BufReader, Error, ErrorKind};
 use std::sync::{Arc, RwLock};
-use std::{fs, thread};
 use std::time::Duration;
+
 use log::{error, info};
 use rand::{Rng, SeedableRng};
 use rand::seq::IteratorRandom;
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
-
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use termion::event::Key::F;
 use tokio::io::AsyncWriteExt;

@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 use crate::error::errors::GenericError;
 use crate::map::objects::items::{Item, ItemType};
-use crate::view::MIN_RESOLUTION;
 
 #[derive(Clone)]
 #[derive(PartialEq)]

@@ -1,9 +1,8 @@
-use std::ptr::eq;
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
+
 use crate::character::equipment::{all_equipment_slots, Equipment};
-use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::view::framehandler::{FrameData, FrameHandler};
 
 pub struct CharacterEquipmentFrameHandler {
@@ -67,9 +66,11 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
 #[cfg(test)]
 mod character_equipment_frame_handler_tests {
     use std::collections::HashMap;
+
     use tui::backend::Backend;
     use tui::buffer::Buffer;
     use uuid::Uuid;
+
     use crate::character::equipment::Equipment;
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::map::objects::container::Container;
@@ -77,9 +78,9 @@ mod character_equipment_frame_handler_tests {
     use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::Area;
     use crate::terminal::terminal_manager::init_test;
-    use crate::ui::ui_areas::{UIArea, UIAreas};
-    use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
+    use crate::ui::ui_areas::UIAreas;
     use crate::view::framehandler::{FrameData, FrameHandler};
+    use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
     use crate::view::MIN_RESOLUTION;
 
     fn build_arming_sword_primary() -> Item {
