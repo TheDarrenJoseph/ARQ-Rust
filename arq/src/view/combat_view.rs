@@ -121,7 +121,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
             // Enter key
             Key::Char('\n') => {
                 let selection = &self.frame_handler.selection;
-                let _option_chosen = selection.options.get(selection.index as usize).unwrap().clone();
+                let _option_chosen = selection.options.get(selection.index as usize).unwrap();
 
                 let data = CombatCallbackData { choice: CombatTurnChoice::ATTACK(WeaponSlot::PRIMARY), result: None };
                 self.trigger_callback(data);

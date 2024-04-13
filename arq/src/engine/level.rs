@@ -180,14 +180,6 @@ impl Level {
         self.characters.get_player_mut()
     }
 
-    pub fn get_map(&self) -> &Option<Map> {
-        &self.map
-    }
-
-    pub fn set_map(&mut self, map : Option<Map>) {
-        self.map = map
-    }
-
     pub fn get_map_mut(&mut self) -> Option<&mut Map> {
         self.map.as_mut()
     }

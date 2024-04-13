@@ -542,7 +542,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ItemListSelection_new(){
+    fn test_item_list_selection_new(){
         // GIVEN a series of items to select from            let test_item = Item::with_defaults(format!("Test Item {}", i), 1, 100);
         let items = build_item_series_4();
 

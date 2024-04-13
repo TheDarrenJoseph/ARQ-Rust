@@ -1,5 +1,6 @@
 use std::io;
 use std::io::Error;
+use log::error;
 
 use termion::event::Key;
 
@@ -55,12 +56,10 @@ fn equip_items(items: Vec<Item>, state: CallbackState) -> Option<ContainerFrameH
                     } else {
                         // Otherwise try the potential slots for it
                         let potential_slots = get_potential_slots(result_item.item_type.clone());
-                        let mut equip_result = Ok(());
-                        let mut chosen_slot = None;
                         for slot in potential_slots {
-                            equip_result = equipment_snapshot.equip(c_copy.clone(), slot.clone());
+                            let equip_result  = equipment_snapshot.equip(c_copy.clone(), slot.clone());
                             if equip_result.is_ok() {
-                                chosen_slot = Some(slot);
+                                let chosen_slot = Some(slot);
                                 result_item.set_equipment_slot(chosen_slot.clone());
                                 modified.push(result_item.clone());
                                 log::info!("Equipped item {} to slot: {}", result_item.get_name(), chosen_slot.unwrap());
@@ -108,9 +107,15 @@ fn drop_items(items: Vec<Item>, mut state: CallbackState) -> Option<ContainerFra
                         self_item.unequip();
                         if pos_container.can_fit_container_item(&dropping_container_item) {
                             log::info!("Dropping item: {} into: {}", item.get_name(), pos_container.get_self_item().get_name());
-                            pos_container.add(dropping_container_item);
-                            let pos = undropped.iter().position(|x| x.id_equals(&item));
-                            undropped.remove(pos.unwrap());
+                            match pos_container.add(dropping_container_item) {
+                                Ok(()) => {
+                                    let pos = undropped.iter().position(|x| x.id_equals(&item));
+                                    undropped.remove(pos.unwrap());
+                                },
+                                Err(e) => {
+                                    error!("Couldn't drop an item: {}", e)
+                                }
+                            }
                         } else {
                             log::info!("Cannot fit item: {}  into: {}", item.get_name(), pos_container.get_self_item().get_name());
                         }
@@ -222,21 +227,16 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use uuid::Uuid;
 
-    use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-    use crate::character::characters::Characters;
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::engine::command::inventory_command::{CallbackState, equip_items, handle_callback};
-    use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;
-    use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, TileType};
-    use crate::map::Tiles;
+    use crate::map::position::Position;
+    use crate::map::tile::Colour;
+    use crate::test::build_test_level;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::EquipItems;
 
@@ -262,40 +262,13 @@ mod tests {
         assert_eq!(4, contents.len());
         container
     }
-
-    fn build_test_level(area_container: Container) -> Level {
-        let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&TileType::Room].clone();
-        let wall = tile_library[&TileType::Wall].clone();
-        let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_square_area(map_pos, 3);
-
-        assert_eq!(0, area_container.get_contents().len());
-        let mut area_containers = HashMap::new();
-        area_containers.insert(map_pos.clone(), area_container);
-        let map = crate::map::Map {
-            area: map_area,
-            tiles : Tiles { tiles : vec![
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
-                vec![ wall.clone(), rom.clone(), wall.clone() ],
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ]},
-            rooms: Vec::new(),
-            containers: area_containers
-        };
-
-        let player_pattern_result = CharacterPattern::new_player();
-        assert!(player_pattern_result.is_ok(), "Failed to build player CharacterPattern!");
-        let player =  CharacterBuilder::new(player_pattern_result.unwrap())
-            .build(String::from("Test Player"));
-        return  Level { map: Some(map) , characters: Characters::new( Some(player), Vec::new())  };
-    }
+    
 
     #[test]
     fn test_drop_callback() {
         // GIVEN a valid map with an area container to drop items into
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(area_container);
+        let mut level = build_test_level(Some(area_container));
 
         // WHEN we call to handle a drop callback with some of the items in the container
         let mut container = build_test_container();
@@ -331,7 +304,7 @@ mod tests {
     fn test_drop_callback_too_many_items() {
         // GIVEN a valid map with an area container to drop items into
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(area_container);
+        let mut level = build_test_level(Some(area_container));
 
         // WHEN we call to handle a drop callback with too many items to fit in the current area container (3 with space for 2)
         let mut container = build_test_container();
@@ -369,7 +342,7 @@ mod tests {
     fn test_drop_callback_zero_weightlimit() {
         // GIVEN a valid map with an area container to drop items into (with a zero weightlimit)
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 0);
-        let mut level = build_test_level(area_container);
+        let mut level = build_test_level(Some(area_container));
 
         let mut container = build_test_container();
         let mut selected_container_items = Vec::new();
@@ -405,7 +378,7 @@ mod tests {
     fn test_equip_callback() {
         // GIVEN a valid callback state
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(area_container);
+        let mut level = build_test_level(Some(area_container));
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");
@@ -445,7 +418,7 @@ mod tests {
     fn test_equip_items() {
         // GIVEN a valid callback state
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(area_container);
+        let mut level = build_test_level(Some(area_container));
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");

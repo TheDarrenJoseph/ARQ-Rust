@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use std::future::Future;
-use std::io::Error;
 use std::pin::Pin;
 use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
 
-use futures::future::err;
 use log::error;
 use rand::distributions::Standard;
 use rand::Rng;
@@ -670,7 +668,7 @@ mod tests {
                 let container = map.containers.get(&tile_pos);
                 if let Some(c) = container {
                     let container_symbol = c.get_self_item().symbol.character;
-                    tile_strings[y as usize].push(c.get_self_item().symbol.character);
+                    tile_strings[y as usize].push(container_symbol);
                 } else {
                     let tile = tiles.get(y as usize).expect("Expected index y to be valid").get(x as usize).expect("Expected a tile to be present.");
                     tile_strings[y as usize].push(tile.symbol.character);

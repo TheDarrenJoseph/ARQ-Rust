@@ -289,13 +289,8 @@ impl WorldContainerViewFrameHandlers {
 mod tests {
     use std::collections::HashMap;
 
-    use rand_seeder::Seeder;
     use termion::event::Key;
 
-    use crate::character::Character;
-    use crate::character::characters::Characters;
-    use crate::engine::level::{init_level_manager, Level, Levels};
-    use crate::map::Map;
     use crate::map::map_generator::build_dev_chest;
     use crate::terminal;
     use crate::ui::resolution::Resolution;
@@ -305,20 +300,6 @@ mod tests {
     use crate::view::framehandler::container;
     use crate::view::model::usage_line::{UsageCommand, UsageLine};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
-
-    fn build_test_levels(map: Map, player: Character) -> Levels {
-        let level = Level {
-            map: Some(map.clone()),
-            characters: Characters::new(Some(player), Vec::new())
-        };
-
-        let seed = "test".to_string();
-        let seed_copy = seed.clone();
-        let rng = Seeder::from(seed).make_rng();
-        let mut levels = init_level_manager(seed_copy, rng);
-        levels.add_level_directly(level);
-        levels
-    }
 
     #[test]
     fn test_draw() {

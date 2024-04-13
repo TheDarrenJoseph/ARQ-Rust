@@ -37,11 +37,11 @@ pub fn build_dev_player_inventory() -> Container {
     // +1 weight
     carton.add_item(tin_bar).expect("The Tin Bar should have been added to the Carton");
 
-    bag.add(carton);
+    bag.add(carton).expect("The Carton should have been added to the Bag");
     bag.add_item(bronze_bar).expect("The Bronze Bar should have been added to the Bag");
 
     // +8 weight (bad contains 3 weight)
-    container.add(bag);
+    container.add(bag).expect("The Bag should have been added to the container");
 
     // + 60 weight
     for i in 1..=60 {

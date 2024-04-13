@@ -1,4 +1,4 @@
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 
 use termion::event::Key;
 use tui::layout::Rect;

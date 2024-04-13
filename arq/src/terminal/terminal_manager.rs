@@ -6,11 +6,11 @@ use tui::Terminal;
 
 use crate::ui::resolution::Resolution;
 
-pub struct TerminalManager<B : tui::backend::Backend> {
+pub struct TerminalManager<B : Backend> {
     pub terminal : tui::Terminal<B>,
 }
 
-impl <B : tui::backend::Backend>  TerminalManager<B> {
+impl <B : Backend>  TerminalManager<B> {
     pub fn clear_screen(&mut self) -> Result<(), io::Error> {
         self.terminal.clear()
     }

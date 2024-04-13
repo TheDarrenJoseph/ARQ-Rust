@@ -1,4 +1,5 @@
 use std::io;
+use log::{error, info};
 
 use crate::character::Character;
 use crate::engine::level::Level;
@@ -22,10 +23,16 @@ fn add_to_target(source : Container, target: &mut Container, to_add: Vec<Item>) 
     for item in to_add {
         if let Some(container_item) = source.find(&item) {
             if target.can_fit_container_item(container_item) {
-                target.add(container_item.clone());
-                moved.push(container_item.clone());
+                match target.add(container_item.clone()) {
+                    Ok(()) => {
+                        moved.push(container_item.clone());
+                    },
+                    Err(e) => {
+                        error!("Couldn't add the item to the target container: {}", e)
+                    }
+                }
             } else {
-                log::info!("Cannot add item {}. Could not find it.", item.get_name());
+                info!("Cannot add item {}. Could not find it.", item.get_name());
                 unmoved.push(item);
             }
         } else {
@@ -47,8 +54,15 @@ pub fn take_items(data: TakeItemsData, level : &mut Level) -> Option<ContainerFr
                     let inventory = player.get_inventory_mut();
                     if inventory.can_fit_container_item(container_item) {
                         log::info!("Taking item: {}", item.get_name());
-                        player.get_inventory_mut().add(container_item.clone());
-                        taken.push(container_item.clone());
+                        match player.get_inventory_mut().add(container_item.clone()) {
+                            Ok(()) => {
+                                // If it's added to the player inventory, go ahead and add it to the taken list for removal
+                                taken.push(container_item.clone());
+                            },
+                            Err(e) => {
+                                error!("Failed to take item, couldn't add it to the Player's inventory.. {}", e);
+                            }
+                        }
                     } else {
                         untaken.push(item);
                     }

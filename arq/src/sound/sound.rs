@@ -1,4 +1,4 @@
-use std::{fs, thread};
+use std::fs;
 use std::fs::{File, ReadDir};
 use std::io::{BufReader, Error, ErrorKind};
 use std::sync::{Arc, RwLock};
@@ -8,11 +8,7 @@ use log::{error, info};
 use rand::{Rng, SeedableRng};
 use rand::seq::IteratorRandom;
 use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
-use termion::event::Key::F;
-use tokio::io::AsyncWriteExt;
-use tokio::runtime::Runtime;
+use rodio::{Decoder, OutputStream, Sink};
 use tokio::task;
 use tokio::time::sleep;
 
@@ -85,11 +81,6 @@ impl SoundSinks {
             handle_background_music(sink_arc).await
         });
     }
-
-    pub fn get_bg_sink(&self) -> &AudioSink {
-        &self.bg_sink
-    }
-
     pub fn get_bg_sink_mut(&mut self) -> &mut AudioSink {
         &mut self.bg_sink
     }

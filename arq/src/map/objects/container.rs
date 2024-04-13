@@ -509,8 +509,8 @@ mod tests {
         // WHEN we call to add either an wrapped ITEM or OBJECT container
         let gold_bar = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10.0, 100));
         let bag_object = Container::new(Uuid::new_v4(), "Bag".to_owned(), 'X', 0.0, 1, ContainerType::OBJECT, 30);
-        container.add(gold_bar);
-        container.add(bag_object);
+        container.add(gold_bar).expect("Gold bar should have been added to the container!");
+        container.add(bag_object).expect("Bag should have been added to the container!");
 
         // THEN we expect it's contents size to increase
         assert_eq!(2, container.get_contents().len());
@@ -530,17 +530,17 @@ mod tests {
         let gold_bar_4 = Container::wrap(Item::new(Uuid::new_v4(), "Gold Bar".to_owned(), MaterialType::GOLD, 'X', 10.0, 100));
         let lockpick_1 = Container::wrap(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::GOLD, 'X', 1.0, 5));
         let lockpick_2 = Container::wrap(Item::new(Uuid::new_v4(), "Lockpick".to_owned(), MaterialType::IRON, 'X', 1.0, 5));
-        bag_object.add(gold_bar_2);
-        bag_object.add(gold_bar_3);
-        bag_object.add(gold_bar_4);
+        bag_object.add(gold_bar_2).expect("Gold bar 2 should have been added to the container!");
+        bag_object.add(gold_bar_3).expect("Gold bar 3 should have been added to the container!");
+        bag_object.add(gold_bar_4).expect("Gold bar 4 should have been added to the container!");
 
         // WHEN we add more items than the container can support (total of 42 weight)
-        container.add(gold_bar_1);
-        container.add(bag_object);
-        container.add(lockpick_1);
-        container.add(lockpick_2);
+        container.add(gold_bar_1).expect("Gold bar 1 should have been added to the container!");
+        container.add(bag_object).expect("Bag should have been added to the container!");
+        // THEN we expect only the first 2 objects to be added successfully
+        container.add(lockpick_1).expect_err("Lockpick 1 should not have been added to the container (too much weight)!");
+        container.add(lockpick_2).expect_err("Lockpick 2 should not have been added to the container (too much weight)!");
 
-        // THEN we expect only the first 2 objects to be added
         // Along with the bag contents
         assert_eq!(2, container.get_contents().len());
         assert_eq!(3, container.get_contents()[1].get_contents().len());
@@ -555,7 +555,7 @@ mod tests {
 
         // WHEN we try to add an AREA container (immovable)
         let floor = Container::new(Uuid::new_v4(), "Floor".to_owned(), 'X', 1.0, 1, ContainerType::AREA, 100);
-        container.add(floor);
+        container.add(floor).expect_err("Should not be able to add the floor to the container.");
 
         // THEN we expect nothing to happen as it's an unsupported type
         assert_eq!(0, container.get_contents().len());
@@ -628,7 +628,7 @@ mod tests {
         let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), MaterialType::GOLD,'X', 1.0, 10);
         bag.add_items(vec![coin1, coin2, coin3]);
         assert_eq!(3, bag.get_contents().len());
-        container.add(bag);
+        container.add(bag).expect("Bag should have been added to the container!");
         assert_eq!(3, container.get_contents().len());
 
         // WHEN we call to get the content count
@@ -685,7 +685,7 @@ mod tests {
         let coin3 = Item::new(Uuid::new_v4(), "Gold Coin 3".to_owned(), MaterialType::GOLD,'X', 1.0, 10);
         bag.add_items(vec![coin1, coin2, coin3]);
         assert_eq!(3, bag.get_contents().len());
-        container.add(bag);
+        container.add(bag).expect("Bag should have been added to the container!");
         assert_eq!(3, container.get_contents().len());
 
         // WHEN we call to get the item count

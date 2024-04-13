@@ -444,75 +444,16 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use uuid::Uuid;
-
-    use crate::character::Character;
-    use crate::character::character_details::build_default_character_details;
-    use crate::character::characters::Characters;
-    use crate::engine::level::Level;
-    use crate::map::objects::container::{Container, ContainerType};
-    use crate::map::objects::items::Item;
-    use crate::map::position::{build_square_area, Position};
-    use crate::map::tile::{Colour, Symbol, TileType};
-    use crate::map::Tiles;
     use crate::terminal::terminal_manager;
+    use crate::test::build_test_level;
     use crate::ui::ui::build_ui;
     use crate::view::character_info_view::{CharacterInfoFrameHandler, CharacterInfoView, TabChoice};
     use crate::view::MIN_RESOLUTION;
-
-    fn build_test_container() -> Container {
-        let id = Uuid::new_v4();
-        let mut container = Container::new(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
-        let container_self_item = container.get_self_item();
-        assert_eq!(id, container_self_item.get_id());
-        assert_eq!("Test Container", container_self_item.get_name());
-        assert_eq!('X', container_self_item.symbol.character);
-        assert_eq!(Colour::White, container_self_item.symbol.colour);
-        assert_eq!(1.0, container_self_item.weight);
-        assert_eq!(1, container_self_item.value);
-
-        for i in 1..=4 {
-            let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item).expect("Failed to add item");
-        }
-
-        assert_eq!(ContainerType::OBJECT, container.container_type);
-        assert_eq!(100, container.get_weight_limit());
-        let contents = container.get_contents();
-        assert_eq!(4, contents.len());
-        container
-    }
-
-    fn build_test_level(player: Character) -> Level {
-        let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&TileType::Room].clone();
-        let wall = tile_library[&TileType::Wall].clone();
-        let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_square_area(map_pos, 3);
-
-        let map = crate::map::Map {
-            area: map_area,
-            tiles : Tiles { tiles : vec![
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
-                vec![ wall.clone(), rom.clone(), wall.clone() ],
-                vec![ wall.clone(), wall.clone(), wall.clone() ],
-            ]},
-            rooms: Vec::new(),
-            containers: HashMap::new()
-        };
-
-        return Level { map: Some(map), characters: Characters::new( Some(player), Vec::new())  };
-    }
-
+    
     #[test]
     fn test_initialise() {
         // GIVEN a valid character info view for a player's inventory
-        let inventory = Container::new(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 2);
-        let _character_details = build_default_character_details();
-        let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
-        let mut level = build_test_level(player);
+        let mut level = build_test_level(None);
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();

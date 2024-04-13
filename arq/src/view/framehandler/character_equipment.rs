@@ -67,7 +67,6 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
 mod character_equipment_frame_handler_tests {
     use std::collections::HashMap;
 
-    use tui::backend::Backend;
     use tui::buffer::Buffer;
     use uuid::Uuid;
 
