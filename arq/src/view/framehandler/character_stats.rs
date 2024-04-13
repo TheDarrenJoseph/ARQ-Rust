@@ -125,7 +125,7 @@ impl CharacterStatsFrameHandler {
     }
 
     fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>, title: String) {
-        let frame_size = data.get_frame_size().clone();
+        let frame_size = data.get_frame_area().clone();
         let frame_width = frame_size.width;
         let frame_height = frame_size.height;
         let window_area = Rect::new(frame_size.x, frame_size.y, frame_width, frame_height);

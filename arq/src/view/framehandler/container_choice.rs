@@ -14,6 +14,9 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 
+/**
+* This FrameHandler is responsible for displaying a list of possible containers to move another Item/Container into
+*/
 #[derive(Clone)]
 pub struct ContainerChoiceFrameHandler {
     choices: Vec<Container>,
@@ -72,7 +75,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerCh
 
     // TODO tidy this up / reduce duplication
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Vec<Container>>) {
-        let frame_size = data.get_frame_size().clone();
+        let frame_size = data.get_frame_area().clone();
         let containers = &self.choices;
 
         let window_block = Block::default()

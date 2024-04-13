@@ -47,11 +47,6 @@ pub fn pick_background_track(paths: &mut ReadDir, rng: &mut impl Rng) -> Result<
     }
 }
 
-pub fn play_background_music() {
-
-}
-
-
 impl SoundSinks {
     pub fn setup_background_music(&mut self) {
         log::info!("Starting background music..");
@@ -63,18 +58,16 @@ impl SoundSinks {
         thread::spawn(move || {
             let _stream_handle = stream_handle;
             let sink = sink_arc.write().unwrap();
-            loop {
-                if sink.empty() {
-                    let mut paths = fs::read_dir(RESOURCE_MUSIC_BACKGROUND_FOLDER).unwrap();
-                    let mut rng = Pcg64::from_entropy();
-                    match pick_background_track(&mut paths, &mut rng) {
-                        Ok(track) => {
-                            let decoder = Decoder::new_mp3(track).unwrap();
-                            sink.append(decoder);
-                        },
-                        Err(e) => {
-                            error!("Failed to pick background track: {}", e)
-                        }
+            if sink.empty() {
+                let mut paths = fs::read_dir(RESOURCE_MUSIC_BACKGROUND_FOLDER).unwrap();
+                let mut rng = Pcg64::from_entropy();
+                match pick_background_track(&mut paths, &mut rng) {
+                    Ok(track) => {
+                        let decoder = Decoder::new_mp3(track).unwrap();
+                        sink.append(decoder);
+                    },
+                    Err(e) => {
+                        error!("Failed to pick background track: {}", e)
                     }
                 }
             }

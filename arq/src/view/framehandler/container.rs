@@ -60,6 +60,7 @@ pub struct MoveItemsData {
 pub enum ContainerFrameHandlerInputResult {
     None,
     OpenContainerView(ContainerFrameHandler),
+    // This is meant to handle moving an item/container in the container view into another container
     MoveToContainerChoice(MoveToContainerChoiceData),
     MoveItems(MoveItemsData),
     TakeItems(TakeItemsData),
@@ -94,7 +95,13 @@ fn build_column_text(column: &Column, item: &Item) -> String {
     }
 }
 
-
+/**
+* Builds a ContainerFrameHandler for opening/displaying a container
+* this can be used in many scenarios:
+* 1. Opening a container from the map view (See the open command)
+* 2. Opening a nested container selected within an existing ContainerFrameHandler display (see build_handler_for_focused_container)
+* 3. Displaying the Player's inventory (See CharacterInfoView)
+*/
 pub fn build_container_frame_handler(container: Container, usage_line : UsageLine) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
@@ -225,7 +232,7 @@ impl ContainerFrameHandler {
         self.item_list_selection.page_down();
     }
 
-    fn build_view_for_focused_container(&mut self) -> Option<ContainerFrameHandler> {
+    fn build_handler_for_focused_container(&mut self) -> Option<ContainerFrameHandler> {
         if !self.item_list_selection.is_selecting() {
             if let Some(focused_item) = self.item_list_selection.get_focused_item() {
                 if focused_item.is_container() {
@@ -335,7 +342,7 @@ impl ContainerFrameHandler {
 impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
 
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
-        let frame_size = data.get_frame_size().clone();
+        let frame_size = data.get_frame_area().clone();
         let container = data.get_data_mut();
 
         let window_block = Block::default()
@@ -437,10 +444,10 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                 }
                 Key::Char('o') => {
                     log::info!("[container frame handler] new result for OpenContainerView..");
-                    if let Some(stacked_view) = self.build_view_for_focused_container() {
+                    if let Some(stacked_handler) = self.build_handler_for_focused_container() {
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
-                            view_specific_result: Some(ContainerFrameHandlerInputResult::OpenContainerView(stacked_view))
+                            view_specific_result: Some(ContainerFrameHandlerInputResult::OpenContainerView(stacked_handler))
                         });
                     }
                 },
@@ -482,7 +489,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
     }
 }
 
-pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameHandler {
+pub fn build_testing_container_frame_handler<'a>(container: Container) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -496,14 +503,28 @@ pub fn build_default_container_view<'a>(container: Container) -> ContainerFrameH
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::fs::File;
+    use std::i8::MIN;
+    use std::io::Read;
+    use termion::input::TermRead;
+    use tui::buffer::Buffer;
+    use tui::layout::Rect;
+    use tui::style::{Modifier, Style};
     use uuid::Uuid;
 
     use crate::item_list_selection::ListSelection;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::Item;
+    use crate::map::position::Area;
     use crate::map::tile::Colour;
     use crate::menu;
-    use crate::view::framehandler::container::{build_default_container_view, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::terminal::terminal_manager::init_test;
+    use crate::test::read_expected_buffer_file;
+    use crate::ui::ui_areas::UIAreas;
+    use crate::view::framehandler::container::{build_testing_container_frame_handler, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::{FrameData, FrameHandler};
+    use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -529,20 +550,50 @@ mod tests {
     }
 
     #[test]
-    fn test_view_build() {
+    fn test_handler_build() {
         // GIVEN valid components
         let container = build_test_container();
         let _start_menu = menu::build_start_menu(false);
         // WHEN we call to build a new view
-        let _view : ContainerFrameHandler = build_default_container_view(container);
+        let _handler : ContainerFrameHandler = build_testing_container_frame_handler(container);
         // THEN we expect to reach this point succesfully
+    }
+
+    #[test]
+    fn test_handle_frame() {
+        // GIVEN a valid ContainerFrameHandler
+        let container = build_test_container();
+        let mut handler_container = container.clone();
+        let _start_menu = menu::build_start_menu(false);
+        let mut frame_handler: ContainerFrameHandler = build_testing_container_frame_handler(container);
+
+        // AND we have a test terminal manager using the minimum 80x24 resolution
+        let mut terminal_manager = init_test(MIN_RESOLUTION).unwrap();
+
+        let ui_areas = UIAreas::new(HashMap::new());
+
+        // WHEN we call to draw the framehandler
+        let mut frame_area = None;
+        terminal_manager.terminal.draw(|frame| {
+            frame_area = Some(Area::from_rect(frame.size()));
+            frame_handler.handle_frame(frame,  FrameData { data: &mut handler_container, ui_areas, frame_area: frame_area.unwrap() });
+        }).expect("Test Terminal should draw the frame successfully");
+        
+        // THEN we expect the framehandler to draw the container to the framebuffer
+        let mut expected = read_expected_buffer_file(String::from("resources/test/container_draw_result.txt"), frame_area.unwrap());
+        expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
+        expected.set_style(Rect::new(32,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        expected.set_style(Rect::new(45,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
+
+        terminal_manager.terminal.backend().assert_buffer(&expected)
+
     }
 
     #[test]
     fn test_move_focus_down() {
         // GIVEN a valid view
         let container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -558,7 +609,7 @@ mod tests {
     fn test_page_down() {
         // GIVEN a valid view
         let container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -575,7 +626,7 @@ mod tests {
         // GIVEN a valid view
         let container = build_test_container();
         let _start_menu = menu::build_start_menu(false);
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -595,7 +646,7 @@ mod tests {
     fn test_page_up() {
         // GIVEN a valid view
         let container = build_test_container();
-        let mut view : ContainerFrameHandler = build_default_container_view(container);
+        let mut view : ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
 
         assert_eq!(0, view.item_list_selection.get_true_index());
@@ -614,7 +665,7 @@ mod tests {
     fn test_handle_callback_result_drop() {
         // GIVEN a valid view
         let container = build_test_container();
-        let mut view: ContainerFrameHandler = build_default_container_view(container);
+        let mut view: ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let contents = view.container.get_contents_mut();
@@ -643,7 +694,7 @@ mod tests {
     fn test_handle_callback_result_take() {
         // GIVEN a valid view
         let container = build_test_container();
-        let mut view: ContainerFrameHandler = build_default_container_view(container);
+        let mut view: ContainerFrameHandler = build_testing_container_frame_handler(container);
         view.item_list_selection.page_line_count = 4;
         assert_eq!(0, view.item_list_selection.get_true_index());
         let contents = view.container.get_contents_mut();

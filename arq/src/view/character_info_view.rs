@@ -76,6 +76,8 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
         let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
         commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
         commands.insert(Key::Char('d'), UsageCommand::new('d', String::from("drop") ));
+        commands.insert(Key::Char('e'), UsageCommand::new('m', String::from("move") ));
+        commands.insert(Key::Char('e'), UsageCommand::new('c', String::from("move-to-container") ));
         commands.insert(Key::Char('e'), UsageCommand::new('e', String::from("equip") ));
         let usage_line = UsageLine::new(commands);
 

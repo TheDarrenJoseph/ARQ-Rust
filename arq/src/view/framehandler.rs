@@ -35,7 +35,7 @@ impl <T> FrameData<T> {
     pub fn get_data_mut(&mut self) -> &mut T {
         &mut self.data
     }
-    pub fn get_frame_size(&self) -> Rect {
+    pub fn get_frame_area(&self) -> Rect {
         self.frame_area.to_rect()
     }
 
