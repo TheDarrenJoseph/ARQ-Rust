@@ -453,7 +453,7 @@ mod tests {
     #[test]
     fn test_initialise() {
         // GIVEN a valid character info view for a player's inventory
-        let mut level = build_test_level(None);
+        let mut level = build_test_level(None, None);
 
         let mut ui = build_ui();
         let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();

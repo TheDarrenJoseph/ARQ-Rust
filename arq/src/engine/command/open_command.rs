@@ -202,20 +202,27 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use termion::event::Key;
+    use tui::backend::TestBackend;
 
     use uuid::Uuid;
 
     use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::characters::Characters;
-    use crate::engine::command::open_command::handle_callback;
+    use crate::engine::command::command::Command;
+    use crate::engine::command::open_command::{handle_callback, OpenCommand};
+    use crate::engine::game_engine::build_test_game_engine;
     use crate::engine::level::Level;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::Item;
-    use crate::map::position::{build_square_area, Position};
+    use crate::map::position::{Area, build_square_area, Position};
     use crate::map::tile::{Colour, Symbol, TileType};
     use crate::map::Tiles;
+    use crate::terminal::terminal_manager;
+    use crate::test::{build_test_level, build_test_levels_for_level};
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
+    use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {
         let id = Uuid::new_v4();
@@ -239,49 +246,38 @@ mod tests {
         assert_eq!(4, contents.len());
         container
     }
-
-    fn build_test_level(player: Character) -> Level {
-        let tile_library = crate::map::tile::build_library();
-        let rom = tile_library[&TileType::Room].clone();
-        let wall = tile_library[&TileType::Wall].clone();
-        let map_pos = Position { x: 0, y: 0 };
-        let map_area = build_square_area(map_pos, 3);
-
-        let map = crate::map::Map {
-            area: map_area,
-            tiles: Tiles { tiles : vec![
-                vec![wall.clone(), wall.clone(), wall.clone()],
-                vec![wall.clone(), rom.clone(), wall.clone()],
-                vec![wall.clone(), wall.clone(), wall.clone()],
-            ]},
-            rooms: Vec::new(),
-            containers: HashMap::new()
-        };
-
-        return Level { map: Some(map), characters: Characters::new(Some(player), Vec::new())};
+    
+    fn choose_n_items(container: &Container, count: i32) -> Vec<Item> {
+        let mut selected_container_items = Vec::new();
+        for i in 0..count {
+            selected_container_items.push(container.get(i).get_self_item().clone());
+        }
+        assert_eq!(count as usize, selected_container_items.len());
+        selected_container_items
     }
-
+    
     #[test]
     fn test_take_callback() {
         // GIVEN a valid level with an player inventory to extract items into
-        let inventory = Container::new(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 2);
-        let _character_details = build_default_character_details();
-        let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
-        let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
-
-        // WHEN we call to handle a take callback with some of the items in a container
+        
+        // AND we've selected the first 2 items to take 
         let container = build_test_container();
-        let mut selected_container_items = Vec::new();
-        for i in 0..=1 {
-            selected_container_items.push(container.get(i).get_self_item().clone());
-        }
-        assert_eq!(2, selected_container_items.len());
+        let mut level = build_test_level(Some((container_pos, container.clone())), None);
+
+        let initial_top_level_item_count = container.get_contents().len();
+        let initial_top_level_inventory_item_count = level.characters.get_player_mut().unwrap().get_inventory_mut().get_contents().len();
+        assert_eq!(4, initial_top_level_item_count);
+        assert_eq!(62, initial_top_level_inventory_item_count);
+        
+        let mut selected_container_items = choose_n_items(&container, 2);
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
-
+        
         let data = TakeItemsData { source: container.clone(), to_take: selected_container_items, position: Some(container_pos) };
         let view_result = ContainerFrameHandlerInputResult::TakeItems(data);
+
+        // WHEN we call to handle a take callback with 2 of the items
         let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 0 un-taken items
@@ -296,34 +292,40 @@ mod tests {
 
         // AND we expect the inventory to contain the 2 items taken
         let inventory = level.characters.get_player_mut().unwrap().get_inventory_mut();
-        let updated_container_contents = inventory.get_contents();
-        assert_eq!(2, updated_container_contents.len());
-        assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
-        assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
+        let updated_inventory = inventory.get_contents();
+        assert_eq!(initial_top_level_inventory_item_count + 2, updated_inventory.len());
+        // AND the bottom 2 items should be the moved items
+        assert_eq!(chosen_item_1, *updated_inventory.get(initial_top_level_inventory_item_count).unwrap().get_self_item());
+        assert_eq!(chosen_item_2, *updated_inventory.get(initial_top_level_inventory_item_count + 1).unwrap().get_self_item());
+        
+        // And the container we took from should have 2 less items in the top level
+        let updated_container = level.get_map_mut().unwrap().find_container(&container, container_pos).unwrap();
+        assert_eq!(2, updated_container.get_contents().len());
     }
 
     #[test]
     fn test_take_callback_too_many_items() {
-        // GIVEN a valid map with an player inventory to extract items into
+        // GIVEN a valid map with a player inventory to extract items into
+        // AND the inventory only has space for 2 items
         let inventory = Container::new(Uuid::new_v4(), "Test Player's Inventory".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 2);
         let _character_details = build_default_character_details();
         let player = Character::new(String::from("Test Player"), Position { x: 0, y: 0}, Symbol::new('@', Colour::Green), inventory);
-        let mut level = build_test_level(player);
         let container_pos =  Position { x: 0, y: 0};
-
-        // WHEN we call to handle a take callback with 3 items (with only space for 2 of them)
+        
+        // AND we've selected 3 items to take (with only space for 2 of them)
         let container = build_test_container();
         let _callback_container = container.clone();
-        let mut selected_container_items = Vec::new();
-        for i in 0..=2 {
-            selected_container_items.push(container.get(i).get_self_item().clone());
-        }
-        assert_eq!(3, selected_container_items.len());
+        let mut selected_container_items   = choose_n_items(&container, 3);
+
+        let mut level = build_test_level(Some((container_pos, container.clone())), Some(player));
+
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         let chosen_item_3 = selected_container_items.get(2).unwrap().clone();
         let data = TakeItemsData { source: container, to_take: selected_container_items, position: Some(container_pos) };
         let view_result = ContainerFrameHandlerInputResult::TakeItems(data);
+        
+        // WHEN we call to drop these items
         let untaken = handle_callback(&mut level, container_pos, view_result).unwrap();
 
         // THEN we expect a DropItems returned with 1 un-taken items
@@ -343,6 +345,33 @@ mod tests {
         assert_eq!(2, updated_container_contents.len());
         assert_eq!(chosen_item_1, *updated_container_contents.get(0).unwrap().get_self_item());
         assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
+    }
+
+    #[ignore]
+    #[test]
+    fn test_handle() {
+        // GIVEN a test game engine, level, player, and container
+        let container = build_test_container();
+        let container_pos = Position::new(1, 0);
+        let level = build_test_level(Some((container_pos, container)), None);
+
+        let levels = build_test_levels_for_level(level);
+
+        let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+        let mut game_engine = build_test_game_engine(levels, terminal_manager).unwrap();
+
+        // AND we've initialised the UI areas
+        game_engine.ui_wrapper.ui.init::<TestBackend>(Area::from_resolution(MIN_RESOLUTION));
+        
+        // AND we have an OpenCommand with all this data
+        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager };
+        
+        // WHEN we call to handle the opening of a container
+        // Player is at 0,0. Container is at 0,1 to the right of the player
+        // TODO mock input from keyboard to escape view
+        //command.handle(Key::Right).expect("Open command should open container");
+        
+        // THEN we expect to reach this point successfully
     }
 
 }

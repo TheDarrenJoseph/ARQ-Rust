@@ -268,7 +268,7 @@ mod tests {
     fn test_drop_callback() {
         // GIVEN a valid map with an area container to drop items into
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(Some(area_container));
+        let mut level = build_test_level(Some((Position::zero(), area_container)), None);
 
         // WHEN we call to handle a drop callback with some of the items in the container
         let mut container = build_test_container();
@@ -304,7 +304,7 @@ mod tests {
     fn test_drop_callback_too_many_items() {
         // GIVEN a valid map with an area container to drop items into
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(Some(area_container));
+        let mut level = build_test_level(Some((Position::zero(), area_container)), None);
 
         // WHEN we call to handle a drop callback with too many items to fit in the current area container (3 with space for 2)
         let mut container = build_test_container();
@@ -342,7 +342,7 @@ mod tests {
     fn test_drop_callback_zero_weightlimit() {
         // GIVEN a valid map with an area container to drop items into (with a zero weightlimit)
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 0);
-        let mut level = build_test_level(Some(area_container));
+        let mut level = build_test_level(Some((Position::zero(), area_container)), None);
 
         let mut container = build_test_container();
         let mut selected_container_items = Vec::new();
@@ -378,7 +378,7 @@ mod tests {
     fn test_equip_callback() {
         // GIVEN a valid callback state
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(Some(area_container));
+        let mut level = build_test_level(Some((Position::zero(), area_container)), None);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");
@@ -418,7 +418,7 @@ mod tests {
     fn test_equip_items() {
         // GIVEN a valid callback state
         let area_container = Container::new(Uuid::new_v4(), "Floor".to_owned(), '$', 0.0, 0, ContainerType::AREA, 2);
-        let mut level = build_test_level(Some(area_container));
+        let mut level = build_test_level(Some((Position::zero(), area_container)), None);
         let player = level.characters.get_player_mut().unwrap();
         // AND the player has nothing equipped in the PRIMARY slot
         player.get_equipment_mut().unequip(PRIMARY).expect("Failed to un-equip");

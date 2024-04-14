@@ -79,6 +79,7 @@ mod tests {
     use crate::map::position::Position;
     use crate::map::tile::{build_library, TileDetails, TileType};
     use crate::terminal::terminal_manager;
+    use crate::test::build_test_levels;
     use crate::view::MIN_RESOLUTION;
 
     fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {
@@ -117,21 +118,7 @@ mod tests {
             }
         }
     }
-
-    fn build_test_levels(map: Map, player: Character) -> Levels {
-        let level = Level {
-            map: Some(map.clone()),
-            characters: Characters::new(Some(player), Vec::new())
-        };
-
-        let seed = "test".to_string();
-        let seed_copy = seed.clone();
-        let rng = Seeder::from(seed).make_rng();
-        let mut levels = init_level_manager(seed_copy, rng);
-        levels.add_level_directly(level);
-        levels
-    }
-
+    
     #[test]
     fn test_build_game_engine() {
         let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
