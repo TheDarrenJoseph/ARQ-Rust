@@ -2,6 +2,7 @@ use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 use tui::terminal::CompletedFrame;
+use crate::input::KeyInputResolver;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
@@ -24,7 +25,8 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handlers: WorldContainerViewFrameHandlers,
     pub container : Container,
-    pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
+    pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>,
+    pub input_handler : Box<dyn KeyInputResolver>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -79,6 +81,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<InputResult<bool>, Error> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
+        
         while !self.handle_input(None).unwrap().generic_input_result.done {
             self.draw(None)?;
         }
@@ -112,7 +115,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
-        let key = resolve_input(input)?;
+        let key = self.input_handler.get_or_return_input_key(input)?;
         match key {
             Key::Char('t') => {
                 if let Some(parent_view) = self.frame_handlers.container_frame_handlers.last_mut() {
@@ -290,6 +293,7 @@ mod tests {
     use std::collections::HashMap;
 
     use termion::event::Key;
+    use crate::input::IoKeyInputResolver;
 
     use crate::map::map_generator::build_dev_chest;
     use crate::terminal;
@@ -322,12 +326,14 @@ mod tests {
 
         // AND we've created a WorldContainerView to view a dev testing Chest container
         let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
+        
         let mut world_container_view = WorldContainerView {
             ui: &mut ui,
             terminal_manager: &mut terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
-            callback: Box::new(|_data| {None})
+            callback: Box::new(|_data| {None}),
+            input_handler: Box::new(IoKeyInputResolver {})
         };
 
         // WHEN we call to draw the world container view, it should complete successfully

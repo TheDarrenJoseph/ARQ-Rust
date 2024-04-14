@@ -9,6 +9,7 @@ use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
 use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::game_engine::GameEngine;
+use crate::input::IoKeyInputResolver;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, Error>  {
@@ -45,7 +46,8 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
             let mut command = OpenCommand {
                 level,
                 ui: &mut engine.ui_wrapper.ui,
-                terminal_manager: &mut engine.ui_wrapper.terminal_manager
+                terminal_manager: &mut engine.ui_wrapper.terminal_manager,
+                input_handler: Box::new(IoKeyInputResolver {}),
             };
             command.handle(key)?;
         },

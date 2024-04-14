@@ -7,13 +7,15 @@ use termion::input::TermRead;
 
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
+use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
 use crate::error::io_error_utils::error_result;
+use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::view::{InputResult, View};
+use crate::view::{InputHandler, InputResult, View};
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
@@ -24,7 +26,8 @@ use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFr
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
-    pub terminal_manager : &'a mut TerminalManager<B>
+    pub terminal_manager : &'a mut TerminalManager<B>,
+    pub input_handler : Box<dyn KeyInputResolver>
 }
 
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
@@ -125,12 +128,21 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let terminal_manager = &mut self.terminal_manager;
         let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         let level = &mut self.level;
+        
+        let mock_input_resolver = &mut self.input_handler.as_any_mut().downcast_mut::<MockKeyInputResolver>();
+        
+        let mut input_handler : Box<dyn KeyInputResolver> = Box::new(IoKeyInputResolver{});
+        if let Some(mock) = mock_input_resolver {
+            input_handler = Box::new(MockKeyInputResolver { key_results: mock.key_results.clone() });
+        }
+        
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
-            callback: Box::new(|_data| {None})
+            callback: Box::new(|_data| {None}),
+            input_handler
         };
         world_container_view.set_callback(Box::new(|input_result| {
             return handle_callback(level, p.clone(), input_result);
@@ -191,7 +203,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
             } else {
                 self.ui.set_console_buffer(message);
                 self.re_render()?;
-                io::stdin().keys().next().unwrap()?;
+                self.input_handler.get_input_key()?;
             }
         }
         Ok(())
@@ -214,6 +226,7 @@ mod tests {
     use crate::engine::command::open_command::{handle_callback, OpenCommand};
     use crate::engine::game_engine::build_test_game_engine;
     use crate::engine::level::Level;
+    use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::Item;
     use crate::map::position::{Area, build_square_area, Position};
@@ -347,7 +360,6 @@ mod tests {
         assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
     }
 
-    #[ignore]
     #[test]
     fn test_handle() {
         // GIVEN a test game engine, level, player, and container
@@ -364,14 +376,15 @@ mod tests {
         game_engine.ui_wrapper.ui.init::<TestBackend>(Area::from_resolution(MIN_RESOLUTION));
         
         // AND we have an OpenCommand with all this data
-        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager };
+        // And our mocked input will return Escape to quit the view immediately
+        let key_results = vec![Key::Esc];
+        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager, input_handler: Box::new(MockKeyInputResolver { key_results }) };
         
         // WHEN we call to handle the opening of a container
         // Player is at 0,0. Container is at 0,1 to the right of the player
         // TODO mock input from keyboard to escape view
-        //command.handle(Key::Right).expect("Open command should open container");
+        command.handle(Key::Right).expect("Open command should open container");
         
         // THEN we expect to reach this point successfully
     }
-
 }
