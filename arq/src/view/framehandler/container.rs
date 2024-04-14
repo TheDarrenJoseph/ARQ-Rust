@@ -6,6 +6,7 @@ use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
+use crate::error::errors::ErrorWrapper;
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -195,7 +196,7 @@ impl ContainerFrameHandler {
         self.item_list_selection.toggle_select();
     }
 
-    fn move_selected(&mut self) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
+    fn move_selected(&mut self) -> Result<InputResult<ContainerFrameHandlerInputResult>, ErrorWrapper> {
         let from_container = self.container.clone();
         let selected_container_items = self.get_selected_items();
         let focused_container = self.find_focused_container();
@@ -326,7 +327,7 @@ impl ContainerFrameHandler {
         }
     }
 
-    pub fn build_move_items_result(&self) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
+    pub fn build_move_items_result(&self) -> Result<InputResult<ContainerFrameHandlerInputResult>, ErrorWrapper> {
         let from_container = self.container.clone();
         let selected_container_items = self.get_selected_items();
         let data = MoveToContainerChoiceData { source: from_container.clone(), to_move: selected_container_items, position: None, choices: Vec::new(), target_container: None };
@@ -408,7 +409,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFr
 }
 
 impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerFrameHandlerInputResult>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerFrameHandlerInputResult>, ErrorWrapper> {
         let default_done_result = Ok(InputResult {
             generic_input_result: GenericInputResult { done: true, requires_view_refresh: true },
             view_specific_result: Some(ContainerFrameHandlerInputResult::None)});

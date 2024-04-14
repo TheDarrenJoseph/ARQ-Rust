@@ -3,8 +3,8 @@ use std::fmt;
 use std::io::{Error, ErrorKind};
 
 use uuid::Uuid;
+use crate::error::errors::ErrorWrapper;
 
-use crate::error::errors::GenericError;
 use crate::map::objects::items::{Item, ItemType};
 
 #[derive(Clone)]
@@ -369,11 +369,11 @@ impl Container {
         self.is_true_container()
     }
 
-    pub fn add_item(&mut self, item : Item) -> Result<(), GenericError> {
+    pub fn add_item(&mut self, item : Item) -> Result<(), ErrorWrapper> {
         match item.item_type {
             // Container items should only ever be the meta item for a container
             ItemType::CONTAINER => {
-                Err(GenericError::new(String::from("Cannot add an item of type CONTAINER to another container.")))
+                ErrorWrapper::internal_result(String::from("Cannot add an item of type CONTAINER to another container."))
             },
             _ => {
                 let weight_limit: f32 = self.weight_limit as f32;
@@ -388,7 +388,7 @@ impl Container {
                         item.weight
                     },
                     ContainerType::ITEM => {
-                        return Err(GenericError::new(String::from("Cannot add item. An item cannot be added to an ITEM ContainerType!")))
+                        return ErrorWrapper::internal_result(String::from("Cannot add item. An item cannot be added to an ITEM ContainerType!"))
                     }
                 };
 
@@ -397,7 +397,7 @@ impl Container {
                     self.contents.push(container);
                     return Ok(())
                 } else {
-                    return Err(GenericError::new(
+                    return Err(ErrorWrapper::new_internal(
                         String::from(
                             format!("Cannot add item. Not enough free weight space in this container. Current weight total: {}, item weight: {}, weight limit: {}",
                                     self.get_weight_total(), item.weight, weight_limit)

@@ -14,7 +14,7 @@ use crate::engine::engine_helpers::game_loop::game_loop;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 use crate::engine::process::map_generation::MapGeneration;
-use crate::error::io_error_utils::error_result;
+use crate::error::errors::ErrorWrapper;
 use crate::map::Map;
 use crate::map::position::{Area, Side};
 use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED, Settings};
@@ -65,7 +65,7 @@ impl <B : Backend + Send> GameEngine<B> {
 
 
     // Updates the game to reflect current settings
-    pub(crate) fn update_from_settings(&mut self) -> Result<(), Error>  {
+    pub(crate) fn update_from_settings(&mut self) -> Result<(), ErrorWrapper>  {
         let _fog_of_war = self.settings.is_fog_of_war();
         let map_seed = self.settings.get_rng_seed().ok_or( Error::new(ErrorKind::NotFound, "Failed to retrieve map seed"))?;
         info!("Map seed updated to: {}", map_seed);
@@ -90,7 +90,7 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(())
     }
 
-    fn setup_sinks(&mut self) -> Result<(), Error> {
+    fn setup_sinks(&mut self) -> Result<(), ErrorWrapper> {
         if self.sound_sinks.is_none() {
             // Start the sound sinks and play bg music
             let mut sinks = build_sound_sinks();
@@ -102,7 +102,7 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(())
     }
 
-    pub fn init(&mut self) -> Result<(), Error> {
+    pub fn init(&mut self) -> Result<(), ErrorWrapper> {
         self.setup_sinks()?;
 
         let ui_wrapper = &mut self.ui_wrapper;
@@ -136,17 +136,17 @@ impl <B : Backend + Send> GameEngine<B> {
 
 
     // TODO remove testing/dev characters
-    fn initialise_characters(&mut self) -> Result<(), Error> {
+    fn initialise_characters(&mut self) -> Result<(), ErrorWrapper> {
         info!("Building player...");
         let player_pattern_result = CharacterPattern::new_player();
         if player_pattern_result.is_err() {
-            return Err(player_pattern_result.unwrap_err().to_io_error())
+            return Err(player_pattern_result.unwrap_err())
         }
         let player = CharacterBuilder::new(player_pattern_result.unwrap()).build(String::from("Player"));
         info!("Building NPCs...");
         let npc_pattern_result = CharacterPattern::goblin();
         if npc_pattern_result.is_err() {
-            return Err(npc_pattern_result.unwrap_err().to_io_error())
+            return Err(npc_pattern_result.unwrap_err())
         }
         let test_npc = CharacterBuilder::new(npc_pattern_result.unwrap()).build(String::from("Ruggo"));
 
@@ -160,11 +160,11 @@ impl <B : Backend + Send> GameEngine<B> {
             self.build_testing_inventory();
             Ok(())
         } else {
-            error_result(String::from("Player was not properly spawned/no player spawn room returned!"))
+            ErrorWrapper::internal_result(String::from("Player was not properly spawned/no player spawn room returned!"))
         }
     }
 
-    async fn generate_map(&mut self) -> Result<Map, Error> {
+    async fn generate_map(&mut self) -> Result<Map, ErrorWrapper> {
         let seed = self.levels.get_seed();
         let map_framehandler = MapGenerationFrameHandler { seed: seed.clone() };
 
@@ -185,7 +185,7 @@ impl <B : Backend + Send> GameEngine<B> {
         level_generator.generate_level().await
     }
 
-    async fn initialise(&mut self) -> Result<(), Error> {
+    async fn initialise(&mut self) -> Result<(), ErrorWrapper> {
         self.ui_wrapper.print_and_re_render(String::from("Generating a new level.."))?;
 
         let map = self.generate_map().await.unwrap();
@@ -235,7 +235,7 @@ impl <B : Backend + Send> GameEngine<B> {
         }
     }
 
-    pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, Error>{
+    pub(crate) async fn start_game(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper>{
         let mut generated = false;
         while !generated {
             let init_result = self.initialise().await;
@@ -264,7 +264,7 @@ impl <B : Backend + Send> GameEngine<B> {
             match self.ui_wrapper.draw_map_view(level) {
                 Err(e) => {
                     log::error!("Error when attempting to draw map: {}", e);
-                    return Err(e);
+                    return Err(e.into());
                 }
                 _ => {
                 }
@@ -312,7 +312,7 @@ impl <B : Backend + Send> GameEngine<B> {
         return PlayerMovementResult { must_generate_map: false, level_change: None };
     }
 
-    fn handle_game_over(&mut self) -> Result<Option<GameOverChoice>, Error> {
+    fn handle_game_over(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let player_score = self.levels.get_level_mut().characters.get_player_mut().unwrap().get_inventory_mut().get_loot_value();
 
         let mut menu = build_game_over_menu(
@@ -326,7 +326,7 @@ impl <B : Backend + Send> GameEngine<B> {
         return Ok(None)
     }
 
-    pub(crate) async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, Error> {
+    pub(crate) async fn handle_player_movement(&mut self, side: Side) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let movement_result : PlayerMovementResult = self.attempt_player_movement(side).await;
 
         // If the player move results in an up/down level movement, handle this
@@ -356,7 +356,7 @@ impl <B : Backend + Send> GameEngine<B> {
         return Ok(None)
     }
 
-    pub(crate) fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, Error>  {
+    pub(crate) fn begin_combat(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
         let level = self.levels.get_level_mut();
 
         let characters = &level.characters;
@@ -381,7 +381,7 @@ impl <B : Backend + Send> GameEngine<B> {
 
 }
 
-pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, Error> {
+pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, ErrorWrapper> {
     let ui = build_ui();
     let settings = build_settings();
     let rng_seed = settings.get_rng_seed().ok_or(Error::new(ErrorKind::NotFound, "Failed to retrieve the RNG seed value!"))?;
@@ -390,7 +390,7 @@ pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) 
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
 }
 
-pub fn build_test_game_engine<'a, B: Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, Error> {
+pub fn build_test_game_engine<'a, B: Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, ErrorWrapper> {
     let ui = build_ui();
     let settings = build_settings();
     Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })

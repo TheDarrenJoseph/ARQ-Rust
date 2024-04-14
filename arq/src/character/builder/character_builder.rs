@@ -6,7 +6,7 @@ use crate::character::character_details::CharacterDetails;
 use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
-use crate::error::errors::GenericError;
+use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
 use crate::map::objects::weapon_builder::{BladedWeaponType, WeaponBlueprint, WeaponBuilder};
@@ -55,7 +55,7 @@ pub fn build_dev_player_inventory() -> Container {
     Future TODO - Consider storing patterns in a proper data store so we can look them up by CharacterType alone / keep the code lightweight
  */
 impl CharacterPattern {
-    pub fn new_player() -> Result<CharacterPattern, GenericError> {
+    pub fn new_player() -> Result<CharacterPattern, ErrorWrapper> {
         let attributes: Vec<AttributeScore> = AttributeScores::default().scores;
 
         // Builds a "Steel Arming Sword" for the player to wield as PRIMARY
@@ -83,7 +83,7 @@ impl CharacterPattern {
         Ok(CharacterPattern { character_type: NewPlayer, blueprint })
     }
 
-    pub fn goblin() -> Result<CharacterPattern, GenericError> {
+    pub fn goblin() -> Result<CharacterPattern, ErrorWrapper> {
         let blueprint = WeaponBlueprint::new(MaterialType::IRON, ItemForm::BLADED(BladedWeaponType::DAGGER)).unwrap();
         let weapon_builder = WeaponBuilder::new(blueprint);
         let dagger = weapon_builder.build();

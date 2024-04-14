@@ -5,6 +5,7 @@ use termion::event::Key;
 use tui::Frame;
 use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
+use crate::error::errors::ErrorWrapper;
 
 use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -44,7 +45,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrame
 }
 
 impl InputHandler<String> for ConsoleFrameHandler {
-    fn handle_input(&mut self, _: Option<Key>) -> Result<InputResult<String>, Error> {
+    fn handle_input(&mut self, _: Option<Key>) -> Result<InputResult<String>, ErrorWrapper> {
         return Ok(InputResult {
             generic_input_result: GenericInputResult { done: false, requires_view_refresh: false },
             view_specific_result: None

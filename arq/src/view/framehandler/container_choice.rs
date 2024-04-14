@@ -5,6 +5,7 @@ use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
+use crate::error::errors::ErrorWrapper;
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -142,7 +143,7 @@ pub enum ContainerChoiceFrameHandlerInputResult {
 }
 
 impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFrameHandler {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerChoiceFrameHandlerInputResult>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<ContainerChoiceFrameHandlerInputResult>, ErrorWrapper> {
         if let Some(key) = input {
             match key {
                 Key::Up => {

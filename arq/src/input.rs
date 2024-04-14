@@ -3,7 +3,6 @@ use std::io;
 use termion::event::Key;
 use termion::input::TermRead;
 
-// TODO hookup?
 pub trait KeyInputResolver {
     fn get_input_key(&self) -> Result<Key, io::Error>;
     fn get_or_return_input_key(&self, input : Option<Key>) -> Result<Key, io::Error>;

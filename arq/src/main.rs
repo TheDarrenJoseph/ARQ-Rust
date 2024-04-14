@@ -9,6 +9,7 @@ use tui::backend::CrosstermBackend;
 
 use crate::engine::engine_helpers::menu::start_menu;
 use crate::engine::game_engine::{build_game_engine, GameEngine};
+use crate::error::errors::ErrorWrapper;
 use crate::ui::ui::StartMenuChoice::Play;
 use crate::view::game_over_view::GameOverChoice;
 
@@ -31,8 +32,8 @@ mod sound;
 pub mod map;
 
 pub mod input;
-async fn begin() -> Result<(), io::Error> {
-    let game_engine: Result<GameEngine<CrosstermBackend<RawTerminal<std::io::Stdout>>>, std::io::Error>;
+async fn begin() -> Result<(), ErrorWrapper> {
+    let game_engine: Result<GameEngine<CrosstermBackend<RawTerminal<std::io::Stdout>>>, ErrorWrapper>;
     let terminal_manager = terminal::terminal_manager::init().unwrap();
     game_engine = build_game_engine(terminal_manager);
     let mut engine = game_engine.unwrap();

@@ -7,7 +7,7 @@ use tui::widgets::{Block, Borders};
 
 use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
-use crate::error::io_error_utils::error_result;
+use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_util::center_area;
@@ -279,7 +279,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterStatsFr
 }
 
 impl InputHandler<CharacterFrameHandlerInputResult> for CharacterStatsFrameHandler {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterFrameHandlerInputResult>, Error> {
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<CharacterFrameHandlerInputResult>, ErrorWrapper> {
         let horizontal_tab : char = char::from_u32(0x2409).unwrap();
         let widgets = &mut self.widgets.widgets;
         let mut selected_widget = None;
@@ -300,7 +300,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterStatsFrameHandl
         let key = resolve_input(input)?;
         match key {
             Key::Esc => {
-                return error_result("Quit interrupt.".to_string());
+                return ErrorWrapper::internal_result("Quit interrupt.".to_string());
             },
             Key::Char('\n') => {
                 match selected_widget {

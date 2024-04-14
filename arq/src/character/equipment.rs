@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 
 use crate::character::equipment::EquipmentSlot::{FEET, HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
-use crate::error::io_error_utils::error_result;
+use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemType};
 
@@ -84,7 +84,7 @@ impl Equipment {
         self.slots.get(&slot).is_some()
     }
 
-    pub fn equip(&mut self, container_item : Container, slot: EquipmentSlot) -> Result<(), Error> {
+    pub fn equip(&mut self, container_item : Container, slot: EquipmentSlot) -> Result<(), ErrorWrapper> {
         return if !self.is_slot_filled(slot.clone()) {
             match container_item.get_container_type() {
                 // Only wrapped items can be equipped
@@ -94,11 +94,11 @@ impl Equipment {
                     Ok(())
                 },
                 ct => {
-                    error_result(format!("Unsupported container_type: {}", ct))
+                    ErrorWrapper::internal_result(format!("Unsupported container_type: {}", ct))
                 }
             }
         } else {
-            error_result(format!("Cannot equip. Equipment slot: {} is already taken.", slot))
+            ErrorWrapper::internal_result(format!("Cannot equip. Equipment slot: {} is already taken.", slot))
         }
     }
 
@@ -106,13 +106,13 @@ impl Equipment {
         self.slots.get(&slot)
     }
 
-    pub fn unequip(&mut self, slot: EquipmentSlot) -> Result<Container, Error> {
+    pub fn unequip(&mut self, slot: EquipmentSlot) -> Result<Container, ErrorWrapper> {
         return if self.is_slot_filled(slot.clone()) {
             let item = self.slots.remove(&slot).unwrap();
             let container = Container::wrap(item);
             Ok(container)
         } else {
-            error_result(format!("Cannot un-equip. Equipment slot: {} is empty.", slot))
+            ErrorWrapper::internal_result(format!("Cannot un-equip. Equipment slot: {} is empty.", slot))
         }
     }
 

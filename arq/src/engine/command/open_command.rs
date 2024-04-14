@@ -9,7 +9,7 @@ use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
-use crate::error::io_error_utils::error_result;
+use crate::error::errors::{error_result, ErrorWrapper};
 use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
@@ -77,7 +77,7 @@ fn handle_callback<'a>(level : &'a mut Level, position: Position, data : Contain
     return None
 }
 
-fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a mut Level) -> Result<ContainerFrameHandlerInputResult, Error> {
+fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a mut Level) -> Result<ContainerFrameHandlerInputResult, ErrorWrapper> {
     if let Some(pos) = data.position {
         let map = level.get_map_mut().unwrap();
         let container_result = map.find_container_mut(pos);
@@ -91,13 +91,13 @@ fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a m
                 result_data.position = Some(pos);
                 return Ok(MoveToContainerChoice(result_data));
             } else {
-                return error_result(format!("Failed build container choices: {}", sub_containers_result.err().unwrap()));
+                return ErrorWrapper::internal_result(format!("Failed build container choices: {}", sub_containers_result.err().unwrap()));
             }
         } else {
-            return error_result( format!("Cannot build container choices. Cannot find container at position: {:?}", pos));
+            return ErrorWrapper::internal_result( format!("Cannot build container choices. Cannot find container at position: {:?}", pos));
         }
     } else {
-        return error_result(String::from("Cannot build container choices. No position provided."));
+        return ErrorWrapper::internal_result(String::from("Cannot build container choices. No position provided."));
     }
 }
 
@@ -111,7 +111,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         Ok(())
     }
 
-    fn open_container(&mut self, p: Position, c: &Container) -> Result<InputResult<bool>, Error> {
+    fn open_container(&mut self, p: Position, c: &Container) -> Result<InputResult<bool>, ErrorWrapper> {
         self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
@@ -163,7 +163,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, key: Key) -> Result<(), io::Error> {
+    fn handle(&mut self, key: Key) -> Result<(), ErrorWrapper> {
 
         let mut message = NOTHING_ERROR.to_string();
         if let Some(p) = self.level.find_adjacent_player_position(key) {
@@ -201,9 +201,7 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
                 log::info!("Player opening container of type {:?} and length: {}", c.container_type, c.get_total_count());
                 self.open_container(p.clone(), &c)?;
             } else {
-                self.ui.set_console_buffer(message);
-                self.re_render()?;
-                self.input_handler.get_input_key()?;
+                return ErrorWrapper::internal_result(message)
             }
         }
         Ok(())

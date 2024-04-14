@@ -8,6 +8,7 @@ use crate::character::battle::Battle;
 use crate::character::equipment::WeaponSlot;
 use crate::engine::combat::CombatTurnChoice;
 use crate::engine::level::Level;
+use crate::error::errors::ErrorWrapper;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
@@ -57,7 +58,7 @@ impl <B : tui::backend::Backend> CombatView<'_, B> {
 }
 
 impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
-    fn begin(&mut self) -> Result<InputResult<Battle>, Error> {
+    fn begin(&mut self) -> Result<InputResult<Battle>, ErrorWrapper> {
         // Input / Output loop
         while self.battle.in_progress {
             self.draw(None).expect("Combat view should have been drawn.");
@@ -74,7 +75,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
         return Ok(self.build_done_result());
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let battle = &mut self.battle;
         let _player = battle.characters.get_player_mut();
         let _npcs = battle.characters.get_npcs();
@@ -99,7 +100,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
 }
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = resolve_input(input)?;
         match key {
             Key::Up => {

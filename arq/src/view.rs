@@ -6,6 +6,7 @@ use termion::input::TermRead;
 use tui::Frame;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
+use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -38,12 +39,12 @@ pub mod menu_view;
      * The terminal manager (from tui-rs) which is what allows us access to each frame via draw() which is then passed to each framehandler, this also allows direct access to the terminal display (character printing etc)
  */
 pub trait View<T> {
-    fn begin(&mut self) -> Result<InputResult<T>, Error>;
-    fn draw(&mut self, area: Option<Area>) -> Result<CompletedFrame, Error>;
+    fn begin(&mut self) -> Result<InputResult<T>, ErrorWrapper>;
+    fn draw(&mut self, area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper>;
 }
 
 pub trait InputHandler<T> {
-    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<T>, Error>;
+    fn handle_input(&mut self, input : Option<Key>) -> Result<InputResult<T>, ErrorWrapper>;
 }
 
 pub struct GenericInputResult {

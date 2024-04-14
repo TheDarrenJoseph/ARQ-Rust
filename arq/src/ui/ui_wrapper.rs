@@ -9,6 +9,7 @@ use tui::terminal::CompletedFrame;
 
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
+use crate::error::errors::ErrorWrapper;
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
 use crate::map::position::{Area, build_rectangular_area, Position};
 use crate::map::room::Room;
@@ -34,7 +35,7 @@ const UI_USAGE_HINT: &str = "Use the arrow keys/WASD to move.\nEsc - Menu";
 
 impl <B : Backend> UIWrapper<B> {
     // TODO refactor into a singular component shared with commands
-    fn re_render(&mut self) -> Result<(), io::Error>  {
+    pub(crate) fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
             ui.render(frame);
@@ -72,7 +73,7 @@ impl <B : Backend> UIWrapper<B> {
         }
     }
 
-    pub(crate) fn draw_start_menu(&mut self) -> Result<InputResult<StartMenuChoice>, Error>  {
+    pub(crate) fn draw_start_menu(&mut self) -> Result<InputResult<StartMenuChoice>, ErrorWrapper>  {
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
 
@@ -90,7 +91,7 @@ impl <B : Backend> UIWrapper<B> {
     // TODO this should live in it's own view likely
     // Shows character creation screen
     // Returns the finished character once input is confirmed
-    fn show_character_creation(&mut self, base_character: Character) -> Result<Character, io::Error> {
+    fn show_character_creation(&mut self, base_character: Character) -> Result<Character, ErrorWrapper> {
         let mut character_view = CharacterStatsFrameHandler { character: base_character.clone(),  widgets: WidgetList { widgets: Vec::new(), widget_index: None }, view_mode: ViewMode::CREATION, attributes_area: Area::new(Position::zero(), 0, 0)};
         // Begin capture of a new character
         let mut character_creation_result = InputResult { generic_input_result:
@@ -144,7 +145,7 @@ impl <B : Backend> UIWrapper<B> {
         return None;
     }
 
-    pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), io::Error> {
+    pub(crate) fn draw_map_view(&mut self, level: &mut Level) -> Result<(), ErrorWrapper> {
         let now = Instant::now();
         verify_display_size(&mut self.terminal_manager);
 

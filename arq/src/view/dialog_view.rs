@@ -5,6 +5,7 @@ use tui::style::{Color, Style};
 use tui::terminal::CompletedFrame;
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};
+use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
@@ -25,7 +26,7 @@ impl <B : tui::backend::Backend> DialogView<'_, B> {
 }
 
 impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
-    fn begin(&mut self) -> Result<InputResult<()>, Error> {
+    fn begin(&mut self) -> Result<InputResult<()>, ErrorWrapper> {
         self.draw(None).expect("The dialog view should have been drawn.");
         get_input_key().expect("Keyboard input key should have been captured");
         Ok(InputResult {
@@ -34,7 +35,7 @@ impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
         })
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let message = self.message.clone();
         let _ui = &mut self.ui;
         self.terminal_manager.clear_screen().expect("The screen should have been cleared");

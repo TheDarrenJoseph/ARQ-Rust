@@ -3,6 +3,7 @@ use std::io::Error;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
+use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -24,7 +25,7 @@ pub struct SettingsMenuView<'a, B : tui::backend::Backend> {
 }
 
 impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
-    fn begin(&mut self)  -> Result<InputResult<bool>, Error> {
+    fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
         // Select the first widget
         if self.menu.widgets.widgets.len() > 0 {
             self.menu.widgets.widgets[0].state_type.focus();
@@ -39,7 +40,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let menu_view = &mut self.menu;
         let terminal = &mut self.terminal_manager.terminal;
         let widgets = &menu_view.widgets;
@@ -71,7 +72,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
 }
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_, COM> {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let menu_view = &mut self.menu;
         let key = resolve_input(input)?;
         let mut target_widget = None;

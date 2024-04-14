@@ -7,6 +7,7 @@ use log::{error, info};
 use termion::input::TermRead;
 
 use crate::engine::game_engine::GameEngine;
+use crate::error::errors::ErrorWrapper;
 use crate::settings::Settings;
 use crate::ui::ui::StartMenuChoice;
 use crate::view::game_over_view::GameOverChoice;
@@ -16,7 +17,7 @@ use crate::widget::stateful::dropdown_widget::get_resolution_dropdown_options;
 use crate::widget::StatefulWidgetType;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 
-pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, _choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, Error> > + '_ >> {
+pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, _choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, ErrorWrapper> > + '_ >> {
     Box::pin(async move {
         let ui_wrapper = &mut engine.ui_wrapper;
         ui_wrapper.clear_screen()?;
@@ -74,7 +75,7 @@ pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine
     })
 }
 
-pub async fn menu_command<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, Error> {
+pub async fn menu_command<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
     engine.ui_wrapper.clear_screen()?;
     engine.ui_wrapper.ui.hide_console();
 

@@ -8,6 +8,7 @@ use crate::character::equipment::get_potential_slots;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::level::Level;
+use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -177,7 +178,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
 
 impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 
-    fn open_inventory(&mut self) -> Result<(), io::Error> {
+    fn open_inventory(&mut self) -> Result<(), ErrorWrapper> {
         log::info!("Player opening inventory.");
         self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
@@ -199,7 +200,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
                     updated_inventory = character_info_view.frame_handler.container_frame_handlers.get(0).unwrap().container.clone();
                 },
                 Err(e) => {
-                    return Err(e)
+                    return Err(ErrorWrapper::from(e))
                 }
             }
         }
@@ -220,7 +221,7 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, _: Key) -> Result<(), io::Error> {
+    fn handle(&mut self, _: Key) -> Result<(), ErrorWrapper> {
         return self.open_inventory();
     }
 }

@@ -10,6 +10,7 @@ use tui::text::Spans;
 use tui::widgets::{Block, Borders, Tabs};
 
 use crate::character::Character;
+use crate::error::errors::ErrorWrapper;
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
@@ -127,7 +128,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
       * Triggering callbacks if needed
       * Returns the optional input result of the container choice view, and a boolean to indicate success
       */
-    fn handle_container_choice_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
+    fn handle_container_choice_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), ErrorWrapper> {
         if let Some(cfh) = &mut self.frame_handler.choice_frame_handler {
             let result = cfh.handle_input(Some(key))?;
             if let Some(view_specific_result) = result.view_specific_result {
@@ -162,7 +163,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
      * Triggering callbacks if needed
      * Returns the optional input result of the container view, and a boolean to indicate success
      */
-    fn handle_container_view_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
+    fn handle_container_view_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), ErrorWrapper> {
         let container_views = &mut self.frame_handler.container_frame_handlers;
         let have_container_views = !container_views.is_empty();
         if have_container_views {
@@ -289,7 +290,7 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
 }
 
 impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
-    fn begin(&mut self) -> Result<InputResult<bool>, Error> {
+    fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         self.initialise();
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
@@ -299,7 +300,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let frame_handler = &mut self.frame_handler;
         let character = self.character.clone();
         let ui = &mut self.ui;
@@ -322,12 +323,13 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
                 frame_handler.handle_frame(frame, FrameData { frame_area: area, ui_areas: ui_areas.clone(), data: specific_frame_data });
             })?);
         }
-        Err(Error::new(ErrorKind::Other, String::from("Failed to draw character info view")))
+        
+        ErrorWrapper::internal_result(String::from("Failed to draw character info view"))
     }
 }
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, COM> {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = resolve_input(input)?;
         match key {
             Key::Esc => {

@@ -7,6 +7,7 @@ use termion::input::TermRead;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
 use tui::widgets::ListState;
+use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::menu::{Menu, Selection, ToList};
@@ -23,7 +24,7 @@ pub struct MenuView<'a, B : tui::backend::Backend> {
 }
 
 impl<B : tui::backend::Backend> MenuView<'_, B> {
-    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, Error> {
+    fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, ErrorWrapper> {
         loop {
             let start_menu_mut = &mut self.menu;
 
@@ -51,7 +52,7 @@ impl<B : tui::backend::Backend> MenuView<'_, B> {
 }
 
 impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
-    fn begin(&mut self) -> Result<InputResult<StartMenuChoice>, Error> {
+    fn begin(&mut self) -> Result<InputResult<StartMenuChoice>, ErrorWrapper> {
         self.draw(None)?;
         let mut choice : Option<StartMenuChoice> = None;
         loop {
@@ -66,7 +67,7 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
         }
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let ui = &mut self.ui;
         verify_display_size::<B>(&mut self.terminal_manager);
 
@@ -76,13 +77,13 @@ impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
 
         let menu = &self.menu;
         let menu_selection = self.menu.selection;
-        self.terminal_manager.terminal.draw(move |frame| {
+        Ok(self.terminal_manager.terminal.draw(move |frame| {
             let mut menu_list_state = ListState::default();
             menu_list_state.select(Some(menu_selection.try_into().unwrap()));
             let area = main_area_result.area;
             let menu_size = Rect::new(4, 4, area.width / 2, menu.menu_titles.len().try_into().unwrap());
             let menu_list = menu.to_list();
             frame.render_stateful_widget(menu_list, menu_size, &mut menu_list_state);
-        })
+        })?)
     }
 }

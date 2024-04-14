@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::character::equipment::EquipmentSlot;
-use crate::error::errors::GenericError;
+use crate::error::errors::ErrorWrapper;
 use crate::map::objects::items::{Dimensions, Item, ItemForm, ItemType, MaterialType, Weapon};
 use crate::map::tile::{Colour, Symbol};
 
@@ -19,7 +19,7 @@ pub struct WeaponBlueprint {
 
 impl WeaponBlueprint {
     /* Abstract damage amount */
-    fn determine_damage(material_type: MaterialType) -> Result<i32, GenericError>  {
+    fn determine_damage(material_type: MaterialType) -> Result<i32, ErrorWrapper>  {
         return match material_type {
             MaterialType::IRON => {
                 Ok(20)
@@ -35,12 +35,12 @@ impl WeaponBlueprint {
             },
             // Future TODO potentially allow UNKNOWN types, but we'd need to provide data for it's properties as a weapon
             _ => {
-                Err(GenericError::new(format!("Unsupported material type for a weapon: {:?}", material_type)))
+                Err(ErrorWrapper::new_internal(format!("Unsupported material type for a weapon: {:?}", material_type)))
             }
         }
     }
 
-    pub fn new(material_type: MaterialType, item_form: ItemForm) -> Result<WeaponBlueprint, GenericError> {
+    pub fn new(material_type: MaterialType, item_form: ItemForm) -> Result<WeaponBlueprint, ErrorWrapper> {
         let material_strength = Self::determine_damage(material_type.clone())?;
         let density_grams_cm3 = material_type.density_grams_cm3() as f32;
 

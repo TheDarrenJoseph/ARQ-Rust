@@ -4,6 +4,7 @@ use std::sync::mpsc::channel;
 use tokio::join;
 
 use crate::engine::process::Progressible;
+use crate::error::errors::ErrorWrapper;
 use crate::map::Map;
 use crate::map::map_generator::MapGenerator;
 use crate::view::util::progress_display::ProgressDisplay;
@@ -17,7 +18,7 @@ pub struct MapGeneration<'rng, 'a, B : tui::backend::Backend> {
 }
 
 impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
-    pub(crate) async fn generate_level(&mut self) -> Result<Map, io::Error> {
+    pub(crate) async fn generate_level(&mut self) -> Result<Map, ErrorWrapper> {
         let progress = self.map_generator.get_progress().clone();
         let (tx, rx) = channel();
         let handling = self.progress_display.handle_progress(rx, progress.step_count());

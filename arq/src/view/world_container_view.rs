@@ -2,6 +2,7 @@ use std::io::{Error, ErrorKind};
 
 use termion::event::Key;
 use tui::terminal::CompletedFrame;
+use crate::error::errors::ErrorWrapper;
 use crate::input::KeyInputResolver;
 
 use crate::map::objects::container::Container;
@@ -45,7 +46,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     * Triggering callbacks if needed
     * Returns the optional input result of the container choice view, and a boolean to indicate success
     */
-    fn handle_container_choice_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), Error> {
+    fn handle_container_choice_input(&mut self, key: Key) -> Result<(Option<GenericInputResult>, bool), ErrorWrapper> {
         if let Some(cfh) = &mut self.frame_handlers.choice_frame_handler {
             let result = cfh.handle_input(Some(key))?;
             if let Some(view_specific_result) = result.view_specific_result {
@@ -78,7 +79,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
 }
 
 impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
-    fn begin(&mut self)  -> Result<InputResult<bool>, Error> {
+    fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
         
@@ -88,7 +89,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let frame_handler = &mut self.frame_handlers;
         let ui = &mut self.ui;
 
@@ -109,12 +110,12 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
                 frame_handler.handle_frame(frame, FrameData { frame_area: frame_area, data: specific_frame_data, ui_areas: ui_areas.clone() });
             })?);
         }
-        Err(Error::new(ErrorKind::Other, String::from("Failed to draw world container view")))
+        ErrorWrapper::internal_result(String::from("Failed to draw world container view"))
     }
 }
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = self.input_handler.get_or_return_input_key(input)?;
         match key {
             Key::Char('t') => {

@@ -5,7 +5,7 @@ use termion::event::Key;
 
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
-use crate::error::io_error_utils::error_result;
+use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::objects::container::Container;
 use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
@@ -29,12 +29,12 @@ fn describe_position_in_room(pos: Position, room: &Room) -> Option<String> {
     None
 }
 
-fn describe_position_container(c: &Container) -> Result<String, io::Error> {
+fn describe_position_container(c: &Container) -> Result<String, ErrorWrapper> {
     let item_count = c.get_top_level_count();
     let container_type = c.get_container_type();
 
     if container_type != AREA  {
-        return error_result( format!("Unexpected input! Cannot describe position with container of type {}.", container_type));
+        return ErrorWrapper::internal_result( format!("Unexpected input! Cannot describe position with container of type {}.", container_type));
     }
 
 
@@ -54,7 +54,7 @@ fn describe_position_container(c: &Container) -> Result<String, io::Error> {
     }
 }
 
-fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Error> {
+fn describe_position(pos: Position, level : &mut Level) -> Result<String, ErrorWrapper> {
     let nothing_found: String = "There's nothing here.".to_string();
     if let Some(map) = &level.map {
         if let Some(room) = map.get_rooms().iter().find(|r| r.get_area().contains_position(pos)) {
@@ -89,7 +89,7 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, io::Er
         }
     } else {
         log::error!("Look usage failure, no map on level!");
-        return Err(Error::new(ErrorKind::Other, "Look usage failure, no map on level!"))
+        return ErrorWrapper::internal_result(String::from("Look usage failure, no map on level!"))
     }
 }
 
@@ -120,7 +120,7 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, _command_key: Key) -> Result<(), io::Error> {
+    fn handle(&mut self, _command_key: Key) -> Result<(), ErrorWrapper> {
         self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
         let key = get_input_key()?;

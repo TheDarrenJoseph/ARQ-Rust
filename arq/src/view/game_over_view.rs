@@ -5,6 +5,7 @@ use tui::layout::{Alignment, Rect};
 use tui::style::Style;
 use tui::terminal::CompletedFrame;
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -41,7 +42,7 @@ pub fn build_game_over_menu<'a, B : tui::backend::Backend>(message: String, ui: 
 }
 
 impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
-    fn begin(&mut self)  -> Result<InputResult<GameOverChoice>, Error> {
+    fn begin(&mut self)  -> Result<InputResult<GameOverChoice>, ErrorWrapper> {
         // Select the first widget
         if self.widgets.widgets.len() > 0 {
             self.widgets.widgets[0].state_type.focus();
@@ -57,7 +58,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
         return Ok(input_result);
     }
 
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let paragraph = Paragraph::new(self.message.clone())
             .block(Block::default().borders(Borders::NONE))
             .style(Style::default()).alignment(Alignment::Center).wrap(Wrap { trim: true });
@@ -95,7 +96,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
 }
 
 impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B> {
-    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<GameOverChoice>, Error> {
+    fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<GameOverChoice>, ErrorWrapper> {
         let mut target_widget = None;
         match self.widgets.widget_index {
             Some(idx) => {

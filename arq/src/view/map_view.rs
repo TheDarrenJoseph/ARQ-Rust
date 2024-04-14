@@ -6,6 +6,7 @@ use tui::buffer::Cell;
 use tui::terminal::CompletedFrame;
 
 use crate::engine::level::Level;
+use crate::error::errors::ErrorWrapper;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -54,7 +55,7 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
 
 impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
-    fn begin(&mut self) -> Result<InputResult<bool>, Error> {
+    fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         let _level = self.level.clone();
         let _map_view_areas = self.map_view_areas.clone();
         self.draw(None)?;
@@ -66,7 +67,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
     // 2. Map view area - View co-ords (The position/size of the map view relative to the entire terminal frame), this could start at 1,1 for example (accounting for borders)
     // 3. Map display area - Map co-ords (The position/size of the map 'viewfinder', the area that you can actually see the map through)
     // 3.1 The map display area is what will move with the character throughout larger maps
-    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, Error> {
+    fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let map_display_area = self.map_view_areas.map_display_area;
         let frame_size = map_display_area.to_rect();
         let ui = &mut self.ui;
@@ -91,7 +92,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 }
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for MapView<'_, COM> {
-    fn handle_input(&mut self, _input: Option<Key>) -> Result<InputResult<bool>, Error> {
+    fn handle_input(&mut self, _input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: None});
     }
 }
