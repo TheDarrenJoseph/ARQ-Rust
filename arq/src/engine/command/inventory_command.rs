@@ -182,8 +182,8 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         log::info!("Player opening inventory.");
         self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
-        let c = self.level.characters.get_player_mut().unwrap().get_inventory_mut();
-        let mut callback_container: Container = c.clone();
+        //let c = self.level.characters.get_player_mut().unwrap().get_inventory_mut();
+        //let mut callback_container: Container = c.clone();
 
         let frame_handler = CharacterInfoFrameHandler { tab_choice: TabChoice::INVENTORY, container_frame_handlers: Vec::new(), choice_frame_handler: None, character_view: None };
 
@@ -193,7 +193,8 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
         {
             let mut character_info_view = CharacterInfoView { character: player, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, frame_handler, callback: Box::new(|_| {None}) };
             character_info_view.set_callback(Box::new(|data| {
-                handle_callback(CallbackState { level, container: Some(&mut callback_container), data })
+                let mut current_inventory = level.characters.get_player_mut().unwrap().get_inventory_mut().clone();
+                handle_callback(CallbackState { level, container: Some(&mut current_inventory), data })
             }));
             match character_info_view.begin() {
                 Ok(_) => {

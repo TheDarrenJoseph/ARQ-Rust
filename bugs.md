@@ -3,11 +3,15 @@
 Tracking unexpected bugs found during play testing (BUG- prefixed)
 Some of these may not be true bugs, but instead needed improvements for playability (PLAY- prefixed)
 
-## BUG-1 - Added Container Items are destroyed upon Container drop into non-room tile
+## [Fixed] BUG-1 - Added Container Items are destroyed upon Container drop into non-room tile
 
 1. GIVEN you've added some items into a container in the player inventory
-2. WHEN you drop that container onto a non-room tile (i.e the corridor tile)
+2. WHEN you drop that container without closing the inventory view first
 3. THEN the container is dropped without the newly added items
+
+Fix notes:
+We were passing a reference to the same (original) player inventory container to every callback when hooking them up in `inventory_command.open_container(..)`
+This meant every time the `CharacterInfoView` fired off a `DropItems` affecting the world state, it would only be using the outdated (original) copy
 
 ## BUG-2 Hitting 'c' within a container without having items selected causes a crash
 
