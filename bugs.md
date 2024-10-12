@@ -20,6 +20,18 @@ This meant every time the `CharacterInfoView` fired off a `DropItems` affecting 
 3. WHEN you hit 'c' to open the container choice view
 4. THEN the game crashes
 
+Stacktrace:
+```
+11: <arq::view::world_container_view::WorldContainerView<B> as arq::view::View<bool>>::draw
+at ./src/view/world_container_view.rs:102:23
+12: <arq::view::world_container_view::WorldContainerView<B> as arq::view::View<bool>>::begin
+at ./src/view/world_container_view.rs:87:13
+13: arq::engine::command::open_command::OpenCommand<B>::open_container
+at ./src/engine/command/open_command.rs:150:9
+14: <arq::engine::command::open_command::OpenCommand<B> as arq::engine::command::command::Command>::handle
+at ./src/engine/command/open_command.rs:202:17
+```
+
 ## PLAY-1 - The container choice view is never shown as an option / prompted
 
 It's not clear when you can hit 'c' to use the container choice view

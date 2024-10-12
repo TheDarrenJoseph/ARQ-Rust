@@ -27,7 +27,7 @@ pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub input_handler : Box<dyn KeyInputResolver>
+    pub input_resolver: Box<dyn KeyInputResolver>
 }
 
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
@@ -129,7 +129,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
         let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         let level = &mut self.level;
         
-        let mock_input_resolver = &mut self.input_handler.as_any_mut().downcast_mut::<MockKeyInputResolver>();
+        let mock_input_resolver = &mut self.input_resolver.as_any_mut().downcast_mut::<MockKeyInputResolver>();
         
         let mut input_handler : Box<dyn KeyInputResolver> = Box::new(IoKeyInputResolver{});
         if let Some(mock) = mock_input_resolver {
@@ -142,7 +142,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
             frame_handlers: frame_handler,
             container: view_container,
             callback: Box::new(|_data| {None}),
-            input_handler
+            input_resolver: input_handler
         };
         world_container_view.set_callback(Box::new(|input_result| {
             return handle_callback(level, p.clone(), input_result);
@@ -376,7 +376,7 @@ mod tests {
         // AND we have an OpenCommand with all this data
         // And our mocked input will return Escape to quit the view immediately
         let key_results = vec![Key::Esc];
-        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager, input_handler: Box::new(MockKeyInputResolver { key_results }) };
+        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager, input_resolver: Box::new(MockKeyInputResolver { key_results }) };
         
         // WHEN we call to handle the opening of a container
         // Player is at 0,0. Container is at 0,1 to the right of the player

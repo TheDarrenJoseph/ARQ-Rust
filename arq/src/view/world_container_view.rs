@@ -27,7 +27,7 @@ pub struct WorldContainerView<'a, B : tui::backend::Backend> {
     pub frame_handlers: WorldContainerViewFrameHandlers,
     pub container : Container,
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>,
-    pub input_handler : Box<dyn KeyInputResolver>
+    pub input_resolver: Box<dyn KeyInputResolver>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -116,7 +116,7 @@ impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
 
 impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
-        let key = self.input_handler.get_or_return_input_key(input)?;
+        let key = self.input_resolver.get_or_return_input_key(input)?;
         match key {
             Key::Char('t') => {
                 if let Some(parent_view) = self.frame_handlers.container_frame_handlers.last_mut() {
@@ -334,7 +334,7 @@ mod tests {
             frame_handlers: frame_handler,
             container: view_container,
             callback: Box::new(|_data| {None}),
-            input_handler: Box::new(IoKeyInputResolver {})
+            input_resolver: Box::new(IoKeyInputResolver {})
         };
 
         // WHEN we call to draw the world container view, it should complete successfully

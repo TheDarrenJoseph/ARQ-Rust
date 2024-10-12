@@ -48,7 +48,7 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 level,
                 ui: &mut engine.ui_wrapper.ui,
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager,
-                input_handler: Box::new(IoKeyInputResolver {}),
+                input_resolver: Box::new(IoKeyInputResolver {}),
             };
             command.handle(key)?;
         },
