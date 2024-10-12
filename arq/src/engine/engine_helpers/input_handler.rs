@@ -3,7 +3,8 @@ use std::io::Error;
 use termion::event::Key;
 
 use crate::engine::command::command::Command;
-use crate::engine::command::input_mapping;
+use crate::engine::command::input_bindings;
+use crate::engine::command::input_bindings::key_to_input;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
@@ -32,7 +33,8 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 ui: &mut engine.ui_wrapper.ui,
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager
             };
-            command.handle(key)?;
+            let input = key_to_input(key);
+            command.handle_input(input)?;
         },
         Key::Char('k') => {
             let mut command = LookCommand {
@@ -40,7 +42,8 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 ui: &mut engine.ui_wrapper.ui,
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager
             };
-            command.handle(key)?;
+            let input = key_to_input(key);
+            command.handle_input(input)?;
         },
         Key::Char('o') => {
             let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
@@ -50,10 +53,11 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager,
                 input_resolver: Box::new(IoKeyInputResolver {}),
             };
-            command.handle(key)?;
+            let input = key_to_input(key);
+            command.handle_input(input)?;
         },
         Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
-            if let Some(side) = input_mapping::key_to_side(key) {
+            if let Some(side) = input_bindings::key_to_side(key) {
                 if let Some(game_over_choice) = engine.handle_player_movement(side).await? {
                     return Ok(Some(game_over_choice));
                 }

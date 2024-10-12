@@ -6,6 +6,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 
 use crate::engine::command::command::Command;
+use crate::engine::command::input_bindings::{Action, Input};
 use crate::engine::container_util;
 use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
@@ -152,9 +153,9 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
 }
 
 impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
-    fn handles_key(&self, key: Key) -> bool {
-        return match key {
-            Key::Char('o') => {
+    fn can_handle_action(&self, action: Action) -> bool {
+        return match action {
+            Action::OpenNearby => {
                 true
             }
             _ => {
@@ -163,10 +164,9 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, key: Key) -> Result<(), ErrorWrapper> {
-
+    fn handle_input(&mut self, input: Option<Input>) -> Result<(), ErrorWrapper> {
         let mut message = NOTHING_ERROR.to_string();
-        if let Some(p) = self.level.find_adjacent_player_position(key) {
+        if let Some(p) = self.level.find_adjacent_player_position(input) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;
 
@@ -221,6 +221,7 @@ mod tests {
     use crate::character::character_details::build_default_character_details;
     use crate::character::characters::Characters;
     use crate::engine::command::command::Command;
+    use crate::engine::command::input_bindings::{key_to_input, Input};
     use crate::engine::command::open_command::{handle_callback, OpenCommand};
     use crate::engine::game_engine::build_test_game_engine;
     use crate::engine::level::Level;
@@ -380,8 +381,9 @@ mod tests {
         
         // WHEN we call to handle the opening of a container
         // Player is at 0,0. Container is at 0,1 to the right of the player
-        // TODO mock input from keyboard to escape view
-        command.handle(Key::Right).expect("Open command should open container");
+        // TODO mock input from keyboard to escape view\
+        let input = key_to_input(Key::Right);
+        command.handle_input(input).expect("Open command should open container");
         
         // THEN we expect to reach this point successfully
     }

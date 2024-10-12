@@ -4,6 +4,7 @@ use std::io::{Error, ErrorKind};
 use termion::event::Key;
 
 use crate::engine::command::command::Command;
+use crate::engine::command::input_bindings::{key_to_input, Action, Input};
 use crate::engine::level::Level;
 use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::objects::container::Container;
@@ -109,9 +110,9 @@ impl <B: tui::backend::Backend> LookCommand<'_, B> {
 }
 
 impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
-    fn handles_key(&self, key: Key) -> bool {
-        return match key {
-            Key::Char('k') => {
+    fn can_handle_action(&self, action: Action) -> bool {
+        return match action {
+            Action::LookAround => {
                 true
             }
             _ => {
@@ -120,11 +121,12 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, _command_key: Key) -> Result<(), ErrorWrapper> {
+    fn handle_input(&mut self, _input: Option<Input>) -> Result<(), ErrorWrapper> {
         self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
         let key = get_input_key()?;
-        let position = self.level.find_adjacent_player_position(key);
+        let input = key_to_input(Key::Right);
+        let position = self.level.find_adjacent_player_position(input);
         if let Some(p) = position {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;

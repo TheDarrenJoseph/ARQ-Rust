@@ -6,6 +6,7 @@ use termion::event::Key;
 
 use crate::character::equipment::get_potential_slots;
 use crate::engine::command::command::Command;
+use crate::engine::command::input_bindings::{Action, Input};
 use crate::engine::container_util;
 use crate::engine::level::Level;
 use crate::error::errors::ErrorWrapper;
@@ -211,9 +212,9 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
 }
 
 impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
-    fn handles_key(&self, key: Key) -> bool {
-        return match key {
-            Key::Char('i') => {
+    fn can_handle_action(&self, action: Action) -> bool {
+        return match action {
+            Action::ShowInventory => {
                 true
             },
             _ => {
@@ -222,8 +223,8 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         };
     }
 
-    fn handle(&mut self, _: Key) -> Result<(), ErrorWrapper> {
-        return self.open_inventory();
+    fn handle_input(&mut self, _: Option<Input>) -> Result<(), ErrorWrapper> {
+        self.open_inventory()
     }
 }
 

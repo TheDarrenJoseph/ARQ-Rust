@@ -5,7 +5,9 @@ use termion::event::Key;
 
 use crate::character::Character;
 use crate::character::characters::Characters;
-use crate::engine::command::input_mapping;
+use crate::engine::command::input_bindings;
+use crate::engine::command::input_bindings::Input;
+use crate::engine::level::LevelChange::DOWN;
 use crate::map::Map;
 use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, Position, Side};
@@ -134,22 +136,19 @@ impl Levels {
 }
 
 impl Level {
-    pub(crate) fn find_adjacent_player_position(&mut self, key: Key) -> Option<Position> {
-        return match key {
-            Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
-                if let Some(side) = input_mapping::key_to_side(key) {
+    pub(crate) fn find_adjacent_player_position(&mut self, input: Option<Input>) -> Option<Position> {
+        return if let Some(i) = input {
+             match i {
+                Input::UP(side) | Input::DOWN(side)  | Input::LEFT(side)  | Input::RIGHT(side)  => {
                     self.find_player_side_position(side)
-                } else {
-                    None
+                },
+                Input::UNKNOWN => {
+                    Some(self.characters.get_player_mut().unwrap().get_global_position().clone())
                 }
-            },
-            Key::Char(_) => {
-                Some(self.characters.get_player_mut().unwrap().get_global_position().clone())
             }
-            _ => {
-                None
-            }
-        };
+        } else {
+            None
+        }
     }
 
     pub fn find_player_side_position(&mut self, side: Side) -> Option<Position> {
