@@ -1,8 +1,8 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap};
 
-use crate::map::Map;
 use crate::map::position::Position;
+use crate::map::Map;
 
 trait ManhattanPathCosting {
     fn manhattan_path_cost(&self, a: Position, b: Position) -> i32;

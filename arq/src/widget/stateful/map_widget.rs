@@ -3,10 +3,10 @@ use tui::layout::Rect;
 use tui::widgets::StatefulWidget;
 
 use crate::engine::level::Level;
-use crate::map::Map;
 use crate::map::map_view_areas::MapViewAreas;
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
+use crate::map::Map;
 use crate::view::util::cell_builder::CellBuilder;
 
 #[derive(Clone)]

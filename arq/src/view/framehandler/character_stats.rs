@@ -5,21 +5,21 @@ use termion::event::Key;
 use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
 
-use crate::character::{Character, Class, determine_class};
 use crate::character::stats::attributes::get_all_attributes;
+use crate::character::{determine_class, Character, Class};
 use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_util::center_area;
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::character_stats::CharacterFrameHandlerInputResult::{NONE, VALIDATION};
-use crate::widget::{Focusable, Named, StatefulWidgetState, StatefulWidgetType};
+use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::{resolve_input, GenericInputResult, InputHandler, InputResult};
 use crate::widget::stateful::button_widget::build_button;
 use crate::widget::stateful::dropdown_widget::build_dropdown;
 use crate::widget::stateful::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
 use crate::widget::stateful::text_widget::build_text_input;
 use crate::widget::widgets::WidgetList;
+use crate::widget::{Focusable, Named, StatefulWidgetState, StatefulWidgetType};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ViewMode {

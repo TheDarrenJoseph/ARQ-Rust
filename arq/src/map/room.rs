@@ -1,9 +1,9 @@
-use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::Rng;
 use uuid::Uuid;
 
 use crate::map::objects::door::Door;
-use crate::map::position::{Area, AreaSide, build_rectangular_area, Position};
+use crate::map::position::{build_rectangular_area, Area, AreaSide, Position};
 use crate::util::utils::{HasUuid, UuidEquals};
 
 #[derive(Debug, Clone)]

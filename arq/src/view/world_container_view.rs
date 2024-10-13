@@ -1,22 +1,20 @@
-use std::io::{Error, ErrorKind};
-
-use termion::event::Key;
-use tui::terminal::CompletedFrame;
 use crate::error::errors::ErrorWrapper;
 use crate::input::KeyInputResolver;
+use termion::event::Key;
+use tui::terminal::CompletedFrame;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
-use crate::view::{GenericInputResult, InputResult, resolve_input, View};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
-use crate::view::InputHandler;
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
+use crate::view::InputHandler;
+use crate::view::{GenericInputResult, InputResult, View};
 
 /*
     This View is responsible for displaying/interacting with containers in the world (i.e chests, dropped items, dead bodies)
@@ -293,18 +291,18 @@ impl WorldContainerViewFrameHandlers {
 mod tests {
     use std::collections::HashMap;
 
-    use termion::event::Key;
     use crate::input::IoKeyInputResolver;
+    use termion::event::Key;
 
     use crate::map::map_generator::build_dev_chest;
     use crate::terminal;
     use crate::ui::resolution::Resolution;
     use crate::ui::ui::build_ui;
     use crate::ui::ui_layout::UILayout;
-    use crate::view::{MIN_RESOLUTION, View};
     use crate::view::framehandler::container;
     use crate::view::model::usage_line::{UsageCommand, UsageLine};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
+    use crate::view::{View, MIN_RESOLUTION};
 
     #[test]
     fn test_draw() {

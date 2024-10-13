@@ -1,12 +1,11 @@
-use std::io;
 use std::sync::mpsc::channel;
 
 use tokio::join;
 
 use crate::engine::process::Progressible;
 use crate::error::errors::ErrorWrapper;
-use crate::map::Map;
 use crate::map::map_generator::MapGenerator;
+use crate::map::Map;
 use crate::view::util::progress_display::ProgressDisplay;
 
 /*

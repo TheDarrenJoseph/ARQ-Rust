@@ -32,6 +32,7 @@ mod sound;
 pub mod map;
 
 pub mod input;
+
 async fn begin() -> Result<(), ErrorWrapper> {
     let game_engine: Result<GameEngine<CrosstermBackend<RawTerminal<std::io::Stdout>>>, ErrorWrapper>;
     let terminal_manager = terminal::terminal_manager::init().unwrap();

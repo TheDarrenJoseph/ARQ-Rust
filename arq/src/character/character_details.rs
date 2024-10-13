@@ -1,5 +1,5 @@
+use crate::character::stats::attributes::{build_default_attributes, AttributeScore};
 use crate::character::{Class, Race};
-use crate::character::stats::attributes::{AttributeScore, build_default_attributes};
 
 #[derive(Clone, Debug)]
 pub struct CharacterDetails {

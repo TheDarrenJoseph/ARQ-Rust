@@ -1,15 +1,15 @@
 use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
-use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, View};
 use crate::view::util::widget_menu::WidgetMenu;
+use crate::view::{resolve_input, GenericInputResult, InputHandler, InputResult, View};
 use crate::widget::{Focusable, StatefulWidgetType};
 
 /*

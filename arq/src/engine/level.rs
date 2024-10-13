@@ -1,16 +1,14 @@
 use std::io;
 
 use rand_pcg::Pcg64;
-use termion::event::Key;
 
-use crate::character::Character;
 use crate::character::characters::Characters;
-use crate::engine::command::input_bindings;
-use crate::engine::command::input_bindings::Input;
-use crate::engine::level::LevelChange::DOWN;
-use crate::map::Map;
+use crate::character::Character;
+
 use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, Position, Side};
+use crate::map::Map;
+use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput};
 
 const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;
@@ -136,18 +134,15 @@ impl Levels {
 }
 
 impl Level {
-    pub(crate) fn find_adjacent_player_position(&mut self, input: Option<Input>) -> Option<Position> {
-        return if let Some(i) = input {
-             match i {
-                Input::UP(side) | Input::DOWN(side)  | Input::LEFT(side)  | Input::RIGHT(side)  => {
-                    self.find_player_side_position(side)
-                },
-                Input::UNKNOWN => {
-                    Some(self.characters.get_player_mut().unwrap().get_global_position().clone())
+    pub(crate) fn find_adjacent_player_position(&mut self, side: Option<Side>) -> Option<Position> {
+        return if let Some(s) = side {
+            match s {
+                Side::TOP | Side::BOTTOM | Side::LEFT | Side::RIGHT => {
+                    self.find_player_side_position(s)
                 }
             }
         } else {
-            None
+            Some(self.characters.get_player_mut().unwrap().get_global_position().clone())
         }
     }
 

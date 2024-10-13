@@ -3,7 +3,7 @@
  * Sets the player position to match that
  * Returns the room the player has been moved to (for further spawning decisions)
  */
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 use crate::engine::game_engine::GameEngine;
 use crate::engine::level::LevelChange;

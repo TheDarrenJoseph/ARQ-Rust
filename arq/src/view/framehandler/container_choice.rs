@@ -1,19 +1,19 @@
 use std::convert::TryInto;
 use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
-use crate::error::errors::ErrorWrapper;
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::ui::ui_util::build_paragraph;
-use crate::view::{GenericInputResult, InputHandler, InputResult};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, Column};
+use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::{GenericInputResult, InputHandler, InputResult};
 
 /**
 * This FrameHandler is responsible for displaying a list of possible containers to move another Item/Container into

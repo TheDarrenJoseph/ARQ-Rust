@@ -1,11 +1,11 @@
 use uuid::Uuid;
 
-use crate::character::{Character, Class, Race};
 use crate::character::builder::character_builder::CharacterType::{GoblinWarrior, NewPlayer};
 use crate::character::character_details::CharacterDetails;
 use crate::character::equipment::Equipment;
 use crate::character::equipment::EquipmentSlot::PRIMARY;
 use crate::character::stats::attributes::{AttributeScore, AttributeScores};
+use crate::character::{Character, Class, Race};
 use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemForm, MaterialType};
@@ -168,10 +168,10 @@ impl CharacterBuilder {
 
 #[cfg(test)]
 mod tests {
-    use crate::character::{Class, Race};
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern, DEFAULT_POSITION};
     use crate::character::equipment::EquipmentSlot::PRIMARY;
     use crate::character::stats::attributes::{AttributeScore, AttributeScores};
+    use crate::character::{Class, Race};
     use crate::map::tile::Colour;
 
     fn assert_attribs(expected: Vec<AttributeScore>, actual: Vec<AttributeScore>) {

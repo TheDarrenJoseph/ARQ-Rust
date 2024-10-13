@@ -15,11 +15,12 @@ use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::errors::ErrorWrapper;
-use crate::map::Map;
 use crate::map::position::{Area, Side};
-use crate::settings::{build_settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED, Settings};
+use crate::map::Map;
+use crate::settings::{build_settings, Settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::bindings::input_bindings::CommandSpecificKeyBindings;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui::build_ui;
 use crate::ui::ui_wrapper::UIWrapper;
@@ -40,7 +41,7 @@ pub struct GameEngine<B: 'static + Backend>  {
     pub(crate) settings: Settings,
     pub levels: Levels,
     sound_sinks: Option<SoundSinks>,
-    game_running : bool,
+    game_running : bool
 }
 
 impl <B : Backend + Send> GameEngine<B> {

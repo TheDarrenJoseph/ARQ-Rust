@@ -3,7 +3,7 @@ use std::io::{Error, ErrorKind};
 
 use tui::layout::Rect;
 
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::map::position::{build_rectangular_area, Area, Position};
 
 // Total represents the entire available area
 pub const UI_AREA_NAME_TOTAL: &str = "total";

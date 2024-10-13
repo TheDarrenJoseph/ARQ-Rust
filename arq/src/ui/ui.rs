@@ -11,8 +11,8 @@ use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::{LayoutType, UILayout};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::widget::StandardWidgetType;
 
 pub struct UI {

@@ -78,8 +78,8 @@ mod character_equipment_frame_handler_tests {
     use crate::map::position::Area;
     use crate::terminal::terminal_manager::init_test;
     use crate::ui::ui_areas::UIAreas;
-    use crate::view::framehandler::{FrameData, FrameHandler};
     use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
+    use crate::view::framehandler::{FrameData, FrameHandler};
     use crate::view::MIN_RESOLUTION;
 
     fn build_arming_sword_primary() -> Item {

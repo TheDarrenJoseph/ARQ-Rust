@@ -1,9 +1,14 @@
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 
 use crate::global_flags::GLOBALS;
+use crate::ui::bindings::action_bindings::ActionKeyBindings;
+use crate::ui::bindings::input_bindings::{AllKeyBindings, CommandSpecificKeyBindings};
+use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
+use crate::ui::bindings::look_bindings::{build_default_look_keybindings, LookKeyBindings};
+use crate::ui::bindings::open_bindings::{build_default_open_keybindings, OpenKeyBindings};
 use crate::ui::resolution::Resolution;
-use crate::widget::stateful::dropdown_widget::{DropdownOption, DropdownSetting, get_resolution_dropdown_options};
+use crate::widget::stateful::dropdown_widget::{get_resolution_dropdown_options, DropdownOption, DropdownSetting};
 
 pub const SETTING_FOG_OF_WAR : &str = "Fog of War";
 pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
@@ -21,7 +26,8 @@ pub struct Settings {
     pub bool_settings : Vec<Setting<bool>>,
     pub u32_settings : Vec<Setting<u32>>,
     pub string_settings : Vec<Setting<String>>,
-    pub dropdown_settings : Vec<Setting<DropdownSetting<DropdownOption<Resolution>>>>
+    pub dropdown_settings : Vec<Setting<DropdownSetting<DropdownOption<Resolution>>>>,
+    pub key_bindings: AllKeyBindings
 }
 
 impl Settings {
@@ -85,6 +91,17 @@ impl Settings {
     }
 }
 
+pub fn build_default_bindings() -> AllKeyBindings {
+    AllKeyBindings {
+        action_key_bindings: ActionKeyBindings { bindings: Default::default() },
+        command_specific_key_bindings: CommandSpecificKeyBindings {
+            inventory_key_bindings: InventoryKeyBindings { bindings: Default::default() },
+            look_key_bindings: build_default_look_keybindings(),
+            open_key_bindings: build_default_open_keybindings()
+        },
+    }
+}
+
 pub fn build_settings() -> Settings {
     let fog_of_war : Setting<bool> = Setting { name: SETTING_FOG_OF_WAR.to_string(), value: false };
     // Generate a new random seed
@@ -104,7 +121,7 @@ pub fn build_settings() -> Settings {
         chosen_option: initial_option.clone()
     };
     let resolution : Setting<DropdownSetting<DropdownOption<Resolution>>> = Setting { name: SETTING_RESOLUTION.to_string(), value: resolution_dropdown_setting };
-    Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed], u32_settings: vec![bg_music_volume], dropdown_settings: vec![resolution]}
+    Settings { bool_settings: vec![fog_of_war], string_settings: vec![map_seed], u32_settings: vec![bg_music_volume], dropdown_settings: vec![resolution], key_bindings: build_default_bindings() }
 }
 
 pub trait Toggleable {

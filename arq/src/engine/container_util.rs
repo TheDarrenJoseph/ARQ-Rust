@@ -1,12 +1,12 @@
-use std::io;
 use log::{error, info};
+use std::io;
 
 use crate::character::Character;
 use crate::engine::level::Level;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, TakeItemsData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, TakeItems};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, TakeItemsData};
 
 pub struct AddToTargetResult {
     pub moved : Vec<Container>,

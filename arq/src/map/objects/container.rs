@@ -2,8 +2,8 @@ use std::convert::TryInto;
 use std::fmt;
 use std::io::{Error, ErrorKind};
 
-use uuid::Uuid;
 use crate::error::errors::ErrorWrapper;
+use uuid::Uuid;
 
 use crate::map::objects::items::{Item, ItemType};
 

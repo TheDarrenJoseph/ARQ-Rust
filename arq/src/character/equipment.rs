@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
-use std::io::Error;
 
 use crate::character::equipment::EquipmentSlot::{FEET, HEAD, LEGS, PRIMARY, SECONDARY, TORSO};
-use crate::error::errors::{error_result, ErrorWrapper};
+use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::items::{Item, ItemType};
 
@@ -126,8 +125,8 @@ impl Equipment {
 mod tests {
     use uuid::Uuid;
 
-    use crate::character::equipment::{all_equipment_slots, Equipment, EquipmentSlot};
     use crate::character::equipment::EquipmentSlot::{HEAD, PRIMARY};
+    use crate::character::equipment::{all_equipment_slots, Equipment, EquipmentSlot};
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;

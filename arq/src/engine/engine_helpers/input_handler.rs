@@ -1,10 +1,6 @@
-use std::io::Error;
-
 use termion::event::Key;
 
 use crate::engine::command::command::Command;
-use crate::engine::command::input_bindings;
-use crate::engine::command::input_bindings::key_to_input;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
@@ -12,6 +8,9 @@ use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::game_engine::GameEngine;
 use crate::error::errors::ErrorWrapper;
 use crate::input::IoKeyInputResolver;
+use crate::ui::bindings::input_bindings;
+use crate::ui::bindings::input_bindings::KeyBindings;
+use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
@@ -33,16 +32,22 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 ui: &mut engine.ui_wrapper.ui,
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager
             };
-            let input = key_to_input(key);
+
+            let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.inventory_key_bindings;
+            let bindings = key_bindings.get_bindings();
+            let input = bindings.get(&key);
             command.handle_input(input)?;
         },
         Key::Char('k') => {
+            let key_bindings = engine.settings.key_bindings.command_specific_key_bindings.look_key_bindings.clone();
             let mut command = LookCommand {
                 level,
                 ui: &mut engine.ui_wrapper.ui,
-                terminal_manager: &mut engine.ui_wrapper.terminal_manager
+                terminal_manager: &mut engine.ui_wrapper.terminal_manager,
+                bindings: key_bindings.clone()
             };
-            let input = key_to_input(key);
+            let bindings = key_bindings.get_bindings();
+            let input = bindings.get(&key);
             command.handle_input(input)?;
         },
         Key::Char('o') => {
@@ -53,7 +58,9 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
                 terminal_manager: &mut engine.ui_wrapper.terminal_manager,
                 input_resolver: Box::new(IoKeyInputResolver {}),
             };
-            let input = key_to_input(key);
+            let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
+            let bindings = key_bindings.get_bindings();
+            let input = bindings.get(&key);          
             command.handle_input(input)?;
         },
         Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
@@ -72,19 +79,16 @@ pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngi
 mod tests {
     use std::collections::HashMap;
 
-    use rand_seeder::Seeder;
     use termion::event::Key;
 
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-    use crate::character::Character;
-    use crate::character::characters::Characters;
     use crate::engine::engine_helpers::input_handler::handle_input;
     use crate::engine::game_engine::*;
-    use crate::engine::level::{init_level_manager, Level, Levels};
-    use crate::map::{Map, Tiles};
-    use crate::map::position::{Area, build_square_area};
+    use crate::engine::level::Levels;
     use crate::map::position::Position;
+    use crate::map::position::{build_square_area, Area};
     use crate::map::tile::{build_library, TileDetails, TileType};
+    use crate::map::{Map, Tiles};
     use crate::terminal::terminal_manager;
     use crate::test::build_test_levels;
     use crate::view::MIN_RESOLUTION;

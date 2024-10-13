@@ -359,7 +359,7 @@ pub const fn build_rectangular_area(start_position : Position, size_x: u16, size
 mod tests {
     use tui::layout::Rect;
 
-    use crate::map::position::{Area, build_rectangular_area, build_square_area, Position, Side};
+    use crate::map::position::{build_rectangular_area, build_square_area, Area, Position, Side};
 
     #[test]
     fn test_get_neighbors_top_left() {

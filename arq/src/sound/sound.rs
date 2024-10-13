@@ -5,8 +5,8 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use log::{error, info};
-use rand::{Rng, SeedableRng};
 use rand::seq::IteratorRandom;
+use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rodio::{Decoder, OutputStream, Sink};
 use tokio::task;

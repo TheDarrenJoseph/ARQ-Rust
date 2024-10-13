@@ -9,8 +9,8 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_areas_builder::UIAreasBuilder;
 use crate::ui::ui_layout::LayoutType::SingleMainWindowCentered;
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
+use crate::view::framehandler::{FrameData, FrameHandler};
 
 pub struct ProgressDisplay<'a, B : tui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,

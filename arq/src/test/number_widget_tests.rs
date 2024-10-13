@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod text_number_input {
-    use crate::widget::{Focusable, StatefulWidgetType};
     use crate::widget::stateful::number_widget::{build_number_input, build_number_input_with_value, NumberInputState};
+    use crate::widget::{Focusable, StatefulWidgetType};
 
     fn assert_for_number_widget<F>(widget_type : StatefulWidgetType, mut callback: F) where F : FnMut(NumberInputState) {
         match widget_type {

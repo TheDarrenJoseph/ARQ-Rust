@@ -2,22 +2,22 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders};
-use crate::error::errors::ErrorWrapper;
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::map::position::Position;
 use crate::ui::ui_util::build_paragraph;
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::model::usage_line::UsageLine;
+use crate::view::{resolve_input, GenericInputResult, InputHandler, InputResult};
 
 /*
     This frame handler is meant to display containers (Chests, Floor items, Dead bodies) in a tabular display
@@ -519,8 +519,8 @@ mod tests {
     use crate::terminal::terminal_manager::init_test;
     use crate::test::read_expected_buffer_file;
     use crate::ui::ui_areas::UIAreas;
-    use crate::view::framehandler::{FrameData, FrameHandler};
     use crate::view::framehandler::container::{build_testing_container_frame_handler, ContainerFrameHandler, ContainerFrameHandlerInputResult};
+    use crate::view::framehandler::{FrameData, FrameHandler};
     use crate::view::MIN_RESOLUTION;
 
     fn build_test_container() -> Container {

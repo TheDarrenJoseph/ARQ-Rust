@@ -1,11 +1,11 @@
 use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use log::error;
 use tui::style::{Color, Style};
 use tui::terminal::CompletedFrame;
 use tui::text::Span;
 use tui::widgets::{Block, Borders, Paragraph};
-use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;

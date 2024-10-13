@@ -6,8 +6,8 @@ use tui::text::{Span, Spans};
 use tui::widgets::Paragraph;
 
 use crate::map::position::{Area, Position};
-pub use crate::ui::resolution::MIN_RESOLUTION;
 use crate::ui::resolution::Resolution;
+pub use crate::ui::resolution::MIN_RESOLUTION;
 
 enum Alignment {
     LEFT,

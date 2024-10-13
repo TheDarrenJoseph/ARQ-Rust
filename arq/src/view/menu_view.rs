@@ -2,12 +2,12 @@ use std::convert::TryInto;
 use std::io;
 use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use log::info;
 use termion::input::TermRead;
 use tui::layout::Rect;
 use tui::terminal::CompletedFrame;
 use tui::widgets::ListState;
-use crate::error::errors::ErrorWrapper;
 
 use crate::map::position::Area;
 use crate::menu::{Menu, Selection, ToList};
@@ -15,7 +15,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::{StartMenuChoice, UI};
 use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_layout::LayoutType;
-use crate::view::{GenericInputResult, InputResult, verify_display_size, View};
+use crate::view::{verify_display_size, GenericInputResult, InputResult, View};
 
 pub struct MenuView<'a, B : tui::backend::Backend> {
     pub ui : &'a mut UI,

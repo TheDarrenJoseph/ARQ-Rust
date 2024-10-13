@@ -11,19 +11,19 @@ use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
 use crate::error::errors::ErrorWrapper;
 use crate::map::map_view_areas::{calculate_map_display_area, MapViewAreas};
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::map::position::{build_rectangular_area, Area, Position};
 use crate::map::room::Room;
 use crate::menu;
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::ui::{Draw, get_input_key, StartMenuChoice, UI};
-use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui::{get_input_key, Draw, StartMenuChoice, UI};
+use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
-use crate::view::{GenericInputResult, InputHandler, InputResult, verify_display_size, View};
-use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::framehandler::character_stats::{CharacterFrameHandlerInputResult, CharacterStatsFrameHandler, ViewMode};
 use crate::view::framehandler::character_stats::CharacterFrameHandlerInputResult::VALIDATION;
+use crate::view::framehandler::character_stats::{CharacterFrameHandlerInputResult, CharacterStatsFrameHandler, ViewMode};
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;
+use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + tui::backend::Backend> {

@@ -1,5 +1,4 @@
 use std::io;
-use std::io::Error;
 
 use termion::event::Key;
 use tui::terminal::CompletedFrame;
@@ -13,10 +12,10 @@ use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
-use crate::view::{GenericInputResult, InputHandler, InputResult, resolve_input, verify_display_size, View};
-use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::framehandler::combat::CombatFrameHandler;
+use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
+use crate::view::{resolve_input, verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 
 pub struct CombatView<'a, B : tui::backend::Backend>  {
     ui : &'a mut UI,

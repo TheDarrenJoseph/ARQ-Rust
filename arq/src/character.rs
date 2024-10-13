@@ -179,9 +179,9 @@ impl Character {
 mod tests {
     use uuid::Uuid;
 
-    use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
     use crate::character::equipment::Equipment;
+    use crate::character::Character;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::position::Position;
     use crate::map::tile::{Colour, Symbol};

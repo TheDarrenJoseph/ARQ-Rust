@@ -6,7 +6,6 @@ use termion::event::Key;
 use termion::input::TermRead;
 
 use crate::engine::command::command::Command;
-use crate::engine::command::input_bindings::{Action, Input};
 use crate::engine::container_util;
 use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
@@ -15,14 +14,16 @@ use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::bindings::action_bindings::Action;
+use crate::ui::bindings::open_bindings::{map_open_input_to_side, OpenInput};
 use crate::ui::ui::UI;
-use crate::view::{InputHandler, InputResult, View};
 use crate::view::framehandler::container;
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
 use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
+use crate::view::{InputHandler, InputResult, View};
 
 pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
@@ -152,7 +153,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
+impl <B: tui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::OpenNearby => {
@@ -164,9 +165,10 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
         };
     }
 
-    fn handle_input(&mut self, input: Option<Input>) -> Result<(), ErrorWrapper> {
+    fn handle_input(&mut self, input: Option<&OpenInput>) -> Result<(), ErrorWrapper> {
         let mut message = NOTHING_ERROR.to_string();
-        if let Some(p) = self.level.find_adjacent_player_position(input) {
+        let side = map_open_input_to_side(input);
+        if let Some(p) = self.level.find_adjacent_player_position(side) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;
 
@@ -211,28 +213,24 @@ impl <B: tui::backend::Backend> Command for OpenCommand<'_, B> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use termion::event::Key;
     use tui::backend::TestBackend;
 
     use uuid::Uuid;
 
-    use crate::character::Character;
     use crate::character::character_details::build_default_character_details;
-    use crate::character::characters::Characters;
+    use crate::character::Character;
     use crate::engine::command::command::Command;
-    use crate::engine::command::input_bindings::{key_to_input, Input};
     use crate::engine::command::open_command::{handle_callback, OpenCommand};
     use crate::engine::game_engine::build_test_game_engine;
-    use crate::engine::level::Level;
-    use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
+    use crate::input::MockKeyInputResolver;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::Item;
-    use crate::map::position::{Area, build_square_area, Position};
-    use crate::map::tile::{Colour, Symbol, TileType};
-    use crate::map::Tiles;
+    use crate::map::position::{Area, Position};
+    use crate::map::tile::{Colour, Symbol};
     use crate::terminal::terminal_manager;
     use crate::test::{build_test_level, build_test_levels_for_level};
+    use crate::ui::bindings::open_bindings::OpenInput::OpenRight;
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
     use crate::view::MIN_RESOLUTION;
 
@@ -382,7 +380,7 @@ mod tests {
         // WHEN we call to handle the opening of a container
         // Player is at 0,0. Container is at 0,1 to the right of the player
         // TODO mock input from keyboard to escape view\
-        let input = key_to_input(Key::Right);
+        let input = Some(&OpenRight);
         command.handle_input(input).expect("Open command should open container");
         
         // THEN we expect to reach this point successfully

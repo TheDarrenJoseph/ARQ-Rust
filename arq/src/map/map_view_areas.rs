@@ -1,4 +1,4 @@
-use crate::map::position::{Area, build_rectangular_area, Position};
+use crate::map::position::{build_rectangular_area, Area, Position};
 
 #[derive(Copy)]
 #[derive(Clone)]

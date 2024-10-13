@@ -1,16 +1,16 @@
+use rand_seeder::Seeder;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use rand_seeder::Seeder;
 
 use tui::buffer::Buffer;
 
 use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-use crate::character::Character;
 use crate::character::characters::Characters;
+use crate::character::Character;
 use crate::engine::level::{init_level_manager, Level, Levels};
 use crate::map::objects::container::Container;
-use crate::map::position::{Area, build_square_area, Position};
+use crate::map::position::{build_square_area, Area, Position};
 use crate::map::tile::TileType;
 use crate::map::{Map, Tiles};
 

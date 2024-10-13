@@ -12,3 +12,5 @@ pub mod ui_areas;
 pub mod ui_areas_builder;
 pub mod ui_util;
 pub mod resolution;
+
+pub mod bindings;

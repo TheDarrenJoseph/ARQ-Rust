@@ -1,10 +1,10 @@
 use crate::settings::Settings;
 use crate::ui::resolution::Resolution;
-use crate::widget::{Focusable, StatefulWidgetState};
 use crate::widget::stateful::boolean_widget::build_boolean_widget;
 use crate::widget::stateful::dropdown_widget::{build_dropdown, DropdownOption};
 use crate::widget::stateful::number_widget::build_number_input_with_value;
 use crate::widget::stateful::text_widget::build_text_input;
+use crate::widget::{Focusable, StatefulWidgetState};
 
 pub struct WidgetList {
     pub widget_index: Option<i8>,

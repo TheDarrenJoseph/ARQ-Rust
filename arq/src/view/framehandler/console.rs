@@ -1,14 +1,13 @@
 use std::convert::TryInto;
-use std::io::Error;
 
+use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::Frame;
 use tui::layout::Rect;
 use tui::widgets::{Block, Borders};
-use crate::error::errors::ErrorWrapper;
+use tui::Frame;
 
-use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
+use crate::view::{GenericInputResult, InputHandler, InputResult};
 use crate::widget::stateful::console_input_widget::build_console_input;
 use crate::widget::StatefulWidgetType;
 

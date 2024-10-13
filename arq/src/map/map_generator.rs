@@ -12,14 +12,14 @@ use uuid::Uuid;
 
 use crate::engine::pathfinding::Pathfinding;
 use crate::engine::process::Progressible;
-use crate::map::{Map, Tiles};
 use crate::map::objects::container::{Container, ContainerType};
 use crate::map::objects::door::build_door;
 use crate::map::objects::items::{Item, MaterialType};
-use crate::map::position::{Area, build_square_area, Position, Side};
+use crate::map::position::{build_square_area, Area, Position, Side};
 use crate::map::room::{build_room, Room};
-use crate::map::tile::{build_library, TileDetails, TileType};
 use crate::map::tile::TileType::{Door, Entry, Exit, NoTile, Wall};
+use crate::map::tile::{build_library, TileDetails, TileType};
+use crate::map::{Map, Tiles};
 use crate::progress::{MultiStepProgress, Step};
 
 pub struct MapGenerator<'rng> {
@@ -565,10 +565,10 @@ mod tests {
     use rand_seeder::Seeder;
 
     use crate::block_on;
-    use crate::map::Map;
     use crate::map::map_generator::build_generator;
-    use crate::map::position::{Area, build_square_area, Position};
+    use crate::map::position::{build_square_area, Area, Position};
     use crate::map::tile::TileDetails;
+    use crate::map::Map;
 
     fn build_test_map(rng: &mut Pcg64, map_area: Area) -> Map {
         let mut generator = build_generator(rng, map_area);

@@ -1,23 +1,24 @@
+use log::error;
 use std::io;
 use std::io::Error;
-use log::error;
 
 use termion::event::Key;
 
 use crate::character::equipment::get_potential_slots;
 use crate::engine::command::command::Command;
-use crate::engine::command::input_bindings::{Action, Input};
 use crate::engine::container_util;
 use crate::engine::level::Level;
 use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::Container;
 use crate::map::objects::items::Item;
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::bindings::action_bindings::Action;
+use crate::ui::bindings::inventory_bindings::InventoryInput;
 use crate::ui::ui::UI;
 use crate::view::character_info_view::{CharacterInfoView, TabChoice};
 use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
-use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{DropItems, EquipItems, MoveItems, MoveToContainerChoice};
+use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
 use crate::view::util::callback::Callback;
 use crate::view::View;
 
@@ -211,7 +212,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
+impl <B: tui::backend::Backend> Command<InventoryInput> for InventoryCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::ShowInventory => {
@@ -223,7 +224,7 @@ impl <B: tui::backend::Backend> Command for InventoryCommand<'_, B> {
         };
     }
 
-    fn handle_input(&mut self, _: Option<Input>) -> Result<(), ErrorWrapper> {
+    fn handle_input(&mut self, _: Option<&InventoryInput>) -> Result<(), ErrorWrapper> {
         self.open_inventory()
     }
 }
@@ -233,7 +234,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::character::equipment::EquipmentSlot::PRIMARY;
-    use crate::engine::command::inventory_command::{CallbackState, equip_items, handle_callback};
+    use crate::engine::command::inventory_command::{equip_items, handle_callback, CallbackState};
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::{Item, ItemForm, MaterialType, Weapon};
     use crate::map::objects::weapon_builder::BladedWeaponType;

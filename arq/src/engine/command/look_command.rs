@@ -4,7 +4,6 @@ use std::io::{Error, ErrorKind};
 use termion::event::Key;
 
 use crate::engine::command::command::Command;
-use crate::engine::command::input_bindings::{key_to_input, Action, Input};
 use crate::engine::level::Level;
 use crate::error::errors::{error_result, ErrorWrapper};
 use crate::map::objects::container::Container;
@@ -14,12 +13,16 @@ use crate::map::room::Room;
 use crate::map::tile::TileType;
 use crate::map::tile::TileType::{NoTile, Wall, Window};
 use crate::terminal::terminal_manager::TerminalManager;
+use crate::ui::bindings::action_bindings::Action;
+use crate::ui::bindings::input_bindings::KeyBindings;
+use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput, LookKeyBindings};
 use crate::ui::ui::{get_input_key, UI};
 
 pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
+    pub bindings : LookKeyBindings
 }
 
 fn describe_position_in_room(pos: Position, room: &Room) -> Option<String> {
@@ -109,7 +112,7 @@ impl <B: tui::backend::Backend> LookCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
+impl <B: tui::backend::Backend> Command<LookInput> for LookCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::LookAround => {
@@ -121,12 +124,15 @@ impl <B: tui::backend::Backend> Command for LookCommand<'_, B> {
         };
     }
 
-    fn handle_input(&mut self, _input: Option<Input>) -> Result<(), ErrorWrapper> {
+    fn handle_input(&mut self, _input: Option<&LookInput>) -> Result<(), ErrorWrapper> {
         self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
         self.re_render().unwrap();
+        
         let key = get_input_key()?;
-        let input = key_to_input(Key::Right);
-        let position = self.level.find_adjacent_player_position(input);
+        let input  = self.bindings.get_input(key);
+        let side = map_look_input_to_side(input);
+        
+        let position = self.level.find_adjacent_player_position(side);
         if let Some(p) = position {
             log::info!("Player looking at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;

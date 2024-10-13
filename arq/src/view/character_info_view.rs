@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 
 use termion::event::Key;
 use tui::layout::Rect;
@@ -14,18 +14,18 @@ use crate::error::errors::ErrorWrapper;
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
-use crate::ui::ui_areas::{UI_AREA_NAME_MAIN, UIAreas};
+use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
-use crate::view::{GenericInputResult, InputResult, resolve_input, verify_display_size, View};
-use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandler;
 use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
 use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, ViewMode};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandlerInputResult};
-use crate::view::InputHandler;
+use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
+use crate::view::InputHandler;
+use crate::view::{resolve_input, verify_display_size, GenericInputResult, InputResult, View};
 use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -451,7 +451,7 @@ mod tests {
     use crate::ui::ui::build_ui;
     use crate::view::character_info_view::{CharacterInfoFrameHandler, CharacterInfoView, TabChoice};
     use crate::view::MIN_RESOLUTION;
-    
+
     #[test]
     fn test_initialise() {
         // GIVEN a valid character info view for a player's inventory

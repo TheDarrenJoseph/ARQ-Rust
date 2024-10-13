@@ -1,8 +1,5 @@
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter, write};
-use std::io;
-use std::io::ErrorKind;
 use crate::error::errors::ErrorType::{INTERNAL, IO};
+use std::fmt::{Debug, Display, Formatter};
 
 pub enum ErrorType {
     INTERNAL,
