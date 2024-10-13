@@ -8,69 +8,72 @@ use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::game_engine::GameEngine;
 use crate::error::errors::ErrorWrapper;
 use crate::input::IoKeyInputResolver;
-use crate::ui::bindings::input_bindings;
+use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
-use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
 
     let level = engine.levels.get_level_mut();
     let ui_wrapper = &mut engine.ui_wrapper;
-    match key {
-        Key::Esc => {
-            if let Some(goc) = menu_command(engine).await? {
-                return Ok(Some(goc));
-            }
-        },
-        Key::Char('c') => {
-            engine.begin_combat()?;
-        },
-        Key::Char('i') => {
-            let mut command = InventoryCommand {
-                level,
-                ui: &mut engine.ui_wrapper.ui,
-                terminal_manager: &mut engine.ui_wrapper.terminal_manager
-            };
+    
+    let action_bindings = &engine.settings.key_bindings.action_key_bindings;
+    let action_input = action_bindings.get_input(key);
+    
+    if let Some(action) = action_input {
+        match action {
+            Action::Escape => {
+                if let Some(goc) = menu_command(engine).await? {
+                    return Ok(Some(goc));
+                }
+            },
+            Action::DevBeginCombat => {
+                engine.begin_combat()?;
+            },
+            Action::ShowInventory => {
+                let mut command = InventoryCommand {
+                    level,
+                    ui: &mut engine.ui_wrapper.ui,
+                    terminal_manager: &mut engine.ui_wrapper.terminal_manager
+                };
 
-            let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.inventory_key_bindings;
-            let bindings = key_bindings.get_bindings();
-            let input = bindings.get(&key);
-            command.handle_input(input)?;
-        },
-        Key::Char('k') => {
-            let key_bindings = engine.settings.key_bindings.command_specific_key_bindings.look_key_bindings.clone();
-            let mut command = LookCommand {
-                level,
-                ui: &mut engine.ui_wrapper.ui,
-                terminal_manager: &mut engine.ui_wrapper.terminal_manager,
-                bindings: key_bindings.clone()
-            };
-            let bindings = key_bindings.get_bindings();
-            let input = bindings.get(&key);
-            command.handle_input(input)?;
-        },
-        Key::Char('o') => {
-            let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
-            let mut command = OpenCommand {
-                level,
-                ui: &mut engine.ui_wrapper.ui,
-                terminal_manager: &mut engine.ui_wrapper.terminal_manager,
-                input_resolver: Box::new(IoKeyInputResolver {}),
-            };
-            let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
-            let bindings = key_bindings.get_bindings();
-            let input = bindings.get(&key);          
-            command.handle_input(input)?;
-        },
-        Key::Down | Key::Up | Key::Left | Key::Right | Key::Char('w') | Key::Char('a') | Key::Char('s') | Key::Char('d') => {
-            if let Some(side) = input_bindings::key_to_side(key) {
-                if let Some(game_over_choice) = engine.handle_player_movement(side).await? {
+                let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.inventory_key_bindings;
+                let bindings = key_bindings.get_bindings();
+                let input = bindings.get(&key);
+                command.handle_input(input)?;
+            },
+            Action::LookAround => {
+                let key_bindings = engine.settings.key_bindings.command_specific_key_bindings.look_key_bindings.clone();
+                let mut command = LookCommand {
+                    level,
+                    ui: &mut engine.ui_wrapper.ui,
+                    terminal_manager: &mut engine.ui_wrapper.terminal_manager,
+                    bindings: key_bindings.clone()
+                };
+                let bindings = key_bindings.get_bindings();
+                let input = bindings.get(&key);
+                command.handle_input(input)?;
+            },
+            Action::OpenNearby => {
+                let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
+                let mut command = OpenCommand {
+                    level,
+                    ui: &mut engine.ui_wrapper.ui,
+                    terminal_manager: &mut engine.ui_wrapper.terminal_manager,
+                    input_resolver: Box::new(IoKeyInputResolver {}),
+                };
+                let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
+                let bindings = key_bindings.get_bindings();
+                let input = bindings.get(&key);
+                command.handle_input(input)?;
+            },
+            Action::MovePlayer(side) => {
+                if let Some(game_over_choice) = engine.handle_player_movement(*side).await? {
                     return Ok(Some(game_over_choice));
                 }
-            }
-        },
-        _ => {}
+            },
+            _ => {}
+        }
     }
     Ok(None)
 }

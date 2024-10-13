@@ -2,7 +2,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 use crate::global_flags::GLOBALS;
-use crate::ui::bindings::action_bindings::ActionKeyBindings;
+use crate::ui::bindings::action_bindings::{build_default_action_keybindings, ActionKeyBindings};
 use crate::ui::bindings::input_bindings::{AllKeyBindings, CommandSpecificKeyBindings};
 use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
 use crate::ui::bindings::look_bindings::{build_default_look_keybindings, LookKeyBindings};
@@ -93,7 +93,7 @@ impl Settings {
 
 pub fn build_default_bindings() -> AllKeyBindings {
     AllKeyBindings {
-        action_key_bindings: ActionKeyBindings { bindings: Default::default() },
+        action_key_bindings: build_default_action_keybindings(),
         command_specific_key_bindings: CommandSpecificKeyBindings {
             inventory_key_bindings: InventoryKeyBindings { bindings: Default::default() },
             look_key_bindings: build_default_look_keybindings(),
