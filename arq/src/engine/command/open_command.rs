@@ -229,7 +229,7 @@ mod tests {
     use crate::map::position::{Area, Position};
     use crate::map::tile::{Colour, Symbol};
     use crate::terminal::terminal_manager;
-    use crate::test::{build_test_level, build_test_levels_for_level};
+    use crate::test::utils::test_utils::{build_test_level, build_test_levels_for_level};
     use crate::ui::bindings::open_bindings::OpenInput::OpenRight;
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
     use crate::view::MIN_RESOLUTION;

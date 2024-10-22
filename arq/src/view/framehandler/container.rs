@@ -73,7 +73,7 @@ fn build_default_columns() -> Vec<Column> {
     vec![
         Column {name : "NAME".to_string(), size: 30},
         Column {name : "WEIGHT (Kg)".to_string(), size: 12},
-        Column {name : "VALUE".to_string(), size: 12}
+        Column {name : "VALUE".to_string(), size: 12},
     ]
 }
 
@@ -511,41 +511,16 @@ mod tests {
     use uuid::Uuid;
 
     use crate::item_list_selection::ListSelection;
-    use crate::map::objects::container::{Container, ContainerType};
-    use crate::map::objects::items::Item;
     use crate::map::position::Area;
-    use crate::map::tile::Colour;
     use crate::menu;
     use crate::terminal::terminal_manager::init_test;
-    use crate::test::read_expected_buffer_file;
+    use crate::test::utils::test_resource_loader::read_expected_buffer_file;
+    use crate::test::utils::test_utils::build_test_container;
     use crate::ui::ui_areas::UIAreas;
     use crate::view::framehandler::container::{build_testing_container_frame_handler, ContainerFrameHandler, ContainerFrameHandlerInputResult};
     use crate::view::framehandler::{FrameData, FrameHandler};
     use crate::view::MIN_RESOLUTION;
-
-    fn build_test_container() -> Container {
-        let id = Uuid::new_v4();
-        let mut container = Container::new(id, "Test Container".to_owned(), 'X', 1.0, 1, ContainerType::OBJECT, 100);
-        let container_self_item = container.get_self_item();
-        assert_eq!(id, container_self_item.get_id());
-        assert_eq!("Test Container", container_self_item.get_name());
-        assert_eq!('X', container_self_item.symbol.character);
-        assert_eq!(Colour::White, container_self_item.symbol.colour);
-        assert_eq!(1.0, container_self_item.weight);
-        assert_eq!(1, container_self_item.value);
-
-        for i in 1..=4 {
-            let test_item = Item::with_defaults(format!("Test Item {}", i), 1.0, 100);
-            container.add_item(test_item).expect("Failed to add a test item to the test container!");
-        }
-
-        assert_eq!(ContainerType::OBJECT, container.container_type);
-        assert_eq!(100, container.get_weight_limit());
-        let contents = container.get_contents();
-        assert_eq!(4, contents.len());
-        container
-    }
-
+    
     #[test]
     fn test_handler_build() {
         // GIVEN valid components
@@ -578,6 +553,7 @@ mod tests {
         
         // THEN we expect the framehandler to draw the container to the framebuffer
         let mut expected = read_expected_buffer_file(String::from("resources/test/container_draw_result.txt"), frame_area.unwrap());
+        // Ensure all each column within the current row is reverse highlighted
         expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
         expected.set_style(Rect::new(32,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
         expected.set_style(Rect::new(45,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));

@@ -25,19 +25,20 @@ pub struct ContainerChoiceFrameHandler {
     pub item_list_selection : ItemListSelection,
 }
 
-pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
-    let mut items = Vec::new();
-    for c in &choices {
-        items.push(c.get_self_item().clone());
-    }
+impl ContainerChoiceFrameHandler {
+    pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
+        let mut items = Vec::new();
+        for c in &choices {
+            items.push(c.get_self_item().clone());
+        }
 
-    ContainerChoiceFrameHandler {
-        choices: choices.clone(),
-        columns: build_default_columns(),
-        item_list_selection: ItemListSelection::new(items.clone(), 1)
+        ContainerChoiceFrameHandler {
+            choices: choices.clone(),
+            columns: build_default_columns(),
+            item_list_selection: ItemListSelection::new(items.clone(), 1)
+        }
     }
 }
-
 
 #[derive(Eq, Hash, PartialEq)]
 #[derive(Debug)]
@@ -174,3 +175,57 @@ impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFra
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use tui::layout::Rect;
+    use tui::style::{Modifier, Style};
+    use crate::map::position::Area;
+    use crate::terminal::terminal_manager::init_test;
+    use crate::test::utils::test_resource_loader::read_expected_buffer_file;
+    use crate::test::utils::test_utils::build_test_container;
+    use crate::ui::ui_areas::UIAreas;
+    use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler};
+    use crate::view::framehandler::{FrameData, FrameHandler};
+    use crate::view::MIN_RESOLUTION;
+    
+    
+    #[test]
+    fn test_draw_to_frame() {
+        // GIVEN a valid ContainerChoiceFrameHandler
+        let container1 = build_test_container();
+        let container2 = build_test_container();
+        let container3 = build_test_container();
+        
+        let mut choices = Vec::new();
+        choices.push(container1);
+        choices.push(container2);
+        choices.push(container3);
+        
+        let mut frame_handler: ContainerChoiceFrameHandler = ContainerChoiceFrameHandler::build(choices);
+
+        // AND we have a test terminal manager using the minimum 80x24 resolution
+        let mut terminal_manager = init_test(MIN_RESOLUTION).unwrap();
+
+        let ui_areas = UIAreas::new(HashMap::new());
+
+        // WHEN we call to draw the framehandler
+        let mut frame_area = None;
+        terminal_manager.terminal.draw(|frame| {
+            frame_area = Some(Area::from_rect(frame.size()));
+            frame_handler.handle_frame(frame,  FrameData { data: Vec::new(), ui_areas, frame_area: frame_area.unwrap() });
+        }).expect("Test Terminal should draw the frame successfully");
+
+        // THEN we expect the framehandler to draw the container to the framebuffer
+        let mut expected = read_expected_buffer_file(String::from("resources/test/container_choice_draw_result.txt"), frame_area.unwrap());
+        // Ensure all each column within the current row is reverse highlighted
+
+        // Item name
+        expected.set_style(Rect::new(1,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        // Container weight/space
+        expected.set_style(Rect::new(14,2, 12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        
+        terminal_manager.terminal.backend().assert_buffer(&expected)
+    }
+
+}

@@ -20,7 +20,7 @@ use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandl
 use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
 use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, ViewMode};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
-use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandlerInputResult};
+use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
@@ -236,7 +236,7 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
                         for c in &choices {
                             items.push(c.get_self_item().clone());
                         }
-                        let cfh = build(choices);
+                        let cfh = ContainerChoiceFrameHandler::build(choices);
                         self.frame_handler.choice_frame_handler = Some(cfh);
                     }
                 },
@@ -419,6 +419,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
 
         match self.tab_choice {
             TabChoice::INVENTORY => {
+                // Check for container choice frame handler, favor that as a dialog if it exists
                 if let Some(cfh) = &mut self.choice_frame_handler {
                     let frame_data = FrameData { data: Vec::new(), ui_areas, frame_area: inner_window_area};
                     cfh.handle_frame(frame, frame_data);
@@ -447,7 +448,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for
 #[cfg(test)]
 mod tests {
     use crate::terminal::terminal_manager;
-    use crate::test::build_test_level;
+    use crate::test::utils::test_utils::build_test_level;
     use crate::ui::ui::build_ui;
     use crate::view::character_info_view::{CharacterInfoFrameHandler, CharacterInfoView, TabChoice};
     use crate::view::MIN_RESOLUTION;

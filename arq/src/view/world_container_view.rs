@@ -10,7 +10,7 @@ use crate::ui::ui::UI;
 use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
 use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
-use crate::view::framehandler::container_choice::{build, ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
+use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::view::InputHandler;
@@ -279,7 +279,7 @@ impl WorldContainerViewFrameHandlers {
             for c in &choices {
                 items.push(c.get_self_item().clone());
             }
-            let cfh = build(choices);
+            let cfh = ContainerChoiceFrameHandler::build(choices);
 
             self.choice_frame_handler = Some(cfh);
         }
@@ -287,53 +287,62 @@ impl WorldContainerViewFrameHandlers {
 }
 
 #[cfg(test)]
-
 mod tests {
     use std::collections::HashMap;
 
     use crate::input::IoKeyInputResolver;
     use termion::event::Key;
-
+    use tui::backend::TestBackend;
     use crate::map::map_generator::build_dev_chest;
     use crate::terminal;
+    use crate::terminal::terminal_manager::TerminalManager;
     use crate::ui::resolution::Resolution;
-    use crate::ui::ui::build_ui;
+    use crate::ui::ui::{build_ui, UI};
     use crate::ui::ui_layout::UILayout;
     use crate::view::framehandler::container;
     use crate::view::model::usage_line::{UsageCommand, UsageLine};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
     use crate::view::{View, MIN_RESOLUTION};
-
-    #[test]
-    fn test_draw() {
+    
+    fn build_test_minimal_ui() -> UI {
+        let mut ui = build_ui();
+        let resolution = Resolution::new(MIN_RESOLUTION.width, MIN_RESOLUTION.height);
+        let ui_layout = UILayout::new(resolution);
+        ui.ui_layout = Some(ui_layout);
+        ui
+    }
+    
+    fn build_view<'a, B: tui::backend::Backend>(mut ui: &'a mut UI, mut terminal_manager: &'a mut TerminalManager<B>) -> WorldContainerView<'a, B> {
         let container = build_dev_chest();
         let subview_container = container.clone();
         let view_container = container.clone();
-
+        
         let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
         commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
         commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
         let usage_line = UsageLine::new(commands);
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
-
-        // GIVEN a UI and terminal manager representing a 80x24 (MIN_RESOLUTION) screen
-        let mut ui = build_ui();
-        let resolution = Resolution::new(MIN_RESOLUTION.width, MIN_RESOLUTION.height);
-        let ui_layout = UILayout::new(resolution);
-        ui.ui_layout = Some(ui_layout);
-        let mut terminal_manager = terminal::terminal_manager::init_test(MIN_RESOLUTION).unwrap();
-
+        
         // AND we've created a WorldContainerView to view a dev testing Chest container
         let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         
         let mut world_container_view = WorldContainerView {
-            ui: &mut ui,
-            terminal_manager: &mut terminal_manager,
+            ui,
+            terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
             callback: Box::new(|_data| {None}),
             input_resolver: Box::new(IoKeyInputResolver {})
         };
+        return world_container_view
+    }
+
+    #[test]
+    fn test_draw() {
+        // GIVEN a UI and terminal manager representing a 80x24 (MIN_RESOLUTION) screen
+        let mut ui = build_test_minimal_ui();
+        let mut terminal_manager = terminal::terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+        let mut world_container_view = build_view(&mut ui, &mut terminal_manager);
 
         // WHEN we call to draw the world container view, it should complete successfully
         world_container_view.draw(None).expect("World container view should have been drawn");

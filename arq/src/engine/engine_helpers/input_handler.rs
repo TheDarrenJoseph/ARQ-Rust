@@ -93,7 +93,7 @@ mod tests {
     use crate::map::tile::{build_library, TileDetails, TileType};
     use crate::map::{Map, Tiles};
     use crate::terminal::terminal_manager;
-    use crate::test::build_test_levels;
+    use crate::test::utils::test_utils::build_test_levels;
     use crate::view::MIN_RESOLUTION;
 
     fn build_tiles(map_area: Area, tile : TileType) -> Vec<Vec<TileDetails>> {

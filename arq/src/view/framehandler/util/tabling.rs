@@ -2,11 +2,17 @@ use tui::layout::Alignment;
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use crate::map::position::Area;
 
 #[derive(Clone)]
 pub struct Column {
     pub name : String,
     pub size : i8
+}
+
+pub struct Cell {
+    pub column : Column,
+    pub area: Area
 }
 
 pub fn build_padding(length : i8) -> String {
@@ -44,9 +50,9 @@ fn test_build_headings() {
 
     // GIVEN a view with a series of columns configured
     let columns = vec![
-        Column {name : "NAME".to_string(), size: 12},
-        Column {name : "WEIGHT (Kg)".to_string(), size: 12},
-        Column {name : "VALUE".to_string(), size: 12}
+        Column {name : "NAME".to_string(), size: 12 },
+        Column {name : "WEIGHT (Kg)".to_string(), size: 12 },
+        Column {name : "VALUE".to_string(), size: 12 }
     ];
 
     // WHEN we call to build the headings Paragraph

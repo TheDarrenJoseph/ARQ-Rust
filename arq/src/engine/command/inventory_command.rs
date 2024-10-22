@@ -240,7 +240,7 @@ mod tests {
     use crate::map::objects::weapon_builder::BladedWeaponType;
     use crate::map::position::Position;
     use crate::map::tile::Colour;
-    use crate::test::build_test_level;
+    use crate::test::utils::test_utils::build_test_level;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
     use crate::view::framehandler::container::ContainerFrameHandlerInputResult::EquipItems;
 
