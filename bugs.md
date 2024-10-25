@@ -13,24 +13,20 @@ Fix notes:
 We were passing a reference to the same (original) player inventory container to every callback when hooking them up in `inventory_command.open_container(..)`
 This meant every time the `CharacterInfoView` fired off a `DropItems` affecting the world state, it would only be using the outdated (original) copy
 
-## BUG-2 Hitting 'c' within a container without having items selected causes a crash
+## [Fixed] BUG-2 Hitting 'c' within a container without having items selected causes a crash
 
 1. GIVEN you're in the container view (of a container on the map, not the player inventory)
 2. AND you've not selected anything
 3. WHEN you hit 'c' to open the container choice view
 4. THEN the game crashes
 
-Stacktrace:
-```
-11: <arq::view::world_container_view::WorldContainerView<B> as arq::view::View<bool>>::draw
-at ./src/view/world_container_view.rs:102:23
-12: <arq::view::world_container_view::WorldContainerView<B> as arq::view::View<bool>>::begin
-at ./src/view/world_container_view.rs:87:13
-13: arq::engine::command::open_command::OpenCommand<B>::open_container
-at ./src/engine/command/open_command.rs:150:9
-14: <arq::engine::command::open_command::OpenCommand<B> as arq::engine::command::command::Command>::handle
-at ./src/engine/command/open_command.rs:202:17
-```
+Fix notes:
+Invalid frame size was being built in the calling code (as it's view code it wasn't covered by tests yet).
+The building of this also needed to validate it's inputs so we could fail in a sensible way.
+
+Sidenote:
+Had to duplicate the usage of try_build_container_choice_frame_handler between character and world container views, 
+is there more consolidation we could do for the high-level generic inventory type logic? 
 
 ## PLAY-1 - The container choice view is never shown as an option / prompted
 

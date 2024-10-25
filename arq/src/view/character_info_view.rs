@@ -26,6 +26,7 @@ use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
 use crate::view::InputHandler;
 use crate::view::{resolve_input, verify_display_size, GenericInputResult, InputResult, View};
+use crate::view::util::try_build_container_choice_frame_handler;
 use crate::widget::widgets::WidgetList;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -230,14 +231,12 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
         if let Some(r) = result {
             match r {
                 ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
-                    if !data.choices.is_empty() {
-                        let choices = data.choices.clone();
-                        let mut items = Vec::new();
-                        for c in &choices {
-                            items.push(c.get_self_item().clone());
-                        }
-                        let cfh = ContainerChoiceFrameHandler::build(choices);
-                        self.frame_handler.choice_frame_handler = Some(cfh);
+                    let result = try_build_container_choice_frame_handler(data);
+                    if (result.is_ok()) {
+                        self.frame_handler.choice_frame_handler = result.ok()
+                    } else {
+                        let error = result.err().unwrap();
+                        self.ui.set_console_buffer(error.message.unwrap())
                     }
                 },
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {

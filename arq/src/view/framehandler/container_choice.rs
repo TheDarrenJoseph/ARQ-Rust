@@ -14,6 +14,7 @@ use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
+use crate::view::framehandler::container::MoveToContainerChoiceData;
 
 /**
 * This FrameHandler is responsible for displaying a list of possible containers to move another Item/Container into
@@ -26,17 +27,22 @@ pub struct ContainerChoiceFrameHandler {
 }
 
 impl ContainerChoiceFrameHandler {
-    pub fn build(choices: Vec<Container>) -> ContainerChoiceFrameHandler {
+    
+    pub fn build(choices : &Vec<Container>) -> Result<ContainerChoiceFrameHandler, ErrorWrapper> {
+        if (choices.is_empty()) {
+           return  ErrorWrapper::internal_result(String::from("No choices provided"));
+        }
+        
         let mut items = Vec::new();
-        for c in &choices {
+        for c in choices {
             items.push(c.get_self_item().clone());
         }
-
-        ContainerChoiceFrameHandler {
+        
+        Ok(ContainerChoiceFrameHandler {
             choices: choices.clone(),
             columns: build_default_columns(),
             item_list_selection: ItemListSelection::new(items.clone(), 1)
-        }
+        })
     }
 }
 
@@ -77,14 +83,15 @@ impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerCh
 
     // TODO tidy this up / reduce duplication
     fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Vec<Container>>) {
-        let frame_size = data.get_frame_area().clone();
         let containers = &self.choices;
 
         let window_block = Block::default()
             .borders(Borders::ALL);
+
+        let frame_size = data.get_frame_area().clone();
         let window_area = Rect::new(frame_size.x.clone(), frame_size.y.clone(), frame_size.width.clone(), frame_size.height.clone());
         let inventory_item_lines = window_area.height - 3;
-        //self.row_count = inventory_item_lines as i32;
+
         self.item_list_selection.page_line_count = inventory_item_lines as i32;
         frame.render_widget(window_block, window_area);
 
@@ -180,6 +187,7 @@ mod tests {
     use std::collections::HashMap;
     use tui::layout::Rect;
     use tui::style::{Modifier, Style};
+    use crate::error::errors::ErrorWrapper;
     use crate::map::position::Area;
     use crate::terminal::terminal_manager::init_test;
     use crate::test::utils::test_resource_loader::read_expected_buffer_file;
@@ -187,6 +195,7 @@ mod tests {
     use crate::ui::ui_areas::UIAreas;
     use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler};
     use crate::view::framehandler::{FrameData, FrameHandler};
+    use crate::view::framehandler::container::MoveToContainerChoiceData;
     use crate::view::MIN_RESOLUTION;
     
     
@@ -202,8 +211,10 @@ mod tests {
         choices.push(container2);
         choices.push(container3);
         
-        let mut frame_handler: ContainerChoiceFrameHandler = ContainerChoiceFrameHandler::build(choices);
-
+        let mut frame_handler_result: Result<ContainerChoiceFrameHandler, ErrorWrapper> = ContainerChoiceFrameHandler::build(&choices);
+        assert!(frame_handler_result.is_ok());
+        let mut frame_handler = frame_handler_result.unwrap();
+        
         // AND we have a test terminal manager using the minimum 80x24 resolution
         let mut terminal_manager = init_test(MIN_RESOLUTION).unwrap();
 

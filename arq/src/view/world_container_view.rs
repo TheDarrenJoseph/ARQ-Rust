@@ -1,3 +1,4 @@
+use futures::future::err;
 use crate::error::errors::ErrorWrapper;
 use crate::input::KeyInputResolver;
 use termion::event::Key;
@@ -15,7 +16,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::view::InputHandler;
 use crate::view::{GenericInputResult, InputResult, View};
-
+use crate::view::util::try_build_container_choice_frame_handler;
 /*
     This View is responsible for displaying/interacting with containers in the world (i.e chests, dropped items, dead bodies)
  */
@@ -52,6 +53,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
                     ContainerChoiceFrameHandlerInputResult::Select(selected_container) => {
                         let container_views = &mut self.frame_handlers.container_frame_handlers;
                         if let Some(topmost_view) = container_views.last_mut() {
+                            // Extract the data on from the view
                             let view_specific_result = topmost_view.build_move_items_result().unwrap().view_specific_result.unwrap();
                             match view_specific_result {
                                 ContainerFrameHandlerInputResult::MoveToContainerChoice(mut data) => {
@@ -73,10 +75,9 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
         }
         Ok((None, false))
     }
-
 }
 
-impl <B : tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
+impl<B: tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
@@ -203,7 +204,13 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
         if let Some(r) = result {
             match r {
                 ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
-                    self.frame_handlers.build_container_choice_view(data);
+                    let result = try_build_container_choice_frame_handler(data);
+                    if (result.is_ok()) {
+                        self.frame_handlers.choice_frame_handler = result.ok()
+                    } else {
+                        let error = result.err().unwrap();
+                        self.ui.set_console_buffer(error.message.unwrap())
+                    }
                 },
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {
                     // TODO (Duplicate) make generic between world_contaienr / character_info
@@ -258,30 +265,14 @@ impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> fo
         if let Some(cfh) = &mut self.choice_frame_handler {
             let inventory_area = Area::new(
                 Position::new(main_area.start_position.x + 2, main_area.start_position.y + 2),
-                1,
-                main_area.width / 2
+                main_area.width / 2,
+                main_area.height / 2
             );
             let frame_data = FrameData { data: Vec::new(), frame_area: inventory_area, ui_areas: data.ui_areas };
             cfh.handle_frame(frame, frame_data);
         } else if let Some(topmost_view) = self.container_frame_handlers.last_mut() {
             let mut frame_inventory = topmost_view.container.clone();
             topmost_view.handle_frame(frame, FrameData { data: &mut frame_inventory, frame_area: data.frame_area, ui_areas: data.ui_areas });
-        }
-    }
-}
-
-impl WorldContainerViewFrameHandlers {
-
-    fn build_container_choice_view(&mut self, data : &MoveToContainerChoiceData) {
-        if !data.choices.is_empty() {
-            let choices = data.choices.clone();
-            let mut items = Vec::new();
-            for c in &choices {
-                items.push(c.get_self_item().clone());
-            }
-            let cfh = ContainerChoiceFrameHandler::build(choices);
-
-            self.choice_frame_handler = Some(cfh);
         }
     }
 }
@@ -324,12 +315,12 @@ mod tests {
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
         
         // AND we've created a WorldContainerView to view a dev testing Chest container
-        let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
+        let frame_handlers = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
-            frame_handlers: frame_handler,
+            frame_handlers,
             container: view_container,
             callback: Box::new(|_data| {None}),
             input_resolver: Box::new(IoKeyInputResolver {})
