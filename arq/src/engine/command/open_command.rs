@@ -186,10 +186,14 @@ impl <B: tui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
                         let item_count = c.get_top_level_count();
                         if item_count > 0 {
                             log::info!("Found map container.");
-                            let contains_single_container = item_count == 1 && c.get_contents()[0].is_true_container();
+                            
+                            // Automatically open any fixed container if it's the only item in this area container
+                            // For example, a single Chest in the Floor container
+                            let contains_single_container = item_count == 1 && c.get_contents()[0].is_fixed_container();
                             if contains_single_container && c.get_contents()[0].get_top_level_count() > 0 {
                                 to_open = Some(c.get_contents()[0].clone());
                             } else {
+                                // Otherwise, show everything in this area container
                                 to_open = Some(c.clone());
                             }
                         }

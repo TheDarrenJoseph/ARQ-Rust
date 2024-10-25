@@ -32,7 +32,7 @@ is there more consolidation we could do for the high-level generic inventory typ
 
 It's not clear when you can hit 'c' to use the container choice view
 
-## PLAY-2 Need a way to open parent containers / move up/down the container tree
+## [Fixed] - PLAY-2 Need a way to open parent containers / move up/down the container tree
 
 There's been several adjustments to which container is opened when opening containers in the world..
 
@@ -43,3 +43,7 @@ The current behaviour is that containers in the world are currently opened autom
 When dropping non-area containers such as a bag, this behavior prevents you from picking it back up without removing the items inside first, 
 or dropping another item in the same space
 
+Fix notes:
+We now check if the "Floor" area contains a single fixed-in-place container before attempting to auto-open it. e.g:
+1. A "Floor" container with a single fixed "Chest" -> Auto-opens into the "Chest" 
+2. A "Floor" container with a single moveable "Bag" -> Shows the "Floor" contents
