@@ -18,7 +18,7 @@ use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput, LookKeyBindings};
 use crate::ui::ui::{get_input_key, UI};
 
-pub struct LookCommand<'a, B: 'static + tui::backend::Backend> {
+pub struct LookCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -97,7 +97,7 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, ErrorW
     }
 }
 
-impl <B: tui::backend::Backend> LookCommand<'_, B> {
+impl <B: ratatui::backend::Backend> LookCommand<'_, B> {
     fn re_render(&mut self) -> Result<(), io::Error> {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
@@ -112,7 +112,7 @@ impl <B: tui::backend::Backend> LookCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command<LookInput> for LookCommand<'_, B> {
+impl <B: ratatui::backend::Backend> Command<LookInput> for LookCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::LookAround => {

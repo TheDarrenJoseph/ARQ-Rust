@@ -2,10 +2,10 @@ use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::layout::{Alignment, Rect};
-use tui::style::Style;
-use tui::terminal::CompletedFrame;
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::Style;
+use ratatui::CompletedFrame;
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -19,7 +19,7 @@ use crate::widget::{Focusable, StatefulWidgetType};
 /*
     This View handles the "Game Over" screen for when you die/escape the dungeon
  */
-pub struct GameOver<'a, B : tui::backend::Backend> {
+pub struct GameOver<'a, B : ratatui::backend::Backend> {
     pub message : String,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -31,7 +31,7 @@ pub enum GameOverChoice {
     EXIT
 }
 
-pub fn build_game_over_menu<'a, B : tui::backend::Backend>(message: String, ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> GameOver<'a, B> {
+pub fn build_game_over_menu<'a, B : ratatui::backend::Backend>(message: String, ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> GameOver<'a, B> {
     GameOver { message, ui, terminal_manager, widgets:
     WidgetList { widget_index: Some(0), widgets :
         vec![ build_button(7, String::from("Restart")),
@@ -41,7 +41,7 @@ pub fn build_game_over_menu<'a, B : tui::backend::Backend>(message: String, ui: 
     }
 }
 
-impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
+impl <'b, B : ratatui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
     fn begin(&mut self)  -> Result<InputResult<GameOverChoice>, ErrorWrapper> {
         // Select the first widget
         if self.widgets.widgets.len() > 0 {
@@ -95,7 +95,7 @@ impl <'b, B : tui::backend::Backend> View<GameOverChoice> for GameOver<'_, B>  {
     }
 }
 
-impl <B : tui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B> {
+impl <B : ratatui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'_, B> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<GameOverChoice>, ErrorWrapper> {
         let mut target_widget = None;
         match self.widgets.widget_index {

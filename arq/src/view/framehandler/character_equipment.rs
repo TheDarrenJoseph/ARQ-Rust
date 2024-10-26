@@ -1,6 +1,6 @@
-use tui::style::Style;
-use tui::text::{Span, Spans};
-use tui::widgets::Paragraph;
+use ratatui::style::Style;
+use ratatui::text::{Span, Line};
+use ratatui::widgets::Paragraph;
 
 use crate::character::equipment::{all_equipment_slots, Equipment};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -14,8 +14,8 @@ impl CharacterEquipmentFrameHandler {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipmentFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Equipment>) {
+impl FrameHandler<Equipment> for CharacterEquipmentFrameHandler {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<Equipment>) {
 
         // TODO potentially use ui_areas in future?
         //let main_area = data.get_ui_areas().get_area(UI_AREA_NAME_MAIN).expect("Main UIArea should be available.");
@@ -29,13 +29,13 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
         let mut title_spans_list = Vec::new();
         for slot in all_equipment_slots() {
             let title = Span::from(slot.to_string());
-            let spans = Spans::from(title);
+            let spans = Line::from(title);
             title_spans_list.push(spans);
         }
 
         let paragraph = Paragraph::new(title_spans_list)
             .style(Style::default())
-            .alignment(tui::layout::Alignment::Left);
+            .alignment(ratatui::layout::Alignment::Left);
         frame.render_widget(paragraph, frame_area.to_rect());
 
         // Part two, render the equipment names offset to the right
@@ -47,7 +47,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
             } else {
                 Span::from("Empty")
             };
-            let spans = Spans::from(name);
+            let spans = Line::from(name);
             name_spans_list.push(spans);
         }
 
@@ -57,7 +57,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
         names_area.width -= max_title_length as u16;
         let paragraph = Paragraph::new(name_spans_list)
             .style(Style::default())
-            .alignment(tui::layout::Alignment::Left);
+            .alignment(ratatui::layout::Alignment::Left);
         frame.render_widget(paragraph, names_area);
     }
 }
@@ -67,7 +67,7 @@ impl <B : tui::backend::Backend> FrameHandler<B, Equipment> for CharacterEquipme
 mod character_equipment_frame_handler_tests {
     use std::collections::HashMap;
 
-    use tui::buffer::Buffer;
+    use ratatui::buffer::Buffer;
     use uuid::Uuid;
 
     use crate::character::equipment::Equipment;

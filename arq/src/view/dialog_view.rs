@@ -2,10 +2,10 @@ use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use log::error;
-use tui::style::{Color, Style};
-use tui::terminal::CompletedFrame;
-use tui::text::Span;
-use tui::widgets::{Block, Borders, Paragraph};
+use ratatui::style::{Color, Style};
+use ratatui::CompletedFrame;
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Borders, Paragraph};
 
 use crate::map::position::{Area, Position};
 use crate::terminal::terminal_manager::TerminalManager;
@@ -13,19 +13,19 @@ use crate::ui::ui::{get_input_key, UI};
 use crate::ui::ui_util::{center_area, MIN_RESOLUTION};
 use crate::view::{GenericInputResult, InputResult, View};
 
-pub struct DialogView<'a, B : tui::backend::Backend> {
+pub struct DialogView<'a, B : ratatui::backend::Backend> {
     message: String,
     ui : &'a mut UI,
     terminal_manager : &'a mut TerminalManager<B>,
 }
 
-impl <B : tui::backend::Backend> DialogView<'_, B> {
+impl <B : ratatui::backend::Backend> DialogView<'_, B> {
     pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, message: String) -> DialogView<'a, B> {
         DialogView { ui, terminal_manager, message }
     }
 }
 
-impl <'b, B : tui::backend::Backend> View<()> for DialogView<'_, B>  {
+impl <'b, B : ratatui::backend::Backend> View<()> for DialogView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<()>, ErrorWrapper> {
         self.draw(None).expect("The dialog view should have been drawn.");
         get_input_key().expect("Keyboard input key should have been captured");

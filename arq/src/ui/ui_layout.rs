@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::slice::Iter;
 
-use tui::layout::Rect;
+use ratatui::layout::Rect;
 
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;

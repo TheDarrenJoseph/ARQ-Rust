@@ -17,7 +17,7 @@ use crate::widget::stateful::dropdown_widget::get_resolution_dropdown_options;
 use crate::widget::widgets::{build_settings_widgets, WidgetList};
 use crate::widget::StatefulWidgetType;
 
-pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, _choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, ErrorWrapper> > + '_ >> {
+pub async fn start_menu<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, _choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, ErrorWrapper> > + '_ >> {
     Box::pin(async move {
         let ui_wrapper = &mut engine.ui_wrapper;
         ui_wrapper.clear_screen()?;
@@ -75,7 +75,7 @@ pub async fn start_menu<B: tui::backend::Backend + Send>(engine: &mut GameEngine
     })
 }
 
-pub async fn menu_command<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
+pub async fn menu_command<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
     engine.ui_wrapper.clear_screen()?;
     engine.ui_wrapper.ui.hide_console();
 

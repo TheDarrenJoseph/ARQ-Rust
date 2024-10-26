@@ -2,10 +2,10 @@ use std::io;
 
 use termion::event::Key;
 use termion::input::TermRead;
-use tui::layout::{Alignment, Rect};
-use tui::style::{Color, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::{Span, Line};
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
@@ -77,9 +77,9 @@ impl std::convert::TryFrom<usize> for SettingsMenuChoice {
 
 
 pub trait Draw {
-    fn draw_info<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame : &mut tui::terminal::Frame<'_, B>);
-    fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>);
+    fn draw_info(&mut self, frame : &mut ratatui::Frame<'_>);
+    fn draw_console(&mut self, frame : &mut ratatui::Frame<'_>);
+    fn draw_additional_widgets(&mut self, frame: &mut ratatui::Frame);
 }
 
 fn build_main_block<'a>() -> Block<'a> {
@@ -91,7 +91,7 @@ fn build_main_block<'a>() -> Block<'a> {
 
 impl UI {
 
-    pub fn init<B: tui::backend::Backend>(&mut self, frame_area: Area) {
+    pub fn init(&mut self, frame_area: Area) {
         let resolution = Resolution::new(frame_area.width, frame_area.height);
         self.frame_size = Some(frame_area);
         if self.ui_layout.is_none() {
@@ -99,7 +99,7 @@ impl UI {
         }
     }
 
-    pub fn re_init<B: tui::backend::Backend>(&mut self, frame_area: Area) {
+    pub fn re_init(&mut self, frame_area: Area) {
         let resolution = Resolution::new(frame_area.width, frame_area.height);
         self.frame_size = Some(frame_area);
         let mut ui_layout = UILayout::new(resolution);
@@ -113,7 +113,7 @@ impl UI {
         2. The console window at the bottom of the screen
         3. Stat bars and command usage hints (additional widgets)
      */
-    pub fn render<'a, B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
+    pub fn render<'a>(&mut self, frame: &mut ratatui::Frame<'_>) {
         let ui_layout =  self.ui_layout.as_mut().ok_or("Failed to get ui_layout, has it been initialised?").unwrap();
         let areas = ui_layout.get_or_build_areas(frame.size(), LayoutType::StandardSplit);
         if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
@@ -167,21 +167,21 @@ pub fn get_input_key() -> Result<Key, io::Error> {
 
 impl Draw for UI {
 
-    fn draw_info<B: tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<'_, B>) {
+    fn draw_info(&mut self, frame: &mut ratatui::Frame<'_>) {
         self.render(frame);
 
         let dev_spans = vec!(Span::raw("Made by Darren Joseph. Written in Rust."));
-        let spans = vec![Spans::from(dev_spans),
-                         Spans::from(Span::raw("--- Credits ---")),
-                         Spans::from(Span::raw("Background music:")),
-                         Spans::from(Span::raw("Tavern Loop One by Alexander Nakarada | https://www.serpentsoundstudios.com")),
-                         Spans::from(Span::raw("Music promoted by https://www.free-stock-music.com")),
-                         Spans::from(Span::raw("Attribution 4.0 International (CC BY 4.0)")),
-                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
-                         Spans::from(Span::raw("")),
-                         Spans::from(Span::raw("Celtic Ambiance by Alexander Nakarada (www.creatorchords.com)")),
-                         Spans::from(Span::raw("Licensed under Creative Commons BY Attribution 4.0 License")),
-                         Spans::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
+        let spans = vec![Line::from(dev_spans),
+                         Line::from(Span::raw("--- Credits ---")),
+                         Line::from(Span::raw("Background music:")),
+                         Line::from(Span::raw("Tavern Loop One by Alexander Nakarada | https://www.serpentsoundstudios.com")),
+                         Line::from(Span::raw("Music promoted by https://www.free-stock-music.com")),
+                         Line::from(Span::raw("Attribution 4.0 International (CC BY 4.0)")),
+                         Line::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
+                         Line::from(Span::raw("")),
+                         Line::from(Span::raw("Celtic Ambiance by Alexander Nakarada (www.creatorchords.com)")),
+                         Line::from(Span::raw("Licensed under Creative Commons BY Attribution 4.0 License")),
+                         Line::from(Span::raw("https://creativecommons.org/licenses/by/4.0/")),
         ];
 
         let spans_len = spans.len() as u16;
@@ -196,14 +196,14 @@ impl Draw for UI {
         frame.render_widget(paragraph, paragraph_size);
     }
 
-    fn draw_console<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    fn draw_console(&mut self, frame: &mut ratatui::Frame) {
         let ui_areas = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::StandardSplit);
         let console_area = ui_areas.get_area(UI_AREA_NAME_CONSOLE).unwrap().area;
         let frame_data = FrameData { frame_area: console_area, ui_areas: ui_areas.clone(), data: ConsoleBuffer { content: self.frame_handler.buffer.content.clone() } };
         self.frame_handler.handle_frame(frame, frame_data);
     }
 
-    fn draw_additional_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    fn draw_additional_widgets(&mut self, frame: &mut ratatui::Frame) {
         let widget_count = self.additional_widgets.len();
         if let Some(main_area) = self.ui_layout.as_ref().unwrap().get_ui_areas(LayoutType::StandardSplit).get_area(UI_AREA_NAME_MAIN) {
             let area = main_area.area;

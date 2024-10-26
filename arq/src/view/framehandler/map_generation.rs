@@ -1,10 +1,10 @@
 use std::convert::TryInto;
 
-use tui::layout::Rect;
-use tui::style::{Color, Style};
-use tui::text::Span;
-use tui::widgets::{Block, Gauge, Paragraph};
-use tui::Frame;
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Style};
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Gauge, Paragraph};
+use ratatui::Frame;
 
 use crate::progress::{MultiStepProgress, Step};
 use crate::view::framehandler::{FrameData, FrameHandler};
@@ -34,8 +34,8 @@ fn build_gauge(progress: MultiStepProgress) -> Option<Gauge<'static>> {
 }
 
 
-impl <B : tui::backend::Backend> FrameHandler<B,MultiStepProgress> for MapGenerationFrameHandler {
-    fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<MultiStepProgress>) {
+impl FrameHandler<MultiStepProgress> for MapGenerationFrameHandler {
+    fn handle_frame(&mut self, frame: &mut Frame, data: FrameData<MultiStepProgress>) {
         let gauge_result = build_gauge(data.data);
         if let Some(gauge) = gauge_result {
             let area = data.frame_area;

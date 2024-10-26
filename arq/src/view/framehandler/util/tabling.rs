@@ -1,7 +1,7 @@
-use tui::layout::Alignment;
-use tui::style::Style;
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::layout::Alignment;
+use ratatui::style::Style;
+use ratatui::text::{Span, Line};
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::map::position::Area;
 
 #[derive(Clone)]
@@ -32,7 +32,7 @@ pub fn build_headings<'a>(columns : Vec<Column>) -> Paragraph<'a> {
         spans.push(Span::raw(column.name.clone()));
         spans.push(Span::raw(padding));
     }
-    heading_spans.push(Spans::from(spans));
+    heading_spans.push(Line::from(spans));
     Paragraph::new(heading_spans)
         .block(Block::default()
             .borders(Borders::NONE))
@@ -44,9 +44,9 @@ pub fn build_headings<'a>(columns : Vec<Column>) -> Paragraph<'a> {
 
 #[test]
 fn test_build_headings() {
-    use tui::buffer::{Buffer, Cell};
-    use tui::layout::Rect;
-    use tui::widgets::Widget;
+    use ratatui::buffer::{Buffer, Cell};
+    use ratatui::layout::Rect;
+    use ratatui::widgets::Widget;
 
     // GIVEN a view with a series of columns configured
     let columns = vec![

@@ -1,4 +1,4 @@
-use tui::layout::Rect;
+use ratatui::layout::Rect;
 
 use crate::map::position::Area;
 use crate::ui::ui_areas::UIAreas;
@@ -16,11 +16,11 @@ pub mod character_equipment;
 /*
     FrameHandlers are "dumb" views that simply draw their state (T) or other given input to a terminal frame (the screen)
  */
-pub trait FrameHandler<B: tui::backend::Backend, T> {
+pub trait FrameHandler<T> {
     /*
         When a FrameHandler "handles" a frame it essentially just draws it's input / content to the frame it is provided a frame by a View/Higher level UI component
      */
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<T>);
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<T>);
 }
 
 pub struct FrameData<T> {
@@ -44,5 +44,5 @@ impl <T> FrameData<T> {
     }
 }
 
-impl<B: tui::backend::Backend, T> dyn FrameHandler<B,T> {
+impl<T> dyn FrameHandler<T> {
 }

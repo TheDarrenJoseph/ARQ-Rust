@@ -12,12 +12,12 @@ use crate::ui::ui_layout::LayoutType::SingleMainWindowCentered;
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 use crate::view::framehandler::{FrameData, FrameHandler};
 
-pub struct ProgressDisplay<'a, B : tui::backend::Backend> {
+pub struct ProgressDisplay<'a, B : ratatui::backend::Backend> {
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handler: MapGenerationFrameHandler
 }
 
-impl <B : tui::backend::Backend> ProgressDisplay<'_, B>  {
+impl <B : ratatui::backend::Backend> ProgressDisplay<'_, B>  {
     pub async fn handle_progress(&mut self, rx : Receiver<MultiStepProgress>, total_steps: usize) {
         for _i in 0..=total_steps {
             let progress = rx.recv();

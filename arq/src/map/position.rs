@@ -1,6 +1,6 @@
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
-use tui::layout::Rect;
+use ratatui::layout::{Rect, Size};
 
 use crate::ui::resolution::Resolution;
 
@@ -21,6 +21,10 @@ impl Position {
 
     pub fn from_rect(rect: Rect) -> Position {
         Position { x : rect.x, y: rect.y }
+    }
+
+    pub fn from_size(size: Size) -> Position {
+        Position { x : size.width, y: size.height }
     }
 
     pub fn get_neighbors(&self) -> Vec<Position> {
@@ -357,7 +361,7 @@ pub const fn build_rectangular_area(start_position : Position, size_x: u16, size
 
 #[cfg(test)]
 mod tests {
-    use tui::layout::Rect;
+    use ratatui::layout::Rect;
 
     use crate::map::position::{build_rectangular_area, build_square_area, Area, Position, Side};
 

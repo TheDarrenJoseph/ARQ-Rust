@@ -24,7 +24,7 @@ use crate::view::View;
 
 const UI_USAGE_HINT: &str = "Up/Down - Move, Enter/q - Toggle/clear selection\nTab - Change tab, Esc - Exit";
 
-pub struct InventoryCommand<'a, B: 'static + tui::backend::Backend> {
+pub struct InventoryCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -178,7 +178,7 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
     }
 }
 
-impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
+impl <B: ratatui::backend::Backend> InventoryCommand<'_, B> {
 
     fn open_inventory(&mut self) -> Result<(), ErrorWrapper> {
         log::info!("Player opening inventory.");
@@ -212,7 +212,7 @@ impl <B: tui::backend::Backend> InventoryCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command<InventoryInput> for InventoryCommand<'_, B> {
+impl <B: ratatui::backend::Backend> Command<InventoryInput> for InventoryCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::ShowInventory => {

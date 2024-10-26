@@ -10,7 +10,7 @@ use crate::engine::level::LevelChange;
 use crate::map::room::Room;
 use crate::util::utils::UuidEquals;
 
-pub fn respawn_player<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, change: LevelChange) -> Option<Room> {
+pub fn respawn_player<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, change: LevelChange) -> Option<Room> {
     let level = engine.levels.get_level_mut();
     let player = level.characters.get_player_mut().unwrap();
 
@@ -37,7 +37,7 @@ pub fn respawn_player<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B
     return None;
 }
 
-pub fn respawn_npcs<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, player_room: Room) {
+pub fn respawn_npcs<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, player_room: Room) {
     let level = engine.levels.get_level_mut();
     let npcs = level.characters.get_npcs_mut();
     if let Some(map) = &level.map {

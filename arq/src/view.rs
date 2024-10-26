@@ -3,9 +3,9 @@ use std::io;
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
 use termion::input::TermRead;
-use tui::layout::Rect;
-use tui::terminal::CompletedFrame;
-use tui::Frame;
+use ratatui::layout::Rect;
+use ratatui::CompletedFrame;
+use ratatui::Frame;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -56,7 +56,7 @@ pub struct InputResult<T> {
     pub(crate) view_specific_result : Option<T>
 }
 
-pub fn resolve_area<B : tui::backend::Backend>(area: Option<Rect>, frame: &Frame<B>) -> Rect {
+pub fn resolve_area<B : ratatui::backend::Backend>(area: Option<Rect>, frame: &Frame) -> Rect {
     return match area {
         Some(a) => { a },
         _ => { frame.size() }
@@ -75,10 +75,10 @@ pub fn resolve_input(input : Option<Key>) -> Result<Key, io::Error> {
 
 }
 
-pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut TerminalManager<B>) {
+pub fn verify_display_size<B : ratatui::backend::Backend>(terminal_manager : &mut TerminalManager<B>) {
     loop {
         let frame_size = terminal_manager.terminal.size().unwrap();
-        let result = check_display_size(Some(Area::from_rect(frame_size)));
+        let result = check_display_size(Some(frame_size));
         match result {
             Err(_e) => {
                 terminal_manager.terminal.clear().expect("Terminal failed to clear!");
@@ -88,7 +88,7 @@ pub fn verify_display_size<B : tui::backend::Backend>(terminal_manager : &mut Te
                          format!("Minimum is {}x{}", MIN_RESOLUTION.width, MIN_RESOLUTION.height),
                          String::from("Please resize and hit any key to check again.") ]);
                 terminal_manager.terminal.draw(|frame|{
-                    frame.render_widget(error_paragraph, frame_size);
+                    frame.render_widget(error_paragraph, frame.area());
                 }).expect("Failed to draw the frame!");
                 io::stdin().keys().next().unwrap().unwrap();
             },

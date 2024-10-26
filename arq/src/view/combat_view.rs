@@ -1,7 +1,7 @@
 use std::io;
 
 use termion::event::Key;
-use tui::terminal::CompletedFrame;
+use ratatui::CompletedFrame;
 
 use crate::character::battle::Battle;
 use crate::character::equipment::WeaponSlot;
@@ -17,7 +17,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
 use crate::view::{resolve_input, verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 
-pub struct CombatView<'a, B : tui::backend::Backend>  {
+pub struct CombatView<'a, B : ratatui::backend::Backend>  {
     ui : &'a mut UI,
     terminal_manager : &'a mut TerminalManager<B>,
     level: Level,
@@ -26,7 +26,7 @@ pub struct CombatView<'a, B : tui::backend::Backend>  {
     callback : Box<dyn FnMut(CombatCallbackData) -> Option<CombatCallbackData> + 'a>
 }
 
-impl <B: tui::backend::Backend> CombatView<'_, B> {
+impl  <B: ratatui::backend::Backend> CombatView<'_, B> {
     pub fn new<'a>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>, level: Level, battle: Battle) -> CombatView<'a, B> {
         let frame_handler = CombatFrameHandler::new(level.clone());
         let callback = Box::new(|_data| {None});
@@ -42,7 +42,7 @@ impl <B: tui::backend::Backend> CombatView<'_, B> {
     }
 }
 
-impl <B : tui::backend::Backend> CombatView<'_, B> {
+impl <B : ratatui::backend::Backend> CombatView<'_, B> {
     fn build_done_result(&self) -> InputResult<Battle> {
         InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: Some(self.battle.clone())}
     }
@@ -56,7 +56,7 @@ impl <B : tui::backend::Backend> CombatView<'_, B> {
     }
 }
 
-impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
+impl <B : ratatui::backend::Backend> View<Battle> for CombatView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<Battle>, ErrorWrapper> {
         // Input / Output loop
         while self.battle.in_progress {
@@ -98,7 +98,7 @@ impl <B : tui::backend::Backend> View<Battle> for CombatView<'_, B>  {
     }
 }
 
-impl <COM: tui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
+impl <COM: ratatui::backend::Backend> InputHandler<bool> for CombatView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = resolve_input(input)?;
         match key {
@@ -150,7 +150,7 @@ pub struct CombatResult {
     pub(crate) messages: Vec<String>
 }
 
-impl <'a, B : tui::backend::Backend> Callback <'a, CombatCallbackData> for CombatView<'a, B>  {
+impl <'a, B : ratatui::backend::Backend> Callback <'a, CombatCallbackData> for CombatView<'a, B>  {
     fn set_callback(&mut self, callback: Box<impl FnMut(CombatCallbackData) -> Option<CombatCallbackData> + 'a>) {
         self.callback = callback;
     }

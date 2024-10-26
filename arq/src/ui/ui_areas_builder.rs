@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use log::info;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::map::position::{Area, Position};
 use crate::ui::ui_areas::{BorderedArea, UIArea, UIAreas, UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN, UI_AREA_NAME_MINIMAP};

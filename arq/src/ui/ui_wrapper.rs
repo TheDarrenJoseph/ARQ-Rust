@@ -4,8 +4,8 @@ use std::time::Instant;
 
 use log::debug;
 use termion::event::Key;
-use tui::backend::Backend;
-use tui::terminal::CompletedFrame;
+use ratatui::backend::Backend;
+use ratatui::CompletedFrame;
 
 use crate::character::Character;
 use crate::engine::level::{Level, LevelChange};
@@ -26,7 +26,7 @@ use crate::view::menu_view::MenuView;
 use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 use crate::widget::widgets::WidgetList;
 
-pub struct UIWrapper<B: 'static + tui::backend::Backend> {
+pub struct UIWrapper<B: 'static + ratatui::backend::Backend> {
     pub(crate) ui : UI,
     pub(crate) terminal_manager : TerminalManager<B>,
 }

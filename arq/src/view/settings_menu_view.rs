@@ -2,8 +2,8 @@ use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::terminal::CompletedFrame;
+use ratatui::layout::Rect;
+use ratatui::CompletedFrame;
 
 use crate::map::position::Area;
 use crate::terminal::terminal_manager::TerminalManager;
@@ -18,13 +18,13 @@ use crate::widget::{Focusable, StatefulWidgetType};
     2. Map seed value
     2. Music volume
  */
-pub struct SettingsMenuView<'a, B : tui::backend::Backend> {
+pub struct SettingsMenuView<'a, B : ratatui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub menu: WidgetMenu
 }
 
-impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
+impl <'b, B : ratatui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
     fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
         // Select the first widget
         if self.menu.widgets.widgets.len() > 0 {
@@ -71,7 +71,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for SettingsMenuView<'_, B>  {
     }
 }
 
-impl <COM: tui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_, COM> {
+impl <COM: ratatui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let menu_view = &mut self.menu;
         let key = resolve_input(input)?;

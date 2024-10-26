@@ -1,6 +1,6 @@
 use termion::event::Key;
-use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, List, ListItem};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Block, Borders, List, ListItem};
 
 pub struct Menu {
     pub menu_titles: Vec<String>,

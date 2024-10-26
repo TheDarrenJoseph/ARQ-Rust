@@ -1,8 +1,8 @@
-use tui::layout::{Alignment, Rect};
-use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Paragraph};
-use tui::Frame;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Span, Line, Text};
+use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::Frame;
 
 use crate::character::battle::Battle;
 use crate::character::equipment::{Equipment, EquipmentSlot, WeaponSlot};
@@ -85,13 +85,13 @@ fn list_equipment(equipment: Equipment) -> Paragraph<'static> {
     let mut spans = vec![];
     for slot in equipment.get_slots() {
         let item = slot.1;
-        spans.push(Spans::from(item.get_name().clone()))
+        spans.push(Line::from(item.get_name().clone()))
     }
     Paragraph::new(spans)
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Battle> for CombatFrameHandler {
-    fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<Battle>) {
+impl FrameHandler<Battle> for CombatFrameHandler {
+    fn handle_frame(&mut self, frame: &mut Frame, data: FrameData<Battle>) {
         let battle = data.data;
         let mut characters = battle.characters;
         let player = characters.get_player_mut().unwrap();

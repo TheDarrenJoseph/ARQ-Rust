@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
-use tui::buffer::Buffer;
+use ratatui::buffer::Buffer;
 use uuid::Uuid;
 use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
 use crate::character::characters::Characters;

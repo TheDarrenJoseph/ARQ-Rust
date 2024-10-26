@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
-use tui::layout::Rect;
-use tui::widgets::Paragraph;
+use ratatui::layout::Rect;
+use ratatui::widgets::Paragraph;
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -34,8 +34,8 @@ pub fn build_weight_limit<'a>(container : &Container, area: Rect, x_offset: usiz
 
 #[cfg(test)]
 mod tests {
-    use tui::buffer::Buffer;
-    use tui::widgets::Widget;
+    use ratatui::buffer::Buffer;
+    use ratatui::widgets::Widget;
     use uuid::Uuid;
 
     use crate::item_list_selection::ItemListSelection;
@@ -48,7 +48,7 @@ mod tests {
         let mut line = String::new();
         for x in 0..buffer.area.width {
             let cell = buffer.get(x as u16, line_index);
-            line.push(cell.symbol.parse().unwrap());
+            line.push(cell.symbol().parse().unwrap());
         }
         line
     }

@@ -2,8 +2,8 @@ use std::io::Error;
 
 use log::info;
 use termion::event::Key;
-use tui::buffer::Cell;
-use tui::terminal::CompletedFrame;
+use ratatui::buffer::Cell;
+use ratatui::CompletedFrame;
 
 use crate::engine::level::Level;
 use crate::error::errors::ErrorWrapper;
@@ -27,14 +27,14 @@ use crate::widget::stateful::map_widget::MapWidget;
     3. Map display area (Map co-ords) The position/size of the map 'viewfinder', this is essentially the portion of the map area that's visible within the map view area
       3.1 The map display area is what will move with the character, and is what allows the map view to pan around
  */
-pub struct MapView<'a, B : tui::backend::Backend> {
+pub struct MapView<'a, B : ratatui::backend::Backend> {
     pub ui : &'a mut UI,
     pub level : &'a mut Level,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub map_view_areas: MapViewAreas
 }
 
-impl<B : tui::backend::Backend> MapView<'_, B> {
+impl<B : ratatui::backend::Backend> MapView<'_, B> {
 
     fn blank_map_view(&mut self) -> Result<(), Error> {
         let view_area = self.map_view_areas.map_display_area;
@@ -53,7 +53,7 @@ impl<B : tui::backend::Backend> MapView<'_, B> {
     }
 }
 
-impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
+impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
 
     fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         let _level = self.level.clone();
@@ -91,7 +91,7 @@ impl<B : tui::backend::Backend> View<bool> for MapView<'_, B> {
 
 }
 
-impl <COM: tui::backend::Backend> InputHandler<bool> for MapView<'_, COM> {
+impl <COM: ratatui::backend::Backend> InputHandler<bool> for MapView<'_, COM> {
     fn handle_input(&mut self, _input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: false }, view_specific_result: None});
     }

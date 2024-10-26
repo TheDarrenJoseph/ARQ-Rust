@@ -11,12 +11,12 @@ use crate::view::util::progress_display::ProgressDisplay;
 /*
     This joins MapGenerator and ProgressDisplay together asynchronously to display the map generation process with a progress bar
  */
-pub struct MapGeneration<'rng, 'a, B : tui::backend::Backend> {
+pub struct MapGeneration<'rng, 'a, B : ratatui::backend::Backend> {
     pub map_generator: MapGenerator<'rng>,
     pub progress_display: ProgressDisplay<'a, B>
 }
 
-impl <B : tui::backend::Backend> MapGeneration<'_, '_, B> {
+impl <B : ratatui::backend::Backend> MapGeneration<'_, '_, B> {
     pub(crate) async fn generate_level(&mut self) -> Result<Map, ErrorWrapper> {
         let progress = self.map_generator.get_progress().clone();
         let (tx, rx) = channel();

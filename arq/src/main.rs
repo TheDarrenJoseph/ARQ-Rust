@@ -5,7 +5,7 @@ use std::io;
 use futures::executor::block_on;
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
-use tui::backend::CrosstermBackend;
+use ratatui::backend::CrosstermBackend;
 
 use crate::engine::engine_helpers::menu::start_menu;
 use crate::engine::game_engine::{build_game_engine, GameEngine};

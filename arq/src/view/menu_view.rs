@@ -5,9 +5,9 @@ use std::io::Error;
 use crate::error::errors::ErrorWrapper;
 use log::info;
 use termion::input::TermRead;
-use tui::layout::Rect;
-use tui::terminal::CompletedFrame;
-use tui::widgets::ListState;
+use ratatui::layout::Rect;
+use ratatui::CompletedFrame;
+use ratatui::widgets::ListState;
 
 use crate::map::position::Area;
 use crate::menu::{Menu, Selection, ToList};
@@ -17,13 +17,13 @@ use crate::ui::ui_areas::UI_AREA_NAME_MAIN;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::{verify_display_size, GenericInputResult, InputResult, View};
 
-pub struct MenuView<'a, B : tui::backend::Backend> {
+pub struct MenuView<'a, B : ratatui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub(crate) menu: Menu
 }
 
-impl<B : tui::backend::Backend> MenuView<'_, B> {
+impl<B : ratatui::backend::Backend> MenuView<'_, B> {
     fn handle_start_menu_selection(&mut self) -> Result<StartMenuChoice, ErrorWrapper> {
         loop {
             let start_menu_mut = &mut self.menu;
@@ -51,7 +51,7 @@ impl<B : tui::backend::Backend> MenuView<'_, B> {
     }
 }
 
-impl<B : tui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
+impl<B : ratatui::backend::Backend> View<StartMenuChoice> for MenuView<'_, B> {
     fn begin(&mut self) -> Result<InputResult<StartMenuChoice>, ErrorWrapper> {
         self.draw(None)?;
         let mut choice : Option<StartMenuChoice> = None;

@@ -25,7 +25,7 @@ use crate::view::util::callback::Callback;
 use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::view::{InputHandler, InputResult, View};
 
-pub struct OpenCommand<'a, B: 'static + tui::backend::Backend> {
+pub struct OpenCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -103,7 +103,7 @@ fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a m
     }
 }
 
-impl <B: tui::backend::Backend> OpenCommand<'_, B> {
+impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
 
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
@@ -153,7 +153,7 @@ impl <B: tui::backend::Backend> OpenCommand<'_, B> {
     }
 }
 
-impl <B: tui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
+impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
     fn can_handle_action(&self, action: Action) -> bool {
         return match action {
             Action::OpenNearby => {
@@ -218,7 +218,7 @@ impl <B: tui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
 #[cfg(test)]
 mod tests {
     use termion::event::Key;
-    use tui::backend::TestBackend;
+    use ratatui::backend::TestBackend;
 
     use uuid::Uuid;
 
@@ -374,7 +374,7 @@ mod tests {
         let mut game_engine = build_test_game_engine(levels, terminal_manager).unwrap();
 
         // AND we've initialised the UI areas
-        game_engine.ui_wrapper.ui.init::<TestBackend>(Area::from_resolution(MIN_RESOLUTION));
+        game_engine.ui_wrapper.ui.init(Area::from_resolution(MIN_RESOLUTION));
         
         // AND we have an OpenCommand with all this data
         // And our mocked input will return Escape to quit the view immediately

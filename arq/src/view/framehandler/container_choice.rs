@@ -3,9 +3,9 @@ use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders};
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::widgets::{Block, Borders};
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -79,10 +79,10 @@ impl ContainerChoiceFrameHandler {
 
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Vec<Container>> for ContainerChoiceFrameHandler {
+impl FrameHandler<Vec<Container>> for ContainerChoiceFrameHandler {
 
     // TODO tidy this up / reduce duplication
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Vec<Container>>) {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<Vec<Container>>) {
         let containers = &self.choices;
 
         let window_block = Block::default()
@@ -185,8 +185,8 @@ impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFra
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use tui::layout::Rect;
-    use tui::style::{Modifier, Style};
+    use ratatui::layout::Rect;
+    use ratatui::style::{Modifier, Style};
     use crate::error::errors::ErrorWrapper;
     use crate::map::position::Area;
     use crate::terminal::terminal_manager::init_test;

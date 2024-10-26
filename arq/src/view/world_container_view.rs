@@ -2,7 +2,7 @@ use futures::future::err;
 use crate::error::errors::ErrorWrapper;
 use crate::input::KeyInputResolver;
 use termion::event::Key;
-use tui::terminal::CompletedFrame;
+use ratatui::CompletedFrame;
 
 use crate::map::objects::container::Container;
 use crate::map::position::{Area, Position};
@@ -20,7 +20,7 @@ use crate::view::util::try_build_container_choice_frame_handler;
 /*
     This View is responsible for displaying/interacting with containers in the world (i.e chests, dropped items, dead bodies)
  */
-pub struct WorldContainerView<'a, B : tui::backend::Backend> {
+pub struct WorldContainerView<'a, B : ratatui::backend::Backend> {
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub frame_handlers: WorldContainerViewFrameHandlers,
@@ -37,7 +37,7 @@ pub struct WorldContainerViewFrameHandlers {
     pub choice_frame_handler: Option<ContainerChoiceFrameHandler>
 }
 
-impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
+impl <B : ratatui::backend::Backend> WorldContainerView<'_, B> {
 
     /*
     * TODO (DUPLICATION) make choice and generic input flows generic / shared between views i.e world_container and character_info?
@@ -77,7 +77,7 @@ impl <B : tui::backend::Backend> WorldContainerView<'_, B> {
     }
 }
 
-impl<B: tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
+impl <B: ratatui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
     fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
@@ -113,7 +113,7 @@ impl<B: tui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
     }
 }
 
-impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
+impl <COM: ratatui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = self.input_resolver.get_or_return_input_key(input)?;
         match key {
@@ -190,7 +190,7 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for WorldContainerView<'_, 
     }
 }
 
-impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for WorldContainerView<'c, B> {
+impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for WorldContainerView<'c, B> {
     fn set_callback(&mut self, callback: Box<impl FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'c>) {
         self.callback = callback;
     }
@@ -259,8 +259,8 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, WorldContainerViewFrameData> for WorldContainerViewFrameHandlers {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<WorldContainerViewFrameData>) {
+impl FrameHandler<WorldContainerViewFrameData> for WorldContainerViewFrameHandlers {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<WorldContainerViewFrameData>) {
         let main_area = data.ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap().area;
         if let Some(cfh) = &mut self.choice_frame_handler {
             let inventory_area = Area::new(
@@ -283,7 +283,7 @@ mod tests {
 
     use crate::input::IoKeyInputResolver;
     use termion::event::Key;
-    use tui::backend::TestBackend;
+    use ratatui::backend::TestBackend;
     use crate::map::map_generator::build_dev_chest;
     use crate::terminal;
     use crate::terminal::terminal_manager::TerminalManager;
@@ -303,7 +303,7 @@ mod tests {
         ui
     }
     
-    fn build_view<'a, B: tui::backend::Backend>(mut ui: &'a mut UI, mut terminal_manager: &'a mut TerminalManager<B>) -> WorldContainerView<'a, B> {
+    fn build_view<'a, B: ratatui::backend::Backend>(mut ui: &'a mut UI, mut terminal_manager: &'a mut TerminalManager<B>) -> WorldContainerView<'a, B> {
         let container = build_dev_chest();
         let subview_container = container.clone();
         let view_container = container.clone();

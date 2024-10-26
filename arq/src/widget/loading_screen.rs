@@ -1,6 +1,6 @@
-use tui::buffer::Buffer;
-use tui::layout::Rect;
-use tui::widgets::{Gauge, Widget};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::widgets::{Gauge, Widget};
 
 struct LoadingScreen<'a> {
     gauge: Gauge<'a>

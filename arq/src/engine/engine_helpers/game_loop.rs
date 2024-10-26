@@ -4,7 +4,7 @@ use crate::error::errors::{ErrorType, ErrorWrapper};
 use crate::ui::ui::get_input_key;
 use crate::view::game_over_view::GameOverChoice;
 
-pub async fn game_loop<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
+pub async fn game_loop<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
     let game_over_result = player_turn(engine).await;
     match game_over_result {
         Ok(goc) => {
@@ -30,12 +30,12 @@ pub async fn game_loop<B: tui::backend::Backend + Send>(engine: &mut GameEngine<
     }
 }
 
-async fn player_turn<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>)  -> Result<Option<GameOverChoice>, ErrorWrapper> {
+async fn player_turn<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>)  -> Result<Option<GameOverChoice>, ErrorWrapper> {
     let key = get_input_key()?;
     return Ok(handle_input(engine, key).await?);
 }
 
-fn npc_turns<B: tui::backend::Backend + Send>(_engine: &mut GameEngine<B>)  -> Result<(), ErrorWrapper> {
+fn npc_turns<B: ratatui::backend::Backend + Send>(_engine: &mut GameEngine<B>)  -> Result<(), ErrorWrapper> {
     // TODO NPC movement
     return Ok(());
 }

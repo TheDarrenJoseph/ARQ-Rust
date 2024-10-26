@@ -1,13 +1,13 @@
 use std::io;
 
 use termion::raw::{IntoRawMode, RawTerminal};
-use tui::backend::{Backend, CrosstermBackend, TestBackend};
-use tui::Terminal;
+use ratatui::backend::{Backend, CrosstermBackend, TestBackend};
+use ratatui::Terminal;
 
 use crate::ui::resolution::Resolution;
 
 pub struct TerminalManager<B : Backend> {
-    pub terminal : tui::Terminal<B>,
+    pub terminal : ratatui::Terminal<B>,
 }
 
 impl <B : Backend>  TerminalManager<B> {

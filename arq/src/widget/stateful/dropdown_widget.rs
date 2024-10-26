@@ -1,8 +1,8 @@
 use log::info;
-use tui::buffer::Buffer;
-use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::StatefulWidget;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::widgets::StatefulWidget;
 
 use crate::ui::resolution::Resolution;
 use crate::view::MIN_RESOLUTION;

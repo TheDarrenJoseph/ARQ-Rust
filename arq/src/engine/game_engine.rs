@@ -4,7 +4,7 @@ use std::io::{Error, ErrorKind};
 use log::info;
 use rand_seeder::Seeder;
 use termion::event::Key;
-use tui::backend::Backend;
+use ratatui::backend::Backend;
 
 use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
@@ -81,12 +81,12 @@ impl <B : Backend + Send> GameEngine<B> {
         let resolution = self.settings.get_resolution();
         if let Some(res) = resolution.value {
             info!("Re-init UI with resolution: {:?}", res);
-            self.ui_wrapper.ui.re_init::<B>(Area::from_resolution(res));
+            self.ui_wrapper.ui.re_init(Area::from_resolution(res));
         } else {
             // Get the current terminal size and use that for the fullscreen size
             let resolution = Resolution::from_rect(self.ui_wrapper.terminal_manager.terminal.get_frame().size());
             info!("Re-init UI with fullscreen resolution: {:?}", resolution);
-            self.ui_wrapper.ui.re_init::<B>(Area::from_resolution(resolution));
+            self.ui_wrapper.ui.re_init(Area::from_resolution(resolution));
         }
         Ok(())
     }
@@ -123,7 +123,7 @@ impl <B : Backend + Send> GameEngine<B> {
                 info!("resolution selected. Using resolution: {:?}", res_value);
                 frame_area = Area::from_resolution(res_value)
             }
-            ui.init::<B>(frame_area);
+            ui.init(frame_area);
         })?;
 
         let ui_layout = &mut ui.ui_layout;

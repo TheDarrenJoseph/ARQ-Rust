@@ -1,6 +1,7 @@
-use tui::buffer::{Buffer, Cell};
-use tui::layout::Rect;
-use tui::widgets::StatefulWidget;
+use ratatui::buffer::{Buffer, Cell};
+use ratatui::layout::Rect;
+use ratatui::style::Style;
+use ratatui::widgets::StatefulWidget;
 
 use crate::engine::level::Level;
 use crate::map::map_view_areas::MapViewAreas;
@@ -85,10 +86,10 @@ impl StatefulWidget for MapWidget {
                     let screen_position = map_view_area.get_position(x,y);
                     let mut cell = buf.get_mut(screen_position.x, screen_position.y);
                     let new_cell = self.build_cell_for_position(_state, global_position,&mut cell);
-                    cell.symbol = new_cell.symbol;
-                    cell.fg = new_cell.fg;
-                    cell.bg = new_cell.bg;
-                    cell.modifier = new_cell.modifier;
+                    cell.set_symbol(new_cell.symbol());
+                    cell.set_bg(new_cell.bg);
+                    cell.set_fg(new_cell.fg);
+                    cell.set_style(Style::default().add_modifier(new_cell.modifier));
                 }
             }
         }

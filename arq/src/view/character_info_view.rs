@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::io::Error;
 
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::style::{Modifier, Style};
-use tui::symbols::line::VERTICAL;
-use tui::terminal::CompletedFrame;
-use tui::text::Spans;
-use tui::widgets::{Block, Borders, Tabs};
+use ratatui::layout::Rect;
+use ratatui::style::{Modifier, Style};
+use ratatui::symbols::line::VERTICAL;
+use ratatui::CompletedFrame;
+use ratatui::text::Line;
+use ratatui::widgets::{Block, Borders, Tabs};
 
 use crate::character::Character;
 use crate::error::errors::ErrorWrapper;
@@ -65,7 +65,7 @@ struct CharacterInfoViewFrameData {
     This View is responsible for the Player's "Character Info" screen i.e Inventory, Character Stats
     Callbacks are used to provide actions (Use, Equip, Drop, etc)
  */
-pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
+pub struct CharacterInfoView<'a, B : ratatui::backend::Backend> {
     pub character : &'a mut Character,
     pub ui : &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
@@ -73,7 +73,7 @@ pub struct CharacterInfoView<'a, B : tui::backend::Backend> {
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>
 }
 
-impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
+impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
     fn initialise(&mut self) {
         let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
         commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
@@ -217,7 +217,7 @@ impl <B : tui::backend::Backend> CharacterInfoView<'_, B> {
     }
 }
 
-impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
+impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
     fn set_callback(&mut self, callback: Box<impl FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'c>) {
         self.callback = callback;
     }
@@ -288,7 +288,7 @@ impl <'c, B : tui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResu
     }
 }
 
-impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
+impl <'b, B : ratatui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
     fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         self.initialise();
         self.terminal_manager.terminal.clear()?;
@@ -327,7 +327,7 @@ impl <'b, B : tui::backend::Backend> View<bool> for CharacterInfoView<'_, B>  {
     }
 }
 
-impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, COM> {
+impl <COM: ratatui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, COM> {
     fn handle_input(&mut self, input: Option<Key>) -> Result<InputResult<bool>, ErrorWrapper> {
         let key = resolve_input(input)?;
         match key {
@@ -385,10 +385,10 @@ impl <COM: tui::backend::Backend> InputHandler<bool> for CharacterInfoView<'_, C
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, CharacterInfoViewFrameData> for CharacterInfoFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<CharacterInfoViewFrameData>) {
+impl FrameHandler<CharacterInfoViewFrameData> for CharacterInfoFrameHandler {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<CharacterInfoViewFrameData>) {
         let tabs = Tab::values();
-        let titles = tabs.iter().map(|t| t.title.clone()).map(Spans::from).collect();
+        let titles: Vec<_> = tabs.iter().map(|t| t.title.clone()).map(Line::from).collect();
         let selection_index = self.tab_choice.clone() as i32;
         let tabs = Tabs::new(titles)
             .block(Block::default().title("Character Info").borders(Borders::NONE))

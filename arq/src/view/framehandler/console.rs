@@ -2,9 +2,9 @@ use std::convert::TryInto;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::widgets::{Block, Borders};
-use tui::Frame;
+use ratatui::layout::Rect;
+use ratatui::widgets::{Block, Borders};
+use ratatui::Frame;
 
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
@@ -25,8 +25,8 @@ pub struct ConsoleBuffer {
 impl ConsoleFrameHandler {
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, ConsoleBuffer> for ConsoleFrameHandler {
-    fn handle_frame(&mut self, frame: &mut Frame<B>, data: FrameData<ConsoleBuffer>) {
+impl FrameHandler<ConsoleBuffer> for ConsoleFrameHandler {
+    fn handle_frame(&mut self, frame: &mut Frame, data: FrameData<ConsoleBuffer>) {
         let frame_size : Rect = data.get_frame_area().clone();
         let window_block = Block::default()
             .borders(Borders::ALL);

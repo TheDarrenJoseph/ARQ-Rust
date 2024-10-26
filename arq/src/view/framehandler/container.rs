@@ -4,9 +4,9 @@ use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders};
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::widgets::{Block, Borders};
 
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
@@ -340,9 +340,9 @@ impl ContainerFrameHandler {
 
 
 
-impl <B : tui::backend::Backend> FrameHandler<B, &mut Container> for ContainerFrameHandler {
+impl FrameHandler<&mut Container> for ContainerFrameHandler {
 
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<&mut Container>) {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, mut data: FrameData<&mut Container>) {
         let frame_size = data.get_frame_area().clone();
         let container = data.get_data_mut();
 
@@ -506,8 +506,8 @@ pub fn build_testing_container_frame_handler<'a>(container: Container) -> Contai
 mod tests {
     use std::collections::HashMap;
 
-    use tui::layout::Rect;
-    use tui::style::{Modifier, Style};
+    use ratatui::layout::Rect;
+    use ratatui::style::{Modifier, Style};
     use uuid::Uuid;
 
     use crate::item_list_selection::ListSelection;

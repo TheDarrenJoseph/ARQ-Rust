@@ -2,8 +2,8 @@ use std::io::Error;
 
 use log::error;
 use termion::event::Key;
-use tui::layout::Rect;
-use tui::widgets::{Block, Borders};
+use ratatui::layout::Rect;
+use ratatui::widgets::{Block, Borders};
 
 use crate::character::stats::attributes::get_all_attributes;
 use crate::character::{determine_class, Character, Class};
@@ -95,7 +95,7 @@ impl CharacterStatsFrameHandler {
         self.widgets.widgets[0].state_type.focus();
     }
 
-    pub fn draw_widgets<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>) {
+    pub fn draw_widgets(&mut self, frame: &mut ratatui::Frame) {
         let _frame_size = frame.size();
         let widget_count = self.widgets.widgets.len();
         if widget_count > 0 {
@@ -124,7 +124,7 @@ impl CharacterStatsFrameHandler {
         }
     }
 
-    fn draw_character_details<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data: FrameData<Character>, title: String) {
+    fn draw_character_details(&mut self, frame: &mut ratatui::Frame, mut data: FrameData<Character>, title: String) {
         let frame_size = data.get_frame_area().clone();
         let frame_width = frame_size.width;
         let frame_height = frame_size.height;
@@ -165,12 +165,12 @@ impl CharacterStatsFrameHandler {
 
     }
 
-    pub fn draw_character_creation<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, data:  FrameData<Character>) {
+    pub fn draw_character_creation(&mut self, frame: &mut ratatui::Frame, data:  FrameData<Character>) {
         log::info!("Drawing character creation...");
         self.draw_character_details(frame, data, "Character Creation".to_string());
     }
 
-    pub fn draw_stats_window<B : tui::backend::Backend>(&mut self, frame: &mut tui::terminal::Frame<B>, mut data:  FrameData<Character>) {
+    pub fn draw_stats_window(&mut self, frame: &mut ratatui::Frame, mut data:  FrameData<Character>) {
         log::info!("Drawing character stats window...");
         let name = data.get_data_mut().get_name().clone();
         self.draw_character_details(frame, data,name);
@@ -265,8 +265,8 @@ impl CharacterStatsFrameHandler {
     }
 }
 
-impl <B : tui::backend::Backend> FrameHandler<B, Character> for CharacterStatsFrameHandler {
-    fn handle_frame(&mut self, frame: &mut tui::terminal::Frame<B>, data: FrameData<Character>) {
+impl FrameHandler<Character> for CharacterStatsFrameHandler {
+    fn handle_frame(&mut self, frame: &mut ratatui::Frame, data: FrameData<Character>) {
         match self.view_mode {
             ViewMode::CREATION => {
                 self.draw_character_creation(frame, data);

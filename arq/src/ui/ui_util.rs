@@ -1,9 +1,9 @@
 use std::io::{Error, ErrorKind};
 
-use tui::layout::Rect;
-use tui::style::Style;
-use tui::text::{Span, Spans};
-use tui::widgets::Paragraph;
+use ratatui::layout::{Rect, Size};
+use ratatui::style::Style;
+use ratatui::text::{Span, Line};
+use ratatui::widgets::Paragraph;
 
 use crate::map::position::{Area, Position};
 use crate::ui::resolution::Resolution;
@@ -17,19 +17,19 @@ enum Alignment {
 pub fn build_paragraph_multi<'a>(messages: Vec<String>) -> Paragraph<'a> {
     let mut spans = Vec::new();
     for line in messages {
-        spans.push(Spans::from(Span::raw(line.clone())));
+        spans.push(Line::from(Span::raw(line.clone())));
     }
     let paragraph = Paragraph::new(spans)
         .style(Style::default())
-        .alignment(tui::layout::Alignment::Left);
+        .alignment(ratatui::layout::Alignment::Left);
     paragraph
 }
 
 pub fn build_paragraph<'a>(text: String) -> Paragraph<'a> {
-    let spans = vec![Spans::from(Span::raw(text.clone()))];
+    let spans = vec![Line::from(Span::raw(text.clone()))];
     let paragraph = Paragraph::new(spans)
         .style(Style::default())
-        .alignment(tui::layout::Alignment::Left);
+        .alignment(ratatui::layout::Alignment::Left);
     paragraph
 }
 
@@ -101,7 +101,7 @@ pub fn center_area(target: Rect, frame_size: Rect, min_resolution: Resolution) -
     }
 }
 
-pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), std::io::Error> {
+pub(crate) fn check_display_size(frame_size_result: Option<Size>) -> Result<(), std::io::Error> {
     if let Some(frame_size) = frame_size_result {
         // Check for 80x24 minimum resolution
         if frame_size.height < MIN_RESOLUTION.height || frame_size.width < MIN_RESOLUTION.width {
@@ -115,7 +115,7 @@ pub(crate) fn check_display_size(frame_size_result: Option<Area>) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    use tui::layout::Rect;
+    use ratatui::layout::Rect;
 
     use crate::ui::resolution::MIN_RESOLUTION;
     use crate::ui::ui_util::center_area;

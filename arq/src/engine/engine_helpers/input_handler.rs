@@ -12,7 +12,7 @@ use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::view::game_over_view::GameOverChoice;
 
-pub async fn handle_input<B: tui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
+pub async fn handle_input<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
 
     let level = engine.levels.get_level_mut();
     let ui_wrapper = &mut engine.ui_wrapper;
