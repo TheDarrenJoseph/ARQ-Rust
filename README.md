@@ -15,7 +15,7 @@ INSPIRATION
 
 MADE USING
 =======
-- [tui](https://github.com/fdehau/tui-rs) for the terminal UI layer
+- [ratatui](https://github.com/ratatui/ratatui) for the terminal UI layer
 - [rodio](https://github.com/RustAudio/rodio) for the sound layer
 - [tokio](https://github.com/tokio-rs/tokio) For async input and background threading (e.g. Map generation)
 

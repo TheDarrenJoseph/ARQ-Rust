@@ -35,7 +35,7 @@ pub mod menu_view;
 
     From a data perspective, a View has direct access to both:
      * UI (ARQ's base UI, window areas, and it's elements (widgets))
-     * The terminal manager (from tui-rs) which is what allows us access to each frame via draw() which is then passed to each framehandler, this also allows direct access to the terminal display (character printing etc)
+     * The terminal manager (from ratatui) which is what allows us access to each frame via draw() which is then passed to each framehandler, this also allows direct access to the terminal display (character printing etc)
  */
 pub trait View<T> {
     fn begin(&mut self) -> Result<InputResult<T>, ErrorWrapper>;
