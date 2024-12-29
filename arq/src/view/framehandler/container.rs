@@ -370,10 +370,17 @@ impl FrameHandler<&mut Container> for ContainerFrameHandler {
             for c in view_contents {
                 let item_index = start_index.clone() + line_index.clone();
                 let item = &c.get_self_item();
-                let mut x_offset: u16 = frame_size.x.clone() as u16 + 1;
+                // The x offset is the starting x 
+                // + 1 to avoid the left-hand border
+                let mut x_offset: u16 = frame_size.x.clone() + 1;
+                // The y offset is the starting y 
+                // + 2 (to avoid top border and the header row) 
+                // + line index (to avoid previous lines)
                 let y_offset: u16 = frame_size.y.clone() as u16 + 2 + line_index.clone() as u16;
+                
                 let current_index = self.item_list_selection.is_focused(item_index);
                 let selected = self.item_list_selection.is_selected(item_index);
+                
                 for column in &self.columns {
                     let text = build_column_text(column, item);
                     let mut column_text = build_paragraph(text);
@@ -388,7 +395,7 @@ impl FrameHandler<&mut Container> for ContainerFrameHandler {
                     let column_length = column.size as i8;
                     let text_area = Rect::new(x_offset.clone(), y_offset.clone(), column_length.try_into().unwrap(), 1);
                     frame.render_widget(column_text.clone(), text_area);
-                    x_offset += column_length as u16 + 1;
+                    x_offset += column_length as u16;
                 }
                 line_index += 1;
             }
@@ -419,7 +426,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
             match key {
                 Key::Char('d') => {
                     log::info!("[container frame handler] new result for DropItems..");
-                    if self.usage_line.commands.contains_key( &Key::Char('d')) {
+                    if self.usage_line.commands.iter().find( |c| c.key == 'd').is_some() {
                         let selected_container_items = self.get_selected_items();
                         return Ok(InputResult {
                             generic_input_result: GenericInputResult { done: false, requires_view_refresh: true },
@@ -428,7 +435,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                     }
                 },
                 Key::Char('e') => {
-                    if self.usage_line.commands.contains_key(&key) {
+                    if self.usage_line.commands.iter().find( |c| c.key == 'e').is_some() {
                         log::info!("[container frame handler] new result for EquipItems..");
                         let focused_item = self.find_focused_item().unwrap();
                         let mut items = Vec::new();
@@ -499,7 +506,7 @@ pub fn build_testing_container_frame_handler<'a>(container: Container) -> Contai
         columns,
         row_count: 1,
         item_list_selection: ItemListSelection::new(items.clone(), 1),
-        usage_line : UsageLine::new(HashMap::new())
+        usage_line : UsageLine::new(Vec::new())
     }
 }
 
@@ -539,7 +546,7 @@ mod tests {
         let mut handler_container = container.clone();
         let _start_menu = menu::build_start_menu(false);
         let mut frame_handler: ContainerFrameHandler = build_testing_container_frame_handler(container);
-
+        
         // AND we have a test terminal manager using the minimum 80x24 resolution
         let mut terminal_manager = init_test(MIN_RESOLUTION).unwrap();
 
@@ -554,10 +561,30 @@ mod tests {
         
         // THEN we expect the framehandler to draw the container to the framebuffer
         let mut expected = read_expected_buffer_file(String::from("resources/test/container_draw_result.txt"), frame_area.unwrap());
+        
+        // Check the column definitions make sense
+        let columns = frame_handler.columns;
+        assert_eq!(3, columns.len());
+        assert_eq!("NAME", columns[0].name);
+        assert_eq!(30, columns[0].size);
+
+        assert_eq!("WEIGHT (Kg)", columns[1].name);
+        assert_eq!(12, columns[1].size);
+
+        assert_eq!("VALUE", columns[2].name);
+        assert_eq!(12, columns[2].size);
+
+        let total_line_width = columns[0].size + columns[1].size + columns[2].size;
+        assert_eq!(54, total_line_width);
+        
+        // Ensure the entire row is reverse highlighted
+        expected.set_style(Rect::new(1, 2, total_line_width as u16, 1), Style::default().add_modifier(Modifier::REVERSED));
+
+
         // Ensure all each column within the current row is reverse highlighted
-        expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
-        expected.set_style(Rect::new(32,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
-        expected.set_style(Rect::new(45,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        //expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
+        //expected.set_style(Rect::new(32,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        //expected.set_style(Rect::new(45,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
 
         terminal_manager.terminal.backend().assert_buffer(&expected)
 

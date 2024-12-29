@@ -285,7 +285,7 @@ mod tests {
     use termion::event::Key;
     use ratatui::backend::TestBackend;
     use ratatui::layout::Rect;
-    use ratatui::prelude::{Modifier, Style};
+    use ratatui::prelude::{Modifier, Span, Style};
     use ratatui::style::Color::{Black, Green, Reset};
     use crate::global_flags::ENTER_KEY;
     use crate::map::map_generator::build_dev_chest;
@@ -315,9 +315,10 @@ mod tests {
         let subview_container = container.clone();
         let view_container = container.clone();
         
-        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-        commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
-        commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
+        let mut commands : Vec<UsageCommand> = vec![
+            UsageCommand::new('o', String::from("open") ),
+            UsageCommand::new('t', String::from("take"))
+        ];
         let usage_line = UsageLine::new(commands);
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
         
@@ -358,12 +359,9 @@ mod tests {
             crate::global_flags::ENTER_KEY, // Start selection
             Key::Down, // Selecting Test Item 1, 2, and 3
             Key::Down,
-            Key::Down,
-            crate::global_flags::ENTER_KEY, // End selection
-            Key::Down, // Move to next line
             Key::Esc // Quit the view
         ]);
-        // AND we've mocked out input to select the first 3 items in the list 
+        // AND we've mocked out input to select the first 3 Test Item x's in the list (skipped past the first item, the bag)
         let input_resolver = MockKeyInputResolver { key_results };
         
         world_container_view.input_resolver = Box::new(input_resolver);
@@ -377,7 +375,7 @@ mod tests {
         let mut ui_layout = world_container_view.ui.ui_layout.clone().unwrap();
         let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_area, LayoutType::StandardSplit).clone();
         
-        let mut expected_buffer= read_expected_buffer_file(String::from("resources/test/container_choice_draw_result.txt"), Area::from_rect(frame_area));
+        let mut expected_buffer= read_expected_buffer_file(String::from("resources/test/world_container_selection.txt"), Area::from_rect(frame_area));
 
         let reset_style = Style::default()
             .fg(Reset)
@@ -387,6 +385,10 @@ mod tests {
         let background_style = Style::default()
             .fg(Reset)
             .bg(Black);
+
+        let selected_style = Style::default()
+            .fg(Green)
+            .bg(Black);
         
         let highlighted_style = Style::default()
             .fg(Green)
@@ -394,13 +396,30 @@ mod tests {
             .add_modifier(Modifier::REVERSED);
         
         expected_buffer.set_style(Rect::new(0,0,frame_area.width, frame_area.height), background_style);
+        
+        // Row 2 - For Test Item 1 (second row)
+        // AND the first 2 rows of the selection should be green text on black background, with no reverse (selected_style)
+        // x == 2 (to avoid the 2 left hand borders)
+        // y == 4 (to avoid the 2 top borders, and the headers row) + 1 to skip the "Bag" container row
+        expected_buffer.set_style(Rect::new(2,4,54, 1), selected_style);
+        
+        // Row 3 - For Test Item 2
+        // x == 2 (to avoid the 2 left hand borders)
+        // y == 5 (to avoid the 2 top borders, the headers row, and 2 previous lines)
+        expected_buffer.set_style(Rect::new(2,5,54, 1), selected_style);
 
-        // Item 1 - Name 
-        expected_buffer.set_style(Rect::new(2,3,30, 1), highlighted_style);
-        // Item 1 - Weight
-        expected_buffer.set_style(Rect::new(33,3, 12, 1), highlighted_style);
-        // Item 1 - Value
-        expected_buffer.set_style(Rect::new(46,3, 12, 1), highlighted_style);
+        // Row 4 - For Test Item 3
+        // x == 2 (to avoid the 2 left hand borders)
+        // y == 6 (to avoid the 2 top borders, the headers row, and 3 previous lines)
+        // This line is actually the reversed / highlighted line as it's both selected, and the current selection index
+        expected_buffer.set_style(Rect::new(2,6, 54, 1), highlighted_style);
+
+        // And the last few lines should be blank/reset style
+        expected_buffer.set_style(Rect::new(0,19, 80, 1), reset_style);
+        expected_buffer.set_style(Rect::new(0,20, 80, 1), reset_style);
+        expected_buffer.set_style(Rect::new(0,21, 80, 1), reset_style);
+        expected_buffer.set_style(Rect::new(0,22, 80, 1), reset_style);
+        expected_buffer.set_style(Rect::new(0,23, 80, 1), reset_style);
         
         world_container_view.terminal_manager.terminal.backend().assert_buffer(&expected_buffer);
     }

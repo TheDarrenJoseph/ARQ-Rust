@@ -75,12 +75,13 @@ pub struct CharacterInfoView<'a, B : ratatui::backend::Backend> {
 
 impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
     fn initialise(&mut self) {
-        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-        commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
-        commands.insert(Key::Char('d'), UsageCommand::new('d', String::from("drop") ));
-        commands.insert(Key::Char('e'), UsageCommand::new('m', String::from("move") ));
-        commands.insert(Key::Char('e'), UsageCommand::new('c', String::from("move-to-container") ));
-        commands.insert(Key::Char('e'), UsageCommand::new('e', String::from("equip") ));
+        let mut commands: Vec<UsageCommand> = vec![
+            UsageCommand::new('o', String::from("open")),
+            UsageCommand::new('d', String::from("drop")),
+            UsageCommand::new('m', String::from("move")),
+            UsageCommand::new('c', String::from("move-to-container")),
+            UsageCommand::new('e', String::from("equip"))
+        ];
         let usage_line = UsageLine::new(commands);
 
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
@@ -215,6 +216,16 @@ impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
         }
         return Ok(true)
     }
+    
+    /*
+        Passes the ContainerFrameHandlerInputResult to the most recent container frame handler
+     */
+    fn pass_result_to_latest_choice_handler(&mut self, result: ContainerFrameHandlerInputResult) {
+        // Find most recent container choice view and update it
+        if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
+            topmost_view.handle_callback_result(result);
+        }
+    }
 }
 
 impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInputResult> for CharacterInfoView<'c, B> {
@@ -226,7 +237,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
         let result = (self.callback)(data);
         self.handle_callback_result(result);
     }
-
+    
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
         if let Some(r) = result {
             match r {
@@ -240,7 +251,6 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
                     }
                 },
                 ContainerFrameHandlerInputResult::MoveItems(ref data) => {
-
                     if data.target_container.is_some() {
                         // if target_container is the root view container
                         let root_container = self.frame_handler.container_frame_handlers.first().map(|top_cv| top_cv.container.clone()).unwrap();
@@ -250,6 +260,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
                         if target_is_root {
                             // Drain all after the first
                             self.frame_handler.container_frame_handlers.drain(1..);
+                            
                             // Then rebuild the remaining (root container) view
                             if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
                                 topmost_view.rebuild_to_container(data.target_container.as_ref().unwrap().clone())
@@ -264,10 +275,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
                                 }
                             }
 
-                            // Ensure the current view updates
-                            if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
-                                topmost_view.handle_callback_result(r);
-                            }
+                            self.pass_result_to_latest_choice_handler(r);
                         }
                     } else {
                         for fh in &mut self.frame_handler.container_frame_handlers {
@@ -278,10 +286,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
                     }
                 }
                 _ => {
-                    // Find source view and update it
-                    if let Some(topmost_view) = self.frame_handler.container_frame_handlers.last_mut() {
-                        topmost_view.handle_callback_result(r);
-                    }
+                    self.pass_result_to_latest_choice_handler(r);
                 }
             }
         }

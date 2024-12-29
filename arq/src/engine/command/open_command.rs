@@ -120,9 +120,10 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
         let subview_container = c.clone();
         let view_container = c.clone();
 
-        let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-        commands.insert(Key::Char('o'), UsageCommand::new('o', String::from("open") ));
-        commands.insert(Key::Char('t'), UsageCommand::new('t', String::from("take")) );
+        let mut commands : Vec<UsageCommand> = vec![
+            UsageCommand::new('o', String::from("open") ),
+            UsageCommand::new('t', String::from("take"))
+        ];
         let usage_line = UsageLine::new(commands);
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
 

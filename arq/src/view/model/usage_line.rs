@@ -31,12 +31,12 @@ impl UsageCommand {
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct UsageLine {
-    pub commands : HashMap<Key, UsageCommand>,
+    pub commands : Vec<UsageCommand>,
     pub start_position: Option<Position>
 }
 
 impl UsageLine {
-    pub const fn new(commands: HashMap<Key, UsageCommand>) -> Self {
+    pub const fn new(commands: Vec<UsageCommand>) -> Self {
         UsageLine { commands, start_position: None }
     }
 
@@ -44,7 +44,7 @@ impl UsageLine {
         let mut description = String::from("");
         let len = self.commands.len();
         let mut i = 0;
-        for c in self.commands.values() {
+        for c in self.commands.iter() {
             description += c.describe_usage().as_str();
             if i < len - 1 {
                 description += ", ";

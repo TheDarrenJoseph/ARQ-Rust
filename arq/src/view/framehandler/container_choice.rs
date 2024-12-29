@@ -127,7 +127,7 @@ impl FrameHandler<Vec<Container>> for ContainerChoiceFrameHandler {
                     let column_length = column.size as i8;
                     let text_area = Rect::new(x_offset.clone(), y_offset.clone(), column_length.try_into().unwrap(), 1);
                     frame.render_widget(column_text.clone(), text_area);
-                    x_offset += column_length as u16 + 1;
+                    x_offset += column_length as u16;
                 }
                 line_index += 1;
             }
@@ -231,10 +231,8 @@ mod tests {
         let mut expected = read_expected_buffer_file(String::from("resources/test/container_choice_draw_result.txt"), frame_area.unwrap());
         // Ensure all each column within the current row is reverse highlighted
 
-        // Item name (x 1-31)
-        expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
-        // Container weight/space  (x 32-44)
-        expected.set_style(Rect::new(32,2, 12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        // The entire current row (x 1-42) should be reversed (i.e white on black)
+        expected.set_style(Rect::new(1,2,42, 1), Style::default().add_modifier(Modifier::REVERSED));
         
         terminal_manager.terminal.backend().assert_buffer(&expected)
     }

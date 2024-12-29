@@ -28,7 +28,7 @@ pub fn build_headings<'a>(columns : Vec<Column>) -> Paragraph<'a> {
     let mut spans = Vec::new();
     for column in columns {
         let name = column.name.clone();
-        let padding = build_padding(column.size - name.len() as i8 + 2);
+        let padding = build_padding(column.size - name.len() as i8 + 1);
         spans.push(Span::raw(column.name.clone()));
         spans.push(Span::raw(padding));
     }
@@ -54,14 +54,21 @@ fn test_build_headings() {
         Column {name : "WEIGHT (Kg)".to_string(), size: 12 },
         Column {name : "VALUE".to_string(), size: 12 }
     ];
-
+    let total_colum_width = columns.iter().fold(0, |acc, c| acc + c.size);
+    assert_eq!(36, total_colum_width);
+    
     // WHEN we call to build the headings Paragraph
     let headings = build_headings(columns);
 
     // THEN we expect it to render to the buffer as expected
-    let area = Rect { x: 0, y: 0, height: 2, width: 31 };
+    let area = Rect { x: 0, y: 0, height: 1, width: total_colum_width as u16 };
     let _cell_buffer : Vec<Cell> = Vec::new();
     let mut buffer = Buffer::empty(area.clone());
     headings.render(area, &mut buffer);
-    assert_eq!(Buffer::with_lines(vec!["NAME         WEIGHT (Kg)  VALUE", "    "]), buffer);
+    let expected_header_text = "NAME        WEIGHT (Kg) VALUE       ";
+    // Make sure we're accounting for the total column width in our expected buffer
+    assert_eq!(total_colum_width as usize, expected_header_text.len());
+    let expected_buffer = Buffer::with_lines(vec![expected_header_text]);
+    
+    assert_eq!(buffer, expected_buffer);
 }

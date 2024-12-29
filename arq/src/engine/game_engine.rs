@@ -215,8 +215,9 @@ impl <B : Backend + Send> GameEngine<B> {
                 player.get_inventory_mut().get_loot_value());
             self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::StatLine(stat_line));
 
-            let mut commands : HashMap<Key, UsageCommand> = HashMap::new();
-            commands.insert(Key::Char('i'), UsageCommand::new('i', String::from("Inventory/Info") ));
+            let mut commands : Vec<UsageCommand> = vec![
+                UsageCommand::new('i', String::from("Inventory/Info") )
+            ];
             let map_usage_line = UsageLine::new(commands);
             self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::UsageLine(map_usage_line));
 
