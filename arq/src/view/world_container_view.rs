@@ -279,17 +279,24 @@ impl FrameHandler<WorldContainerViewFrameData> for WorldContainerViewFrameHandle
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, VecDeque};
 
-    use crate::input::IoKeyInputResolver;
+    use crate::input::{IoKeyInputResolver, MockKeyInputResolver};
     use termion::event::Key;
     use ratatui::backend::TestBackend;
+    use ratatui::layout::Rect;
+    use ratatui::prelude::{Modifier, Style};
+    use ratatui::style::Color::{Black, Green, Reset};
+    use crate::global_flags::ENTER_KEY;
     use crate::map::map_generator::build_dev_chest;
+    use crate::map::position::Area;
     use crate::terminal;
     use crate::terminal::terminal_manager::TerminalManager;
+    use crate::test::utils::test_resource_loader::read_expected_buffer_file;
     use crate::ui::resolution::Resolution;
     use crate::ui::ui::{build_ui, UI};
-    use crate::ui::ui_layout::UILayout;
+    use crate::ui::ui_areas::UIAreas;
+    use crate::ui::ui_layout::{LayoutType, UILayout};
     use crate::view::framehandler::container;
     use crate::view::model::usage_line::{UsageCommand, UsageLine};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
@@ -337,5 +344,64 @@ mod tests {
 
         // WHEN we call to draw the world container view, it should complete successfully
         world_container_view.draw(None).expect("World container view should have been drawn");
+    }
+
+    #[test]
+    fn test_begin_selecting_items() {
+        // GIVEN a UI and terminal manager representing a 80x24 (MIN_RESOLUTION) screen
+        let mut ui = build_test_minimal_ui();
+        let mut terminal_manager = terminal::terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+        let mut world_container_view = build_view(&mut ui, &mut terminal_manager);
+        
+        let key_results: VecDeque<Key> = VecDeque::from([
+            Key::Down, // Move down past the Bag to Item 1
+            crate::global_flags::ENTER_KEY, // Start selection
+            Key::Down, // Selecting Test Item 1, 2, and 3
+            Key::Down,
+            Key::Down,
+            crate::global_flags::ENTER_KEY, // End selection
+            Key::Down, // Move to next line
+            Key::Esc // Quit the view
+        ]);
+        // AND we've mocked out input to select the first 3 items in the list 
+        let input_resolver = MockKeyInputResolver { key_results };
+        
+        world_container_view.input_resolver = Box::new(input_resolver);
+        
+        // WHEN we call to begin the view draw / IO loop
+        let result = world_container_view.begin().unwrap();
+        
+        // THEN we expect to be returned here after selecting items
+        // AND as the view will not have redrawn yet, we should be able to see this in the buffer
+        let frame_area = world_container_view.terminal_manager.terminal.get_frame().area();
+        let mut ui_layout = world_container_view.ui.ui_layout.clone().unwrap();
+        let ui_areas: UIAreas = ui_layout.get_or_build_areas(frame_area, LayoutType::StandardSplit).clone();
+        
+        let mut expected_buffer= read_expected_buffer_file(String::from("resources/test/container_choice_draw_result.txt"), Area::from_rect(frame_area));
+
+        let reset_style = Style::default()
+            .fg(Reset)
+            .bg(Reset)
+            .underline_color(Reset);
+        
+        let background_style = Style::default()
+            .fg(Reset)
+            .bg(Black);
+        
+        let highlighted_style = Style::default()
+            .fg(Green)
+            .bg(Black)
+            .add_modifier(Modifier::REVERSED);
+        
+        expected_buffer.set_style(Rect::new(0,0,frame_area.width, frame_area.height), background_style);
+
+        // Item 1 - Name 
+        expected_buffer.set_style(Rect::new(2,3,30, 1), highlighted_style);
+        // Item 1 - Weight
+        expected_buffer.set_style(Rect::new(33,3, 12, 1), highlighted_style);
+        // Item 1 - Value
+        expected_buffer.set_style(Rect::new(46,3, 12, 1), highlighted_style);
+        
+        world_container_view.terminal_manager.terminal.backend().assert_buffer(&expected_buffer);
     }
 }

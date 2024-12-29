@@ -217,6 +217,7 @@ impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
     use termion::event::Key;
     use ratatui::backend::TestBackend;
 
@@ -378,7 +379,7 @@ mod tests {
         
         // AND we have an OpenCommand with all this data
         // And our mocked input will return Escape to quit the view immediately
-        let key_results = vec![Key::Esc];
+        let key_results = VecDeque::from(vec![Key::Esc]);
         let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager, input_resolver: Box::new(MockKeyInputResolver { key_results }) };
         
         // WHEN we call to handle the opening of a container

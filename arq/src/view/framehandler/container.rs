@@ -18,6 +18,7 @@ use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::model::usage_line::UsageLine;
 use crate::view::{resolve_input, GenericInputResult, InputHandler, InputResult};
+use crate::global_flags::ENTER_KEY;
 
 /*
     This frame handler is meant to display containers (Chests, Floor items, Dead bodies) in a tabular display
@@ -458,7 +459,7 @@ impl InputHandler<ContainerFrameHandlerInputResult> for ContainerFrameHandler {
                 Key::Char('c') => {
                     return self.build_move_items_result();
                 },
-                Key::Char('\n') => {
+                ENTER_KEY => {
                     // Start / stop selecting items
                     self.toggle_select();
                 },

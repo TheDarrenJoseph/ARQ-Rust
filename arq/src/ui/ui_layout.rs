@@ -12,6 +12,7 @@ use crate::ui::ui_layout::LayoutType::{CombatView, SingleMainWindow, SingleMainW
 /*
  * This is essentially a wrapper around UIAreasBuilder that caches the current UIAreas
  */
+#[derive(Clone)]
 pub struct UILayout {
     ui_areas : HashMap<LayoutType, UIAreas>,
     ui_areas_builder: UIAreasBuilder

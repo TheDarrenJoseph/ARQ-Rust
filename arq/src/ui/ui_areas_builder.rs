@@ -10,6 +10,7 @@ use crate::ui::ui_layout::LayoutType::{CombatView, SingleMainWindow, SingleMainW
 use crate::ui::ui_util::center_area;
 use crate::view::MIN_RESOLUTION;
 
+#[derive(Clone)]
 pub struct UIAreasBuilder {
     frame_size: Area,
     pub(crate) layout_type: LayoutType

@@ -144,7 +144,8 @@ fn handle_callback(state: CallbackState) -> Option<ContainerFrameHandlerInputRes
     match state.data {
         DropItems(ref items) => {
             log::info!("[inventory usage] Received data for DropItems with {} items", items.len());
-            return drop_items(items.to_vec(), state);
+            let result = drop_items(items.to_vec(), state);
+            return result;
         },
         MoveItems(data) => {
             log::info!("[inventory usage] Received data for MoveItems with {} items", data.to_move.len());

@@ -55,7 +55,7 @@ pub enum ContainerChoiceCommand {
 
 fn build_default_columns() -> Vec<Column> {
     vec![
-        Column {name : "NAME".to_string(), size: 12},
+        Column {name : "NAME".to_string(), size: 30},
         Column {name : "STORAGE (Kg)".to_string(), size: 12}
     ]
 }
@@ -160,7 +160,7 @@ impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFra
                 Key::Down => {
                     self.item_list_selection.move_down();
                 },
-                Key::Char('\n') => {
+                ENTER_EKY => {
                     let chosen_index = self.item_list_selection.get_true_index();
                     log::info!("Chosen index: {}", chosen_index);
                     if let Some(c) = self.choices.get(chosen_index as usize) {
@@ -231,10 +231,10 @@ mod tests {
         let mut expected = read_expected_buffer_file(String::from("resources/test/container_choice_draw_result.txt"), frame_area.unwrap());
         // Ensure all each column within the current row is reverse highlighted
 
-        // Item name
-        expected.set_style(Rect::new(1,2,12, 1), Style::default().add_modifier(Modifier::REVERSED));
-        // Container weight/space
-        expected.set_style(Rect::new(14,2, 12, 1), Style::default().add_modifier(Modifier::REVERSED));
+        // Item name (x 1-31)
+        expected.set_style(Rect::new(1,2,30, 1), Style::default().add_modifier(Modifier::REVERSED));
+        // Container weight/space  (x 32-44)
+        expected.set_style(Rect::new(32,2, 12, 1), Style::default().add_modifier(Modifier::REVERSED));
         
         terminal_manager.terminal.backend().assert_buffer(&expected)
     }

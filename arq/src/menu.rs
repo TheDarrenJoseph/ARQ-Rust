@@ -1,6 +1,7 @@
 use termion::event::Key;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, List, ListItem};
+use crate::global_flags::ENTER_KEY;
 
 pub struct Menu {
     pub menu_titles: Vec<String>,
@@ -56,7 +57,7 @@ impl Selection for Menu {
             //Key::Esc => {
             //    self.exit = true;
             //}
-            Key::Char('\n') => {
+            ENTER_KEY => {
                 self.selected = true;
             }
             Key::Char(c) => {
