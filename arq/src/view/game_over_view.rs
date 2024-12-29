@@ -113,7 +113,7 @@ impl <B : ratatui::backend::Backend> InputHandler<GameOverChoice> for GameOver<'
             Key::Up => {
                 self.widgets.previous_widget();
             },
-            ENTER_EKY => {
+            crate::global_flags::ENTER_KEY => {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {

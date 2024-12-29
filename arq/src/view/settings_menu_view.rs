@@ -120,7 +120,7 @@ impl <COM: ratatui::backend::Backend> InputHandler<bool> for SettingsMenuView<'_
                 }
                 menu_view.widgets.previous_widget();
             },
-            ENTER_EKY => {
+            crate::global_flags::ENTER_KEY => {
                 match target_widget {
                     Some(widget) => {
                         match &mut widget.state_type {

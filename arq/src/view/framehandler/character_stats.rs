@@ -302,7 +302,7 @@ impl InputHandler<CharacterFrameHandlerInputResult> for CharacterStatsFrameHandl
             Key::Esc => {
                 return ErrorWrapper::internal_result("Quit interrupt.".to_string());
             },
-            ENTER_EKY => {
+            crate::global_flags::ENTER_KEY => {
                 match selected_widget {
                     Some(widget) => {
                         match &mut widget.state_type {

@@ -119,7 +119,7 @@ impl <COM: ratatui::backend::Backend> InputHandler<bool> for CombatView<'_, COM>
                 return Ok(self.build_input_not_done_result());
             },
             // Enter key
-            ENTER_EKY => {
+            crate::global_flags::ENTER_KEY => {
                 let selection = &self.frame_handler.selection;
                 let _option_chosen = selection.options.get(selection.index as usize).unwrap();
 

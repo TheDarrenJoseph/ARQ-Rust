@@ -160,7 +160,7 @@ impl InputHandler<ContainerChoiceFrameHandlerInputResult> for ContainerChoiceFra
                 Key::Down => {
                     self.item_list_selection.move_down();
                 },
-                ENTER_EKY => {
+                crate::global_flags::ENTER_KEY => {
                     let chosen_index = self.item_list_selection.get_true_index();
                     log::info!("Chosen index: {}", chosen_index);
                     if let Some(c) = self.choices.get(chosen_index as usize) {
