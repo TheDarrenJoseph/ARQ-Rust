@@ -1,0 +1,35 @@
+---
+  config:
+    class:
+      hideEmptyMembersBox: true
+  title: World Container Data Ownership (for Callbacks)
+---
+classDiagram
+    OpenCommand <|-- WorldContainerVIew
+    WorldContainerVIew <|-- WorldContainerViewFrameHandlers
+
+    WorldContainerViewFrameHandlers <|-- ContainerChoiceFrameHandler
+    WorldContainerViewFrameHandlers <|-- ContainerFrameHandler
+    class OpenCommand{
+      +Level
+      +UI
+      +TerminalManager
+      +KeyInputResolver
+    }
+
+    class WorldContainerVIew{
+      +UI
+      +TerminalManager
+      +WorldContainerViewFrameHandlers
+      +Container
+      +Callback
+      +KeyInputResolver
+    }
+
+    class WorldContainerViewFrameHandlers {
+        +Vec~ContainerFrameHandler~
+        +Option~ContainerChoiceFrameHandler~
+    }
+
+    class ContainerChoiceFrameHandler
+    class ContainerFrameHandler

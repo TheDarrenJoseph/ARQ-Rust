@@ -1,0 +1,17 @@
+---
+  title: World Container Input Handling / Callback flow
+---
+sequenceDiagram
+    
+    OpenCommand->>WorldContainerView: set_callback
+    OpenCommand->>WorldContainerView: begin
+    WorldContainerView->>WorldContainerView: draw
+    WorldContainerView ->> WorldContainerView: handle_input (Initial input capture)
+    WorldContainerView->>ContainerFrameHandler(n): handle_input (targeting topmost/current ContainerFrameHandler)
+    ContainerFrameHandler(n) ->> WorldContainerView: InputResult (from handle_input)
+    WorldContainerView ->> WorldContainerView: handle_input (internal processing of result)
+    WorldContainerView ->> OpenCommand: trigger_callback
+    OpenCommand ->> OpenCommand: handle_callback (moving items, taking items, etc) (Actual Level data modification)
+    WorldContainerView ->> WorldContainerView: handle_callback_result
+    WorldContainerView ->> ContainerFrameHandler(n): rebuild_to_container (if moving items)
+    WorldContainerView ->> ContainerFrameHandler(n): handle_callback_result (top, or targeted by result)
