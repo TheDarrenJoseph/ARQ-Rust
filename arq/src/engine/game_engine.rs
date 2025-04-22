@@ -10,19 +10,27 @@ use crate::character::battle::Battle;
 use crate::character::builder::character_builder::{build_dev_player_inventory, CharacterBuilder, CharacterPattern};
 use crate::character::characters::Characters;
 use crate::engine::combat::Combat;
+use crate::engine::command::command::Command;
+use crate::engine::command::inventory_command::InventoryCommand;
+use crate::engine::command::look_command::LookCommand;
+use crate::engine::command::open_command::OpenCommand;
 use crate::engine::engine_helpers::game_loop::game_loop;
+use crate::engine::engine_helpers::input_handler::InputHandler;
+use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::errors::ErrorWrapper;
+use crate::input::IoKeyInputResolver;
 use crate::map::position::{Area, Side};
 use crate::map::Map;
 use crate::settings::{build_settings, Settings, SETTING_BG_MUSIC, SETTING_RESOLUTION, SETTING_RNG_SEED};
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
-use crate::ui::bindings::input_bindings::CommandSpecificKeyBindings;
+use crate::ui::bindings::action_bindings::Action;
+use crate::ui::bindings::input_bindings::{CommandSpecificKeyBindings, KeyBindings};
 use crate::ui::resolution::Resolution;
-use crate::ui::ui::build_ui;
+use crate::ui::ui::{build_ui, get_input_key};
 use crate::ui::ui_wrapper::UIWrapper;
 use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
@@ -41,7 +49,8 @@ pub struct GameEngine<B: 'static + Backend>  {
     pub(crate) settings: Settings,
     pub levels: Levels,
     sound_sinks: Option<SoundSinks>,
-    game_running : bool
+    game_running : bool,
+    pub(crate) input_handler: InputHandler
 }
 
 impl <B : Backend + Send> GameEngine<B> {
@@ -379,23 +388,119 @@ impl <B : Backend + Send> GameEngine<B> {
         Ok(None)
     }
 
-
+    pub(crate) async fn player_turn(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper> {
+        let key = get_input_key()?;
+        let mut input_handler = &mut self.input_handler;
+        
+        let action = input_handler.handle_input(key).await;
+        self.handle_action(action.unwrap(), Some(key)).await?;
+        
+        return Ok(None);
+    }
+    
+    async fn handle_action(&mut self, action: Action, input: Option<Key>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
+        let level = self.levels.get_level_mut();
+        let ui_wrapper = &mut self.ui_wrapper;
+        
+        match action {
+            Action::Escape => {
+                if let Some(goc) = menu_command(self).await? {
+                    Ok(Some(goc))
+                } else {
+                    Ok(None)
+                }
+            },
+            Action::DevBeginCombat => {
+                Ok(self.begin_combat()?)
+            },
+            Action::ShowInventory => {
+                let mut command = InventoryCommand {
+                    level,
+                    ui: &mut self.ui_wrapper.ui,
+                    terminal_manager: &mut self.ui_wrapper.terminal_manager
+                };
+                command.start()?;
+                
+                if let Some(key) = input {
+                    let key_bindings = &mut self.settings.key_bindings.command_specific_key_bindings.inventory_key_bindings;
+                    let bindings = key_bindings.get_bindings();
+                    let input = bindings.get(&key);
+                    command.handle_input(input)?;
+                }
+                Ok(None)
+            },
+            Action::LookAround => {
+                let key_bindings = self.settings.key_bindings.command_specific_key_bindings.look_key_bindings.clone();
+                let mut command = LookCommand {
+                    level,
+                    ui: &mut self.ui_wrapper.ui,
+                    terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                    bindings: key_bindings.clone()
+                };
+                command.start()?;
+                
+                if let Some(key) = input {
+                    let bindings = key_bindings.get_bindings();
+                    let input = bindings.get(&key);
+                    command.handle_input(input)?;
+                }
+                Ok(None)
+            },
+            Action::OpenNearby => {
+                let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
+                let mut command = OpenCommand {
+                    level,
+                    ui: &mut self.ui_wrapper.ui,
+                    terminal_manager: &mut self.ui_wrapper.terminal_manager,
+                    input_resolver: Box::new(IoKeyInputResolver {}),
+                };
+                command.start()?;
+                
+                let key_bindings = &mut self.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
+                let bindings = key_bindings.get_bindings();
+                let input = bindings.get(&key);
+                command.handle_input(input)?;
+                
+                Ok(None)
+            },
+            Action::MovePlayer(side) => {
+                if let Some(game_over_choice) = self.handle_player_movement(side.clone()).await? {
+                    return Ok(Some(game_over_choice));
+                } else {
+                    return Ok(None);
+                }
+            },
+            _ => {
+                return Ok(None);
+            }
+        }
+    }
 
 }
 
 pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, ErrorWrapper> {
     let ui = build_ui();
     let settings = build_settings();
+    let key_bindings = settings.key_bindings.clone();
     let rng_seed = settings.get_rng_seed().ok_or(Error::new(ErrorKind::NotFound, "Failed to retrieve the RNG seed value!"))?;
     let seed_copy = rng_seed.clone();
     let rng = Seeder::from(rng_seed).make_rng();
-    Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
+    Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false, input_handler: InputHandler::new(key_bindings) })
 }
 
 pub fn build_test_game_engine<'a, B: Backend>(levels: Levels, terminal_manager : TerminalManager<B>) -> Result<GameEngine<B>, ErrorWrapper> {
     let ui = build_ui();
     let settings = build_settings();
-    Ok(GameEngine { levels, settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false })
+    let key_bindings = settings.key_bindings.clone();
+    Ok(
+        GameEngine { 
+            levels,
+            settings, 
+            ui_wrapper: UIWrapper { ui, terminal_manager },
+            sound_sinks: None, 
+            game_running: false,
+            input_handler: InputHandler::new(key_bindings)
+        })
 }
 
 struct PlayerMovementResult {

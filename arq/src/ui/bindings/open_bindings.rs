@@ -5,6 +5,7 @@ use crate::map::position::Side;
 use crate::ui::bindings::look_bindings::{LookInput, LookKeyBindings};
 use crate::ui::bindings::open_bindings::OpenInput::{OpenDown, OpenLeft, OpenRight, OpenUp};
 
+#[derive(Debug, Clone)]
 pub enum OpenInput {
     OpenUp,
     OpenDown,
@@ -12,6 +13,7 @@ pub enum OpenInput {
     OpenRight
 }
 
+#[derive(Debug, Clone)]
 pub struct OpenKeyBindings {
     bindings : HashMap<Key, OpenInput>
 }

@@ -124,7 +124,7 @@ impl <COM: ratatui::backend::Backend> InputHandler<bool> for CombatView<'_, COM>
                 let _option_chosen = selection.options.get(selection.index as usize).unwrap();
 
                 let data = CombatCallbackData { choice: CombatTurnChoice::ATTACK(WeaponSlot::PRIMARY), result: None };
-                self.trigger_callback(data);
+                //self.trigger_callback(data);
 
                 // TODO send-recieve battle turn option
                 return Ok(self.build_input_not_done_result());

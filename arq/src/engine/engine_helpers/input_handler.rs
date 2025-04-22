@@ -9,73 +9,30 @@ use crate::engine::game_engine::GameEngine;
 use crate::error::errors::ErrorWrapper;
 use crate::input::IoKeyInputResolver;
 use crate::ui::bindings::action_bindings::Action;
-use crate::ui::bindings::input_bindings::KeyBindings;
+use crate::ui::bindings::input_bindings::{AllKeyBindings, KeyBindings};
 use crate::view::game_over_view::GameOverChoice;
 
-pub async fn handle_input<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, key : Key) -> Result<Option<GameOverChoice>, ErrorWrapper>  {
+pub struct InputHandler {
+  current_action: Option<Action>,
+  keybindings: AllKeyBindings,  
+}
 
-    let level = engine.levels.get_level_mut();
-    let ui_wrapper = &mut engine.ui_wrapper;
-    
-    let action_bindings = &engine.settings.key_bindings.action_key_bindings;
-    let action_input = action_bindings.get_input(key);
-    
-    if let Some(action) = action_input {
-        match action {
-            Action::Escape => {
-                if let Some(goc) = menu_command(engine).await? {
-                    return Ok(Some(goc));
-                }
-            },
-            Action::DevBeginCombat => {
-                engine.begin_combat()?;
-            },
-            Action::ShowInventory => {
-                let mut command = InventoryCommand {
-                    level,
-                    ui: &mut engine.ui_wrapper.ui,
-                    terminal_manager: &mut engine.ui_wrapper.terminal_manager
-                };
-
-                let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.inventory_key_bindings;
-                let bindings = key_bindings.get_bindings();
-                let input = bindings.get(&key);
-                command.handle_input(input)?;
-            },
-            Action::LookAround => {
-                let key_bindings = engine.settings.key_bindings.command_specific_key_bindings.look_key_bindings.clone();
-                let mut command = LookCommand {
-                    level,
-                    ui: &mut engine.ui_wrapper.ui,
-                    terminal_manager: &mut engine.ui_wrapper.terminal_manager,
-                    bindings: key_bindings.clone()
-                };
-                let bindings = key_bindings.get_bindings();
-                let input = bindings.get(&key);
-                command.handle_input(input)?;
-            },
-            Action::OpenNearby => {
-                let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
-                let mut command = OpenCommand {
-                    level,
-                    ui: &mut engine.ui_wrapper.ui,
-                    terminal_manager: &mut engine.ui_wrapper.terminal_manager,
-                    input_resolver: Box::new(IoKeyInputResolver {}),
-                };
-                let key_bindings = &mut engine.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
-                let bindings = key_bindings.get_bindings();
-                let input = bindings.get(&key);
-                command.handle_input(input)?;
-            },
-            Action::MovePlayer(side) => {
-                if let Some(game_over_choice) = engine.handle_player_movement(*side).await? {
-                    return Ok(Some(game_over_choice));
-                }
-            },
-            _ => {}
+impl InputHandler {
+    pub fn new(keybindings: AllKeyBindings) -> InputHandler {
+        InputHandler {
+            current_action: None,
+            keybindings
         }
     }
-    Ok(None)
+    pub async fn handle_input(&mut self, key : Key) -> Option<Action> {
+        let action_bindings = &self.keybindings.action_key_bindings;
+        let action_input = action_bindings.get_input(key);
+
+        if let Some(action) = action_input {
+            return Some(action.clone())
+        }
+        None
+    }
 }
 
 #[cfg(test)]
@@ -85,7 +42,7 @@ mod tests {
     use termion::event::Key;
 
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-    use crate::engine::engine_helpers::input_handler::handle_input;
+    use crate::engine::engine_helpers::input_handler::InputHandler;
     use crate::engine::game_engine::*;
     use crate::engine::level::Levels;
     use crate::map::position::Position;
@@ -122,8 +79,10 @@ mod tests {
                 let player = levels.characters.get_player_mut();
                 assert_eq!(start_position, player.unwrap().get_global_position());
 
+                let mut input_handler = engine.input_handler;
+                
                 for key in input {
-                    handle_input(&mut engine, key).await.unwrap();
+                    input_handler.handle_input(key).await.unwrap();
                 }
                 assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_global_position());
             },

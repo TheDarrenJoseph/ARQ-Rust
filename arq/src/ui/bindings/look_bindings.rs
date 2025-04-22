@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use termion::event::Key;
 use crate::map::position::Side;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum LookInput {
     LookUp,
     LookDown,
@@ -12,7 +12,7 @@ pub enum LookInput {
     LookCurrent
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LookKeyBindings {
     bindings: HashMap<Key, LookInput>
 }

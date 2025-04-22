@@ -166,6 +166,10 @@ impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
         };
     }
 
+    fn start(&mut self) -> Result<(), ErrorWrapper> {
+        Ok(())
+    }
+
     fn handle_input(&mut self, input: Option<&OpenInput>) -> Result<(), ErrorWrapper> {
         let mut message = NOTHING_ERROR.to_string();
         let side = map_open_input_to_side(input);

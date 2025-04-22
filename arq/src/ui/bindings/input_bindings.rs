@@ -32,12 +32,14 @@ pub trait KeyBindings<T> {
 }
 
 
+#[derive(Debug, Clone)]
 pub struct CommandSpecificKeyBindings {
     pub inventory_key_bindings: InventoryKeyBindings,
     pub look_key_bindings: LookKeyBindings,
     pub open_key_bindings: OpenKeyBindings
 }
 
+#[derive(Debug, Clone)]
 pub struct AllKeyBindings {
     pub action_key_bindings: ActionKeyBindings,
     pub command_specific_key_bindings: CommandSpecificKeyBindings,

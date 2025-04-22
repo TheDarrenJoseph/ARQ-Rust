@@ -225,8 +225,13 @@ impl <B: ratatui::backend::Backend> Command<InventoryInput> for InventoryCommand
         };
     }
 
-    fn handle_input(&mut self, _: Option<&InventoryInput>) -> Result<(), ErrorWrapper> {
+    fn start(&mut self) -> Result<(), ErrorWrapper> {
         self.open_inventory()
+    }
+
+    fn handle_input(&mut self, _: Option<&InventoryInput>) -> Result<(), ErrorWrapper> {
+        // TODO
+        Ok(())
     }
 }
 

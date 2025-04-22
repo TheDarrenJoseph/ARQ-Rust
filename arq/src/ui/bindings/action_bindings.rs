@@ -8,6 +8,7 @@ use crate::ui::bindings::look_bindings::{LookInput, LookKeyBindings};
 /*
   An Action that the Player can take
  */
+#[derive(Debug, Clone)]
 pub enum Action {
     ShowInventory,
     DevBeginCombat, // For development of combat view
@@ -17,6 +18,7 @@ pub enum Action {
     Escape // This can open the pause menu, close a container view, etc
 }
 
+#[derive(Debug, Clone)]
 pub struct ActionKeyBindings {
    pub bindings : HashMap<Key, Action>
 }

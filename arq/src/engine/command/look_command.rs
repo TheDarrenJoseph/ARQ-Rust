@@ -16,7 +16,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput, LookKeyBindings};
-use crate::ui::ui::{get_input_key, UI};
+use crate::ui::ui::{get_input_key, Draw, UI};
 
 pub struct LookCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
@@ -98,10 +98,14 @@ fn describe_position(pos: Position, level : &mut Level) -> Result<String, ErrorW
 }
 
 impl <B: ratatui::backend::Backend> LookCommand<'_, B> {
+    
+    /*
+       Re-renders just the console area, as we only make changes here
+     */
     fn re_render(&mut self) -> Result<(), io::Error> {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
+            ui.draw_console(frame);
         })?;
         Ok(())
     }
@@ -122,6 +126,12 @@ impl <B: ratatui::backend::Backend> Command<LookInput> for LookCommand<'_, B> {
                 false
             }
         };
+    }
+
+    fn start(&mut self) -> Result<(), ErrorWrapper> {
+        self.ui.set_console_buffer("Where do you want to look?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
+        self.re_render().unwrap();
+        return Ok(())
     }
 
     fn handle_input(&mut self, _input: Option<&LookInput>) -> Result<(), ErrorWrapper> {
