@@ -31,5 +31,15 @@ classDiagram
         +Option~ContainerChoiceFrameHandler~
     }
 
-    class ContainerChoiceFrameHandler
-    class ContainerFrameHandler
+    class ContainerChoiceFrameHandler {
+      -choices: Vec~Container~,
+      -columns : Vec~Column~,
+      +item_list_selection : ItemListSelection,
+    }
+    class ContainerFrameHandler {
+      +container : Container,
+      -columns : Vec~Column~,
+      -row_count: i32,
+      +item_list_selection : ItemListSelection,
+      -usage_line : UsageLine
+    }
