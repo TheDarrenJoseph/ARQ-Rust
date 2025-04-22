@@ -13,7 +13,7 @@ use crate::view::util::cell_builder::CellBuilder;
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct MapWidget {
-    map_view_areas : MapViewAreas // Possibly reduced display area
+    pub map_view_areas : MapViewAreas // Possibly reduced display area
 }
 
 impl MapWidget {

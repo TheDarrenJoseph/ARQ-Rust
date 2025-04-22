@@ -90,21 +90,23 @@ impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
 
         let level = &mut self.level;
         let terminal = &mut self.terminal_manager.terminal;
+        let map_view_areas = self.map_view_areas.clone();
         
         return Ok(terminal.draw(|frame| {
             // First let the UI draw everything else
             ui.render(None, frame);
 
             // Then render the map widget
-            let map_widget = ui.get_stateful_widgets_mut().iter().find(|w| match w {
+            let map_widget = ui.get_stateful_widgets_mut().iter_mut().find(|w| match w {
                 StatefulWidgetType::Map(_) => true,
                 _ => false
             });
             if let Some(widget_type) = map_widget {
                 match widget_type {
                     StatefulWidgetType::Map(map_widget) => {
+                        // Update the map widget with the latest state
+                        map_widget.map_view_areas = map_view_areas;
                         frame.render_stateful_widget(map_widget.clone(), frame_size, level);
-
                     }
                     _ => {}
                 }
