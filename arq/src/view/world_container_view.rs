@@ -99,7 +99,7 @@ impl <B: ratatui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             return Ok(self.terminal_manager.terminal.draw(|frame| {
-                ui.render(frame);
+                ui.render(None, frame);
                 let frame_area = Area::new(
                     Position::new(main_area.start_position.x + 1, main_area.start_position.y + 1),
                     main_area.width.clone() - 1,

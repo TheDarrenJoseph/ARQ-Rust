@@ -107,8 +107,9 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
 
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
+        let level = self.level.clone();
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
+            ui.render(Option::from(level), frame);
         })?;
         Ok(())
     }

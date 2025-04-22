@@ -14,7 +14,8 @@ use crate::ui::ui::UI;
 use crate::view::util::cell_builder::CellBuilder;
 use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 use crate::widget::stateful::map_widget::MapWidget;
-
+use crate::widget::{StatefulWidgetState, StatefulWidgetType};
+use crate::widget::widgets::WidgetList;
 /*
     This view draws the following to the screen:
     1. Individual tiles of the map
@@ -51,6 +52,12 @@ impl<B : ratatui::backend::Backend> MapView<'_, B> {
         info!("Map view cleared");
         Ok(())
     }
+    
+    fn build_widget(&mut self) -> MapWidget {
+        let map_view_areas = self.map_view_areas;
+        let map_widget: MapWidget = MapWidget::new(map_view_areas);
+        return map_widget;
+    }
 }
 
 impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
@@ -58,6 +65,11 @@ impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
     fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         let _level = self.level.clone();
         let _map_view_areas = self.map_view_areas.clone();
+        
+        let map_widget = self.build_widget();
+        let stateful_widgets = self.ui.get_stateful_widgets_mut();
+        stateful_widgets.push(StatefulWidgetType::Map(map_widget));
+        
         self.draw(None)?;
         return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
@@ -70,21 +82,33 @@ impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
     fn draw(&mut self, _area: Option<Area>) -> Result<CompletedFrame, ErrorWrapper> {
         let map_display_area = self.map_view_areas.map_display_area;
         let frame_size = map_display_area.to_rect();
+        
         let ui = &mut self.ui;
 
         // Frame handler data
         verify_display_size::<B>(self.terminal_manager);
 
-        let map_view_areas = self.map_view_areas;
         let level = &mut self.level;
         let terminal = &mut self.terminal_manager.terminal;
+        
         return Ok(terminal.draw(|frame| {
             // First let the UI draw everything else
-            ui.render(frame);
+            ui.render(None, frame);
 
-            // Then render the map
-            let map_widget: MapWidget = MapWidget::new(map_view_areas);
-            frame.render_stateful_widget(map_widget, frame_size, level);
+            // Then render the map widget
+            let map_widget = ui.get_stateful_widgets_mut().iter().find(|w| match w {
+                StatefulWidgetType::Map(_) => true,
+                _ => false
+            });
+            if let Some(widget_type) = map_widget {
+                match widget_type {
+                    StatefulWidgetType::Map(map_widget) => {
+                        frame.render_stateful_widget(map_widget.clone(), frame_size, level);
+
+                    }
+                    _ => {}
+                }
+            }
         })?);
     }
 

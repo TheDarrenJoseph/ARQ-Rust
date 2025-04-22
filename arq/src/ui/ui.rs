@@ -6,18 +6,19 @@ use ratatui::layout::{Alignment, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Span, Line};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
-
+use crate::engine::level::Level;
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_areas::{UI_AREA_NAME_CONSOLE, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::{LayoutType, UILayout};
 use crate::view::framehandler::console::{ConsoleBuffer, ConsoleFrameHandler};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::widget::StandardWidgetType;
+use crate::widget::{StandardWidgetType, StatefulWidgetState, StatefulWidgetType};
 
 pub struct UI {
     pub render_additional: bool,
     console_visible: bool,
+    stateful_widgets: Vec<StatefulWidgetType>,
     additional_widgets: Vec<StandardWidgetType>,
     frame_size : Option<Area>,
     frame_handler: ConsoleFrameHandler,
@@ -38,6 +39,7 @@ pub fn build_ui() -> UI {
         frame_size : None,
         render_additional: false,
         console_visible: false,
+        stateful_widgets: Vec::new(),
         additional_widgets: Vec::new(),
         frame_handler,
         ui_layout: None
@@ -80,6 +82,7 @@ pub trait Draw {
     fn draw_info(&mut self, frame : &mut ratatui::Frame<'_>);
     fn draw_console(&mut self, frame : &mut ratatui::Frame<'_>);
     fn draw_additional_widgets(&mut self, frame: &mut ratatui::Frame);
+    fn draw_stateful_widgets(&mut self, level: &mut Level, frame: &mut ratatui::Frame);
 }
 
 fn build_main_block<'a>() -> Block<'a> {
@@ -113,7 +116,7 @@ impl UI {
         2. The console window at the bottom of the screen
         3. Stat bars and command usage hints (additional widgets)
      */
-    pub fn render<'a>(&mut self, frame: &mut ratatui::Frame<'_>) {
+    pub fn render<'a>(&mut self, level: Option<Level>, frame: &mut ratatui::Frame<'_>) {
         let ui_layout =  self.ui_layout.as_mut().ok_or("Failed to get ui_layout, has it been initialised?").unwrap();
         let areas = ui_layout.get_or_build_areas(frame.size(), LayoutType::StandardSplit);
         if let Some(main) = areas.get_area(UI_AREA_NAME_MAIN) {
@@ -122,6 +125,11 @@ impl UI {
             {
                 frame.render_widget(main_block, main_area.to_rect());
             }
+        }
+        
+        // TODO Render any major stateful widgets
+        if let Some(mut level) = level {
+            self.draw_stateful_widgets(&mut level, frame);
         }
 
         if self.console_visible {
@@ -159,6 +167,10 @@ impl UI {
     pub fn get_additional_widgets_mut(&mut self) -> &mut Vec<StandardWidgetType> {
         &mut self.additional_widgets
     }
+
+    pub fn get_stateful_widgets_mut(&mut self) -> &mut Vec<StatefulWidgetType> {
+        &mut self.stateful_widgets
+    }
 }
 
 pub fn get_input_key() -> Result<Key, io::Error> {
@@ -168,7 +180,7 @@ pub fn get_input_key() -> Result<Key, io::Error> {
 impl Draw for UI {
 
     fn draw_info(&mut self, frame: &mut ratatui::Frame<'_>) {
-        self.render(frame);
+        self.render(None, frame);
 
         let dev_spans = vec!(Span::raw("Made by Darren Joseph. Written in Rust."));
         let spans = vec![Line::from(dev_spans),
@@ -224,6 +236,23 @@ impl Draw for UI {
                     }
                     _offset += 1;
                 }
+            }
+        }
+    }
+
+    fn draw_stateful_widgets(&mut self, level: &mut Level, frame: &mut ratatui::Frame) {
+        // TODO do we need to consider UI Layouts here?
+        let widget_count = self.stateful_widgets.len();
+        if widget_count > 0 {
+            let mut _offset = 0;
+            for widget in self.stateful_widgets.iter_mut() {
+                match widget {
+                    StatefulWidgetType::Map(map_widget) => {
+                        frame.render_stateful_widget(map_widget.clone(), frame.area(), level);
+                    },
+                    _ => {}
+                }
+                _offset += 1;
             }
         }
     }

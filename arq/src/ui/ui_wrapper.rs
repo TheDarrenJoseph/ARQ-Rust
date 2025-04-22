@@ -24,6 +24,7 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;
 use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
+use crate::widget::stateful::map_widget::MapWidget;
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + ratatui::backend::Backend> {
@@ -38,7 +39,7 @@ impl <B : Backend> UIWrapper<B> {
     pub(crate) fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(frame);
+            ui.render(None, frame);
         })?;
         Ok(())
     }
@@ -108,7 +109,7 @@ impl <B : Backend> UIWrapper<B> {
                 self.terminal_manager.terminal.draw(|frame| {
                     let mut main_area = main.area;
                     main_area.height -= 2;
-                    ui.render(frame);
+                    ui.render(None, frame);
                     character_view.handle_frame(frame, FrameData { data: base_character.clone(), ui_areas: ui_areas.clone(), frame_area: main_area });
                 })?;
             }
@@ -163,7 +164,12 @@ impl <B : Backend> UIWrapper<B> {
             let player_global_position = level.characters.get_player().unwrap().get_global_position();
             let map_display_area = calculate_map_display_area(player_global_position, map_view_area);
             let map_view_areas = MapViewAreas { map_area, map_view_area, map_display_area };
-            let mut map_view = MapView { level, ui: &mut self.ui, terminal_manager: &mut self.terminal_manager, map_view_areas };
+            let mut map_view = MapView {
+                level,
+                ui: &mut self.ui,
+                terminal_manager: &mut self.terminal_manager, 
+                map_view_areas
+            };
 
             // Draw the base UI (incl. console) and the map
             map_view.begin()?;
