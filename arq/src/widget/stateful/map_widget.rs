@@ -20,8 +20,7 @@ impl MapWidget {
     pub(crate) const fn new(map_view_areas: MapViewAreas) -> MapWidget {
         MapWidget { map_view_areas }
     }
-
-
+    
     fn find_container<'a>(&'a self, map: &'a Map, global_position: Position) -> Option<(Position, &Container)> {
         let containers = &map.containers;
 
@@ -36,9 +35,9 @@ impl MapWidget {
         None
     }
 
-    fn build_cell_for_position(&mut self, level: &mut Level, global_position: Position, _cell_target: &mut Cell) -> Cell {
-        let characters = &mut level.characters;
-        let player_mut = characters.get_player_mut().unwrap();
+    fn build_cell_for_position(&mut self, level: &Level, global_position: Position, _cell_target: &mut Cell) -> Cell {
+        let characters = &level.characters;
+        let player_mut = characters.get_player().unwrap();
 
         if let Some(map) = &level.map {
             let tiles = &map.tiles;
@@ -49,7 +48,7 @@ impl MapWidget {
                 return CellBuilder::from_character(player_mut);
             }
 
-            let characters = &mut level.characters;
+            let characters = &level.characters;
             if let Some(npc) = characters.get_npcs().iter().find(|npc| npc.get_global_position().equals(global_position)).cloned() {
                 return CellBuilder::from_character(&npc);
             }
@@ -74,7 +73,7 @@ impl MapWidget {
 impl StatefulWidget for MapWidget {
     type State = Level;
 
-    fn render(mut self, _area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
+    fn render(mut self, _area: Rect, buf: &mut Buffer, level: &mut Self::State) {
         let map_view_area = self.map_view_areas.map_view_area;
         // Local positions should start at 0,0 to size_x-1, size_y-1
         for x in 0..map_view_area.width {
@@ -85,7 +84,7 @@ impl StatefulWidget for MapWidget {
                 if position_in_display_area {
                     let screen_position = map_view_area.get_position(x,y);
                     let mut cell = buf.get_mut(screen_position.x, screen_position.y);
-                    let new_cell = self.build_cell_for_position(_state, global_position,&mut cell);
+                    let new_cell = self.build_cell_for_position(level, global_position,&mut cell);
                     cell.set_symbol(new_cell.symbol());
                     cell.set_bg(new_cell.bg);
                     cell.set_fg(new_cell.fg);

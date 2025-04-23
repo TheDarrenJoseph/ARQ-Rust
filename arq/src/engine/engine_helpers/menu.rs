@@ -19,12 +19,13 @@ use crate::widget::StatefulWidgetType;
 
 pub async fn start_menu<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>, _choice: Option<StartMenuChoice>) -> Pin<Box<dyn Future< Output = Result<Option<GameOverChoice>, ErrorWrapper> > + '_ >> {
     Box::pin(async move {
+        let game_running= engine.is_game_running();
         let ui_wrapper = &mut engine.ui_wrapper;
         ui_wrapper.clear_screen()?;
 
         // Hide additional widgets when paused
         ui_wrapper.ui.render_additional = false;
-        let start_choice = ui_wrapper.draw_start_menu()?.view_specific_result.unwrap();
+        let start_choice = ui_wrapper.draw_start_menu(game_running)?.view_specific_result.unwrap();
         match start_choice {
             StartMenuChoice::Play => {
                 ui_wrapper.ui.render_additional = true;

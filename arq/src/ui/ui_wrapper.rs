@@ -74,11 +74,11 @@ impl <B : Backend> UIWrapper<B> {
         }
     }
 
-    pub(crate) fn draw_start_menu(&mut self) -> Result<InputResult<StartMenuChoice>, ErrorWrapper>  {
+    pub(crate) fn draw_start_menu(&mut self, game_running: bool) -> Result<InputResult<StartMenuChoice>, ErrorWrapper>  {
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
 
-        let menu = menu::build_start_menu(false);
+        let menu = menu::build_start_menu(game_running);
         let mut menu_view = MenuView { ui, terminal_manager, menu };
 
         Ok(menu_view.begin()?)

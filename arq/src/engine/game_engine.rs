@@ -393,7 +393,11 @@ impl <B : Backend + Send> GameEngine<B> {
         let mut input_handler = &mut self.input_handler;
         
         let action = input_handler.handle_input(key).await;
-        self.handle_action(action.unwrap(), Some(key)).await?;
+        let goc = self.handle_action(action.unwrap(), Some(key)).await?;
+        
+        if let Some(goc) = goc {
+            return Ok(Some(goc));
+        }
         
         return Ok(None);
     }
