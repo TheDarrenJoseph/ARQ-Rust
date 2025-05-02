@@ -50,7 +50,7 @@ pub async fn handle_background_music(sink_arc: Arc<RwLock<Sink>>) {
     loop {
         if sink_arc.write().unwrap().empty() {
             let mut paths = fs::read_dir(RESOURCE_MUSIC_BACKGROUND_FOLDER).unwrap();
-            let mut rng = Pcg64::from_entropy();
+            let mut rng = Pcg64::from_os_rng();
             match pick_background_track(&mut paths, &mut rng) {
                 Ok(track) => {
                     let decoder = Decoder::new_mp3(track).unwrap();

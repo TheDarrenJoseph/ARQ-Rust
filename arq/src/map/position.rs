@@ -1,4 +1,4 @@
-use rand::distributions::{Distribution, Standard};
+use rand::distr::{Distribution, StandardUniform};
 use rand::Rng;
 use ratatui::layout::{Rect, Size};
 
@@ -250,7 +250,7 @@ pub enum Side {
     BOTTOM
 }
 
-impl Distribution<Side> for Standard {
+impl Distribution<Side> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Side {
         match rng.gen_range(0..=3) {
             0 => Side::LEFT,

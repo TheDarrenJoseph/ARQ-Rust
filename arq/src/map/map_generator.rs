@@ -5,7 +5,7 @@ use std::sync::mpsc::Sender;
 use std::task::{Context, Poll};
 
 use log::error;
-use rand::distributions::Standard;
+use rand::distr::StandardUniform;
 use rand::Rng;
 use rand_pcg::Pcg64;
 use uuid::Uuid;
@@ -335,7 +335,7 @@ impl <'rng> MapGenerator<'rng> {
         let map_sides = map_area.get_sides();
 
         for _x in 0..door_count {
-            let side : Side =  self.rng.sample(Standard);
+            let side : Side =  self.rng.sample(StandardUniform);
             if !chosen_sides.contains(&side) {
                 chosen_sides.push(side);
 
@@ -581,7 +581,7 @@ mod tests {
     fn test_build_generator() {
         // GIVEN a 12x12 map board
         let map_area = build_square_area(Position { x: 0, y: 0 }, 12);
-        let rng = &mut Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).into_rng();
         let generator = build_generator(rng, map_area);
 
         assert_eq!(3, generator.min_room_size);
@@ -597,7 +597,7 @@ mod tests {
     #[test]
     fn test_generate_room() {
         let map_area = build_square_area(Position { x: 0, y: 0 }, 12);
-        let rng = &mut Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).into_rng();
         let mut generator = build_generator(rng, map_area);
 
         let room = generator.generate_room(Position { x: 0, y: 0 }, 3);
@@ -610,7 +610,7 @@ mod tests {
     fn test_generate_rooms() {
         let map_size = 12;
         let map_area = build_square_area(Position { x: 0, y: 0 }, map_size);
-        let rng = &mut Seeder::from("test".to_string()).make_rng();
+        let rng = &mut Seeder::from("test".to_string()).into_rng();
         let mut generator = build_generator(rng, map_area);
         let rooms = generator.generate_rooms();
         assert_ne!(0, rooms.len());
@@ -683,7 +683,7 @@ mod tests {
         // GIVEN a fixed RNG seed and map size
         let map_size = 12;
         let map_area = build_square_area(Position { x: 0, y: 0 }, map_size);
-        let rng: &mut Pcg64 = &mut Seeder::from("test".to_string()).make_rng();
+        let rng: &mut Pcg64 = &mut Seeder::from("test".to_string()).into_rng();
         // WHEN we call to generate the map
         let map = build_test_map(rng, map_area);
 

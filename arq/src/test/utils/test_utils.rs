@@ -58,7 +58,7 @@ pub fn build_test_levels(map: Map, player: Character) -> Levels {
 pub fn build_test_levels_for_level(level: Level) -> Levels {
     let seed = "test".to_string();
     let seed_copy = seed.clone();
-    let rng = Seeder::from(seed).make_rng();
+    let rng = Seeder::from(seed).into_rng();
     let mut levels = init_level_manager(seed_copy, rng);
     levels.add_level_directly(level);
     levels

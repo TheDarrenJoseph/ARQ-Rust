@@ -67,7 +67,7 @@ impl <B : Backend + Send> GameEngine<B> {
         // Grab the randomised seed
         let map_seed = settings.find_string_setting_value(SETTING_RNG_SEED.to_string()).unwrap();
         let seed_copy = map_seed.clone();
-        let rng = Seeder::from(map_seed).make_rng();
+        let rng = Seeder::from(map_seed).into_rng();
         self.game_running = false;
         self.levels = init_level_manager(seed_copy, rng);
         self.settings = settings;
@@ -79,7 +79,7 @@ impl <B : Backend + Send> GameEngine<B> {
         let _fog_of_war = self.settings.is_fog_of_war();
         let map_seed = self.settings.get_rng_seed().ok_or( Error::new(ErrorKind::NotFound, "Failed to retrieve map seed"))?;
         info!("Map seed updated to: {}", map_seed);
-        let rng = Seeder::from(map_seed).make_rng();
+        let rng = Seeder::from(map_seed).into_rng();
         self.levels.rng = rng;
 
         let bg_music_volume = self.settings.get_bg_music_volume();
@@ -488,7 +488,7 @@ pub fn build_game_engine<'a, B: Backend>(terminal_manager : TerminalManager<B>) 
     let key_bindings = settings.key_bindings.clone();
     let rng_seed = settings.get_rng_seed().ok_or(Error::new(ErrorKind::NotFound, "Failed to retrieve the RNG seed value!"))?;
     let seed_copy = rng_seed.clone();
-    let rng = Seeder::from(rng_seed).make_rng();
+    let rng = Seeder::from(rng_seed).into_rng();
     Ok(GameEngine { levels: init_level_manager(seed_copy, rng), settings, ui_wrapper : UIWrapper { ui, terminal_manager }, sound_sinks: None, game_running: false, input_handler: InputHandler::new(key_bindings) })
 }
 

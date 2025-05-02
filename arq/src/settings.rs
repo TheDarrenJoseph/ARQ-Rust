@@ -1,7 +1,9 @@
-use rand::distributions::Alphanumeric;
+use std::fs;
+use rand::distr::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 use crate::global_flags::GLOBALS;
+use crate::sound::sound::RESOURCE_MUSIC_BACKGROUND_FOLDER;
 use crate::ui::bindings::action_bindings::{build_default_action_keybindings, ActionKeyBindings};
 use crate::ui::bindings::input_bindings::{AllKeyBindings, CommandSpecificKeyBindings};
 use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
@@ -16,6 +18,8 @@ pub const SETTING_BG_MUSIC : &str = "Background music";
 pub const SETTING_RESOLUTION : &str = "Resolution";
 
 pub const SETTING_BG_MUSIC_VOLUME_DEFAULT : u32 = 50;
+
+pub const RESOURCE_SETTINGS_FILE: &str = "resources/settings.json";
 
 pub struct Setting<T> {
     pub name : String,
@@ -103,6 +107,10 @@ pub fn build_default_bindings() -> AllKeyBindings {
 }
 
 pub fn build_settings() -> Settings {
+    let settings_raw = fs::read_to_string(RESOURCE_SETTINGS_FILE).unwrap();
+    let settings_json : serde_json::Value = serde_json::from_str(&settings_raw).unwrap();
+    let bg_music_volume_default : u32 = settings_json.get("BG_MUSIC_VOLUME_DEFAULT").unwrap().as_u64().unwrap() as u32;
+    
     let fog_of_war : Setting<bool> = Setting { name: SETTING_FOG_OF_WAR.to_string(), value: false };
     // Generate a new random seed
     let random_seed: String = thread_rng()
@@ -111,7 +119,7 @@ pub fn build_settings() -> Settings {
         .map(char::from)
         .collect();
     let map_seed : Setting<String> = Setting { name: SETTING_RNG_SEED.to_string(), value: random_seed };
-    let bg_music_volume : Setting<u32> = Setting { name: SETTING_BG_MUSIC.to_string(), value: SETTING_BG_MUSIC_VOLUME_DEFAULT };
+    let bg_music_volume : Setting<u32> = Setting { name: SETTING_BG_MUSIC.to_string(), value: bg_music_volume_default };
 
 
     let resolution_options = get_resolution_dropdown_options();
