@@ -15,8 +15,9 @@ use crate::map::objects::container::Container;
 use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
-use crate::ui::bindings::open_bindings::{map_open_input_to_side, OpenInput};
-use crate::ui::ui::UI;
+use crate::ui::bindings::input_bindings::KeyBindings;
+use crate::ui::bindings::open_bindings::{map_open_input_to_side, OpenInput, OpenKeyBindings};
+use crate::ui::ui::{get_input_key, UI};
 use crate::view::framehandler::container;
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult::{MoveItems, MoveToContainerChoice, TakeItems};
 use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData};
@@ -29,7 +30,8 @@ pub struct OpenCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
-    pub input_resolver: Box<dyn KeyInputResolver>
+    pub input_resolver: Box<dyn KeyInputResolver>,
+    pub key_bindings: OpenKeyBindings
 }
 
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
@@ -109,7 +111,7 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
         let ui = &mut self.ui;
         let level = self.level.clone();
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(Option::from(level), frame);
+            ui.render(Some(level), frame);
         })?;
         Ok(())
     }
@@ -172,6 +174,12 @@ impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
     }
 
     fn handle_input(&mut self, input: Option<&OpenInput>) -> Result<(), ErrorWrapper> {
+        self.ui.set_console_buffer("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location.".to_string());
+        self.re_render().unwrap();
+
+        let key = get_input_key()?;
+        let input  = self.key_bindings.get_input(key);
+       
         let mut message = NOTHING_ERROR.to_string();
         let side = map_open_input_to_side(input);
         if let Some(p) = self.level.find_adjacent_player_position(side) {
@@ -241,6 +249,7 @@ mod tests {
     use crate::map::tile::{Colour, Symbol};
     use crate::terminal::terminal_manager;
     use crate::test::utils::test_utils::{build_test_level, build_test_levels_for_level};
+    use crate::ui::bindings::open_bindings::build_default_open_keybindings;
     use crate::ui::bindings::open_bindings::OpenInput::OpenRight;
     use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, TakeItemsData};
     use crate::view::MIN_RESOLUTION;
@@ -386,7 +395,13 @@ mod tests {
         // AND we have an OpenCommand with all this data
         // And our mocked input will return Escape to quit the view immediately
         let key_results = VecDeque::from(vec![Key::Esc]);
-        let mut command = OpenCommand { level: game_engine.levels.get_level_mut(), ui: &mut game_engine.ui_wrapper.ui, terminal_manager: &mut game_engine.ui_wrapper.terminal_manager, input_resolver: Box::new(MockKeyInputResolver { key_results }) };
+        let mut command = OpenCommand { 
+            level: game_engine.levels.get_level_mut(),
+            ui: &mut game_engine.ui_wrapper.ui, 
+            terminal_manager: &mut game_engine.ui_wrapper.terminal_manager,
+            input_resolver: Box::new(MockKeyInputResolver { key_results }), 
+            key_bindings: build_default_open_keybindings()
+        };
         
         // WHEN we call to handle the opening of a container
         // Player is at 0,0. Container is at 0,1 to the right of the player

@@ -44,24 +44,45 @@ impl <B : Backend> UIWrapper<B> {
         Ok(())
     }
 
+    pub(crate) fn re_render_all(&mut self, level: Level) -> Result<(), io::Error>  {
+        let ui = &mut self.ui;
+        self.terminal_manager.terminal.draw(|frame| {
+            ui.render(Some(level), frame);
+        })?;
+        Ok(())
+    }
+
+    /*
+      Prints a string to the console and re-renders the most basic UI elements
+     */
     pub(crate) fn print_and_re_render(&mut self, message: String) -> Result<(), io::Error> {
         self.ui.set_console_buffer(message);
         self.re_render()
     }
 
-    pub fn get_prompted_input(&mut self, prompt: String) -> Result<Key, io::Error> {
-        self.print_and_re_render(prompt)?;
+    /*
+      Prints a string to the console and re-renders using level info
+     */
+    pub(crate) fn print_and_re_render_all(&mut self, level: Level, message: String) -> Result<(), io::Error> {
+        self.ui.set_console_buffer(message);
+        self.re_render_all(level)
+    }
+
+
+    // TODO fix this path rendering
+    fn get_prompted_input(&mut self, level: Level, prompt: String) -> Result<Key, io::Error> {
+        self.print_and_re_render_all(level, prompt)?;
         get_input_key()
     }
 
-    pub fn yes_or_no(&mut self, prompt: String, confirm_message: Option<String>) -> Result<bool, io::Error> {
+    pub fn yes_or_no(&mut self, level: Level, prompt: String, confirm_message: Option<String>) -> Result<bool, io::Error> {
         let final_prompt = format!("{} (y/n)", prompt);
         loop {
-            match self.get_prompted_input(final_prompt.clone())? {
+            match self.get_prompted_input(level.clone(), final_prompt.clone())? {
                 Key::Char('y') | Key::Char('Y') => {
                     if let Some(message) = confirm_message {
                         let final_message = format!("{} (any key to continue)", message);
-                        self.print_and_re_render(final_message)?;
+                        self.print_and_re_render_all(level, final_message)?;
                         get_input_key()?;
                     }
                     return Ok(true);
@@ -180,9 +201,10 @@ impl <B : Backend> UIWrapper<B> {
         Ok(())
     }
 
-    pub fn check_room_entry_exits(&mut self, room: &Room, pos: Position) -> LevelChange {
+    pub fn check_room_entry_exits(&mut self, level: Level, room: &Room, pos: Position) -> LevelChange {
         if pos.equals_option(room.get_exit()) {
             match self.yes_or_no(
+                level.clone(),
                 String::from("You've reached the exit! There's a staircase downwards; would you like to leave?"),
                 Some(String::from("You move downstairs a level.."))) {
                 Ok(true) => {
@@ -192,6 +214,7 @@ impl <B : Backend> UIWrapper<B> {
             }
         } else if pos.equals_option(room.get_entry()) {
             match self.yes_or_no(
+                level.clone(),
                 String::from("This is the entrance. There's a staircase upwards; wold you like to leave?"),
                 Some(String::from("You move upstairs a level.."))) {
                 Ok(true) => {

@@ -311,7 +311,7 @@ impl <B : Backend + Send> GameEngine<B> {
                     if let Some(room) = m.rooms.iter()
                         .find(|r| r.get_inside_area().contains_position(pos)) {
                         // Future TODO move to a specific controller instead?
-                        level_change = self.ui_wrapper.check_room_entry_exits(room, pos);
+                        level_change = self.ui_wrapper.check_room_entry_exits(level.clone(), room, pos);
                         let must_generate_map = levels.must_build_level(level_change.clone());
                         return PlayerMovementResult { must_generate_map, level_change: Some(level_change) };
                     }
@@ -451,19 +451,22 @@ impl <B : Backend + Send> GameEngine<B> {
                 Ok(None)
             },
             Action::OpenNearby => {
-                let key = ui_wrapper.get_prompted_input(String::from("What do you want to open?. Arrow keys to choose. Repeat usage to choose current location."))?;
+                let key_bindings = self.settings.key_bindings.command_specific_key_bindings.open_key_bindings.clone();
                 let mut command = OpenCommand {
                     level,
                     ui: &mut self.ui_wrapper.ui,
                     terminal_manager: &mut self.ui_wrapper.terminal_manager,
                     input_resolver: Box::new(IoKeyInputResolver {}),
+                    key_bindings: key_bindings.clone()
                 };
                 command.start()?;
-                
-                let key_bindings = &mut self.settings.key_bindings.command_specific_key_bindings.open_key_bindings;
-                let bindings = key_bindings.get_bindings();
-                let input = bindings.get(&key);
-                command.handle_input(input)?;
+
+                // Pass through any additional input
+                if let Some(key) = input {
+                    let bindings = key_bindings.get_bindings();
+                    let input = bindings.get(&key);
+                    command.handle_input(input)?;
+                }
                 
                 Ok(None)
             },
