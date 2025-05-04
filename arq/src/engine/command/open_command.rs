@@ -1,18 +1,20 @@
 use std::collections::HashMap;
 use std::io;
 use std::io::Error;
-
+use std::sync::mpsc::Receiver;
 use termion::event::Key;
 use termion::input::TermRead;
-
+use tokio::task;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
+use crate::engine::message::channels::MessageChannels;
 use crate::error::errors::{error_result, ErrorWrapper};
 use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
+use crate::sound::sound::handle_background_music;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
@@ -24,19 +26,20 @@ use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, Mov
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
 use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
-use crate::view::{InputHandler, InputResult, View};
+use crate::view::{GenericInputResult, InputHandler, InputResult, View};
 
 pub struct OpenCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub input_resolver: Box<dyn KeyInputResolver>,
-    pub key_bindings: OpenKeyBindings
+    pub key_bindings: OpenKeyBindings,
+    pub result_receiver: Option<tokio::sync::mpsc::Receiver<ContainerFrameHandlerInputResult>>,
+    pub result_sender: Option<tokio::sync::mpsc::Sender<ContainerFrameHandlerInputResult>>
 }
 
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
 const NOTHING_ERROR : &str = "There's nothing here to open.";
-
 fn handle_callback<'a>(level : &'a mut Level, position: Position, data : ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> {
     let mut input_result : ContainerFrameHandlerInputResult = data;
     match input_result {
@@ -142,18 +145,40 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
             input_handler = Box::new(MockKeyInputResolver { key_results: mock.key_results.clone() });
         }
         
+        let message_channels = MessageChannels::new();
+        
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
             callback: Box::new(|_data| {None}),
-            input_resolver: input_handler
+            input_resolver: input_handler,
+            result_sender: message_channels.request_channel.sender,
+            result_response_receiver: message_channels.response_channel.receiver
         };
-        world_container_view.set_callback(Box::new(|input_result| {
-            return handle_callback(level, p.clone(), input_result);
-        }));
-        world_container_view.begin()
+        world_container_view.begin();
+        
+        // TODO replace this with channel messaging
+        // world_container_view.set_callback(Box::new(|input_result| {
+        //     return handle_callback(level, p.clone(), input_result);
+        // }));
+
+        // TODO find a way to safely handle messaging
+        let result_receiver = Some(message_channels.request_channel.receiver);
+        let mut result_sender = Some(message_channels.response_channel.sender);
+        // let response = if let Some(result) = result_receiver.unwrap().recv().await {
+        //     handle_callback(level, p.clone(), result)
+        // } else {
+        //     None
+        // };
+        // 
+        // if let Some(rs) = response {
+        //     result_sender.as_mut().unwrap().send(rs).await.expect("Failed to send response");
+        // }
+
+        
+        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
     }
 }
 
@@ -242,6 +267,7 @@ mod tests {
     use crate::engine::command::command::Command;
     use crate::engine::command::open_command::{handle_callback, OpenCommand};
     use crate::engine::game_engine::build_test_game_engine;
+    use crate::engine::message::channels::MessageChannels;
     use crate::input::MockKeyInputResolver;
     use crate::map::objects::container::{Container, ContainerType};
     use crate::map::objects::items::Item;
@@ -395,12 +421,15 @@ mod tests {
         // AND we have an OpenCommand with all this data
         // And our mocked input will return Escape to quit the view immediately
         let key_results = VecDeque::from(vec![Key::Esc]);
+        let message_channels = MessageChannels::<ContainerFrameHandlerInputResult, ContainerFrameHandlerInputResult>::new();
         let mut command = OpenCommand { 
             level: game_engine.levels.get_level_mut(),
             ui: &mut game_engine.ui_wrapper.ui, 
             terminal_manager: &mut game_engine.ui_wrapper.terminal_manager,
             input_resolver: Box::new(MockKeyInputResolver { key_results }), 
-            key_bindings: build_default_open_keybindings()
+            key_bindings: build_default_open_keybindings(),
+            result_receiver: Some(message_channels.request_channel.receiver),
+            result_sender: Some(message_channels.response_channel.sender)
         };
         
         // WHEN we call to handle the opening of a container

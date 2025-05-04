@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
-
+use std::sync::mpsc;
 use log::info;
 use rand_seeder::Seeder;
 use termion::event::Key;
@@ -19,6 +19,7 @@ use crate::engine::engine_helpers::input_handler::InputHandler;
 use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
+use crate::engine::message::channels::MessageChannels;
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::errors::ErrorWrapper;
 use crate::input::IoKeyInputResolver;
@@ -454,12 +455,15 @@ impl <B : Backend + Send> GameEngine<B> {
             },
             Action::OpenNearby => {
                 let key_bindings = self.settings.key_bindings.command_specific_key_bindings.open_key_bindings.clone();
+                
                 let mut command = OpenCommand {
                     level,
                     ui: &mut self.ui_wrapper.ui,
                     terminal_manager: &mut self.ui_wrapper.terminal_manager,
                     input_resolver: Box::new(IoKeyInputResolver {}),
-                    key_bindings: key_bindings.clone()
+                    key_bindings: key_bindings.clone(),
+                    result_sender: None,
+                    result_receiver: None
                 };
                 command.start()?;
 

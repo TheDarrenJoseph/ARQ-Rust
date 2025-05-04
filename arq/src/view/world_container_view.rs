@@ -14,7 +14,7 @@ use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrame
 use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
-use crate::view::InputHandler;
+use crate::view::{InputHandler};
 use crate::view::{GenericInputResult, InputResult, View};
 use crate::view::util::try_build_container_choice_frame_handler;
 /*
@@ -26,7 +26,11 @@ pub struct WorldContainerView<'a, B : ratatui::backend::Backend> {
     pub frame_handlers: WorldContainerViewFrameHandlers,
     pub container : Container,
     pub callback : Box<dyn FnMut(ContainerFrameHandlerInputResult) -> Option<ContainerFrameHandlerInputResult> + 'a>,
-    pub input_resolver: Box<dyn KeyInputResolver>
+    pub input_resolver: Box<dyn KeyInputResolver>,
+    // The sender and receiver are used for communicating with the command in control
+    // Moving, dropping, opening containers etc
+    pub result_sender: tokio::sync::mpsc::Sender<ContainerFrameHandlerInputResult>,
+    pub result_response_receiver: tokio::sync::mpsc::Receiver<ContainerFrameHandlerInputResult>
 }
 
 pub struct WorldContainerViewFrameData {
@@ -75,10 +79,16 @@ impl <B : ratatui::backend::Backend> WorldContainerView<'_, B> {
         }
         Ok((None, false))
     }
+
+    async fn send_message(&mut self, data: ContainerFrameHandlerInputResult) {
+        self.result_sender.send(data).await.expect("Failed to send ContainerFrameHandlerInputResult");
+        let response = self.result_response_receiver.recv().await.expect("Failed to receive response ContainerFrameHandlerInputResult");
+        self.handle_callback_result(Some(response));
+    }
 }
 
 impl <B: ratatui::backend::Backend> View<bool> for WorldContainerView<'_, B>  {
-    fn begin(&mut self)  -> Result<InputResult<bool>, ErrorWrapper> {
+    fn begin(&mut self) -> Result<InputResult<bool>, ErrorWrapper> {
         self.terminal_manager.terminal.clear()?;
         self.draw(None)?;
         
@@ -122,7 +132,10 @@ impl <COM: ratatui::backend::Backend> InputHandler<bool> for WorldContainerView<
                     let selected_container_items = parent_view.get_selected_items();
                     let data = TakeItemsData { source: self.container.clone(), to_take: selected_container_items, position: None };
                     let result = ContainerFrameHandlerInputResult::TakeItems(data);
-                    self.trigger_callback(result);
+
+                    let _ = self.send_message(result);
+                    
+                    //self.trigger_callback(result);
                 }
             },
             Key::Esc => {
@@ -196,8 +209,9 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
     }
 
     fn trigger_callback(&mut self, data: ContainerFrameHandlerInputResult) {
-        let result = (self.callback)(data);
-        self.handle_callback_result(result);
+        
+        //let result = (self.callback)(data);
+        //self.handle_callback_result(result);
     }
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {
@@ -325,13 +339,16 @@ mod tests {
         // AND we've created a WorldContainerView to view a dev testing Chest container
         let frame_handlers = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         
+        let result_channel =  tokio::sync::mpsc::channel(2);
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
             frame_handlers,
             container: view_container,
             callback: Box::new(|_data| {None}),
-            input_resolver: Box::new(IoKeyInputResolver {})
+            input_resolver: Box::new(IoKeyInputResolver {}),
+            result_sender: result_channel.0,
+            result_response_receiver: result_channel.1
         };
         return world_container_view
     }
