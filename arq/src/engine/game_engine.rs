@@ -390,15 +390,17 @@ impl <B : Backend + Send> GameEngine<B> {
 
     pub(crate) async fn player_turn(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let key = get_input_key()?;
-        let mut input_handler = &mut self.input_handler;
+        let input_handler = &mut self.input_handler;
         
         let action = input_handler.handle_input(key).await;
-        let goc = self.handle_action(action.unwrap(), Some(key)).await?;
         
-        if let Some(goc) = goc {
-            return Ok(Some(goc));
+        if let Some(a) = action {
+            let goc = self.handle_action(a, Some(key)).await?;
+            if let Some(goc) = goc {
+                return Ok(Some(goc));
+            }
         }
-        
+       
         return Ok(None);
     }
     
