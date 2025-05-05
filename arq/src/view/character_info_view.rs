@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::io::Error;
 
 use termion::event::Key;
@@ -20,7 +19,7 @@ use crate::view::framehandler::character_equipment::CharacterEquipmentFrameHandl
 use crate::view::framehandler::character_info::CharacterInfoFrameHandler;
 use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, ViewMode};
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
-use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
+use crate::view::framehandler::container_choice::ContainerChoiceFrameHandlerInputResult;
 use crate::view::framehandler::{container, FrameData, FrameHandler};
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
@@ -75,7 +74,7 @@ pub struct CharacterInfoView<'a, B : ratatui::backend::Backend> {
 
 impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
     fn initialise(&mut self) {
-        let mut commands: Vec<UsageCommand> = vec![
+        let commands: Vec<UsageCommand> = vec![
             UsageCommand::new('o', String::from("open")),
             UsageCommand::new('d', String::from("drop")),
             UsageCommand::new('m', String::from("move")),
@@ -243,7 +242,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
             match r {
                 ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
                     let result = try_build_container_choice_frame_handler(data);
-                    if (result.is_ok()) {
+                    if result.is_ok() {
                         self.frame_handler.choice_frame_handler = result.ok()
                     } else {
                         let error = result.err().unwrap();

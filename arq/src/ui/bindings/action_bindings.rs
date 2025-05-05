@@ -4,7 +4,6 @@ use termion::event::Key;
 use crate::map::position::Side;
 use crate::map::position::Side::{BOTTOM, LEFT, RIGHT, TOP};
 use crate::ui::bindings::action_bindings::Action::{DevBeginCombat, Escape, LookAround, MovePlayer, OpenNearby, ShowInventory};
-use crate::ui::bindings::look_bindings::{LookInput, LookKeyBindings};
 /*
   An Action that the Player can take
  */

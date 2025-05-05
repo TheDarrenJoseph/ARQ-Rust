@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
-use std::sync::mpsc;
 use log::info;
 use rand_seeder::Seeder;
 use termion::event::Key;
@@ -13,14 +11,12 @@ use crate::engine::combat::Combat;
 use crate::engine::command::command::Command;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
-use crate::engine::command::open_command::OpenCommand;
 use crate::engine::command::open_command_new::OpenCommandNew;
 use crate::engine::engine_helpers::game_loop::game_loop;
 use crate::engine::engine_helpers::input_handler::InputHandler;
 use crate::engine::engine_helpers::menu::menu_command;
 use crate::engine::engine_helpers::spawning::{respawn_npcs, respawn_player};
 use crate::engine::level::{init_level_manager, LevelChange, LevelChangeResult, Levels};
-use crate::engine::message::channels::MessageChannels;
 use crate::engine::process::map_generation::MapGeneration;
 use crate::error::errors::ErrorWrapper;
 use crate::input::IoKeyInputResolver;
@@ -30,7 +26,7 @@ use crate::settings::{build_settings, Settings, SETTING_BG_MUSIC, SETTING_RESOLU
 use crate::sound::sound::{build_sound_sinks, SoundSinks};
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
-use crate::ui::bindings::input_bindings::{CommandSpecificKeyBindings, KeyBindings};
+use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui::{build_ui, get_input_key};
 use crate::ui::ui_wrapper::UIWrapper;
@@ -226,7 +222,7 @@ impl <B : Backend + Send> GameEngine<B> {
                 player.get_inventory_mut().get_loot_value());
             self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::StatLine(stat_line));
 
-            let mut commands : Vec<UsageCommand> = vec![
+            let commands : Vec<UsageCommand> = vec![
                 UsageCommand::new('i', String::from("Inventory/Info") )
             ];
             let map_usage_line = UsageLine::new(commands);

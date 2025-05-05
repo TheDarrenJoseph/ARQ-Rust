@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::convert::TryInto;
 use std::io::Error;
 
@@ -516,7 +515,7 @@ mod tests {
 
     use ratatui::layout::Rect;
     use ratatui::style::{Modifier, Style};
-    use uuid::Uuid;
+    
 
     use crate::item_list_selection::ListSelection;
     use crate::map::position::Area;

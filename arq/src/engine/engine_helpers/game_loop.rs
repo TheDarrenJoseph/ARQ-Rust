@@ -1,6 +1,5 @@
 use crate::engine::game_engine::GameEngine;
 use crate::error::errors::{ErrorType, ErrorWrapper};
-use crate::ui::ui::get_input_key;
 use crate::view::game_over_view::GameOverChoice;
 
 pub async fn game_loop<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {

@@ -3,12 +3,11 @@ use rand::distr::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 use crate::global_flags::GLOBALS;
-use crate::sound::sound::RESOURCE_MUSIC_BACKGROUND_FOLDER;
-use crate::ui::bindings::action_bindings::{build_default_action_keybindings, ActionKeyBindings};
+use crate::ui::bindings::action_bindings::build_default_action_keybindings;
 use crate::ui::bindings::input_bindings::{AllKeyBindings, CommandSpecificKeyBindings};
 use crate::ui::bindings::inventory_bindings::InventoryKeyBindings;
-use crate::ui::bindings::look_bindings::{build_default_look_keybindings, LookKeyBindings};
-use crate::ui::bindings::open_bindings::{build_default_open_keybindings, OpenKeyBindings};
+use crate::ui::bindings::look_bindings::build_default_look_keybindings;
+use crate::ui::bindings::open_bindings::build_default_open_keybindings;
 use crate::ui::resolution::Resolution;
 use crate::widget::stateful::dropdown_widget::{get_resolution_dropdown_options, DropdownOption, DropdownSetting};
 

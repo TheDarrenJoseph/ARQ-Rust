@@ -1,9 +1,6 @@
 use std::time::Duration;
-use futures::{FutureExt, TryFutureExt};
-use log::{debug, info};
-use termion::AsyncReader;
+use log::info;
 use termion::input::TermRead;
-use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use crate::engine::command::open_command_new::OpenContainerEvent;

@@ -14,8 +14,7 @@ use crate::ui::ui::UI;
 use crate::view::util::cell_builder::CellBuilder;
 use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
 use crate::widget::stateful::map_widget::MapWidget;
-use crate::widget::{StatefulWidgetState, StatefulWidgetType};
-use crate::widget::widgets::WidgetList;
+use crate::widget::StatefulWidgetType;
 /*
     This view draws the following to the screen:
     1. Individual tiles of the map

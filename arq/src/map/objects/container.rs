@@ -45,13 +45,13 @@ impl Container {
     }
     
     pub fn is_moveable_container(&self) -> bool {
-        let container_type_valid = (self.container_type == ContainerType::OBJECT);
+        let container_type_valid = self.container_type == ContainerType::OBJECT;
         let item_type_valid = self.item.item_type == ItemType::CONTAINER;
         return container_type_valid && item_type_valid;
     }
 
     pub fn is_fixed_container(&self) -> bool {
-        let container_type_valid = (self.container_type == ContainerType::AREA);
+        let container_type_valid = self.container_type == ContainerType::AREA;
         let item_type_valid = self.item.item_type == ItemType::CONTAINER;
         return container_type_valid && item_type_valid;
     }

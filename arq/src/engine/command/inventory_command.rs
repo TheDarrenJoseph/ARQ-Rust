@@ -1,8 +1,6 @@
 use log::error;
-use std::io;
 use std::io::Error;
 
-use termion::event::Key;
 
 use crate::character::equipment::get_potential_slots;
 use crate::engine::command::command::Command;

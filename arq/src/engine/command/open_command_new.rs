@@ -1,11 +1,4 @@
-use std::io;
-use log::info;
-use termion::event::Key;
-use tokio::sync::mpsc;
-use crate::engine::command::command::Command;
-use crate::engine::command::open_command::OpenCommand;
 use crate::engine::level::Level;
-use crate::engine::message::channels::MessageChannels;
 use crate::error::errors::ErrorWrapper;
 use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::item_list_selection::{ItemListSelection, ListSelection};
@@ -14,17 +7,16 @@ use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::bindings::open_bindings::{map_open_input_to_side, OpenInput, OpenKeyBindings};
-use crate::ui::event::{Event, EventHandler, EventTask};
-use crate::ui::ui::{get_input_key, UI};
+use crate::ui::event::{Event, EventHandler};
+use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
-use crate::ui::ui_layout::LayoutType::StandardSplit;
-use crate::view::framehandler::container;
 use crate::view::framehandler::util::tabling::Column;
-use crate::view::InputResult;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
-use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
 use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData};
 use crate::widget::{Named, StatefulWidgetType};
+use log::info;
+use std::io;
+use termion::event::Key;
 
 pub struct OpenCommandNew<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
@@ -102,12 +94,12 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
             let input_maybe = input_result.unwrap();
             let side = map_open_input_to_side(input_maybe);
             if side.is_some() {
-                let mut message = NOTHING_ERROR.to_string();
+                let message = NOTHING_ERROR.to_string();
                 if let Some(p) = self.level.find_adjacent_player_position(side) {
                     log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
                     self.re_render()?;
     
-                    let mut to_open : Option<Container> = self.find_container(p);
+                    let to_open : Option<Container> = self.find_container(p);
                     if let Some(c) = to_open {
                         self.ui.clear_console_buffer();
                         self.re_render()?;
@@ -144,7 +136,7 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         stateful_widgets.push(StatefulWidgetType::Container(container_widget));
 
         let items = container.to_cloned_item_list();
-        let mut item_list_selection =  ItemListSelection::new(items.clone(), 4);
+        let item_list_selection =  ItemListSelection::new(items.clone(), 4);
         let commands : Vec<UsageCommand> = vec![
             UsageCommand::new('o', String::from("open") ),
             UsageCommand::new('t', String::from("take"))
@@ -194,7 +186,7 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
                                             widget_data.item_list_selection.toggle_select();
                                         },
                                         Key::Esc => {
-                                            if (widget_data.item_list_selection.is_selecting()) {
+                                            if widget_data.item_list_selection.is_selecting() {
                                                 widget_data.item_list_selection.cancel_selection();
                                             } else {
                                                 info!("Stopping Open Command Event Loop");

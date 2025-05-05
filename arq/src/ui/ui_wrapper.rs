@@ -1,5 +1,4 @@
 use std::io;
-use std::io::Error;
 use std::time::Instant;
 
 use log::debug;
@@ -24,7 +23,6 @@ use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::map_view::MapView;
 use crate::view::menu_view::MenuView;
 use crate::view::{verify_display_size, GenericInputResult, InputHandler, InputResult, View};
-use crate::widget::stateful::map_widget::MapWidget;
 use crate::widget::widgets::WidgetList;
 
 pub struct UIWrapper<B: 'static + ratatui::backend::Backend> {

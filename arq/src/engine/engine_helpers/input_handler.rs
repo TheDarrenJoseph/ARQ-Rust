@@ -1,16 +1,7 @@
 use termion::event::Key;
 
-use crate::engine::command::command::Command;
-use crate::engine::command::inventory_command::InventoryCommand;
-use crate::engine::command::look_command::LookCommand;
-use crate::engine::command::open_command::OpenCommand;
-use crate::engine::engine_helpers::menu::menu_command;
-use crate::engine::game_engine::GameEngine;
-use crate::error::errors::ErrorWrapper;
-use crate::input::IoKeyInputResolver;
 use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::{AllKeyBindings, KeyBindings};
-use crate::view::game_over_view::GameOverChoice;
 
 pub struct InputHandler {
   current_action: Option<Action>,
@@ -42,7 +33,7 @@ mod tests {
     use termion::event::Key;
 
     use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-    use crate::engine::engine_helpers::input_handler::InputHandler;
+    
     use crate::engine::game_engine::*;
     use crate::engine::level::Levels;
     use crate::map::position::Position;

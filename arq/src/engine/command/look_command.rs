@@ -1,11 +1,9 @@
 use std::io;
-use std::io::{Error, ErrorKind};
 
-use termion::event::Key;
 
 use crate::engine::command::command::Command;
 use crate::engine::level::Level;
-use crate::error::errors::{error_result, ErrorWrapper};
+use crate::error::errors::ErrorWrapper;
 use crate::map::objects::container::Container;
 use crate::map::objects::container::ContainerType::AREA;
 use crate::map::position::Position;
@@ -16,7 +14,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput, LookKeyBindings};
-use crate::ui::ui::{get_input_key, Draw, UI};
+use crate::ui::ui::{get_input_key, UI};
 
 pub struct LookCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,

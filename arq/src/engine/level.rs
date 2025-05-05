@@ -8,7 +8,6 @@ use crate::character::Character;
 use crate::map::map_generator::{build_generator, MapGenerator};
 use crate::map::position::{build_rectangular_area, Position, Side};
 use crate::map::Map;
-use crate::ui::bindings::look_bindings::{map_look_input_to_side, LookInput};
 
 const MAP_SIZE_X: u16 = 80;
 const MAP_SIZE_Y: u16 = 30;

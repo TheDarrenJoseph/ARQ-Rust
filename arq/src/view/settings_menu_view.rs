@@ -1,4 +1,3 @@
-use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;

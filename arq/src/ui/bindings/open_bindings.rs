@@ -2,7 +2,6 @@ use crate::ui::bindings::input_bindings::KeyBindings;
 use std::collections::HashMap;
 use termion::event::Key;
 use crate::map::position::Side;
-use crate::ui::bindings::look_bindings::{LookInput, LookKeyBindings};
 use crate::ui::bindings::open_bindings::OpenInput::{OpenDown, OpenLeft, OpenRight, OpenUp};
 
 #[derive(Debug, Clone)]

@@ -13,7 +13,7 @@ pub fn try_build_container_choice_frame_handler(data : &MoveToContainerChoiceDat
         return ErrorWrapper::internal_result(String::from("Must select items before attempting to move them to a nearby container."));
     }
 
-    if (data.choices.is_empty()) {
+    if data.choices.is_empty() {
         return ErrorWrapper::internal_result(String::from("No nearby containers found."));
     }
 

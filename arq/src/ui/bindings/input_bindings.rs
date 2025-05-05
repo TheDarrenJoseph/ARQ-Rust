@@ -4,7 +4,7 @@ use crate::ui::bindings::look_bindings::LookKeyBindings;
 use crate::ui::bindings::open_bindings::OpenKeyBindings;
 use std::collections::HashMap;
 use termion::event::Key;
-use crate::ui::bindings::action_bindings::{Action, ActionKeyBindings};
+use crate::ui::bindings::action_bindings::ActionKeyBindings;
 
 pub(crate) fn key_to_side(key : Key) -> Option<Side> {
     return match key {

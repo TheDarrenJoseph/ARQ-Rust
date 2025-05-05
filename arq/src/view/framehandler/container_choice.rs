@@ -1,5 +1,4 @@
 use std::convert::TryInto;
-use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use termion::event::Key;
@@ -14,7 +13,6 @@ use crate::view::framehandler::util::paging::build_page_count;
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::{GenericInputResult, InputHandler, InputResult};
-use crate::view::framehandler::container::MoveToContainerChoiceData;
 
 /**
 * This FrameHandler is responsible for displaying a list of possible containers to move another Item/Container into
@@ -29,7 +27,7 @@ pub struct ContainerChoiceFrameHandler {
 impl ContainerChoiceFrameHandler {
     
     pub fn build(choices : &Vec<Container>) -> Result<ContainerChoiceFrameHandler, ErrorWrapper> {
-        if (choices.is_empty()) {
+        if choices.is_empty() {
            return  ErrorWrapper::internal_result(String::from("No choices provided"));
         }
         
@@ -195,7 +193,7 @@ mod tests {
     use crate::ui::ui_areas::UIAreas;
     use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler};
     use crate::view::framehandler::{FrameData, FrameHandler};
-    use crate::view::framehandler::container::MoveToContainerChoiceData;
+    
     use crate::view::MIN_RESOLUTION;
     
     
@@ -211,7 +209,7 @@ mod tests {
         choices.push(container2);
         choices.push(container3);
         
-        let mut frame_handler_result: Result<ContainerChoiceFrameHandler, ErrorWrapper> = ContainerChoiceFrameHandler::build(&choices);
+        let frame_handler_result: Result<ContainerChoiceFrameHandler, ErrorWrapper> = ContainerChoiceFrameHandler::build(&choices);
         assert!(frame_handler_result.is_ok());
         let mut frame_handler = frame_handler_result.unwrap();
         

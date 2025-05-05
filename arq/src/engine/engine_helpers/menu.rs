@@ -98,13 +98,13 @@ fn handle_settings_menu_selection(settings: &mut Settings, widgets: WidgetList) 
 
     for widget in widgets.widgets {
         match widget.state_type {
-            StatefulWidgetType::Boolean(mut b) => {
+            StatefulWidgetType::Boolean(b) => {
                 let setting = settings.bool_settings.iter_mut().find(|x| x.name == b.get_name());
                 if let Some(s) = setting {
                     s.value = b.value;
                 }
             },
-            StatefulWidgetType::Text(mut t) => {
+            StatefulWidgetType::Text(t) => {
                 let setting = settings.string_settings.iter_mut().find(|x| x.name == t.get_name());
                 if let Some(s) = setting {
                     s.value = t.get_input();
@@ -116,7 +116,7 @@ fn handle_settings_menu_selection(settings: &mut Settings, widgets: WidgetList) 
                     s.value = t.get_input() as u32;
                 }
             },
-            StatefulWidgetType::Dropdown(mut t) => {
+            StatefulWidgetType::Dropdown(t) => {
                 // Update the setting value from the widget
                 let setting = settings.dropdown_settings.iter_mut().find(|x| x.name == t.get_name());
                 if let Some(s) = setting {

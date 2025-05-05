@@ -1,21 +1,14 @@
-use std::collections::HashMap;
-use std::{io, thread};
-use std::io::Error;
+use std::io;
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::Receiver;
-use termion::event::Key;
-use termion::input::TermRead;
 use tokio::sync::mpsc::Sender;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
-use crate::engine::engine_helpers::input_handler;
 use crate::engine::level::Level;
 use crate::engine::message::channels::MessageChannels;
-use crate::error::errors::{error_result, ErrorWrapper};
+use crate::error::errors::ErrorWrapper;
 use crate::input::{IoKeyInputResolver, KeyInputResolver, MockKeyInputResolver};
 use crate::map::objects::container::Container;
 use crate::map::position::Position;
-use crate::sound::sound::handle_background_music;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::action_bindings::Action;
 use crate::ui::bindings::input_bindings::KeyBindings;
@@ -27,7 +20,7 @@ use crate::view::framehandler::container::{ContainerFrameHandlerInputResult, Mov
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
 use crate::view::util::callback::Callback;
 use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
-use crate::view::{GenericInputResult, InputHandler, InputResult, View};
+use crate::view::{InputResult, View};
 
 pub struct OpenCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
@@ -262,7 +255,7 @@ impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
 mod tests {
     use std::collections::VecDeque;
     use termion::event::Key;
-    use ratatui::backend::TestBackend;
+    
 
     use uuid::Uuid;
 
@@ -330,7 +323,7 @@ mod tests {
         assert_eq!(4, initial_top_level_item_count);
         assert_eq!(62, initial_top_level_inventory_item_count);
         
-        let mut selected_container_items = choose_n_items(&container, 2);
+        let selected_container_items = choose_n_items(&container, 2);
         let chosen_item_1 = selected_container_items.get(0).unwrap().clone();
         let chosen_item_2 = selected_container_items.get(1).unwrap().clone();
         
@@ -375,7 +368,7 @@ mod tests {
         // AND we've selected 3 items to take (with only space for 2 of them)
         let container = build_test_container();
         let _callback_container = container.clone();
-        let mut selected_container_items   = choose_n_items(&container, 3);
+        let selected_container_items   = choose_n_items(&container, 3);
 
         let mut level = build_test_level(Some((container_pos, container.clone())), Some(player));
 
@@ -416,7 +409,7 @@ mod tests {
 
         let levels = build_test_levels_for_level(level);
 
-        let mut terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+        let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
         let mut game_engine = build_test_game_engine(levels, terminal_manager).unwrap();
 
         // AND we've initialised the UI areas

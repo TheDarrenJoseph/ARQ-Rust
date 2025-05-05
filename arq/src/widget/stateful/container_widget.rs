@@ -5,10 +5,8 @@ use ratatui::prelude::{Color, Modifier, StatefulWidget, Style};
 use ratatui::widgets::{Block, Borders, Widget};
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
-use crate::map::position::Area;
 use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_util::build_paragraph;
-use crate::view::framehandler::FrameData;
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::model::usage_line::UsageLine;
@@ -29,7 +27,7 @@ pub struct ContainerWidgetData {
 impl StatefulWidget for ContainerWidget {
     type State = ContainerWidgetData;
 
-    fn render(mut self, _: Rect, buf: &mut Buffer, mut data: &mut ContainerWidgetData) {
+    fn render(mut self, _: Rect, buf: &mut Buffer, data: &mut ContainerWidgetData) {
         let main_area = data.ui_areas.get_area(UI_AREA_NAME_MAIN).unwrap();
         let frame_size = main_area.area.to_rect();
         

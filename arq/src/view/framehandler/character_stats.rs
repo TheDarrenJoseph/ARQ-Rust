@@ -1,4 +1,3 @@
-use std::io::Error;
 
 use log::error;
 use termion::event::Key;
@@ -7,7 +6,7 @@ use ratatui::widgets::{Block, Borders};
 
 use crate::character::stats::attributes::get_all_attributes;
 use crate::character::{determine_class, Character, Class};
-use crate::error::errors::{error_result, ErrorWrapper};
+use crate::error::errors::ErrorWrapper;
 use crate::map::position::Area;
 use crate::ui::resolution::Resolution;
 use crate::ui::ui_util::center_area;

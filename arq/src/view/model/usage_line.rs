@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 
-use termion::event::Key;
 
 use crate::map::position::Position;
 

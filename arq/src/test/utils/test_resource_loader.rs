@@ -1,19 +1,8 @@
-use rand_seeder::Seeder;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
 use ratatui::buffer::Buffer;
-use uuid::Uuid;
-use crate::character::builder::character_builder::{CharacterBuilder, CharacterPattern};
-use crate::character::characters::Characters;
-use crate::character::Character;
-use crate::engine::level::{init_level_manager, Level, Levels};
-use crate::map::objects::container::{Container, ContainerType};
-use crate::map::position::{build_square_area, Area, Position};
-use crate::map::tile::{Colour, TileType};
-use crate::map::{Map, Tiles};
-use crate::map::objects::items::Item;
+use crate::map::position::Area;
 
 pub fn read_expected_buffer_file(path: String, buffer_area: Area) -> Buffer {
     let mut input_string = String::new();

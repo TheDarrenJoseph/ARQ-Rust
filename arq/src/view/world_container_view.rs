@@ -1,4 +1,3 @@
-use futures::future::err;
 use crate::error::errors::ErrorWrapper;
 use crate::input::KeyInputResolver;
 use termion::event::Key;
@@ -10,7 +9,7 @@ use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::ui::UI;
 use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_layout::LayoutType;
-use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveToContainerChoiceData, TakeItemsData};
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, TakeItemsData};
 use crate::view::framehandler::container_choice::{ContainerChoiceFrameHandler, ContainerChoiceFrameHandlerInputResult};
 use crate::view::framehandler::{FrameData, FrameHandler};
 use crate::view::util::callback::Callback;
@@ -218,7 +217,7 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
             match r {
                 ContainerFrameHandlerInputResult::MoveToContainerChoice(ref data) => {
                     let result = try_build_container_choice_frame_handler(data);
-                    if (result.is_ok()) {
+                    if result.is_ok() {
                         self.frame_handlers.choice_frame_handler = result.ok()
                     } else {
                         let error = result.err().unwrap();
@@ -292,15 +291,15 @@ impl FrameHandler<WorldContainerViewFrameData> for WorldContainerViewFrameHandle
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, VecDeque};
+    use std::collections::VecDeque;
 
     use crate::input::{IoKeyInputResolver, MockKeyInputResolver};
     use termion::event::Key;
-    use ratatui::backend::TestBackend;
+    
     use ratatui::layout::Rect;
-    use ratatui::prelude::{Modifier, Span, Style};
+    use ratatui::prelude::{Modifier, Style};
     use ratatui::style::Color::{Black, Green, Reset};
-    use crate::global_flags::ENTER_KEY;
+    
     use crate::map::map_generator::build_dev_chest;
     use crate::map::position::Area;
     use crate::terminal;
@@ -323,12 +322,12 @@ mod tests {
         ui
     }
     
-    fn build_view<'a, B: ratatui::backend::Backend>(mut ui: &'a mut UI, mut terminal_manager: &'a mut TerminalManager<B>) -> WorldContainerView<'a, B> {
+    fn build_view<'a, B: ratatui::backend::Backend>(ui: &'a mut UI, terminal_manager: &'a mut TerminalManager<B>) -> WorldContainerView<'a, B> {
         let container = build_dev_chest();
         let subview_container = container.clone();
         let view_container = container.clone();
         
-        let mut commands : Vec<UsageCommand> = vec![
+        let commands : Vec<UsageCommand> = vec![
             UsageCommand::new('o', String::from("open") ),
             UsageCommand::new('t', String::from("take"))
         ];
@@ -339,7 +338,7 @@ mod tests {
         let frame_handlers = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
         
         let result_channel =  tokio::sync::mpsc::channel(2);
-        let mut world_container_view = WorldContainerView {
+        let world_container_view = WorldContainerView {
             ui,
             terminal_manager,
             frame_handlers,

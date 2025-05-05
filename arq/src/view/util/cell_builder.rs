@@ -1,4 +1,3 @@
-use log4rs::encode::Style;
 use ratatui::buffer::Cell;
 use ratatui::style::Color;
 

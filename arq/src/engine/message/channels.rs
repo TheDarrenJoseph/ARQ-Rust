@@ -1,7 +1,4 @@
 use tokio::sync::mpsc::{Receiver, Sender};
-use crate::engine::level::Level;
-use crate::option_list_selection::OptionListSelection;
-use crate::view::framehandler::combat::CombatFrameHandler;
 /*
     A channel that allows sending and receiving messages
  */

@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 use std::io;
-use std::io::Error;
 
 use crate::error::errors::ErrorWrapper;
 use log::info;
