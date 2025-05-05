@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::io;
+use std::{io, thread};
 use std::io::Error;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Receiver;
 use termion::event::Key;
 use termion::input::TermRead;
-use tokio::task;
+use tokio::sync::mpsc::Sender;
 use crate::engine::command::command::Command;
 use crate::engine::container_util;
 use crate::engine::engine_helpers::input_handler;
@@ -33,9 +34,7 @@ pub struct OpenCommand<'a, B: 'static + ratatui::backend::Backend> {
     pub ui: &'a mut UI,
     pub terminal_manager : &'a mut TerminalManager<B>,
     pub input_resolver: Box<dyn KeyInputResolver>,
-    pub key_bindings: OpenKeyBindings,
-    pub result_receiver: Option<tokio::sync::mpsc::Receiver<ContainerFrameHandlerInputResult>>,
-    pub result_sender: Option<tokio::sync::mpsc::Sender<ContainerFrameHandlerInputResult>>
+    pub key_bindings: OpenKeyBindings
 }
 
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
@@ -108,6 +107,25 @@ fn build_container_choices<'a>(data: &'a MoveToContainerChoiceData, level: &'a m
     }
 }
 
+async fn handle_messages(
+    result_receiver: Option<tokio::sync::mpsc::Receiver<ContainerFrameHandlerInputResult>>,
+    mut result_sender: Option<Sender<ContainerFrameHandlerInputResult>>,
+    level: Arc<Mutex<&mut Level>>,
+    position: Position
+) {
+    let response = if let Some(mut rx) = result_receiver {
+        let result= rx.recv().await.unwrap();
+        handle_callback(*level.lock().unwrap(), position, result)
+    } else {
+        None
+    };
+
+    if let Some(rs) = response {
+        result_sender.as_mut().unwrap().send(rs).await.expect("Failed to send response");
+    }
+
+}
+
 impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
 
     fn re_render(&mut self) -> Result<(), io::Error>  {
@@ -126,7 +144,7 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
         let subview_container = c.clone();
         let view_container = c.clone();
 
-        let mut commands : Vec<UsageCommand> = vec![
+        let commands : Vec<UsageCommand> = vec![
             UsageCommand::new('o', String::from("open") ),
             UsageCommand::new('t', String::from("take"))
         ];
@@ -136,49 +154,35 @@ impl <B: ratatui::backend::Backend> OpenCommand<'_, B> {
         let ui = &mut self.ui;
         let terminal_manager = &mut self.terminal_manager;
         let frame_handler = WorldContainerViewFrameHandlers { container_frame_handlers: vec![container_view], choice_frame_handler: None };
-        let level = &mut self.level;
-        
         let mock_input_resolver = &mut self.input_resolver.as_any_mut().downcast_mut::<MockKeyInputResolver>();
         
         let mut input_handler : Box<dyn KeyInputResolver> = Box::new(IoKeyInputResolver{});
         if let Some(mock) = mock_input_resolver {
             input_handler = Box::new(MockKeyInputResolver { key_results: mock.key_results.clone() });
         }
-        
+        let level = &mut self.level;
+
         let message_channels = MessageChannels::new();
+        
+        // let result_receiver = Some(message_channels.request_channel.receiver);
+        // let mut result_sender = Some(message_channels.response_channel.sender);
         
         let mut world_container_view = WorldContainerView {
             ui,
             terminal_manager,
             frame_handlers: frame_handler,
             container: view_container,
-            callback: Box::new(|_data| {None}),
+            callback: Box::new(|_data| { None }),
             input_resolver: input_handler,
             result_sender: message_channels.request_channel.sender,
             result_response_receiver: message_channels.response_channel.receiver
         };
-        world_container_view.begin();
         
-        // TODO replace this with channel messaging
-        // world_container_view.set_callback(Box::new(|input_result| {
-        //     return handle_callback(level, p.clone(), input_result);
-        // }));
-
-        // TODO find a way to safely handle messaging
-        let result_receiver = Some(message_channels.request_channel.receiver);
-        let mut result_sender = Some(message_channels.response_channel.sender);
-        // let response = if let Some(result) = result_receiver.unwrap().recv().await {
-        //     handle_callback(level, p.clone(), result)
-        // } else {
-        //     None
-        // };
-        // 
-        // if let Some(rs) = response {
-        //     result_sender.as_mut().unwrap().send(rs).await.expect("Failed to send response");
-        // }
-
+        world_container_view.set_callback(Box::new(|input_result| {
+            return handle_callback(level, p.clone(), input_result);
+        }));
         
-        return Ok(InputResult { generic_input_result: GenericInputResult { done: true, requires_view_refresh: true }, view_specific_result: None});
+        return world_container_view.begin();
     }
 }
 
@@ -427,9 +431,7 @@ mod tests {
             ui: &mut game_engine.ui_wrapper.ui, 
             terminal_manager: &mut game_engine.ui_wrapper.terminal_manager,
             input_resolver: Box::new(MockKeyInputResolver { key_results }), 
-            key_bindings: build_default_open_keybindings(),
-            result_receiver: Some(message_channels.request_channel.receiver),
-            result_sender: Some(message_channels.response_channel.sender)
+            key_bindings: build_default_open_keybindings()
         };
         
         // WHEN we call to handle the opening of a container

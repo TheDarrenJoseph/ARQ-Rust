@@ -133,9 +133,9 @@ impl <COM: ratatui::backend::Backend> InputHandler<bool> for WorldContainerView<
                     let data = TakeItemsData { source: self.container.clone(), to_take: selected_container_items, position: None };
                     let result = ContainerFrameHandlerInputResult::TakeItems(data);
 
-                    let _ = self.send_message(result);
-                    
-                    //self.trigger_callback(result);
+                    // TODO for now we do both messaging and callback
+                    let _ = self.send_message(result.clone());
+                    self.trigger_callback(result);
                 }
             },
             Key::Esc => {
@@ -209,9 +209,8 @@ impl <'c, B : ratatui::backend::Backend> Callback<'c, ContainerFrameHandlerInput
     }
 
     fn trigger_callback(&mut self, data: ContainerFrameHandlerInputResult) {
-        
-        //let result = (self.callback)(data);
-        //self.handle_callback_result(result);
+        let result = (self.callback)(data);
+        self.handle_callback_result(result);
     }
 
     fn handle_callback_result(&mut self, result: Option<ContainerFrameHandlerInputResult>) {

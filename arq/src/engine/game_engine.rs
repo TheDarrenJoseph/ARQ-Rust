@@ -461,9 +461,7 @@ impl <B : Backend + Send> GameEngine<B> {
                     ui: &mut self.ui_wrapper.ui,
                     terminal_manager: &mut self.ui_wrapper.terminal_manager,
                     input_resolver: Box::new(IoKeyInputResolver {}),
-                    key_bindings: key_bindings.clone(),
-                    result_sender: None,
-                    result_receiver: None
+                    key_bindings: key_bindings.clone()
                 };
                 command.start()?;
 
