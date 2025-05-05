@@ -19,7 +19,7 @@ pub fn build_button(length: i8, name: String) -> StatefulWidgetState {
 }
 
 impl ButtonState {
-    pub fn get_name(&mut self) -> String {
+    pub fn get_name(&self) -> String {
         self.name.clone()
     }
 }

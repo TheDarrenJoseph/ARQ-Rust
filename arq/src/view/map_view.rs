@@ -94,7 +94,7 @@ impl<B : ratatui::backend::Backend> View<bool> for MapView<'_, B> {
         
         return Ok(terminal.draw(|frame| {
             // First let the UI draw everything else
-            ui.render(None, frame);
+            ui.render(None, None, frame);
 
             // Then render the map widget
             let map_widget = ui.get_stateful_widgets_mut().iter_mut().find(|w| match w {

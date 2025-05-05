@@ -95,7 +95,7 @@ impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
     fn re_render(&mut self) -> Result<(), std::io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(None, frame);
+            ui.render(None, None, frame);
         })?;
         Ok(())
     }
@@ -318,7 +318,7 @@ impl <'b, B : ratatui::backend::Backend> View<bool> for CharacterInfoView<'_, B>
         if let Some(main) = ui_areas.get_area(UI_AREA_NAME_MAIN) {
             let main_area = main.area;
             return Ok(self.terminal_manager.terminal.draw(|frame| {
-                ui.render(None, frame);
+                ui.render(None, None, frame);
                 // Sizes for the entire 'Character Info' frame area
 
                 let rect = Rect { x: main_area.start_position.x, y: main_area.start_position.y + 1, width: main_area.width.clone(), height: main_area.height.clone() - 1 };

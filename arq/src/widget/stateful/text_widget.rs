@@ -46,7 +46,7 @@ impl TextInputState {
         self.input = input
     }
 
-    pub fn get_name(&mut self) -> String {
+    pub fn get_name(&self) -> String {
         self.name.clone()
     }
 

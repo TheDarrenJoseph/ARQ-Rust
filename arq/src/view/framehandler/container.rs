@@ -78,7 +78,7 @@ fn build_default_columns() -> Vec<Column> {
     ]
 }
 
-fn build_column_text(column: &Column, item: &Item) -> String {
+pub(crate) fn build_column_text(column: &Column, item: &Item) -> String {
     match column.name.as_str() {
         "NAME" => {
             if item.is_equipped() {

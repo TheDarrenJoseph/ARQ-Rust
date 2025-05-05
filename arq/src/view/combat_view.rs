@@ -36,7 +36,7 @@ impl  <B: ratatui::backend::Backend> CombatView<'_, B> {
     fn re_render(&mut self) -> Result<(), io::Error>  {
         let ui = &mut self.ui;
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(None, frame);
+            ui.render(None, None, frame);
         })?;
         Ok(())
     }

@@ -3,7 +3,7 @@ use std::convert::TryInto;
 
 use crate::map::objects::items::Item;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum SelectionMode {
     SelectingItems
 }
@@ -32,7 +32,7 @@ pub trait ListSelection {
     fn move_down(&mut self);
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ItemListSelection {
     selection_mode : SelectionMode,
     // The index of the topmost item on the screen, allows scrolling

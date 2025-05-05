@@ -20,7 +20,7 @@ pub fn build_boolean_widget(length: i8, name: String, value: bool) -> StatefulWi
 }
 
 impl BooleanState {
-    pub fn get_name(&mut self) -> String {
+    pub fn get_name(&self) -> String {
         self.name.clone()
     }
 }

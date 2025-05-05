@@ -14,3 +14,6 @@ pub mod ui_util;
 pub mod resolution;
 
 pub mod bindings;
+
+// This entire event module is based on the example code from https://github.com/ratatui/templates
+pub mod event;

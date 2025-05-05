@@ -3,6 +3,7 @@ use crate::widget::character_stat_line::CharacterStatLineWidget;
 use crate::widget::stateful::boolean_widget::BooleanState;
 use crate::widget::stateful::button_widget::ButtonState;
 use crate::widget::stateful::console_input_widget::ConsoleInputState;
+use crate::widget::stateful::container_widget::ContainerWidget;
 use crate::widget::stateful::dropdown_widget::DropdownInputState;
 use crate::widget::stateful::map_widget::MapWidget;
 use crate::widget::stateful::number_widget::NumberInputState;
@@ -34,12 +35,13 @@ pub fn build_buffer(length: i8, input: String) -> String {
 #[derive(Debug)]
 pub enum StatefulWidgetType {
     Text(TextInputState),
+    Boolean(BooleanState),
     Console(ConsoleInputState),
     Number(NumberInputState),
     Dropdown(DropdownInputState),
     Button(ButtonState),
-    Boolean(BooleanState),
-    Map(MapWidget)
+    Map(MapWidget),
+    Container(ContainerWidget)
 }
 
 // Non stateful
@@ -53,11 +55,11 @@ pub struct StatefulWidgetState {
 }
 
 pub trait Named {
-    fn get_name(&mut self) -> String;
+    fn get_name(&self) -> String;
 }
 
 impl Named for StatefulWidgetType {
-    fn get_name(&mut self) -> String {
+    fn get_name(&self) -> String {
         match self {
             StatefulWidgetType::Text(state) => {
                 state.get_name()
@@ -76,6 +78,12 @@ impl Named for StatefulWidgetType {
             },
             StatefulWidgetType::Button(state) => {
                 state.get_name()
+            },
+            StatefulWidgetType::Map(_state) => {
+                String::from("Map")
+            },
+            StatefulWidgetType::Container(_state) => {
+                String::from("Container")
             },
             _ => { "".to_string() }
         }

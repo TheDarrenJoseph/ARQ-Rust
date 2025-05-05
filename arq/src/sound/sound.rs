@@ -62,7 +62,7 @@ pub async fn handle_background_music(sink_arc: Arc<RwLock<Sink>>) {
             }
         } else {
             info!("Background audio sink is not empty. Waiting 60s..");
-            sleep(Duration::from_secs(60)).await;
+            tokio::time::sleep(Duration::from_secs_f64(60f64)).await;
         }
     }
 }

@@ -464,7 +464,7 @@ impl <B : Backend + Send> GameEngine<B> {
                     input_resolver: Box::new(IoKeyInputResolver {}),
                     key_bindings: key_bindings.clone()
                 };
-                command.begin()?;
+                command.begin().await?;
                 Ok(None)
             },
             Action::MovePlayer(side) => {

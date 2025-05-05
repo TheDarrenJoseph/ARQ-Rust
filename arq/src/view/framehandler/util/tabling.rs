@@ -4,7 +4,7 @@ use ratatui::text::{Span, Line};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::map::position::Area;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Column {
     pub name : String,
     pub size : i8

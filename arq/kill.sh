@@ -5,5 +5,5 @@ if [ -z $TARGETPID ];
 then
   echo "No arq process found.."
 else 
-  kill $TARGETPID && echo "Killed pid: $TARGETPID"
+  kill -9 $TARGETPID && echo "Killed pid: $TARGETPID"
 fi

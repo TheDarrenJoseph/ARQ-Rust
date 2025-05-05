@@ -106,7 +106,7 @@ impl <B: ratatui::backend::Backend> LookCommand<'_, B> {
         let ui = &mut self.ui;
         let level = self.level.clone();
         self.terminal_manager.terminal.draw(|frame| {
-            ui.render(Some(level), frame);
+            ui.render(Some(level), None, frame);
         })?;
         Ok(())
     }
