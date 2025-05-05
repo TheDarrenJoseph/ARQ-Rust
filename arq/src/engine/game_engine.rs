@@ -14,6 +14,7 @@ use crate::engine::command::command::Command;
 use crate::engine::command::inventory_command::InventoryCommand;
 use crate::engine::command::look_command::LookCommand;
 use crate::engine::command::open_command::OpenCommand;
+use crate::engine::command::open_command_new::OpenCommandNew;
 use crate::engine::engine_helpers::game_loop::game_loop;
 use crate::engine::engine_helpers::input_handler::InputHandler;
 use crate::engine::engine_helpers::menu::menu_command;
@@ -456,22 +457,14 @@ impl <B : Backend + Send> GameEngine<B> {
             Action::OpenNearby => {
                 let key_bindings = self.settings.key_bindings.command_specific_key_bindings.open_key_bindings.clone();
                 
-                let mut command = OpenCommand {
+                let mut command = OpenCommandNew {
                     level,
                     ui: &mut self.ui_wrapper.ui,
                     terminal_manager: &mut self.ui_wrapper.terminal_manager,
                     input_resolver: Box::new(IoKeyInputResolver {}),
                     key_bindings: key_bindings.clone()
                 };
-                command.start()?;
-
-                // Pass through any additional input
-                if let Some(key) = input {
-                    let bindings = key_bindings.get_bindings();
-                    let input = bindings.get(&key);
-                    command.handle_input(input)?;
-                }
-                
+                command.begin()?;
                 Ok(None)
             },
             Action::MovePlayer(side) => {

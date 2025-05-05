@@ -210,7 +210,7 @@ impl <B: ratatui::backend::Backend> Command<OpenInput> for OpenCommand<'_, B> {
         let input  = self.key_bindings.get_input(key);
        
         let mut message = NOTHING_ERROR.to_string();
-        let side = map_open_input_to_side(input);
+        let side = map_open_input_to_side(input.cloned());
         if let Some(p) = self.level.find_adjacent_player_position(side) {
             log::info!("Player opening at map position: {}, {}", &p.x, &p.y);
             self.re_render()?;

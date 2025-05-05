@@ -47,7 +47,7 @@ impl KeyBindings<OpenInput> for OpenKeyBindings {
     }
 }
 
-pub fn map_open_input_to_side(look_input: Option<&OpenInput>) -> Option<Side> {
+pub fn map_open_input_to_side(look_input: Option<OpenInput>) -> Option<Side> {
     return if let Some(input) = look_input {
         match input {
             OpenInput::OpenUp => Option::from(Side::TOP),
