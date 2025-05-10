@@ -7,17 +7,24 @@ use crate::map::position::Position;
 use crate::terminal::terminal_manager::TerminalManager;
 use crate::ui::bindings::input_bindings::KeyBindings;
 use crate::ui::bindings::open_bindings::{map_open_input_to_side, OpenInput, OpenKeyBindings};
-use crate::ui::event::{Event, EventHandler};
+use crate::ui::event::{Event, TerminalEventHandler};
 use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::framehandler::util::tabling::Column;
 use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
-use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData, ContainerWidgetEventHandlingResult};
+use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData};
 use crate::widget::{Named, StandardWidgetType, StatefulWidgetType};
-use log::info;
+use log::{debug, info};
 use std::io;
 use termion::event::Key;
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::UnboundedSender;
+use crate::engine::command::open_command_new::OpenContainerEventType::TakeItems;
+use crate::engine::container_util;
+use crate::map::objects::items::Item;
+use crate::ui::event::AppEventType::OpenContainerEvent;
 use crate::ui::ui_areas::UIAreas;
+use crate::view::framehandler::container::{ContainerFrameHandler, ContainerFrameHandlerInputResult, MoveItemsData, MoveToContainerChoiceData, TakeItemsData, TakeItemsResponse};
 
 pub struct OpenCommandNew<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
@@ -30,10 +37,11 @@ pub struct OpenCommandNew<'a, B: 'static + ratatui::backend::Backend> {
 const UI_USAGE_HINT: &str = "Up/Down - Move\nEnter/q - Toggle/clear selection\nEsc - Exit";
 const NOTHING_ERROR : &str = "There's nothing here to open.";
 
-pub enum OpenContainerEvent {
-    MoveUp,
-    MoveDown,
-    ToggleSelection
+#[derive(Debug)]
+pub enum OpenContainerEventType {
+    TakeItems(TakeItemsData),
+    TakeItemsResult(TakeItemsResponse),
+    Escape
 }
 
 impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
@@ -150,9 +158,10 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         let frame_size = self.terminal_manager.terminal.get_frame().area();
         let mut ui_layout = self.ui.ui_layout.clone().unwrap();
         let ui_areas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit);
-        
+
+        let (container_event_sender, mut container_event_receiver) = mpsc::unbounded_channel();
         let container_widget = create_container_widget();
-        let mut widget_data = create_container_widget_data(c.clone(), ui_areas.clone());
+        let mut widget_data = create_container_widget_data(c.clone(), ui_areas.clone(), container_event_sender);
         self.update_usage_line();
         
         let ui = &mut self.ui;
@@ -162,8 +171,8 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         stateful_widgets.push(StatefulWidgetType::Container(container_widget));
         
         // Spawn a thread to handle the UI events 
-        let mut event_handler = EventHandler::new();
-        let event_thread = event_handler.spawn_thread();
+        let mut event_handler = TerminalEventHandler::new();
+        let event_thread_data = event_handler.spawn_thread();
 
         let mut running = true;
         while running {
@@ -171,23 +180,53 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
                 ui.render(None, Some(&mut widget_data), frame);
             })?;
             
-            // Whenever there's a UI event, ask the widget state to handle it
+            // Whenever there's a UI event, ask the widget data to handle it
+            debug!("Waiting for a UI event");
             let event = event_handler.receiver.recv().await;
             if let Some(e) = event {
-                match widget_data.handle_event(e).await {
-                    ContainerWidgetEventHandlingResult::Continue => {}
-                    ContainerWidgetEventHandlingResult::Exit => {
-                        info!("Stopping Open Command Event Loop");
-                        running = false;
+                widget_data.handle_event(e).await;
+            
+                // If the widget data has sent us an event, handle that
+                match container_event_receiver.try_recv() {
+                    Ok(e) => {
+                        debug!("Handling container event");
+                        match e {
+                            Event::AppEvent(OpenContainerEvent(OpenContainerEventType::Escape)) => {
+                                running = false;
+                            },
+                            Event::AppEvent(OpenContainerEvent(TakeItems(mut data))) => {
+                                log::info!("[open usage] Received data for TakeItems with {} items", data.to_take.len());
+                                data.position = Some(p.clone());
+                                
+                                let result = container_util::take_items(data , self.level);
+                                
+                                // If we have a result for this take handling, send it back via the main event handler
+                                // So that the container widget/data can update appropriately
+                                if let Some(ContainerFrameHandlerInputResult::TakeItems(take_items_data)) = result {
+                                    let take_items_response = TakeItemsResponse {
+                                        // to_take is actually the "untaken" items here
+                                        untaken: take_items_data.to_take
+                                    };
+                                    event_handler.sender.send(Event::AppEvent(OpenContainerEvent(OpenContainerEventType::TakeItemsResult(take_items_response)))).unwrap();
+                                }
+                           
+                            }
+                            _ => {}
+                        }
+                    },
+                    Err(e) => {
+                      log::error!("Error receiving container event: {:?}", e);
                     }
                 }
             }
         }
         
         log::info!("Open Command Event Loop finished");
-        self.reset_usage_line();
         event_handler.receiver.close();
-        event_thread.abort();
+        event_thread_data.cancellation_token.cancel();
+        event_thread_data.join_handle.await.unwrap();
+
+        self.reset_usage_line();
         Ok(())
     }
 }
@@ -202,12 +241,13 @@ fn create_container_widget() -> ContainerWidget {
     }
 }
 
-fn create_container_widget_data(container: Container, ui_areas: UIAreas) -> ContainerWidgetData {
+fn create_container_widget_data(container: Container, ui_areas: UIAreas, sender: UnboundedSender<Event>) -> ContainerWidgetData {
     let items = container.to_cloned_item_list();
     let item_list_selection =  ItemListSelection::new(items.clone(), 4);
     ContainerWidgetData {
         container: container.clone(),
         ui_areas: ui_areas.clone(),
-        item_list_selection
+        item_list_selection,
+        event_sender: sender,
     }
 }

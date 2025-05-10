@@ -194,8 +194,8 @@ impl <B : Backend> UIWrapper<B> {
             map_view.begin()?;
         }
 
-        let duration = now.elapsed();
-        debug!("Map view draw took: {}ms", duration.as_millis());
+        //let duration = now.elapsed();
+        //debug!("Map view draw took: {}ms", duration.as_millis());
         Ok(())
     }
 

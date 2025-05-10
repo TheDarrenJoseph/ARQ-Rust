@@ -1,15 +1,16 @@
 use std::time::Duration;
-use log::info;
+use log::{debug, error, info};
 use termion::input::TermRead;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use crate::engine::command::open_command_new::OpenContainerEvent;
+use tokio_util::sync::CancellationToken;
+use crate::engine::command::open_command_new::OpenContainerEventType;
 
 /*
     Based on example code from https://github.com/ratatui/templates
  */
 #[derive(Debug)]
-pub struct EventHandler {
+pub struct TerminalEventHandler {
     pub(crate) sender: mpsc::UnboundedSender<Event>,
     pub(crate) receiver: mpsc::UnboundedReceiver<Event>,
 }
@@ -20,12 +21,14 @@ pub struct EventHandler {
     Based on example code from https://github.com/ratatui/templates
  */
 pub struct EventTask {
+    cancellation_token: CancellationToken,
     sender: mpsc::UnboundedSender<Event>,
 }
 
 /*
     Based on example code from https://github.com/ratatui/templates
  */
+#[derive(Debug)]
 pub enum Event {
     /// An event that is emitted on a regular schedule.
     ///
@@ -35,32 +38,51 @@ pub enum Event {
     Tick,
     // TODO migrate to crossterm events
     Termion(termion::event::Event),
-    AppEvent(AppEvent)
+    AppEvent(AppEventType)
 }
 
-pub enum AppEvent {
-    OpenContainerEvent(OpenContainerEvent)
+#[derive(Debug)]
+pub enum AppEventType {
+    OpenContainerEvent(OpenContainerEventType)
 }
 
 /*
     Based on example code from https://github.com/ratatui/templates
  */
-impl EventHandler {
-    pub fn new() -> EventHandler {
+impl TerminalEventHandler {
+    pub fn new() -> TerminalEventHandler {
         let (sender, receiver) = mpsc::unbounded_channel();
-        EventHandler { sender, receiver }
+        TerminalEventHandler { sender, receiver }
     }
     
-    pub fn spawn_thread(&self) -> JoinHandle<()> {
+    pub fn spawn_thread(&self) -> TerminalEventThreadData {
+        let cancellation_token = CancellationToken::new();
+        
         info!("Spawning event handler thread");
-        let task = EventTask::new(self.sender.clone());
-        tokio::spawn(async { task.run().await })
+        let task = EventTask::new(
+            cancellation_token.clone(),
+            self.sender.clone()
+        );
+        let join_handle = tokio::spawn(async { task.run().await });
+        
+        TerminalEventThreadData {
+            cancellation_token,
+            join_handle
+        }
     }
 }
 
+pub struct TerminalEventThreadData {
+    pub cancellation_token: CancellationToken,
+    pub join_handle: JoinHandle<()>
+}
+
 impl EventTask {
-    pub fn new(sender: mpsc::UnboundedSender<Event>) -> Self {
-        Self { sender }
+    pub fn new(cancellation_token: CancellationToken, sender: mpsc::UnboundedSender<Event>) -> Self {
+        Self { 
+            cancellation_token,
+            sender 
+        }
     }
     
     pub(crate) async fn run(self) {
@@ -69,26 +91,31 @@ impl EventTask {
         let mut events = termion::async_stdin().events();
         
         loop {
-            while let Some(e) = events.next() {
+            if self.cancellation_token.is_cancelled() {
+                info!("Event Task cancelled");
+                return;         
+            }
+            
+            if let Some(e) = events.next() {
                 match e {
                     Ok(e) => {
                         if self.sender.is_closed() {
                             break;
                         }
-                        //debug!("Sending Termion event: {:?}", e);
+                        debug!("Sending Termion event: {:?}", e);
                         self.send(Event::Termion(e));
                     },
                     Err(e) => {
-                        println!("Error reading from stdin: {}", e);
+                        error!("Error reading from stdin: {}", e);
                         break;
                     }
                 }
             }
             // wait for the next tick before trying to read events
             tick.tick().await;
-            //debug!("TICK");
+            debug!("TICK");
             // self.send(Event::Tick);
-            //debug!("TOCK");
+            // debug!("TOCK");
         }
     }
     

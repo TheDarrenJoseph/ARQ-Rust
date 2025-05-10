@@ -80,7 +80,7 @@ impl SoundSinks {
         let sink_arc = Arc::new(RwLock::new(Sink::try_new(&stream_handle).unwrap()));
         self.bg_sink.set_sink(Some(sink_arc.clone()));
         
-        task::spawn(async move {
+        task::spawn(async {
             handle_background_music(sink_arc).await
         });
     }

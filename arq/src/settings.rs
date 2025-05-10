@@ -16,8 +16,6 @@ pub const SETTING_RNG_SEED : &str = "Map RNG Seed";
 pub const SETTING_BG_MUSIC : &str = "Background music";
 pub const SETTING_RESOLUTION : &str = "Resolution";
 
-pub const SETTING_BG_MUSIC_VOLUME_DEFAULT : u32 = 50;
-
 pub const RESOURCE_SETTINGS_FILE: &str = "resources/settings.json";
 
 pub struct Setting<T> {

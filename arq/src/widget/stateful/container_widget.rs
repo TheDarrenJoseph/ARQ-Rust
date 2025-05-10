@@ -1,14 +1,21 @@
 use std::convert::TryInto;
+use log::debug;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Color, Modifier, StatefulWidget, Style};
 use ratatui::widgets::{Block, Borders, Widget};
 use termion::event::Key;
+use tokio::sync::mpsc;
+use crate::engine::command::open_command_new::OpenContainerEventType;
+use crate::engine::command::open_command_new::OpenContainerEventType::{Escape, TakeItems};
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
+use crate::map::objects::items::Item;
+use crate::ui::event::AppEventType::OpenContainerEvent;
 use crate::ui::event::Event;
 use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_util::build_paragraph;
+use crate::view::framehandler::container::TakeItemsData;
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
@@ -22,11 +29,13 @@ pub struct ContainerWidget {
 pub struct ContainerWidgetData {
     pub container : Container,
     pub ui_areas: UIAreas,
-    pub item_list_selection : ItemListSelection
+    pub item_list_selection : ItemListSelection,
+    pub event_sender: mpsc::UnboundedSender<Event>
 }
 
 impl ContainerWidgetData {
-    pub async fn handle_event(&mut self, event: Event) -> ContainerWidgetEventHandlingResult {
+    pub async fn handle_event(&mut self, event: Event) {
+        log::debug!("Handling event: {:?}", event);
         match event {
             Event::Termion(termion_event) => {
                 match termion_event {
@@ -38,6 +47,11 @@ impl ContainerWidgetData {
                             Key::Down => {
                                 self.item_list_selection.move_down();
                             },
+                            Key::Char('t') => {
+                                let selected_items = Vec::from(self.item_list_selection.get_selected_items().clone());
+                                let data = TakeItemsData { source: self.container.clone(), to_take: selected_items, position: None };
+                                self.event_sender.send(Event::AppEvent(OpenContainerEvent(TakeItems(data))));
+                            },
                             Key::Char('\n') => {
                                 self.item_list_selection.toggle_select();
                             },
@@ -45,27 +59,52 @@ impl ContainerWidgetData {
                                 if self.item_list_selection.is_selecting() {
                                     self.item_list_selection.cancel_selection();
                                 } else {
-                                    return ContainerWidgetEventHandlingResult::Exit
+                                    self.event_sender.send(Event::AppEvent(OpenContainerEvent(Escape))).expect("Failed to send event");
                                 }
                             }
                             _ => {}
                         }
 
-                    },
+                    }
                     _ => {}
                 }
-                ContainerWidgetEventHandlingResult::Continue
             },
-            _ => {
-                ContainerWidgetEventHandlingResult::Continue
-            }
+            Event::AppEvent(OpenContainerEvent(OpenContainerEventType::TakeItemsResult(take_items_response))) => {
+                self.retain_selected_items(take_items_response.untaken);
+            },
+            _ => {}
         }
     }
-}
 
-pub enum ContainerWidgetEventHandlingResult {
-    Continue,
-    Exit
+    fn clone_selected_container_items(&mut self) -> Vec<Container> {
+        let mut items = Vec::new();
+        let selected_items = self.item_list_selection.get_selected_items();
+        for item in selected_items {
+            if let Some(found) = self.container.find(&item) {
+                items.push(found.clone());
+            }
+        }
+        items
+    }
+    
+    fn retain_selected_items(&mut self, to_retain: Vec<Item>) {
+        let mut droppable_containers = self.clone_selected_container_items();
+        if !droppable_containers.is_empty() {
+            let view_container = &mut self.container;
+            for retainable in to_retain {
+                if let Some(pos) = droppable_containers.iter().position(|c| *c.get_self_item() == retainable) {
+                    droppable_containers.remove(pos);
+                }
+            }
+            view_container.remove_matching_items(droppable_containers);
+            self.rebuild_selection();
+        }
+    }
+
+    pub fn rebuild_selection(&mut self) {
+        self.item_list_selection = ItemListSelection::new(self.container.to_cloned_item_list(), 1);
+    }
+
 }
 
 impl StatefulWidget for ContainerWidget {

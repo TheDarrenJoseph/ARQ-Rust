@@ -32,14 +32,19 @@ pub struct ContainerFrameHandler {
     usage_line : UsageLineWidget
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TakeItemsData {
     pub source: Container,
     pub to_take: Vec<Item>,
     pub position: Option<Position>
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+pub struct TakeItemsResponse {
+    pub untaken: Vec<Item>
+}
+
+#[derive(Clone, Debug)]
 pub struct MoveToContainerChoiceData {
     pub source: Container,
     pub to_move: Vec<Item>,
