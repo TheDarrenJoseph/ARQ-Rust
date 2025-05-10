@@ -4,6 +4,7 @@ use crate::view::game_over_view::GameOverChoice;
 
 pub async fn game_loop<B: ratatui::backend::Backend + Send>(engine: &mut GameEngine<B>) -> Result<Option<GameOverChoice>, ErrorWrapper> {
     let game_over_result = engine.player_turn().await;
+    engine.re_render_all().await?;
     match game_over_result {
         Ok(goc) => {
             npc_turns(engine)?;

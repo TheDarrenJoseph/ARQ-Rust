@@ -64,7 +64,7 @@ impl EventTask {
     }
     
     pub(crate) async fn run(self) {
-        let tick_rate = Duration::from_secs_f64(0.5 as f64);
+        let tick_rate = Duration::from_secs_f64(0.1f64);
         let mut tick = tokio::time::interval(tick_rate);
         let mut events = termion::async_stdin().events();
         
@@ -85,9 +85,9 @@ impl EventTask {
                 }
             }
             // wait for the next tick before trying to read events
-            //debug!("TICK");
             tick.tick().await;
-            self.send(Event::Tick);
+            //debug!("TICK");
+            // self.send(Event::Tick);
             //debug!("TOCK");
         }
     }

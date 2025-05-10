@@ -385,13 +385,18 @@ impl <B : Backend + Send> GameEngine<B> {
         combat_view.begin()?;
         Ok(None)
     }
+    
+    pub(crate) async fn re_render_all(&mut self) -> Result<(), Error> {
+        let ui_wrapper = &mut self.ui_wrapper;
+        let level = self.levels.get_level_mut();
+        ui_wrapper.re_render_all(level.clone())
+    }
 
     pub(crate) async fn player_turn(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let key = get_input_key()?;
         let input_handler = &mut self.input_handler;
         
         let action = input_handler.handle_input(key).await;
-        
         if let Some(a) = action {
             let goc = self.handle_action(a, Some(key)).await?;
             if let Some(goc) = goc {

@@ -3,8 +3,10 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Color, Modifier, StatefulWidget, Style};
 use ratatui::widgets::{Block, Borders, Widget};
+use termion::event::Key;
 use crate::item_list_selection::{ItemListSelection, ListSelection};
 use crate::map::objects::container::Container;
+use crate::ui::event::Event;
 use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_util::build_paragraph;
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
@@ -22,6 +24,49 @@ pub struct ContainerWidgetData {
     pub ui_areas: UIAreas,
     pub item_list_selection : ItemListSelection,
     pub(crate) usage_line : UsageLine
+}
+
+impl ContainerWidgetData {
+    pub async fn handle_event(&mut self, event: Event) -> ContainerWidgetEventHandlingResult {
+        match event {
+            Event::Termion(termion_event) => {
+                match termion_event {
+                    termion::event::Event::Key(key) => {
+                        match key {
+                            Key::Up => {
+                                self.item_list_selection.move_up();
+                            },
+                            Key::Down => {
+                                self.item_list_selection.move_down();
+                            },
+                            Key::Char('\n') => {
+                                self.item_list_selection.toggle_select();
+                            },
+                            Key::Esc => {
+                                if self.item_list_selection.is_selecting() {
+                                    self.item_list_selection.cancel_selection();
+                                } else {
+                                    return ContainerWidgetEventHandlingResult::Exit
+                                }
+                            }
+                            _ => {}
+                        }
+
+                    },
+                    _ => {}
+                }
+                ContainerWidgetEventHandlingResult::Continue
+            },
+            _ => {
+                ContainerWidgetEventHandlingResult::Continue
+            }
+        }
+    }
+}
+
+pub enum ContainerWidgetEventHandlingResult {
+    Continue,
+    Exit
 }
 
 impl StatefulWidget for ContainerWidget {

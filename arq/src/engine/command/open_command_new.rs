@@ -12,7 +12,7 @@ use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::framehandler::util::tabling::Column;
 use crate::view::model::usage_line::{UsageCommand, UsageLine};
-use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData};
+use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData, ContainerWidgetEventHandlingResult};
 use crate::widget::{Named, StatefulWidgetType};
 use log::info;
 use std::io;
@@ -144,12 +144,12 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         let usage_line = UsageLine::new(commands);
    
         // Run the re-render in a loop with the new widget set
-        let level = self.level.clone();
         let container = container.clone();
         
         let frame_size = self.terminal_manager.terminal.get_frame().area();
         let ui_areas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit);
         
+        // Spawn a thread to handle the UI events 
         let mut event_handler = EventHandler::new();
         let event_thread = event_handler.spawn_thread();
 
@@ -165,51 +165,17 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
             self.terminal_manager.terminal.draw(|frame| {
                 ui.render(None, Some(&mut widget_data), frame);
             })?;
-
+            
+            // Whenever there's a UI event, ask the widget state to handle it
             let event = event_handler.receiver.recv().await;
-            let stateful_widgets = ui.get_stateful_widgets_mut();
-            let container_widget: &StatefulWidgetType = stateful_widgets.iter().find(|widget| widget.get_name() == "Container" ).unwrap();
-            if let StatefulWidgetType::Container(container_widget) = container_widget {
-                if let Some(e) = event {
-                    match e {
-                        Event::Termion(termion_event) => {
-                            match termion_event { 
-                                termion::event::Event::Key(key) => {
-                                    match key {
-                                        Key::Up => {
-                                            widget_data.item_list_selection.move_up();
-                                        },
-                                        Key::Down => {
-                                            widget_data.item_list_selection.move_down();
-                                        },
-                                        Key::Char('\n') => {
-                                            widget_data.item_list_selection.toggle_select();
-                                        },
-                                        Key::Esc => {
-                                            if widget_data.item_list_selection.is_selecting() {
-                                                widget_data.item_list_selection.cancel_selection();
-                                            } else {
-                                                info!("Stopping Open Command Event Loop");
-                                                running = false;
-                                            }
-                                        }
-                                        _ => {}
-                                    }
-                                    
-                                },
-                                _ => {}
-                            }
-                            
-                        },
-                        Event::Tick => {
-                            // TODO anything on tick?
-                        }
-                        _ => {}
+            if let Some(e) = event {
+                match widget_data.handle_event(e).await {
+                    ContainerWidgetEventHandlingResult::Continue => {}
+                    ContainerWidgetEventHandlingResult::Exit => {
+                        info!("Stopping Open Command Event Loop");
+                        running = false;
                     }
                 }
-
-            } else {
-                log::error!("Container widget not found.");
             }
         }
         
@@ -219,3 +185,4 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         Ok(())
     }
 }
+

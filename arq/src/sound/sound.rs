@@ -34,10 +34,10 @@ pub fn pick_background_track(paths: &mut ReadDir, rng: &mut impl Rng) -> Result<
                 let file_path = de.path();
                 info!("Picked a new background track: {:?}", file_path);
                 let path = de.path();
-                return Ok(BufReader::new(File::open(path).unwrap()))
+                Ok(BufReader::new(File::open(path).unwrap()))
             },
             Err(e) => {
-                return Err(e)
+                Err(e)
             }
         }
     } else {
@@ -46,6 +46,10 @@ pub fn pick_background_track(paths: &mut ReadDir, rng: &mut impl Rng) -> Result<
 }
 
 pub async fn handle_background_music(sink_arc: Arc<RwLock<Sink>>) {
+    // Check the music state every 60s 
+    let tick_rate = Duration::from_secs_f64(60f64);
+    let mut interval = tokio::time::interval(tick_rate);
+    
     loop {
         if sink_arc.write().unwrap().empty() {
             let mut paths = fs::read_dir(RESOURCE_MUSIC_BACKGROUND_FOLDER).unwrap();
@@ -61,7 +65,7 @@ pub async fn handle_background_music(sink_arc: Arc<RwLock<Sink>>) {
             }
         } else {
             info!("Background audio sink is not empty. Waiting 60s..");
-            tokio::time::sleep(Duration::from_secs_f64(60f64)).await;
+            interval.tick().await;
         }
     }
 }
