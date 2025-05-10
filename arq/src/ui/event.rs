@@ -113,7 +113,7 @@ impl EventTask {
             }
             // wait for the next tick before trying to read events
             tick.tick().await;
-            debug!("TICK");
+            //debug!("TICK");
             // self.send(Event::Tick);
             // debug!("TOCK");
         }

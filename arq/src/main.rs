@@ -2,7 +2,6 @@ extern crate core;
 
 use std::io;
 
-use futures::executor::block_on;
 use termion::input::TermRead;
 use termion::raw::RawTerminal;
 use ratatui::backend::CrosstermBackend;
@@ -72,5 +71,5 @@ async fn begin() -> Result<(), ErrorWrapper> {
 #[tokio::main(worker_threads = 2)]
 async fn main<>() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    block_on(begin()).expect("Failure in main thread!");
+    begin().await.expect("Failure in main thread!");
 }

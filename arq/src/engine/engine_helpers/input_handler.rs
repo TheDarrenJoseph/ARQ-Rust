@@ -69,12 +69,12 @@ mod tests {
                 let levels = engine.levels.get_level_mut();
                 let player = levels.characters.get_player_mut();
                 assert_eq!(start_position, player.unwrap().get_global_position());
-
-                let mut input_handler = engine.input_handler;
                 
+                // Feed each input into the engine handling
                 for key in input {
-                    input_handler.handle_input(key).await.unwrap();
+                    engine.handle_input(key).await.unwrap();
                 }
+                
                 assert_eq!(expected_end_position, engine.levels.get_level_mut().characters.get_player().unwrap().get_global_position());
             },
             _ => {

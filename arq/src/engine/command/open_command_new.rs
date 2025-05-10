@@ -14,7 +14,7 @@ use crate::view::framehandler::util::tabling::Column;
 use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
 use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData};
 use crate::widget::{Named, StandardWidgetType, StatefulWidgetType};
-use log::{debug, info};
+use log::{debug, error, info};
 use std::io;
 use termion::event::Key;
 use tokio::sync::mpsc;
@@ -150,7 +150,7 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
             }
         }
     }
-    
+
     async fn open_container(&mut self, p: Position, c: &Container) -> Result<(), ErrorWrapper> {
         self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
@@ -163,69 +163,73 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         let container_widget = create_container_widget();
         let mut widget_data = create_container_widget_data(c.clone(), ui_areas.clone(), container_event_sender);
         self.update_usage_line();
-        
+
         let ui = &mut self.ui;
 
         // Add the container widget to the UI
         let stateful_widgets = ui.get_stateful_widgets_mut();
         stateful_widgets.push(StatefulWidgetType::Container(container_widget));
-        
+
         // Spawn a thread to handle the UI events 
         let mut event_handler = TerminalEventHandler::new();
         let event_thread_data = event_handler.spawn_thread();
 
         let mut running = true;
         while running {
+            debug!("LOOPING");
+
             self.terminal_manager.terminal.draw(|frame| {
                 ui.render(None, Some(&mut widget_data), frame);
             })?;
-            
+
             // Whenever there's a UI event, ask the widget data to handle it
             debug!("Waiting for a UI event");
-            let event = event_handler.receiver.recv().await;
-            if let Some(e) = event {
+            if let Some(e) = event_handler.receiver.recv().await {
                 widget_data.handle_event(e).await;
-            
-                // If the widget data has sent us an event, handle that
-                match container_event_receiver.try_recv() {
-                    Ok(e) => {
-                        debug!("Handling container event");
-                        match e {
-                            Event::AppEvent(OpenContainerEvent(OpenContainerEventType::Escape)) => {
-                                running = false;
-                            },
-                            Event::AppEvent(OpenContainerEvent(TakeItems(mut data))) => {
-                                log::info!("[open usage] Received data for TakeItems with {} items", data.to_take.len());
-                                data.position = Some(p.clone());
-                                
-                                let result = container_util::take_items(data , self.level);
-                                
-                                // If we have a result for this take handling, send it back via the main event handler
-                                // So that the container widget/data can update appropriately
-                                if let Some(ContainerFrameHandlerInputResult::TakeItems(take_items_data)) = result {
-                                    let take_items_response = TakeItemsResponse {
-                                        // to_take is actually the "untaken" items here
-                                        untaken: take_items_data.to_take
-                                    };
-                                    event_handler.sender.send(Event::AppEvent(OpenContainerEvent(OpenContainerEventType::TakeItemsResult(take_items_response)))).unwrap();
-                                }
-                           
-                            }
-                            _ => {}
-                        }
-                    },
-                    Err(e) => {
-                      log::error!("Error receiving container event: {:?}", e);
-                    }
-                }
+            } else {
+                info!("Receiver returned None!");
+                running = false;
             }
+
+            // If the widget data has sent us an event, handle that
+            // match container_event_receiver.try_recv() {
+            //     Ok(event) => {
+            //         debug!("Handling container event");
+            //         match event {
+            //             Event::AppEvent(OpenContainerEvent(OpenContainerEventType::Escape)) => {
+            //                 info!("LOOP | Stopping open command loop");
+            //                 running = false;
+            //             },
+            //             Event::AppEvent(OpenContainerEvent(TakeItems(mut data))) => {
+            //                 log::info!("[open usage] Received data for TakeItems with {} items", data.to_take.len());
+            //                 data.position = Some(p.clone());
+            // 
+            //                 let result = container_util::take_items(data, self.level);
+            // 
+            //                 // If we have a result for this take handling, send it back via the main event handler
+            //                 // So that the container widget/data can update appropriately
+            //                 if let Some(ContainerFrameHandlerInputResult::TakeItems(take_items_data)) = result {
+            //                     let take_items_response = TakeItemsResponse {
+            //                         // to_take is actually the "untaken" items here
+            //                         untaken: take_items_data.to_take
+            //                     };
+            //                     event_handler.sender.send(Event::AppEvent(OpenContainerEvent(OpenContainerEventType::TakeItemsResult(take_items_response)))).unwrap();
+            //                 }
+            //             }
+            //             _ => {}
+            //         }
+            //     },
+            //     Err(e) => {
+            //         error!("Could not receive container event: {:?}", e);
+            //     }
+            // }
         }
-        
-        log::info!("Open Command Event Loop finished");
+
         event_handler.receiver.close();
         event_thread_data.cancellation_token.cancel();
         event_thread_data.join_handle.await.unwrap();
-
+        log::info!("LOOP | Open Command Event Finished");
+    
         self.reset_usage_line();
         Ok(())
     }

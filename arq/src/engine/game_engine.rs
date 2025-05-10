@@ -391,8 +391,13 @@ impl <B : Backend + Send> GameEngine<B> {
 
     pub(crate) async fn player_turn(&mut self) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let key = get_input_key()?;
+        self.handle_input(key).await?;
+        return Ok(None);
+    }
+    
+    pub async fn handle_input(&mut self, key: Key) -> Result<Option<GameOverChoice>, ErrorWrapper> {
         let input_handler = &mut self.input_handler;
-        
+
         let action = input_handler.handle_input(key).await;
         if let Some(a) = action {
             let goc = self.handle_action(a, Some(key)).await?;
@@ -400,7 +405,6 @@ impl <B : Backend + Send> GameEngine<B> {
                 return Ok(Some(goc));
             }
         }
-       
         return Ok(None);
     }
     

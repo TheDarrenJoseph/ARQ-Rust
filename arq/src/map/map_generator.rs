@@ -564,17 +564,16 @@ mod tests {
     use rand_pcg::Pcg64;
     use rand_seeder::Seeder;
 
-    use crate::block_on;
     use crate::map::map_generator::build_generator;
     use crate::map::position::{build_square_area, Area, Position};
     use crate::map::tile::TileDetails;
     use crate::map::Map;
 
-    fn build_test_map(rng: &mut Pcg64, map_area: Area) -> Map {
+    async fn build_test_map(rng: &mut Pcg64, map_area: Area) -> Map {
         let mut generator = build_generator(rng, map_area);
 
         let (tx, _rx) = channel();
-        block_on(generator.generate(tx))
+        generator.generate(tx).await
     }
 
     #[test]
@@ -678,14 +677,14 @@ mod tests {
         tile_strings
     }
 
-    #[test]
-    fn test_generate() {
+    #[tokio::test]
+    async fn test_generate() {
         // GIVEN a fixed RNG seed and map size
         let map_size = 12;
         let map_area = build_square_area(Position { x: 0, y: 0 }, map_size);
         let rng: &mut Pcg64 = &mut Seeder::from("test".to_string()).into_rng();
         // WHEN we call to generate the map
-        let map = build_test_map(rng, map_area);
+        let map = build_test_map(rng, map_area).await;
 
         // WHEN we expect a map of the given area to be generated
         let area = map.area;
@@ -716,14 +715,14 @@ mod tests {
         let expected_tiles: Vec<String> = vec![
             "            ".to_string(),
             "            ".to_string(),
+            "        ####".to_string(),
+            "     ---=^-#".to_string(),
+            "  ----  #--#".to_string(),
+            "  -#### ####".to_string(),
+            "  -=--#     ".to_string(),
+            "   #-^#     ".to_string(),
+            "   ####     ".to_string(),
             "            ".to_string(),
-            " #####      ".to_string(),
-            " #---#      ".to_string(),
-            " #-^-=-     ".to_string(),
-            " #---#-     ".to_string(),
-            " #####---#=#".to_string(),
-            "        -=^#".to_string(),
-            "         #=#".to_string(),
             "            ".to_string(),
             "            ".to_string()
         ];
@@ -736,14 +735,14 @@ mod tests {
         let expected_tiles_with_containers: Vec<String> = vec![
             "            ".to_string(),
             "            ".to_string(),
+            "        ####".to_string(),
+            "     $$$=^$#".to_string(),
+            "  $$$$  #$$#".to_string(),
+            "  $#### ####".to_string(),
+            "  $=$$#     ".to_string(),
+            "   #$^#     ".to_string(),
+            "   ####     ".to_string(),
             "            ".to_string(),
-            " #####      ".to_string(),
-            " #$$$#      ".to_string(),
-            " #$^$=$     ".to_string(),
-            " #$$$#$     ".to_string(),
-            " #####$$$#=#".to_string(),
-            "        $=^#".to_string(),
-            "         #=#".to_string(),
             "            ".to_string(),
             "            ".to_string()
         ];

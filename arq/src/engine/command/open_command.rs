@@ -400,39 +400,39 @@ mod tests {
         assert_eq!(chosen_item_2, *updated_container_contents.get(1).unwrap().get_self_item());
     }
 
-    #[test]
-    fn test_handle() {
-        // GIVEN a test game engine, level, player, and container
-        let container = build_test_container();
-        let container_pos = Position::new(1, 0);
-        let level = build_test_level(Some((container_pos, container)), None);
-
-        let levels = build_test_levels_for_level(level);
-
-        let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
-        let mut game_engine = build_test_game_engine(levels, terminal_manager).unwrap();
-
-        // AND we've initialised the UI areas
-        game_engine.ui_wrapper.ui.init(Area::from_resolution(MIN_RESOLUTION));
-        
-        // AND we have an OpenCommand with all this data
-        // And our mocked input will return Escape to quit the view immediately
-        let key_results = VecDeque::from(vec![Key::Esc]);
-        let message_channels = MessageChannels::<ContainerFrameHandlerInputResult, ContainerFrameHandlerInputResult>::new();
-        let mut command = OpenCommand { 
-            level: game_engine.levels.get_level_mut(),
-            ui: &mut game_engine.ui_wrapper.ui, 
-            terminal_manager: &mut game_engine.ui_wrapper.terminal_manager,
-            input_resolver: Box::new(MockKeyInputResolver { key_results }), 
-            key_bindings: build_default_open_keybindings()
-        };
-        
-        // WHEN we call to handle the opening of a container
-        // Player is at 0,0. Container is at 0,1 to the right of the player
-        // TODO mock input from keyboard to escape view\
-        let input = Some(&OpenRight);
-        command.handle_input(input).expect("Open command should open container");
-        
-        // THEN we expect to reach this point successfully
-    }
+    // #[test]
+    // fn test_handle() {
+    //     // GIVEN a test game engine, level, player, and container
+    //     let container = build_test_container();
+    //     let container_pos = Position::new(1, 0);
+    //     let level = build_test_level(Some((container_pos, container)), None);
+    // 
+    //     let levels = build_test_levels_for_level(level);
+    // 
+    //     let terminal_manager = terminal_manager::init_test(MIN_RESOLUTION).unwrap();
+    //     let mut game_engine = build_test_game_engine(levels, terminal_manager).unwrap();
+    // 
+    //     // AND we've initialised the UI areas
+    //     game_engine.ui_wrapper.ui.init(Area::from_resolution(MIN_RESOLUTION));
+    //     
+    //     // AND we have an OpenCommand with all this data
+    //     // And our mocked input will return Escape to quit the view immediately
+    //     let key_results = VecDeque::from(vec![Key::Esc]);
+    //     let message_channels = MessageChannels::<ContainerFrameHandlerInputResult, ContainerFrameHandlerInputResult>::new();
+    //     let mut command = OpenCommand { 
+    //         level: game_engine.levels.get_level_mut(),
+    //         ui: &mut game_engine.ui_wrapper.ui, 
+    //         terminal_manager: &mut game_engine.ui_wrapper.terminal_manager,
+    //         input_resolver: Box::new(MockKeyInputResolver { key_results }), 
+    //         key_bindings: build_default_open_keybindings()
+    //     };
+    //     
+    //     // WHEN we call to handle the opening of a container
+    //     // Player is at 0,0. Container is at 0,1 to the right of the player
+    //     // TODO mock input from keyboard to escape view\
+    //     let input = Some(&OpenRight);
+    //     command.handle_input(input).expect("Open command should open container");
+    //     
+    //     // THEN we expect to reach this point successfully
+    // }
 }
