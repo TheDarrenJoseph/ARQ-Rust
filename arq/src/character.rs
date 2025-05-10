@@ -16,10 +16,10 @@ pub mod equipment;
 pub mod battle;
 pub mod builder;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Race {Human,Goblin}
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Class {None,Warrior}
 
 impl Display for Class {

@@ -310,7 +310,7 @@ mod tests {
     use crate::ui::ui_areas::UIAreas;
     use crate::ui::ui_layout::{LayoutType, UILayout};
     use crate::view::framehandler::container;
-    use crate::view::model::usage_line::{UsageCommand, UsageLine};
+    use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
     use crate::view::world_container_view::{WorldContainerView, WorldContainerViewFrameHandlers};
     use crate::view::{View, MIN_RESOLUTION};
     
@@ -331,7 +331,7 @@ mod tests {
             UsageCommand::new('o', String::from("open") ),
             UsageCommand::new('t', String::from("take"))
         ];
-        let usage_line = UsageLine::new(commands);
+        let usage_line = UsageLineWidget::for_commands(commands);
         let container_view = container::build_container_frame_handler(subview_container, usage_line);
         
         // AND we've created a WorldContainerView to view a dev testing Chest container

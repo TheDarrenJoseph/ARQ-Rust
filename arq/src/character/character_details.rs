@@ -2,6 +2,7 @@ use crate::character::stats::attributes::{build_default_attributes, AttributeSco
 use crate::character::{Class, Race};
 
 #[derive(Clone, Debug)]
+#[derive(PartialEq, Eq)]
 pub struct CharacterDetails {
     race: Race,
     class: Class,

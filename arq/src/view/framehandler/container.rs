@@ -15,7 +15,7 @@ use crate::ui::ui_util::build_paragraph;
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
 use crate::view::framehandler::{FrameData, FrameHandler};
-use crate::view::model::usage_line::UsageLine;
+use crate::widget::standard::usage_line::UsageLineWidget;
 use crate::view::{resolve_input, GenericInputResult, InputHandler, InputResult};
 use crate::global_flags::ENTER_KEY;
 
@@ -29,7 +29,7 @@ pub struct ContainerFrameHandler {
     columns : Vec<Column>,
     row_count: i32,
     pub item_list_selection : ItemListSelection,
-    usage_line : UsageLine
+    usage_line : UsageLineWidget
 }
 
 #[derive(Clone)]
@@ -103,7 +103,7 @@ pub(crate) fn build_column_text(column: &Column, item: &Item) -> String {
 * 2. Opening a nested container selected within an existing ContainerFrameHandler display (see build_handler_for_focused_container)
 * 3. Displaying the Player's inventory (See CharacterInfoView)
 */
-pub fn build_container_frame_handler(container: Container, usage_line : UsageLine) -> ContainerFrameHandler {
+pub fn build_container_frame_handler(container: Container, usage_line : UsageLineWidget) -> ContainerFrameHandler {
     let columns = build_default_columns();
     let items = container.to_cloned_item_list();
     ContainerFrameHandler {
@@ -505,7 +505,7 @@ pub fn build_testing_container_frame_handler<'a>(container: Container) -> Contai
         columns,
         row_count: 1,
         item_list_selection: ItemListSelection::new(items.clone(), 1),
-        usage_line : UsageLine::new(Vec::new())
+        usage_line : UsageLineWidget::for_commands(Vec::new())
     }
 }
 

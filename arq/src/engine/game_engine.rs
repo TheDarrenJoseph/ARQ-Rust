@@ -34,12 +34,12 @@ use crate::view::combat_view::CombatView;
 use crate::view::dialog_view::DialogView;
 use crate::view::framehandler::map_generation::MapGenerationFrameHandler;
 use crate::view::game_over_view::{build_game_over_menu, GameOverChoice};
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
 use crate::view::util::callback::Callback;
 use crate::view::util::callback::CallbackHandler;
 use crate::view::util::progress_display::ProgressDisplay;
 use crate::view::View;
-use crate::widget::character_stat_line::CharacterStatLineWidget;
+use crate::widget::standard::character_stat_line::CharacterStatLineWidget;
 use crate::widget::StandardWidgetType;
 
 pub struct GameEngine<B: 'static + Backend>  {
@@ -221,11 +221,8 @@ impl <B : Backend + Send> GameEngine<B> {
                 player.get_details(),
                 player.get_inventory_mut().get_loot_value());
             self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::StatLine(stat_line));
-
-            let commands : Vec<UsageCommand> = vec![
-                UsageCommand::new('i', String::from("Inventory/Info") )
-            ];
-            let map_usage_line = UsageLine::new(commands);
+            
+            let map_usage_line = UsageLineWidget::new();
             self.ui_wrapper.ui.get_additional_widgets_mut().push(StandardWidgetType::UsageLine(map_usage_line));
 
         } else {

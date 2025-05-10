@@ -11,12 +11,13 @@ use crate::ui::event::{Event, EventHandler};
 use crate::ui::ui::UI;
 use crate::ui::ui_layout::LayoutType;
 use crate::view::framehandler::util::tabling::Column;
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
 use crate::widget::stateful::container_widget::{ContainerWidget, ContainerWidgetData, ContainerWidgetEventHandlingResult};
-use crate::widget::{Named, StatefulWidgetType};
+use crate::widget::{Named, StandardWidgetType, StatefulWidgetType};
 use log::info;
 use std::io;
 use termion::event::Key;
+use crate::ui::ui_areas::UIAreas;
 
 pub struct OpenCommandNew<'a, B: 'static + ratatui::backend::Backend> {
     pub level: &'a mut Level,
@@ -114,52 +115,56 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         return ErrorWrapper::internal_result(NOTHING_ERROR.to_string())
     }
     
+    
+    // Updates the UI usage line widget to reflect an opened container
+    fn update_usage_line(&mut self) {
+        let mut container_usage_commands = vec![
+            UsageCommand::new('o', String::from("open") ),
+            UsageCommand::new('t', String::from("take"))
+        ];
+        for widget in self.ui.get_additional_widgets_mut().iter_mut() {
+            match widget {
+                StandardWidgetType::UsageLine(usage_line_widget) => {
+                    usage_line_widget.commands = container_usage_commands.clone();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn reset_usage_line(&mut self) {
+        for widget in self.ui.get_additional_widgets_mut().iter_mut() {
+            match widget {
+                StandardWidgetType::UsageLine(usage_line_widget) => {
+                    usage_line_widget.reset_commands();
+                }
+                _ => {}
+            }
+        }
+    }
+    
     async fn open_container(&mut self, p: Position, c: &Container) -> Result<(), ErrorWrapper> {
         self.ui.set_console_buffer(UI_USAGE_HINT.to_string());
 
         log::info!("Player opening container: {} at position: {:?}", c.get_self_item().get_name(), p);
-        
-        let container = c.clone();
-        let container_widget = ContainerWidget {
-            columns: vec![
-                Column {name : "NAME".to_string(), size: 30},
-                Column {name : "STORAGE (Kg)".to_string(), size: 12}
-            ],
-            row_count: 1
-        };
-
+        let frame_size = self.terminal_manager.terminal.get_frame().area();
         let mut ui_layout = self.ui.ui_layout.clone().unwrap();
+        let ui_areas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit);
+        
+        let container_widget = create_container_widget();
+        let mut widget_data = create_container_widget_data(c.clone(), ui_areas.clone());
+        self.update_usage_line();
+        
         let ui = &mut self.ui;
 
         // Add the container widget to the UI
         let stateful_widgets = ui.get_stateful_widgets_mut();
         stateful_widgets.push(StatefulWidgetType::Container(container_widget));
-
-        let items = container.to_cloned_item_list();
-        let item_list_selection =  ItemListSelection::new(items.clone(), 4);
-        let commands : Vec<UsageCommand> = vec![
-            UsageCommand::new('o', String::from("open") ),
-            UsageCommand::new('t', String::from("take"))
-        ];
-        let usage_line = UsageLine::new(commands);
-   
-        // Run the re-render in a loop with the new widget set
-        let container = container.clone();
-        
-        let frame_size = self.terminal_manager.terminal.get_frame().area();
-        let ui_areas = ui_layout.get_or_build_areas(frame_size, LayoutType::StandardSplit);
         
         // Spawn a thread to handle the UI events 
         let mut event_handler = EventHandler::new();
         let event_thread = event_handler.spawn_thread();
 
-        let mut widget_data = ContainerWidgetData {
-            container: container.clone(),
-            ui_areas: ui_areas.clone(),
-            item_list_selection: item_list_selection,
-            usage_line: usage_line.clone()
-        };
-        
         let mut running = true;
         while running {
             self.terminal_manager.terminal.draw(|frame| {
@@ -180,9 +185,29 @@ impl <B: ratatui::backend::Backend> OpenCommandNew<'_, B> {
         }
         
         log::info!("Open Command Event Loop finished");
+        self.reset_usage_line();
         event_handler.receiver.close();
         event_thread.abort();
         Ok(())
     }
 }
 
+fn create_container_widget() -> ContainerWidget {
+    ContainerWidget {
+        columns: vec![
+            Column {name : "NAME".to_string(), size: 30},
+            Column {name : "STORAGE (Kg)".to_string(), size: 12}
+        ],
+        row_count: 1,
+    }
+}
+
+fn create_container_widget_data(container: Container, ui_areas: UIAreas) -> ContainerWidgetData {
+    let items = container.to_cloned_item_list();
+    let item_list_selection =  ItemListSelection::new(items.clone(), 4);
+    ContainerWidgetData {
+        container: container.clone(),
+        ui_areas: ui_areas.clone(),
+        item_list_selection
+    }
+}

@@ -11,19 +11,18 @@ use crate::ui::ui_areas::{UIAreas, UI_AREA_NAME_MAIN};
 use crate::ui::ui_util::build_paragraph;
 use crate::view::framehandler::util::paging::{build_page_count, build_weight_limit};
 use crate::view::framehandler::util::tabling::{build_headings, Column};
-use crate::view::model::usage_line::UsageLine;
+use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
 
 #[derive(Debug, Clone)]
 pub struct ContainerWidget {
     pub(crate) columns : Vec<Column>,
-    pub(crate) row_count: i32,
+    pub(crate) row_count: i32
 }
 
 pub struct ContainerWidgetData {
     pub container : Container,
     pub ui_areas: UIAreas,
-    pub item_list_selection : ItemListSelection,
-    pub(crate) usage_line : UsageLine
+    pub item_list_selection : ItemListSelection
 }
 
 impl ContainerWidgetData {
@@ -78,7 +77,7 @@ impl StatefulWidget for ContainerWidget {
         
         let container = &mut data.container;
         let item_list_selection = &mut data.item_list_selection;
-        let usage_line = &mut data.usage_line;
+        //let usage_line = &mut data.usage_line;
 
         let window_block = Block::default()
             .borders(Borders::ALL)
@@ -132,10 +131,11 @@ impl StatefulWidget for ContainerWidget {
                 line_index += 1;
             }
             
-            let usage_description = usage_line.describe();
-            let usage_text = build_paragraph(usage_description.clone());
-            let text_area = Rect::new(window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
-            usage_text.render(text_area, buf);
+            // TODO do we want the widget to have this?
+            //let usage_description = usage_line.describe();
+            //let usage_text = build_paragraph(usage_description.clone());
+            //let text_area = Rect::new(window_area.x.clone() + 1, window_area.y.clone() + window_area.height.clone() - 1, usage_description.len().try_into().unwrap(), 1);
+            //usage_text.render(text_area, buf);
 
             // From right hand to left hand side draw the info text
             let page_count = build_page_count(&item_list_selection, window_area.clone());

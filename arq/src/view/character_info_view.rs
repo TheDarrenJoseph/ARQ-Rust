@@ -21,7 +21,7 @@ use crate::view::framehandler::character_stats::{CharacterStatsFrameHandler, Vie
 use crate::view::framehandler::container::ContainerFrameHandlerInputResult;
 use crate::view::framehandler::container_choice::ContainerChoiceFrameHandlerInputResult;
 use crate::view::framehandler::{container, FrameData, FrameHandler};
-use crate::view::model::usage_line::{UsageCommand, UsageLine};
+use crate::widget::standard::usage_line::{UsageCommand, UsageLineWidget};
 use crate::view::util::callback::Callback;
 use crate::view::InputHandler;
 use crate::view::{resolve_input, verify_display_size, GenericInputResult, InputResult, View};
@@ -81,7 +81,7 @@ impl <B : ratatui::backend::Backend> CharacterInfoView<'_, B> {
             UsageCommand::new('c', String::from("move-to-container")),
             UsageCommand::new('e', String::from("equip"))
         ];
-        let usage_line = UsageLine::new(commands);
+        let usage_line = UsageLineWidget::for_commands(commands);
 
         let inventory_view = container::build_container_frame_handler(self.character.get_inventory_mut().clone(), usage_line);
         self.frame_handler.container_frame_handlers = vec!(inventory_view);

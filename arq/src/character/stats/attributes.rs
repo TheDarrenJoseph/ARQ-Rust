@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Result};
 
-#[derive(Copy, PartialEq, Clone, Debug)]
+#[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Attribute {Strength, Health, Agility, Intelligence, Stealth}
 
 impl Display for Attribute {
@@ -10,6 +10,7 @@ impl Display for Attribute {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[derive(PartialEq, Eq)]
 pub struct AttributeScore {
     pub attribute: Attribute,
     pub score: i8

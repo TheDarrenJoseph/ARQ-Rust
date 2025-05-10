@@ -7,6 +7,7 @@ use crate::character::character_details::CharacterDetails;
 
 #[derive(Clone)]
 #[derive(Debug)]
+#[derive(PartialEq, Eq)]
 pub struct CharacterStatLineWidget {
     level: i32,
     health: i8,
